@@ -19,7 +19,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   featured = false 
 }) => {
   return (
-    <article className={`bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow ${featured ? 'h-full' : ''}`}>
+    <article className={`bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow ${featured ? 'h-full' : ''}`}>
       {image && (
         <div className={`relative ${featured ? 'h-64' : 'h-48'}`}>
           <img
@@ -36,17 +36,17 @@ const NewsCard: React.FC<NewsCardProps> = ({
       )}
       
       <div className={`p-${featured ? '6' : '4'}`}>
-        <div className="flex items-center text-sm text-gray-500 mb-2">
+        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span>{time}</span>
         </div>
         
-        <h3 className={`font-bold text-gray-900 mb-3 hover:text-[#F7931A] transition-colors cursor-pointer ${
+        <h3 className={`font-bold text-gray-900 dark:text-gray-100 mb-3 hover:text-[#F7931A] transition-colors cursor-pointer ${
           featured ? 'text-xl leading-tight' : 'text-lg leading-tight'
         }`}>
           {title}
         </h3>
         
-        <p className="text-gray-600 text-sm leading-relaxed">
+        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
           {summary}
         </p>
       </div>

@@ -1,6 +1,7 @@
 
 import React from 'react';
 import Header from '../components/Header';
+import PriceBar from '../components/PriceBar';
 import NewsCard from '../components/NewsCard';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
@@ -8,7 +9,7 @@ import Footer from '../components/Footer';
 const Index = () => {
   const featuredNews = {
     title: "Bitcoin Halving Sonrası Piyasada Büyük Hareketlilik",
-    summary: "Bitcoin'in son halving olayının ardından kripto para piyasalarında önemli değişimler yaşanıyor. Uzmanlar, önümüzdeki dönemde fiyat hareketlerinin artacağını öngörüyor.",
+    summary: "Bitcoin'in son halving olayının ardından piyasalarda önemli değişimler yaşanıyor. Uzmanlar, önümüzdeki dönemde fiyat hareketlerinin artacağını öngörüyor.",
     category: "Bitcoin",
     time: "30 dakika önce",
     image: "https://images.unsplash.com/photo-1518544866273-fc95ba4d8b2b?w=800&h=600&fit=crop"
@@ -16,30 +17,30 @@ const Index = () => {
 
   const mainNews = [
     {
-      title: "Ethereum'da Yeni Güncelleme: Gas Ücretleri %40 Azalacak",
-      summary: "Ethereum ağındaki son güncelleme ile transaction maliyetlerinde önemli düşüş bekleniyor.",
-      category: "Ethereum",
+      title: "Lightning Network'te Yeni Rekor: Kapasite 5.000 BTC'yi Aştı",
+      summary: "Bitcoin'in ikinci katman çözümü Lightning Network'te kilitli Bitcoin miktarı yeni bir rekora ulaştı.",
+      category: "Lightning",
       time: "1 saat önce",
       image: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=300&fit=crop"
     },
     {
-      title: "Türkiye'de Kripto Para Düzenlemeleri Netleşiyor",
-      summary: "BDDK'nın yeni açıklaması ile kripto para borsalarına yönelik kurallar belirlendi.",
+      title: "Türkiye'de Bitcoin Düzenlemeleri Netleşiyor",
+      summary: "BDDK'nın yeni açıklaması ile Bitcoin borsalarına yönelik kurallar belirlendi.",
       category: "Düzenleme",
       time: "2 saat önce",
       image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop"
     },
     {
-      title: "DeFi Protokollerinde TVL 150 Milyar Doları Aştı",
-      summary: "Merkezi olmayan finans protokollerindeki toplam kilitli değer yeni rekor seviyeye ulaştı.",
-      category: "DeFi",
+      title: "Bitcoin Madenciliği Hash Rate'i Yeni Zirveye Çıktı",
+      summary: "Bitcoin ağının güvenliği artarken, madencilik zorluğu da yeni seviyelere ulaştı.",
+      category: "Madencilik",
       time: "3 saat önce",
       image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop"
     },
     {
-      title: "NFT Piyasası Yeniden Canlanıyor: Sanat Eserleri Öne Çıkıyor",
-      summary: "Non-fungible token piyasasında sanat eserlerine olan ilgi artarken, yeni projeler dikkat çekiyor.",
-      category: "NFT",
+      title: "MicroStrategy Bitcoin Alımlarını Sürdürüyor",
+      summary: "Şirket stratejisini Bitcoin üzerine kuran MicroStrategy, portföyüne yeni Bitcoin'ler eklemeye devam ediyor.",
+      category: "Şirket",
       time: "4 saat önce",
       image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop"
     }
@@ -47,9 +48,9 @@ const Index = () => {
 
   const sideNews = [
     {
-      title: "Binance Yeni Coin Listelerini Açıkladı",
-      summary: "Dünyanın en büyük kripto para borsası, önümüzdeki ay listelenecek yeni projeleri duyurdu.",
-      category: "Borsa",
+      title: "El Salvador Bitcoin Rezervlerini Artırıyor",
+      summary: "Latin Amerika ülkesi, Bitcoin'i yasal para birimi ilan ettikten sonra rezervlerini genişletmeye devam ediyor.",
+      category: "Ülke",
       time: "5 saat önce"
     },
     {
@@ -61,8 +62,9 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
+      <PriceBar />
       
       {/* Breaking News Banner */}
       <div className="bg-[#F7931A] text-white py-2">
@@ -92,14 +94,14 @@ const Index = () => {
             </div>
 
             {/* Category Tabs */}
-            <div className="flex space-x-4 mb-6 border-b border-gray-200">
-              {['Tümü', 'Bitcoin', 'Altcoin', 'DeFi', 'NFT', 'Analiz'].map((tab) => (
+            <div className="flex space-x-4 mb-6 border-b border-gray-200 dark:border-gray-700">
+              {['Tümü', 'Haberler', 'Analiz', 'Lightning', 'Madencilik', 'Eğitim'].map((tab) => (
                 <button
                   key={tab}
                   className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${
                     tab === 'Tümü' 
                       ? 'border-[#F7931A] text-[#F7931A]' 
-                      : 'border-transparent text-gray-600 hover:text-[#F7931A]'
+                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-[#F7931A]'
                   }`}
                 >
                   {tab}
@@ -116,7 +118,7 @@ const Index = () => {
 
             {/* Additional News */}
             <div className="space-y-4">
-              <h2 className="text-xl font-bold text-gray-900 border-l-4 border-[#F7931A] pl-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 border-l-4 border-[#F7931A] pl-4">
                 Diğer Haberler
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
