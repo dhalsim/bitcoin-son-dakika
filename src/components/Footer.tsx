@@ -3,7 +3,7 @@ import React from 'react';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white mt-12">
+    <footer className="bg-gray-900 dark:bg-black text-white mt-12 dark:border-t dark:border-gray-800">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -11,7 +11,8 @@ const Footer = () => {
               <img 
                 src="/lovable-uploads/028135f1-856a-4e86-a719-a75eca32fa2a.png" 
                 alt="Bitcoin News"
-                className="h-8 w-8"
+                className="h-8"
+                style={{ width: '32px', height: '12px' }}
               />
             </div>
             <p className="text-gray-400 text-sm">
@@ -23,9 +24,9 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Kategoriler</h4>
             <ul className="space-y-2 text-sm">
               <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Haberler</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Analiz</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Madencilik</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Lightning</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Köşe Yazıları</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Eğitim</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Podcast</a></li>
             </ul>
           </div>
           
@@ -42,9 +43,9 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Takip Edin</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Twitter</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Telegram</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">YouTube</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">RSS</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Nostr</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">X (Twitter)</a></li>
               <li><a href="#" className="text-gray-400 hover:text-[#F7931A] transition-colors">Newsletter</a></li>
             </ul>
           </div>

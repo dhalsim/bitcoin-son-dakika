@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface NewsCardProps {
@@ -19,7 +18,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   featured = false 
 }) => {
   return (
-    <article className={`bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow ${featured ? 'h-full' : ''}`}>
+    <article className={`bg-white dark:bg-black rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow ${featured ? 'h-full' : ''} dark:border dark:border-gray-800`}>
       {image && (
         <div className={`relative ${featured ? 'h-64' : 'h-48'}`}>
           <img

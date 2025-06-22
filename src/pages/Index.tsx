@@ -62,7 +62,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-black">
       <Header />
       <PriceBar />
       
@@ -94,8 +94,8 @@ const Index = () => {
             </div>
 
             {/* Category Tabs */}
-            <div className="flex space-x-4 mb-6 border-b border-gray-200 dark:border-gray-700">
-              {['Tümü', 'Haberler', 'Analiz', 'Lightning', 'Madencilik', 'Eğitim'].map((tab) => (
+            <div className="flex space-x-4 mb-6 border-b border-gray-200 dark:border-gray-800">
+              {['Tümü', 'Haberler', 'Köşe Yazıları', 'Eğitim', 'Podcast'].map((tab) => (
                 <button
                   key={tab}
                   className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${

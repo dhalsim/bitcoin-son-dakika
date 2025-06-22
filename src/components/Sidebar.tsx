@@ -29,7 +29,7 @@ const Sidebar = () => {
   return (
     <aside className="space-y-6">
       {/* Trending News */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <div className="bg-white dark:bg-black rounded-lg shadow-sm p-6 dark:border dark:border-gray-800">
         <div className="flex items-center mb-4">
           <TrendingUp className="h-5 w-5 text-[#F7931A] mr-2" />
           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Gündem</h3>
@@ -37,7 +37,7 @@ const Sidebar = () => {
         
         <div className="space-y-4">
           {trendingNews.map((news, index) => (
-            <div key={index} className="border-b border-gray-100 dark:border-gray-700 pb-3 last:border-b-0 last:pb-0">
+            <div key={index} className="border-b border-gray-100 dark:border-gray-800 pb-3 last:border-b-0 last:pb-0">
               <h4 className="font-medium text-gray-900 dark:text-gray-100 hover:text-[#F7931A] cursor-pointer text-sm leading-snug mb-1">
                 {news.title}
               </h4>
@@ -48,7 +48,7 @@ const Sidebar = () => {
       </div>
 
       {/* Bitcoin Stats */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+      <div className="bg-white dark:bg-black rounded-lg shadow-sm p-6 dark:border dark:border-gray-800">
         <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Bitcoin İstatistikleri</h3>
         
         <div className="space-y-3">
@@ -88,7 +88,7 @@ const Sidebar = () => {
       </div>
 
       {/* Advertisement Placeholder */}
-      <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-8 text-center">
+      <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-8 text-center dark:border dark:border-gray-800">
         <div className="text-gray-500 dark:text-gray-400 text-sm">REKLAM ALANI</div>
       </div>
     </aside>
