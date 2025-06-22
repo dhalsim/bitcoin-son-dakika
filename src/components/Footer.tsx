@@ -3,8 +3,19 @@ import React from 'react';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 dark:bg-black text-white mt-12 dark:border-t dark:border-gray-800">
-      <div className="container mx-auto px-4 py-8">
+    <footer className="bg-gray-900 dark:bg-black text-white mt-12 dark:border-t dark:border-gray-800 relative">
+      {/* Background image */}
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: 'url(/lovable-uploads/f67c2cf5-3d5b-4310-9128-a823e7c74a4c.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      />
+      
+      <div className="container mx-auto px-4 py-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-3 mb-4">

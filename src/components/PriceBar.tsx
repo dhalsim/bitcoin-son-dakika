@@ -15,7 +15,7 @@ const PriceBar = () => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-            <span className="mr-2">Anlık Fiyatlar (Satoshi Cinsinden)</span>
+            <span className="mr-2">Anlık Fiyatlar</span>
             <span className="text-[#F7931A] satoshi-symbol"></span>
           </h3>
           <div className="flex items-center space-x-6 overflow-x-auto">

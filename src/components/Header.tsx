@@ -7,8 +7,19 @@ const Header = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="bg-white dark:bg-black shadow-md">
-      <div className="container mx-auto px-4">
+    <header className="bg-white dark:bg-black shadow-md relative">
+      {/* Background image */}
+      <div 
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: 'url(/lovable-uploads/f67c2cf5-3d5b-4310-9128-a823e7c74a4c.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      />
+      
+      <div className="container mx-auto px-4 relative z-10">
         {/* Top bar */}
         <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800">
           <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -27,7 +38,11 @@ const Header = () => {
                 <Rss className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               </a>
               <a href="#" className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
-                <span className="text-gray-600 dark:text-gray-400 font-bold text-sm">N</span>
+                <img 
+                  src="https://raw.githubusercontent.com/SovrynMatt/Nostr-Website-Button-Design/main/nostr-icon-purple-256x256.png" 
+                  alt="Nostr"
+                  className="h-4 w-4"
+                />
               </a>
               <a href="#" className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
                 <X className="h-4 w-4 text-gray-600 dark:text-gray-400" />
