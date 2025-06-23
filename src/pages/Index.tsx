@@ -62,20 +62,20 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
       <PriceBar />
       
       {/* Breaking News Banner */}
-      <div className="bg-[#F7931A] text-white py-2">
+      <div className="bg-red-600 text-white py-2">
         <div className="container mx-auto px-4">
           <div className="flex items-center">
-            <span className="bg-white text-[#F7931A] px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold mr-2 sm:mr-4 whitespace-nowrap">
+            <span className="bg-white text-red-600 px-3 py-1 text-xs font-bold mr-4 whitespace-nowrap uppercase tracking-wide">
               SON DAKİKA
             </span>
             <div className="flex-1 overflow-hidden">
               <div className="animate-pulse">
-                <span className="text-xs sm:text-sm font-medium">
+                <span className="text-sm font-medium">
                   Bitcoin 70.000 doları aştı! Piyasalarda büyük hareketlilik devam ediyor...
                 </span>
               </div>
@@ -84,24 +84,29 @@ const Index = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3">
             {/* Featured News */}
-            <div className="mb-6 sm:mb-8">
+            <div className="mb-8">
+              <div className="border-l-4 border-red-600 pl-4 mb-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
+                  Öne Çıkan Haber
+                </h2>
+              </div>
               <NewsCard {...featuredNews} featured={true} />
             </div>
 
             {/* Category Tabs */}
-            <div className="flex space-x-2 sm:space-x-4 mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+            <div className="flex space-x-6 mb-6 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
               {['Tümü', 'Haberler', 'Köşe Yazıları', 'Eğitim', 'Podcast'].map((tab) => (
                 <button
                   key={tab}
-                  className={`pb-2 px-1 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  className={`pb-3 px-1 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap uppercase tracking-wide ${
                     tab === 'Tümü' 
-                      ? 'border-[#F7931A] text-[#F7931A]' 
-                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-[#F7931A]'
+                      ? 'border-red-600 text-red-600 dark:text-red-400' 
+                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
                   }`}
                 >
                   {tab}
@@ -110,18 +115,20 @@ const Index = () => {
             </div>
 
             {/* Main News Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
               {mainNews.map((news, index) => (
                 <NewsCard key={index} {...news} />
               ))}
             </div>
 
             {/* Additional News */}
-            <div className="space-y-4">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 border-l-4 border-[#F7931A] pl-4">
-                Diğer Haberler
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-6">
+              <div className="border-l-4 border-red-600 pl-4">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
+                  Diğer Haberler
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {sideNews.map((news, index) => (
                   <NewsCard key={index} {...news} />
                 ))}
