@@ -107,16 +107,21 @@
   content: "≐";
 }
 
-/* Sliding animation for price bar */
+/* Enhanced sliding animation for price bar */
 @keyframes slide {
   0% {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-33.333%);
   }
 }
 
 .price-slider {
-  animation: slide 30s linear infinite;
+  animation: slide 45s linear infinite;
+  will-change: transform;
+}
+
+.price-slider:hover {
+  animation-play-state: paused;
 }

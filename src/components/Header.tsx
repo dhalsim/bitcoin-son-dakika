@@ -1,7 +1,13 @@
 
 import React from 'react';
-import { Search, Menu, Moon, Sun, Rss, X } from 'lucide-react';
+import { Search, Menu, Moon, Sun, Rss, X, ChevronDown } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 const Header = () => {
   const { theme, toggleTheme } = useTheme();
@@ -34,24 +40,24 @@ const Header = () => {
             
             {/* Social Links */}
             <div className="flex items-center space-x-2">
-              <a href="#" className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+              <a href="#" className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
                 <Rss className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               </a>
-              <a href="#" className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+              <a href="#" className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300">
                 <img 
                   src="https://raw.githubusercontent.com/SovrynMatt/Nostr-Website-Button-Design/main/nostr-icon-purple-256x256.png" 
                   alt="Nostr"
                   className="h-4 w-4"
                 />
               </a>
-              <a href="#" className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+              <a href="#" className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300">
                 <X className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               </a>
             </div>
             
             <button
               onClick={toggleTheme}
-              className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-yellow-500/20 transition-all duration-300"
             >
               {theme === 'dark' ? (
                 <Sun className="h-4 w-4 text-gray-600 dark:text-gray-400" />
@@ -84,11 +90,48 @@ const Header = () => {
             
             {/* Navigation */}
             <nav className="hidden lg:flex items-center space-x-6">
-              <a href="#" className="text-gray-700 dark:text-gray-300 hover:text-[#F7931A] font-medium transition-colors">Ana Sayfa</a>
-              <a href="#" className="text-gray-700 dark:text-gray-300 hover:text-[#F7931A] font-medium transition-colors">Haberler</a>
-              <a href="#" className="text-gray-700 dark:text-gray-300 hover:text-[#F7931A] font-medium transition-colors">Köşe Yazıları</a>
-              <a href="#" className="text-gray-700 dark:text-gray-300 hover:text-[#F7931A] font-medium transition-colors">Eğitim</a>
-              <a href="#" className="text-gray-700 dark:text-gray-300 hover:text-[#F7931A] font-medium transition-colors">Podcast</a>
+              <a href="#" className="text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">Ana Sayfa</a>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
+                  Haberler
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+                  <DropdownMenuItem>Son Dakika</DropdownMenuItem>
+                  <DropdownMenuItem>Piyasa Analizi</DropdownMenuItem>
+                  <DropdownMenuItem>Teknoloji</DropdownMenuItem>
+                  <DropdownMenuItem>Düzenlemeler</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
+                  Köşe Yazıları
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+                  <DropdownMenuItem>Güncel Yorumlar</DropdownMenuItem>
+                  <DropdownMenuItem>Teknik Analiz</DropdownMenuItem>
+                  <DropdownMenuItem>Ekonomi</DropdownMenuItem>
+                  <DropdownMenuItem>Teknoloji</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
+                  Eğitim
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+                  <DropdownMenuItem>Bitcoin Temelleri</DropdownMenuItem>
+                  <DropdownMenuItem>Cüzdan Kullanımı</DropdownMenuItem>
+                  <DropdownMenuItem>Güvenlik</DropdownMenuItem>
+                  <DropdownMenuItem>Lightning Network</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <a href="#" className="text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">Podcast</a>
             </nav>
           </div>
 
@@ -98,10 +141,10 @@ const Header = () => {
               <input
                 type="text"
                 placeholder="Haber ara..."
-                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-[#F7931A] w-64 bg-white dark:bg-black text-gray-900 dark:text-gray-100"
+                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-64 bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-all duration-300"
               />
             </div>
-            <button className="lg:hidden">
+            <button className="lg:hidden hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded">
               <Menu className="h-6 w-6 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
