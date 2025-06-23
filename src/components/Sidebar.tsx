@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, PenTool } from 'lucide-react';
 
 const Sidebar = () => {
   const trendingNews = [
@@ -26,8 +26,58 @@ const Sidebar = () => {
     }
   ];
 
+  const recentColumns = [
+    {
+      title: "Bitcoin'in Geleceği ve Kurumsal Yatırımcılar",
+      author: "Ahmet Yılmaz",
+      time: "1 gün önce"
+    },
+    {
+      title: "Merkez Bankası Dijital Para Birimlerinin Etkisi",
+      author: "Fatma Demir",
+      time: "2 gün önce"
+    },
+    {
+      title: "Enflasyona Karşı Bitcoin: Gerçek Koruma mu?",
+      author: "Mehmet Özkan",
+      time: "3 gün önce"
+    },
+    {
+      title: "Lightning Network: Bitcoin'in Ölçekleme Çözümü",
+      author: "Ayşe Kaya",
+      time: "4 gün önce"
+    },
+    {
+      title: "Türkiye'de Kripto Para Düzenlemeleri",
+      author: "Can Şahin",
+      time: "5 gün önce"
+    }
+  ];
+
   return (
     <aside className="space-y-6">
+      {/* Recent Columns */}
+      <div className="bg-white dark:bg-black rounded-lg shadow-sm p-6 dark:border dark:border-gray-800">
+        <div className="flex items-center mb-4">
+          <PenTool className="h-5 w-5 text-[#F7931A] mr-2" />
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Köşe Yazıları</h3>
+        </div>
+        
+        <div className="space-y-4">
+          {recentColumns.map((column, index) => (
+            <div key={index} className="border-b border-gray-100 dark:border-gray-800 pb-3 last:border-b-0 last:pb-0">
+              <h4 className="font-medium text-gray-900 dark:text-gray-100 hover:text-[#F7931A] cursor-pointer text-sm leading-snug mb-1">
+                {column.title}
+              </h4>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600 dark:text-gray-400">{column.author}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{column.time}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Trending News */}
       <div className="bg-white dark:bg-black rounded-lg shadow-sm p-6 dark:border dark:border-gray-800">
         <div className="flex items-center mb-4">
@@ -54,7 +104,7 @@ const Sidebar = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-gray-900 dark:text-gray-100">Hash Rate</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100">Hash Oranı</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">EH/s</div>
             </div>
             <div className="text-right">
@@ -65,8 +115,8 @@ const Sidebar = () => {
           
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-gray-900 dark:text-gray-100">Difficulty</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Trillion</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100">Zorluk</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Trilyon</div>
             </div>
             <div className="text-right">
               <div className="font-medium text-gray-900 dark:text-gray-100">62.46T</div>
