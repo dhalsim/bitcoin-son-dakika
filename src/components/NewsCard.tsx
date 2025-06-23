@@ -19,7 +19,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   featured = false 
 }) => {
   return (
-    <article className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 ${featured ? 'h-full' : ''}`}>
+    <article className={`bg-white dark:bg-black rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow ${featured ? 'h-full' : ''} dark:border dark:border-gray-800`}>
       {image && (
         <div className={`relative ${featured ? 'h-48 sm:h-64' : 'h-40 sm:h-48'}`}>
           <img
@@ -27,8 +27,8 @@ const NewsCard: React.FC<NewsCardProps> = ({
             alt={title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute top-3 left-3">
-            <span className="bg-red-600 text-white px-2 py-1 text-xs font-medium uppercase tracking-wide">
+          <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
+            <span className="bg-[#F7931A] text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
               {category}
             </span>
           </div>
@@ -36,17 +36,17 @@ const NewsCard: React.FC<NewsCardProps> = ({
       )}
       
       <div className={`p-${featured ? '4 sm:p-6' : '3 sm:p-4'}`}>
-        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wide">
+        <div className="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span>{time}</span>
         </div>
         
-        <h3 className={`font-bold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 hover:text-red-600 dark:hover:text-red-400 transition-colors cursor-pointer leading-tight ${
-          featured ? 'text-lg sm:text-xl' : 'text-base sm:text-lg'
+        <h3 className={`font-bold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 hover:text-[#F7931A] transition-colors cursor-pointer ${
+          featured ? 'text-lg sm:text-xl leading-tight' : 'text-base sm:text-lg leading-tight'
         }`}>
           {title}
         </h3>
         
-        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-3">
+        <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm leading-relaxed">
           {summary}
         </p>
       </div>
