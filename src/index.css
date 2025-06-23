@@ -106,3 +106,17 @@
 .satoshi-symbol::before {
   content: "≐";
 }
+
+/* Sliding animation for price bar */
+@keyframes slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.price-slider {
+  animation: slide 30s linear infinite;
+}

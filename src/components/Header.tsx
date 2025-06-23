@@ -23,7 +23,7 @@ const Header = () => {
         {/* Top bar */}
         <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Son Dakika Haberleri
+            Bitcoinci Perspektiften Dünyanın Nabzı
           </div>
           <div className="flex items-center space-x-4 text-sm">
             <span className="text-gray-600 dark:text-gray-400">22 Haziran 2025, Pazar</span>
@@ -66,10 +66,18 @@ const Header = () => {
         <div className="flex items-center justify-between py-4">
           <div className="flex items-center space-x-8">
             <div className="flex items-center">
+              {/* Light mode logo */}
+              <img 
+                src="/lovable-uploads/ddd6a57e-772d-4b33-a7df-b059c896614e.png" 
+                alt="Bitcoin News"
+                className="h-12 block dark:hidden"
+                style={{ width: '129px', height: '48px' }}
+              />
+              {/* Dark mode logo */}
               <img 
                 src="/lovable-uploads/028135f1-856a-4e86-a719-a75eca32fa2a.png" 
                 alt="Bitcoin News"
-                className="h-12"
+                className="h-12 hidden dark:block"
                 style={{ width: '129px', height: '48px' }}
               />
             </div>
