@@ -17,6 +17,9 @@ const PriceBar = () => {
     { name: "DAX", value: "17,245", symbol: "📊", change: "-0.2%" }
   ];
 
+  // Create enough duplicates for seamless infinite scroll
+  const infinitePrices = [...prices, ...prices, ...prices];
+
   return (
     <div className="bg-main-accent text-white py-2 border-b border-orange-300 relative overflow-hidden">
       <div className="container mx-auto px-4 relative z-10">
@@ -30,7 +33,7 @@ const PriceBar = () => {
           
           <div className="relative overflow-hidden bg-black/20 dark:bg-black/30 rounded backdrop-blur-sm">
             <div className="flex items-center space-x-3 sm:space-x-4 price-slider py-1.5 sm:py-2 px-3 sm:px-4">
-              {prices.concat(prices).map((price, index) => (
+              {infinitePrices.map((price, index) => (
                 <div key={index} className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap min-w-fit">
                   <span className="text-white/90 font-medium">{price.symbol} {price.name}:</span>
                   <span className="font-bold text-white">{price.value}</span>
