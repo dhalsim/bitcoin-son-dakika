@@ -30,7 +30,7 @@ const PriceBar = () => {
           
           <div className="relative overflow-hidden bg-black/20 dark:bg-black/30 rounded backdrop-blur-sm">
             <div className="flex items-center space-x-3 sm:space-x-4 price-slider py-1.5 sm:py-2 px-3 sm:px-4">
-              {prices.concat(prices).concat(prices).map((price, index) => (
+              {prices.concat(prices).map((price, index) => (
                 <div key={index} className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap min-w-fit">
                   <span className="text-white/90 font-medium">{price.symbol} {price.name}:</span>
                   <span className="font-bold text-white">{price.value}</span>
