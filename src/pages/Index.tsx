@@ -62,15 +62,15 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       <Header />
       <PriceBar />
       
       {/* Breaking News Banner */}
-      <div className="bg-[#F7931A] text-white py-2">
+      <div className="bg-main-accent text-white py-2">
         <div className="container mx-auto px-4">
           <div className="flex items-center">
-            <span className="bg-white text-[#F7931A] px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold mr-2 sm:mr-4 whitespace-nowrap">
+            <span className="bg-white text-main-accent px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold mr-2 sm:mr-4 whitespace-nowrap">
               SON DAKİKA
             </span>
             <div className="flex-1 overflow-hidden">
@@ -100,8 +100,8 @@ const Index = () => {
                   key={tab}
                   className={`pb-2 px-1 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     tab === 'Tümü' 
-                      ? 'border-[#F7931A] text-[#F7931A]' 
-                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-[#F7931A]'
+                      ? 'border-main-accent text-main-accent' 
+                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-main-accent'
                   }`}
                 >
                   {tab}
@@ -118,7 +118,7 @@ const Index = () => {
 
             {/* Additional News */}
             <div className="space-y-4">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 border-l-4 border-[#F7931A] pl-4">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 border-l-4 border-main-accent pl-4">
                 Diğer Haberler
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

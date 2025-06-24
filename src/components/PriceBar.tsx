@@ -11,22 +11,22 @@ const PriceBar = () => {
   ];
 
   return (
-    <div className="bg-gradient-to-r from-[#F7931A] to-orange-600 dark:from-[#F7931A] dark:to-orange-700 border-b border-orange-300 dark:border-orange-800 relative overflow-hidden">
-      <div className="container mx-auto px-4 py-4 sm:py-8 relative z-10">
-        <div className="flex flex-col space-y-4 sm:space-y-6">
-          <h3 className="text-lg sm:text-xl font-bold text-white flex items-center">
-            <span className="mr-3">Anlık Fiyatlar</span>
-            <span className="text-white satoshi-symbol text-xl sm:text-2xl"></span>
+    <div className="bg-gradient-to-r from-[#ffbe0b] to-[#fb5607] dark:from-[#ffbe0b] dark:to-[#fb5607] border-b border-orange-300 dark:border-orange-800 relative overflow-hidden">
+      <div className="container mx-auto px-4 py-3 relative z-10">
+        <div className="flex flex-col space-y-2">
+          <h3 className="text-base font-bold text-white flex items-center">
+            <span className="mr-2">Anlık Fiyatlar</span>
+            <span className="text-white satoshi-symbol text-lg"></span>
           </h3>
           
           <div className="relative overflow-hidden bg-black/30 dark:bg-black/50 rounded-lg backdrop-blur-sm">
-            <div className="flex items-center space-x-6 sm:space-x-12 price-slider py-3 sm:py-4 px-4 sm:px-6">
+            <div className="flex items-center space-x-4 price-slider py-2 px-4">
               {prices.concat(prices).concat(prices).map((price, index) => (
-                <div key={index} className="flex items-center space-x-2 sm:space-x-4 text-sm sm:text-lg whitespace-nowrap min-w-fit">
+                <div key={index} className="flex items-center space-x-2 text-sm whitespace-nowrap min-w-fit">
                   <span className="text-white/90 font-medium">{price.symbol} {price.name}:</span>
-                  <span className="font-bold text-white text-lg sm:text-xl">{price.value}</span>
+                  <span className="font-bold text-white text-base">{price.value}</span>
                   <span className="text-white satoshi-symbol"></span>
-                  <span className={`text-xs sm:text-sm font-semibold px-2 sm:px-3 py-1 rounded-full ${
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                     price.change.startsWith('+') 
                       ? 'text-green-100 bg-green-600/80' 
                       : 'text-red-100 bg-red-600/80'

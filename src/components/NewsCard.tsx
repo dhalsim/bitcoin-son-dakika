@@ -19,7 +19,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   featured = false 
 }) => {
   return (
-    <article className={`bg-white dark:bg-black rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow ${featured ? 'h-full' : ''} dark:border dark:border-gray-800`}>
+    <article className={`bg-white dark:bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow ${featured ? 'h-full' : ''} dark:border dark:border-border`}>
       {image && (
         <div className={`relative ${featured ? 'h-48 sm:h-64' : 'h-40 sm:h-48'}`}>
           <img
@@ -28,7 +28,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
             className="w-full h-full object-cover"
           />
           <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
-            <span className="bg-[#F7931A] text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+            <span className="bg-main-accent text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
               {category}
             </span>
           </div>
@@ -40,7 +40,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
           <span>{time}</span>
         </div>
         
-        <h3 className={`font-bold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 hover:text-[#F7931A] transition-colors cursor-pointer ${
+        <h3 className={`font-bold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 hover:text-main-accent transition-colors cursor-pointer ${
           featured ? 'text-lg sm:text-xl leading-tight' : 'text-base sm:text-lg leading-tight'
         }`}>
           {title}
