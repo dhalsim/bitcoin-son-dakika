@@ -1,0 +1,8 @@
+name = "bitcoin-son-dakika"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "build/client"
+
+# KV Store bindings
+[[kv_namespaces]]
+binding = "EDITOR_PUBKEYS"
+id = "0f704aa08f574714ad5dd23a0e06a04e" 
