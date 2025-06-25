@@ -1,5 +1,4 @@
 
-import React from 'react';
 import Header from '../components/Header';
 import PriceBar from '../components/PriceBar';
 import NewsCard from '../components/NewsCard';
