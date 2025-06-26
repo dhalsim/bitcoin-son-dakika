@@ -1,68 +1,13 @@
-import { verifyEvent, Event } from 'nostr-tools/pure';
-import { ErrorResponse } from './utils';
-
-interface Context {
-  request: Request;
-  env: {
-    EDITOR_PUBKEYS: { get: (key: string) => Promise<string | null> };
-  };
-}
+import { authenticateNIP98, ErrorResponse, SuccessResponse, CorsResponse } from './utils';
+import { Context } from './types';
 
 export async function onRequestPost(context: Context) {
   try {
-    // Get the Authorization header
-    const authHeader = context.request.headers.get('Authorization');
+    // Authenticate user - require editor role for deployment
+    const authResult = await authenticateNIP98(context.request, context, ['editor']);
     
-    if (!authHeader || !authHeader.startsWith('Nostr ')) {
-      return ErrorResponse(undefined, 'Missing or invalid Authorization header', 401);
-    }
-
-    // Parse the Nostr event from the Authorization header
-    let nostrEvent: Event;
-    try {
-      const eventBase64 = authHeader.slice(6); // Remove 'Nostr ' prefix
-      const eventJson = atob(eventBase64);
-      nostrEvent = JSON.parse(eventJson);
-    } catch (error) {
-      return ErrorResponse(error, 'Invalid Nostr event format', 401);
-    }
-
-    // Verify the event signature
-    if (!verifyEvent(nostrEvent)) {
-      return ErrorResponse(undefined, 'Invalid event signature', 401);
-    }
-
-    // Check if the pubkey is authorized in KV store
-    const authorizedPubkeys = await context.env.EDITOR_PUBKEYS.get('pubkeys');
-    let pubkeysArray: string[] = [];
-    
-    if (authorizedPubkeys) {
-      try {
-        pubkeysArray = JSON.parse(authorizedPubkeys);
-      } catch (error) {
-        return ErrorResponse(error, 'Error parsing authorized pubkeys');
-      }
-    }
-
-    if (!pubkeysArray.includes(nostrEvent.pubkey)) {
-      return ErrorResponse(undefined, 'Unauthorized pubkey', 403);
-    }
-
-    // Verify the event is for the correct URL and method (NIP-98)
-    const urlTag = nostrEvent.tags.find(tag => tag[0] === 'u');
-    const methodTag = nostrEvent.tags.find(tag => tag[0] === 'method');
-    
-    if (!urlTag || !methodTag || methodTag[1] !== 'POST') {
-      return ErrorResponse(undefined, 'Invalid NIP-98 auth event', 401);
-    }
-
-    // Check if the event is not too old (within 10 minutes)
-    const eventTime = nostrEvent.created_at;
-    const currentTime = Math.floor(Date.now() / 1000);
-    const maxAge = 10 * 60; // 10 minutes
-
-    if (currentTime - eventTime > maxAge) {
-      return ErrorResponse(undefined, 'Auth event is too old', 401);
+    if (!authResult.success) {
+      return ErrorResponse(undefined, authResult.error, authResult.status);
     }
 
     // All checks passed, trigger the deployment
@@ -76,19 +21,11 @@ export async function onRequestPost(context: Context) {
     });
 
     if (response.ok) {
-      return new Response(JSON.stringify({
-        success: true,
+      return SuccessResponse({
         message: 'Deploy hook triggered successfully',
         status: response.status,
-        authorizedBy: nostrEvent.pubkey
-      }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        }
+        authorizedBy: authResult.pubkey,
+        userRoles: authResult.roles
       });
     } else {
       return ErrorResponse(undefined, 'Failed to trigger deploy hook', response.status);
@@ -100,12 +37,5 @@ export async function onRequestPost(context: Context) {
 
 // Handle CORS preflight requests
 export async function onRequestOptions() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    }
-  });
+  return CorsResponse();
 } 

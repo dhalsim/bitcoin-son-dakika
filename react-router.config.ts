@@ -4,14 +4,13 @@ export default {
   // Use src directory instead of app
   appDirectory: "src",
   
-  // Disable SSR - we only want static pre-rendering
+  // Disable SSR for main app - we only want static pre-rendering
   ssr: false,
   
-  // Enable static pre-rendering for SEO and performance
+  // Enable static pre-rendering for main site
   async prerender() {
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika
-      "/admin", // Yönetim paneli
     ];
   },
 } satisfies Config; 

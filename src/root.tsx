@@ -4,7 +4,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { Toaster } from "./components/ui/toaster";
 import type { MetaFunction, LinksFunction } from "react-router";
 import "./index.css";
-import textsData from "../public/texts.json";
+import turkishWindowNostrJs from "@/i18n/tr.json";
 
 export const meta: MetaFunction = () => {
   return [
@@ -62,9 +62,9 @@ export default function Root() {
         <script
           dangerouslySetInnerHTML={{
             __html: `window.wnjParams = { 
-              texts: ${JSON.stringify(textsData)},
+              texts: ${JSON.stringify(turkishWindowNostrJs)},
               position: 'bottom',
-              startHidden: false,
+              startHidden: true,
               compactMode: true,
               nstartMeLanguage: 'tr',
             };`
