@@ -8,7 +8,7 @@ const Footer = () => {
       <div 
         className="absolute inset-0 opacity-20"
         style={{
-          backgroundImage: 'url(/lovable-uploads/f67c2cf5-3d5b-4310-9128-a823e7c74a4c.png)',
+          backgroundImage: 'url(/arkaplan.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -20,10 +20,10 @@ const Footer = () => {
           <div>
             <div className="flex items-center space-x-3 mb-4">
               <img 
-                src="/lovable-uploads/028135f1-856a-4e86-a719-a75eca32fa2a.png" 
+                src="/beyaz-logo-yazisi.png" 
                 alt="Bitcoin News"
                 className="h-8"
-                style={{ width: '32px', height: '12px' }}
+                style={{ width: '64px', height: '24px' }}
               />
             </div>
             <p className="text-gray-400 text-sm">

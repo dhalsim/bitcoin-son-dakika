@@ -4,6 +4,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { Toaster } from "./components/ui/toaster";
 import type { MetaFunction, LinksFunction } from "react-router";
 import "./index.css";
+import textsData from "../public/texts.json";
 
 export const meta: MetaFunction = () => {
   return [
@@ -16,8 +17,29 @@ export const links: LinksFunction = () => {
   return [
     {
       rel: "preload",
-      href: "https://cdn.jsdelivr.net/npm/window.nostr.js/dist/window.nostr.min.js",
+      href: "/window.nostr.js",
       as: "script",
+    },
+    {
+      rel: "apple-touch-icon",
+      sizes: "180x180",
+      href: "/apple-touch-icon.png",
+    },
+    {
+      rel: "icon",
+      type: "image/png",
+      sizes: "32x32",
+      href: "/favicon-32x32.png",
+    },
+    {
+      rel: "icon",
+      type: "image/png",
+      sizes: "16x16",
+      href: "/favicon-16x16.png",
+    },
+    {
+      rel: "manifest",
+      href: "/site.webmanifest",
     },
   ];
 };
@@ -37,7 +59,18 @@ export default function Root() {
           <Toaster />
           <Outlet />
         </TooltipProvider>
-        <script src="https://cdn.jsdelivr.net/npm/window.nostr.js/dist/window.nostr.min.js"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.wnjParams = { 
+              texts: ${JSON.stringify(textsData)},
+              position: 'bottom',
+              startHidden: false,
+              compactMode: true,
+              nstartMeLanguage: 'tr',
+            };`
+          }}
+        />
+        <script src="/window.nostr.js"></script>
         <Scripts />
       </body>
     </html>

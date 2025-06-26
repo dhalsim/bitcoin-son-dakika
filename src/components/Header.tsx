@@ -24,7 +24,7 @@ const Header = () => {
       <div 
         className="absolute inset-0 opacity-20"
         style={{
-          backgroundImage: 'url(/lovable-uploads/f67c2cf5-3d5b-4310-9128-a823e7c74a4c.png)',
+          backgroundImage: 'url(/arkaplan.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -80,14 +80,14 @@ const Header = () => {
             <div className="flex items-center">
               {/* Light mode logo */}
               <img 
-                src="/lovable-uploads/ddd6a57e-772d-4b33-a7df-b059c896614e.png" 
+                src="/siyah-logo-yazisi.png" 
                 alt="Bitcoin News"
                 className="h-8 sm:h-12 block dark:hidden"
                 style={{ width: 'auto' }}
               />
               {/* Dark mode logo */}
               <img 
-                src="/lovable-uploads/028135f1-856a-4e86-a719-a75eca32fa2a.png" 
+                src="/beyaz-logo-yazisi.png" 
                 alt="Bitcoin News"
                 className="h-8 sm:h-12 hidden dark:block"
                 style={{ width: 'auto' }}
