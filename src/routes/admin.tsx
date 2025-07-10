@@ -24,6 +24,11 @@ type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }
   | { action: "add-article"; type: "a"; a: string };
 
+type AddNewsPayload = {
+  action: "add-news";
+  eventId: string;
+}
+
 type AddAdminPayload = {
   action: "add-admin-pubkey";
   pubkey: string;
@@ -44,7 +49,7 @@ type AddEditorPayload = {
   pubkey: string;
 }
 
-type Payload = AddArticlePayload | AddAdminPayload | RemoveAdminPayload | RemoveEditorPayload | AddEditorPayload;
+type Payload = AddNewsPayload | AddArticlePayload | AddAdminPayload | RemoveAdminPayload | RemoveEditorPayload | AddEditorPayload;
 
 const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
@@ -145,11 +150,13 @@ export default function AdminPanel() {
                 .map(tag => tag[1])
                 .filter(Boolean);
             } else if (dTag === 'news') {
+              // News uses 'e' tags for event IDs
               news = event.tags
-                .filter(tag => tag[0] === 'a')
+                .filter(tag => tag[0] === 'e')
                 .map(tag => tag[1])
                 .filter(Boolean);
             } else if (dTag === 'articles') {
+              // Articles use 'a' tags for addressable events
               articles = event.tags
                 .filter(tag => tag[0] === 'a')
                 .map(tag => tag[1])
