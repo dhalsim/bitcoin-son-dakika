@@ -1,5 +1,6 @@
 import { authenticateNIP98, getUserRoles, ErrorResponse, SuccessResponse, CorsResponse, getUsersByRole } from './utils';
 import { Context } from './types';
+import { SimplePool } from 'nostr-tools';
 
 export async function onRequestGet(context: Context) {
   try {

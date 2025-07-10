@@ -25,8 +25,6 @@ const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519b
 interface AdminData {
   adminUsers: string[];
   editorUsers: string[];
-  totalAdmins: number;
-  totalEditors: number;
   news: string[];
   articles: string[];
 }
@@ -37,7 +35,7 @@ interface UserInfo {
 }
 
 export default function AdminPanel() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [adminData, setAdminData] = useState<AdminData | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo>({});
   const [error, setError] = useState<string>('');
@@ -53,6 +51,8 @@ export default function AdminPanel() {
   }, []);
 
   const loadAdminData = async () => {
+    setLoading(true);
+    
     try {
       const pool = new SimplePool();
 
@@ -89,55 +89,54 @@ export default function AdminPanel() {
 
           events.push(evt);
         },
-      });
-      
-      let adminUsers: string[] = [];
-      let editorUsers: string[] = [];
-      let news: string[] = [];
-      let articles: string[] = [];
-      
-      // Parse the events to extract pubkeys from sets
-      events.forEach(event => {
-        const dTag = event.tags.find(tag => tag[0] === 'd')?.[1];
-        
-        if (dTag === 'admin-users') {
-          // Extract pubkeys from 'p' tags
-          adminUsers = event.tags
-            .filter(tag => tag[0] === 'p')
-            .map(tag => tag[1])
-            .filter(Boolean);
-        } else if (dTag === 'editor-users') {
-          // Extract pubkeys from 'p' tags  
-          editorUsers = event.tags
-            .filter(tag => tag[0] === 'p')
-            .map(tag => tag[1])
-            .filter(Boolean);
-        } else if (dTag === 'news') {
-          news = event.tags
-            .filter(tag => tag[0] === 'a')
-            .map(tag => tag[1])
-            .filter(Boolean);
-        } else if (dTag === 'articles') {
-          articles = event.tags
-            .filter(tag => tag[0] === 'a')
-            .map(tag => tag[1])
-            .filter(Boolean);
+        onclose(){
+          let adminUsers: string[] = [];
+          let editorUsers: string[] = [];
+          let news: string[] = [];
+          let articles: string[] = [];
+          
+          // Parse the events to extract pubkeys from sets
+          events.forEach(event => {
+            const dTag = event.tags.find(tag => tag[0] === 'd')?.[1];
+            
+            if (dTag === 'admin-users') {
+              // Extract pubkeys from 'p' tags
+              adminUsers = event.tags
+                .filter(tag => tag[0] === 'p')
+                .map(tag => tag[1])
+                .filter(Boolean);
+            } else if (dTag === 'editor-users') {
+              // Extract pubkeys from 'p' tags  
+              editorUsers = event.tags
+                .filter(tag => tag[0] === 'p')
+                .map(tag => tag[1])
+                .filter(Boolean);
+            } else if (dTag === 'news') {
+              news = event.tags
+                .filter(tag => tag[0] === 'a')
+                .map(tag => tag[1])
+                .filter(Boolean);
+            } else if (dTag === 'articles') {
+              articles = event.tags
+                .filter(tag => tag[0] === 'a')
+                .map(tag => tag[1])
+                .filter(Boolean);
+            }
+          });
+    
+          setAdminData({
+            adminUsers,
+            editorUsers,
+            news,
+            articles
+          });  
+          
+          setLoading(false);
         }
       });
-
-      setAdminData({
-        adminUsers,
-        editorUsers,
-        totalAdmins: adminUsers.length,
-        totalEditors: editorUsers.length,
-        news,
-        articles
-      });      
     } catch (err) {
       console.error('Error loading admin data from Nostr:', err);
       setError('Nostr verilerini yüklerken hata oluştu');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -280,7 +279,7 @@ export default function AdminPanel() {
               <div className="flex items-center gap-4">
                 <Shield className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-2xl font-bold">{adminData?.totalAdmins || 0}</p>
+                  <p className="text-2xl font-bold">{adminData?.adminUsers.length || 0}</p>
                   <p className="text-gray-600 dark:text-gray-400">Yöneticiler</p>
                 </div>
               </div>
@@ -292,7 +291,7 @@ export default function AdminPanel() {
               <div className="flex items-center gap-4">
                 <Users className="h-8 w-8 text-green-500" />
                 <div>
-                  <p className="text-2xl font-bold">{adminData?.totalEditors || 0}</p>
+                  <p className="text-2xl font-bold">{adminData?.editorUsers.length || 0}</p>
                   <p className="text-gray-600 dark:text-gray-400">Editörler</p>
                 </div>
               </div>
