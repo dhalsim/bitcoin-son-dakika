@@ -4,13 +4,18 @@ export default {
   // Use src directory instead of app
   appDirectory: "src",
   
-  // Disable SSR for main app - we only want static pre-rendering
   ssr: false,
   
-  // Enable static pre-rendering for main site
+  // Use route discovery for client-side routing
+  routeDiscovery: {
+    mode: "initial"
+  },
+  
+  // Enable static pre-rendering for main site (SSG mode)
   async prerender() {
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika
+      "/admin", // Admin panel - client-side only, publicly accessible
     ];
   },
 } satisfies Config; 
