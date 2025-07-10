@@ -6,12 +6,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Key, AlertCircle, Loader2, Users, UserPlus, Trash2, RefreshCw } from 'lucide-react';
+import { NostrEvent, SimplePool } from "nostr-tools";
+
+const ADMIN_RELAYS = [
+  "wss://relay.nostr.band",
+  "wss://relay.damus.io",
+  "wss://nos.lol",
+  "wss://relay.primal.net",
+  "wss://relay.snort.social",
+  "wss://nostr.bitcoiner.social",
+  "wss://nostr.mom",
+  "wss://nostr-pub.wellorder.net",
+  "wss://relay.nos.social"
+];
+
+const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
 interface AdminData {
   adminUsers: string[];
   editorUsers: string[];
   totalAdmins: number;
   totalEditors: number;
+  news: string[];
+  articles: string[];
 }
 
 interface UserInfo {
@@ -37,15 +54,88 @@ export default function AdminPanel() {
 
   const loadAdminData = async () => {
     try {
-      const response = await fetch('/functions/admin');
-      if (response.ok) {
-        const data = await response.json();
-        setAdminData(data);
-      } else {
-        setError('Admin verileri yüklenemedi');
-      }
+      const pool = new SimplePool();
+
+      const events: NostrEvent[] = [];
+      
+      pool.subscribeManyEose(ADMIN_RELAYS, [
+        {
+          authors: [MASTER_ADMIN_PUBKEY],
+          kinds: [30000],
+          "#d": ["admin-users"],
+          limit: 1
+        },
+        {
+          authors: [MASTER_ADMIN_PUBKEY],
+          kinds: [30000], 
+          "#d": ["editor-users"],
+          limit: 1
+        },
+        {
+          authors: [MASTER_ADMIN_PUBKEY],
+          kinds: [30004], 
+          "#d": ["news"],
+          limit: 1
+        },
+        {
+          authors: [MASTER_ADMIN_PUBKEY],
+          kinds: [30004], 
+          "#d": ["articles"],
+          limit: 1
+        }
+      ], {
+        onevent(evt) {
+          console.log(evt);
+
+          events.push(evt);
+        },
+      });
+      
+      let adminUsers: string[] = [];
+      let editorUsers: string[] = [];
+      let news: string[] = [];
+      let articles: string[] = [];
+      
+      // Parse the events to extract pubkeys from sets
+      events.forEach(event => {
+        const dTag = event.tags.find(tag => tag[0] === 'd')?.[1];
+        
+        if (dTag === 'admin-users') {
+          // Extract pubkeys from 'p' tags
+          adminUsers = event.tags
+            .filter(tag => tag[0] === 'p')
+            .map(tag => tag[1])
+            .filter(Boolean);
+        } else if (dTag === 'editor-users') {
+          // Extract pubkeys from 'p' tags  
+          editorUsers = event.tags
+            .filter(tag => tag[0] === 'p')
+            .map(tag => tag[1])
+            .filter(Boolean);
+        } else if (dTag === 'news') {
+          news = event.tags
+            .filter(tag => tag[0] === 'a')
+            .map(tag => tag[1])
+            .filter(Boolean);
+        } else if (dTag === 'articles') {
+          articles = event.tags
+            .filter(tag => tag[0] === 'a')
+            .map(tag => tag[1])
+            .filter(Boolean);
+        }
+      });
+
+      setAdminData({
+        adminUsers,
+        editorUsers,
+        totalAdmins: adminUsers.length,
+        totalEditors: editorUsers.length,
+        news,
+        articles
+      });      
     } catch (err) {
-      setError('Bağlantı hatası');
+      console.error('Error loading admin data from Nostr:', err);
+      setError('Nostr verilerini yüklerken hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -184,7 +274,7 @@ export default function AdminPanel() {
         )}
 
         {/* Admin Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -208,172 +298,307 @@ export default function AdminPanel() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <AlertCircle className="h-8 w-8 text-orange-500" />
+                <div>
+                  <p className="text-2xl font-bold">{adminData?.news.length || 0}</p>
+                  <p className="text-gray-600 dark:text-gray-400">Haberler</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <RefreshCw className="h-8 w-8 text-purple-500" />
+                <div>
+                  <p className="text-2xl font-bold">{adminData?.articles.length || 0}</p>
+                  <p className="text-gray-600 dark:text-gray-400">Makaleler</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Admin Management - Only show if user is admin */}
         {userIsAdmin && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Admin Users Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Yöneticiler ({adminData?.adminUsers.length || 0})
-                </CardTitle>
-                <CardDescription>
-                  Kullanıcı ekleyip çıkarabilir
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  {adminData?.adminUsers.map((pubkey) => (
-                    <div key={pubkey} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <span className="font-mono text-sm">
-                        {pubkey.substring(0, 16)}...
-                      </span>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={actionLoading === 'remove-admin-pubkey' || adminData.adminUsers.length === 1}
-                        onClick={() => removeAdmin(pubkey)}
-                      >
-                        {actionLoading === 'remove-admin-pubkey' ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="space-y-3 pt-4 border-t">
-                  <Label htmlFor="newAdminPubkey">Yeni Yönetici Ekle</Label>
-                  <Input
-                    id="newAdminPubkey"
-                    placeholder="Pubkey'i girin"
-                    value={newAdminPubkey}
-                    onChange={(e) => setNewAdminPubkey(e.target.value)}
-                  />
-                  <Button 
-                    className="w-full"
-                    disabled={!newAdminPubkey.trim() || actionLoading === 'add-admin-pubkey'}
-                    onClick={addAdmin}
-                  >
-                    {actionLoading === 'add-admin-pubkey' ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <UserPlus className="h-4 w-4 mr-2" />
-                    )}
-                    Yönetici Ekle
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Admin Users Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    Yöneticiler ({adminData?.adminUsers.length || 0})
+                  </CardTitle>
+                  <CardDescription>
+                    Kullanıcı ekleyip çıkarabilir
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    {adminData?.adminUsers.map((pubkey) => (
+                      <div key={pubkey} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <span className="font-mono text-sm">
+                          {pubkey.substring(0, 16)}...
+                        </span>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={actionLoading === 'remove-admin-pubkey' || adminData.adminUsers.length === 1}
+                          onClick={() => removeAdmin(pubkey)}
+                        >
+                          {actionLoading === 'remove-admin-pubkey' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label htmlFor="newAdminPubkey">Yeni Yönetici Ekle</Label>
+                    <Input
+                      id="newAdminPubkey"
+                      placeholder="Pubkey'i girin"
+                      value={newAdminPubkey}
+                      onChange={(e) => setNewAdminPubkey(e.target.value)}
+                    />
+                    <Button 
+                      className="w-full"
+                      disabled={!newAdminPubkey.trim() || actionLoading === 'add-admin-pubkey'}
+                      onClick={addAdmin}
+                    >
+                      {actionLoading === 'add-admin-pubkey' ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <UserPlus className="h-4 w-4 mr-2" />
+                      )}
+                      Yönetici Ekle
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Editor Users Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Editörler ({adminData?.editorUsers.length || 0})
-                </CardTitle>
-                <CardDescription>
-                  İçerik yayınlayabilir ve deploy tetikleyebilir
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  {adminData?.editorUsers.map((pubkey) => (
-                    <div key={pubkey} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <span className="font-mono text-sm">
-                        {pubkey.substring(0, 16)}...
-                      </span>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={actionLoading === 'remove-editor-pubkey'}
-                        onClick={() => removeEditor(pubkey)}
-                      >
-                        {actionLoading === 'remove-editor-pubkey' ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="space-y-3 pt-4 border-t">
-                  <Label htmlFor="newEditorPubkey">Yeni Editör Ekle</Label>
-                  <Input
-                    id="newEditorPubkey"
-                    placeholder="Pubkey'i girin"
-                    value={newEditorPubkey}
-                    onChange={(e) => setNewEditorPubkey(e.target.value)}
-                  />
-                  <Button 
-                    className="w-full"
-                    variant="secondary"
-                    disabled={!newEditorPubkey.trim() || actionLoading === 'add-editor-pubkey'}
-                    onClick={addEditor}
-                  >
-                    {actionLoading === 'add-editor-pubkey' ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              {/* Editor Users Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Editörler ({adminData?.editorUsers.length || 0})
+                  </CardTitle>
+                  <CardDescription>
+                    İçerik yayınlayabilir ve deploy tetikleyebilir
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    {adminData?.editorUsers.map((pubkey) => (
+                      <div key={pubkey} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <span className="font-mono text-sm">
+                          {pubkey.substring(0, 16)}...
+                        </span>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={actionLoading === 'remove-editor-pubkey'}
+                          onClick={() => removeEditor(pubkey)}
+                        >
+                          {actionLoading === 'remove-editor-pubkey' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label htmlFor="newEditorPubkey">Yeni Editör Ekle</Label>
+                    <Input
+                      id="newEditorPubkey"
+                      placeholder="Pubkey'i girin"
+                      value={newEditorPubkey}
+                      onChange={(e) => setNewEditorPubkey(e.target.value)}
+                    />
+                    <Button 
+                      className="w-full"
+                      variant="secondary"
+                      disabled={!newEditorPubkey.trim() || actionLoading === 'add-editor-pubkey'}
+                      onClick={addEditor}
+                    >
+                      {actionLoading === 'add-editor-pubkey' ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <UserPlus className="h-4 w-4 mr-2" />
+                      )}
+                      Editör Ekle
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Content Curation Sets */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5" />
+                    Haber Küratörlüğü ({adminData?.news.length || 0})
+                  </CardTitle>
+                  <CardDescription>
+                    Küratörlenen haber içerikleri
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {adminData?.news.length === 0 ? (
+                      <p className="text-gray-500 text-sm">Henüz haber eklenmemiş</p>
                     ) : (
-                      <UserPlus className="h-4 w-4 mr-2" />
+                      adminData?.news.map((articleId) => (
+                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <span className="font-mono text-sm">
+                            {articleId}
+                          </span>
+                        </div>
+                      ))
                     )}
-                    Editör Ekle
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <RefreshCw className="h-5 w-5" />
+                    Makale Küratörlüğü ({adminData?.articles.length || 0})
+                  </CardTitle>
+                  <CardDescription>
+                    Küratörlenen makale içerikleri
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {adminData?.articles.length === 0 ? (
+                      <p className="text-gray-500 text-sm">Henüz makale eklenmemiş</p>
+                    ) : (
+                      adminData?.articles.map((articleId) => (
+                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <span className="font-mono text-sm">
+                            {articleId}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
 
         {/* Non-Admin Users - Show read-only view */}
         {!userIsAdmin && adminData && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Yöneticiler ({adminData.adminUsers.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {adminData.adminUsers.map((pubkey) => (
-                    <div key={pubkey} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <span className="font-mono text-sm">
-                        {pubkey.substring(0, 16)}...
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    Yöneticiler ({adminData.adminUsers.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {adminData.adminUsers.map((pubkey) => (
+                      <div key={pubkey} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <span className="font-mono text-sm">
+                          {pubkey.substring(0, 16)}...
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Editörler ({adminData.editorUsers.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {adminData.editorUsers.map((pubkey) => (
-                    <div key={pubkey} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <span className="font-mono text-sm">
-                        {pubkey.substring(0, 16)}...
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Editörler ({adminData.editorUsers.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {adminData.editorUsers.map((pubkey) => (
+                      <div key={pubkey} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <span className="font-mono text-sm">
+                          {pubkey.substring(0, 16)}...
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5" />
+                    Haber Küratörlüğü ({adminData.news.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {adminData.news.length === 0 ? (
+                      <p className="text-gray-500 text-sm">Henüz haber eklenmemiş</p>
+                    ) : (
+                      adminData.news.map((articleId) => (
+                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <span className="font-mono text-sm">
+                            {articleId}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <RefreshCw className="h-5 w-5" />
+                    Makale Küratörlüğü ({adminData.articles.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {adminData.articles.length === 0 ? (
+                      <p className="text-gray-500 text-sm">Henüz makale eklenmemiş</p>
+                    ) : (
+                      adminData.articles.map((articleId) => (
+                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <span className="font-mono text-sm">
+                            {articleId}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         )}
 
