@@ -27,6 +27,7 @@ type AddArticlePayload =
 type AddNewsPayload = {
   action: "add-news";
   eventId: string;
+  relay: string;
 }
 
 type AddAdminPayload = {
@@ -75,6 +76,10 @@ export default function AdminPanel() {
   // Form states
   const [newAdminPubkey, setNewAdminPubkey] = useState('');
   const [newEditorPubkey, setNewEditorPubkey] = useState('');
+  
+  // News form states
+  const [newsEventId, setNewsEventId] = useState('');
+  const [newsRelay, setNewsRelay] = useState('');
   
   // Article form states
   const [articleInputMethod, setArticleInputMethod] = useState<'naddr' | 'fields'>('naddr');
@@ -240,6 +245,10 @@ export default function AdminPanel() {
         // Clear form inputs
         if (data.action.includes('add-admin')) setNewAdminPubkey('');
         if (data.action.includes('add-editor')) setNewEditorPubkey('');
+        if (data.action === 'add-news') {
+          setNewsEventId('');
+          setNewsRelay('');
+        }
       } else {
         setError(result.error || 'İşlem başarısız');
       }
@@ -266,6 +275,11 @@ export default function AdminPanel() {
 
   const removeEditor = (pubkey: string) => {
     performAction({ action: 'remove-editor-pubkey', pubkey });
+  };
+
+  const addNews = () => {
+    if (!newsEventId.trim() || !newsRelay.trim()) return;
+    performAction({ action: 'add-news', eventId: newsEventId.trim(), relay: newsRelay.trim() });
   };
 
   const addArticle = async () => {
@@ -392,119 +406,186 @@ export default function AdminPanel() {
           </Card>
         </div>
 
-        {/* Article Management - Show if user is editor */}
+        {/* Content Curation - Show if user is editor */}
         {userIsEditor && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Yeni Makale Ekle
-              </CardTitle>
-              <CardDescription>
-                Küratörlenen makale listesine yeni makale ekleyin
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Input Method Toggle */}
-              <div className="flex gap-2">
-                <Button
-                  variant={articleInputMethod === 'naddr' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setArticleInputMethod('naddr')}
-                >
-                  NAddr Girişi
-                </Button>
-                <Button
-                  variant={articleInputMethod === 'fields' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setArticleInputMethod('fields')}
-                >
-                  Manuel Giriş
-                </Button>
-              </div>
-
-              {articleInputMethod === 'naddr' ? (
-                <div className="space-y-3">
-                  <Label htmlFor="articleNaddr">NAddr (NIP-19)</Label>
-                  <Input
-                    id="articleNaddr"
-                    placeholder="naddr1..."
-                    value={articleNaddr}
-                    onChange={(e) => setArticleNaddr(e.target.value)}
-                  />
-                  <p className="text-sm text-gray-500">
-                    NAddr formatında makale adresini girin
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="articlePubkey">Yazar Pubkey</Label>
-                    <Input
-                      id="articlePubkey"
-                      placeholder={userInfo.pubkey || "Pubkey girin"}
-                      value={articlePubkey}
-                      onChange={(e) => setArticlePubkey(e.target.value)}
-                    />
-                    {userInfo.pubkey && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setArticlePubkey(userInfo.pubkey || '')}
-                        className="mt-1"
-                      >
-                        Kendi pubkey'imi kullan
-                      </Button>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* News Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5" />
+                    Haber Küratörlüğü ({adminData?.news.length || 0})
+                  </CardTitle>
+                  <CardDescription>
+                    Küratörlenen haber içerikleri
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    {adminData?.news.length === 0 ? (
+                      <p className="text-gray-500 text-sm">Henüz haber eklenmemiş</p>
+                    ) : (
+                      adminData?.news.map((eventId) => (
+                        <div key={eventId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <span className="font-mono text-sm">
+                            {eventId}
+                          </span>
+                        </div>
+                      ))
                     )}
                   </div>
                   
-                  <div>
-                    <Label htmlFor="articleDTag">D Tag (Makale ID)</Label>
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label htmlFor="newsEventId">Yeni Haber Ekle</Label>
                     <Input
-                      id="articleDTag"
-                      placeholder="makale-basligim"
-                      value={articleDTag}
-                      onChange={(e) => setArticleDTag(e.target.value)}
+                      id="newsEventId"
+                      placeholder="Event ID girin"
+                      value={newsEventId}
+                      onChange={(e) => setNewsEventId(e.target.value)}
                     />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="articleRelay">Önerilen Relay</Label>
                     <Input
-                      id="articleRelay"
-                      placeholder="wss://relay.example.com"
-                      value={articleRelay}
-                      onChange={(e) => setArticleRelay(e.target.value)}
+                      placeholder="Relay URL"
+                      value={newsRelay}
+                      onChange={(e) => setNewsRelay(e.target.value)}
                     />
+                    <Button 
+                      className="w-full"
+                      variant="secondary"
+                      disabled={!newsEventId.trim() || !newsRelay.trim() || actionLoading === 'add-news'}
+                      onClick={addNews}
+                    >
+                      {actionLoading === 'add-news' ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4 mr-2" />
+                      )}
+                      Haber Ekle
+                    </Button>
                   </div>
-                  
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
-                      <strong>A Tag Preview:</strong> {articlePubkey && articleDTag 
-                        ? `30023:${articlePubkey}:${articleDTag}` 
-                        : 'Pubkey ve D Tag gerekli'}
-                    </p>
-                  </div>
-                </div>
-              )}
+                </CardContent>
+              </Card>
 
-              <Button 
-                className="w-full"
-                disabled={
-                  actionLoading === 'add-article' || 
-                  (articleInputMethod === 'naddr' ? !articleNaddr.trim() : !articlePubkey.trim() || !articleDTag.trim())
-                }
-                onClick={addArticle}
-              >
-                {actionLoading === 'add-article' ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <FileText className="h-4 w-4 mr-2" />
-                )}
-                Makale Ekle
-              </Button>
-            </CardContent>
-          </Card>
+              {/* Article Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <RefreshCw className="h-5 w-5" />
+                    Makale Küratörlüğü ({adminData?.articles.length || 0})
+                  </CardTitle>
+                  <CardDescription>
+                    Küratörlenen makale içerikleri
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    {adminData?.articles.length === 0 ? (
+                      <p className="text-gray-500 text-sm">Henüz makale eklenmemiş</p>
+                    ) : (
+                      adminData?.articles.map((articleId) => (
+                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <span className="font-mono text-sm">
+                            {articleId}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label>Yeni Makale Ekle</Label>
+                    
+                    {/* Input Method Toggle */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant={articleInputMethod === 'naddr' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setArticleInputMethod('naddr')}
+                      >
+                        NAddr Girişi
+                      </Button>
+                      <Button
+                        variant={articleInputMethod === 'fields' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setArticleInputMethod('fields')}
+                      >
+                        Manuel Giriş
+                      </Button>
+                    </div>
+
+                    {articleInputMethod === 'naddr' ? (
+                      <div className="space-y-3">
+                        <Input
+                          placeholder="naddr1..."
+                          value={articleNaddr}
+                          onChange={(e) => setArticleNaddr(e.target.value)}
+                        />
+                        <p className="text-sm text-gray-500">
+                          NAddr formatında makale adresini girin
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div>
+                          <Input
+                            placeholder={userInfo.pubkey || "Yazar Pubkey"}
+                            value={articlePubkey}
+                            onChange={(e) => setArticlePubkey(e.target.value)}
+                          />
+                          {userInfo.pubkey && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setArticlePubkey(userInfo.pubkey || '')}
+                              className="mt-1"
+                            >
+                              Kendi pubkey'imi kullan
+                            </Button>
+                          )}
+                        </div>
+                        
+                        <Input
+                          placeholder="D Tag (Makale ID)"
+                          value={articleDTag}
+                          onChange={(e) => setArticleDTag(e.target.value)}
+                        />
+                        
+                        <Input
+                          placeholder="wss://relay.example.com (isteğe bağlı)"
+                          value={articleRelay}
+                          onChange={(e) => setArticleRelay(e.target.value)}
+                        />
+                        
+                        <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                          <p className="text-sm text-blue-700 dark:text-blue-300">
+                            <strong>A Tag Preview:</strong> {articlePubkey && articleDTag 
+                              ? `30023:${articlePubkey}:${articleDTag}` 
+                              : 'Pubkey ve D Tag gerekli'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button 
+                      className="w-full"
+                      disabled={
+                        actionLoading === 'add-article' || 
+                        (articleInputMethod === 'naddr' ? !articleNaddr.trim() : !articlePubkey.trim() || !articleDTag.trim())
+                      }
+                      onClick={addArticle}
+                    >
+                      {actionLoading === 'add-article' ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <FileText className="h-4 w-4 mr-2" />
+                      )}
+                      Makale Ekle
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         )}
 
         {/* Admin Management - Only show if user is admin */}
@@ -629,62 +710,7 @@ export default function AdminPanel() {
               </Card>
             </div>
 
-            {/* Content Curation Sets */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5" />
-                    Haber Küratörlüğü ({adminData?.news.length || 0})
-                  </CardTitle>
-                  <CardDescription>
-                    Küratörlenen haber içerikleri
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {adminData?.news.length === 0 ? (
-                      <p className="text-gray-500 text-sm">Henüz haber eklenmemiş</p>
-                    ) : (
-                      adminData?.news.map((articleId) => (
-                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <span className="font-mono text-sm">
-                            {articleId}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <RefreshCw className="h-5 w-5" />
-                    Makale Küratörlüğü ({adminData?.articles.length || 0})
-                  </CardTitle>
-                  <CardDescription>
-                    Küratörlenen makale içerikleri
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {adminData?.articles.length === 0 ? (
-                      <p className="text-gray-500 text-sm">Henüz makale eklenmemiş</p>
-                    ) : (
-                      adminData?.articles.map((articleId) => (
-                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <span className="font-mono text-sm">
-                            {articleId}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         )}
 
