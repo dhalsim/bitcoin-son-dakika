@@ -15,7 +15,7 @@ export default {
   async prerender() {
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika
-      "/admin", // Admin panel - client-side only, publicly accessible
+      "/admin-panel", // Admin panel - client-side only, publicly accessible
     ];
   },
 } satisfies Config; 

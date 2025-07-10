@@ -16,4 +16,15 @@ export default defineConfig(() => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    exclude: [
+      "nostr-tools"
+    ],
+    include: [
+      "react",
+      "react-dom",
+      "react-router",
+      "react-router-dom"
+    ]
+  },
 }));

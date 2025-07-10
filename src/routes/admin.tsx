@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Key, AlertCircle, Loader2, Users, UserPlus, Trash2, RefreshCw } from 'lucide-react';
+import { Shield, Key, AlertCircle, Loader2, Users, UserPlus, Trash2, RefreshCw, Plus, FileText } from 'lucide-react';
 import { NostrEvent, SimplePool } from "nostr-tools";
 
 const ADMIN_RELAYS = [
@@ -19,6 +19,32 @@ const ADMIN_RELAYS = [
   "wss://nostr-pub.wellorder.net",
   "wss://relay.nos.social"
 ];
+
+type AddArticlePayload = 
+  | { action: "add-article"; type: "naddr"; naddr: string }
+  | { action: "add-article"; type: "a"; a: string };
+
+type AddAdminPayload = {
+  action: "add-admin-pubkey";
+  pubkey: string;
+}
+
+type RemoveAdminPayload = {
+  action: "remove-admin-pubkey";
+  pubkey: string;
+}
+
+type RemoveEditorPayload = {
+  action: "remove-editor-pubkey";
+  pubkey: string;
+}
+
+type AddEditorPayload = {
+  action: "add-editor-pubkey";
+  pubkey: string;
+}
+
+type Payload = AddArticlePayload | AddAdminPayload | RemoveAdminPayload | RemoveEditorPayload | AddEditorPayload;
 
 const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
@@ -44,6 +70,13 @@ export default function AdminPanel() {
   // Form states
   const [newAdminPubkey, setNewAdminPubkey] = useState('');
   const [newEditorPubkey, setNewEditorPubkey] = useState('');
+  
+  // Article form states
+  const [articleInputMethod, setArticleInputMethod] = useState<'naddr' | 'fields'>('naddr');
+  const [articleNaddr, setArticleNaddr] = useState('');
+  const [articlePubkey, setArticlePubkey] = useState('');
+  const [articleDTag, setArticleDTag] = useState('');
+  const [articleRelay, setArticleRelay] = useState('');
 
   useEffect(() => {
     loadAdminData();
@@ -171,8 +204,8 @@ export default function AdminPanel() {
     return `Nostr ${btoa(JSON.stringify(signedEvent))}`;
   };
 
-  const performAction = async (action: string, data: { pubkey: string }) => {
-    setActionLoading(action);
+  const performAction = async (data: Payload) => {
+    setActionLoading(data.action);
     setError('');
 
     try {
@@ -184,7 +217,7 @@ export default function AdminPanel() {
           'Content-Type': 'application/json',
           'Authorization': authHeader
         },
-        body: JSON.stringify({ action, ...data })
+        body: JSON.stringify(data)
       });
 
       const result = await response.json();
@@ -192,8 +225,8 @@ export default function AdminPanel() {
       if (result.success) {
         await loadAdminData(); // Refresh data
         // Clear form inputs
-        if (action.includes('add-admin')) setNewAdminPubkey('');
-        if (action.includes('add-editor')) setNewEditorPubkey('');
+        if (data.action.includes('add-admin')) setNewAdminPubkey('');
+        if (data.action.includes('add-editor')) setNewEditorPubkey('');
       } else {
         setError(result.error || 'İşlem başarısız');
       }
@@ -206,20 +239,37 @@ export default function AdminPanel() {
 
   const addAdmin = () => {
     if (!newAdminPubkey.trim()) return;
-    performAction('add-admin-pubkey', { pubkey: newAdminPubkey.trim() });
+    performAction({ action: 'add-admin-pubkey', pubkey: newAdminPubkey.trim() });
   };
 
   const removeAdmin = (pubkey: string) => {
-    performAction('remove-admin-pubkey', { pubkey });
+    performAction({ action: 'remove-admin-pubkey', pubkey });
   };
 
   const addEditor = () => {
     if (!newEditorPubkey.trim()) return;
-    performAction('add-editor-pubkey', { pubkey: newEditorPubkey.trim() });
+    performAction({ action: 'add-editor-pubkey', pubkey: newEditorPubkey.trim() });
   };
 
   const removeEditor = (pubkey: string) => {
-    performAction('remove-editor-pubkey', { pubkey });
+    performAction({ action: 'remove-editor-pubkey', pubkey });
+  };
+
+  const addArticle = async () => {
+    if (articleInputMethod === 'naddr') {
+      if (!articleNaddr.trim()) return;
+      await performAction({ action: 'add-article', type: 'naddr', naddr: articleNaddr.trim() });
+    } else {
+      if (!articlePubkey.trim() || !articleDTag.trim()) return;
+      const aTag = `30023:${articlePubkey.trim()}:${articleDTag.trim()}`;
+      await performAction({ action: 'add-article', type: 'a', a: aTag });
+    }
+    
+    // Clear form
+    setArticleNaddr('');
+    setArticlePubkey('');
+    setArticleDTag('');
+    setArticleRelay('');
   };
 
   if (loading) {
@@ -322,6 +372,121 @@ export default function AdminPanel() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Article Management - Show if user is editor or admin */}
+        {(userIsAdmin || userIsEditor) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                Yeni Makale Ekle
+              </CardTitle>
+              <CardDescription>
+                Küratörlenen makale listesine yeni makale ekleyin
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Input Method Toggle */}
+              <div className="flex gap-2">
+                <Button
+                  variant={articleInputMethod === 'naddr' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setArticleInputMethod('naddr')}
+                >
+                  NAddr Girişi
+                </Button>
+                <Button
+                  variant={articleInputMethod === 'fields' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setArticleInputMethod('fields')}
+                >
+                  Manuel Giriş
+                </Button>
+              </div>
+
+              {articleInputMethod === 'naddr' ? (
+                <div className="space-y-3">
+                  <Label htmlFor="articleNaddr">NAddr (NIP-19)</Label>
+                  <Input
+                    id="articleNaddr"
+                    placeholder="naddr1..."
+                    value={articleNaddr}
+                    onChange={(e) => setArticleNaddr(e.target.value)}
+                  />
+                  <p className="text-sm text-gray-500">
+                    NAddr formatında makale adresini girin
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="articlePubkey">Yazar Pubkey</Label>
+                    <Input
+                      id="articlePubkey"
+                      placeholder={userInfo.pubkey || "Pubkey girin"}
+                      value={articlePubkey}
+                      onChange={(e) => setArticlePubkey(e.target.value)}
+                    />
+                    {userInfo.pubkey && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setArticlePubkey(userInfo.pubkey || '')}
+                        className="mt-1"
+                      >
+                        Kendi pubkey'imi kullan
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="articleDTag">D Tag (Makale ID)</Label>
+                    <Input
+                      id="articleDTag"
+                      placeholder="makale-basligim"
+                      value={articleDTag}
+                      onChange={(e) => setArticleDTag(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="articleRelay">Önerilen Relay (İsteğe bağlı)</Label>
+                    <Input
+                      id="articleRelay"
+                      placeholder="wss://relay.example.com"
+                      value={articleRelay}
+                      onChange={(e) => setArticleRelay(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      <strong>A Tag Preview:</strong> {articlePubkey && articleDTag 
+                        ? `30023:${articlePubkey}:${articleDTag}` 
+                        : 'Pubkey ve D Tag gerekli'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <Button 
+                className="w-full"
+                disabled={
+                  actionLoading === 'add-article' || 
+                  (articleInputMethod === 'naddr' ? !articleNaddr.trim() : !articlePubkey.trim() || !articleDTag.trim())
+                }
+                onClick={addArticle}
+              >
+                {actionLoading === 'add-article' ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4 mr-2" />
+                )}
+                Makale Ekle
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Admin Management - Only show if user is admin */}
         {userIsAdmin && (

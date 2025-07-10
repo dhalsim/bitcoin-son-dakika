@@ -257,7 +257,7 @@ export async function getUsersByRole(
   }
 }
 
-const ADMIN_RELAYS = [
+export const ADMIN_RELAYS = [
   "wss://relay.nostr.band",
   "wss://relay.damus.io",
   "wss://nos.lol",
@@ -269,5 +269,5 @@ const ADMIN_RELAYS = [
   "wss://relay.nos.social"
 ];
 
-const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
+export const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 

@@ -5,6 +5,7 @@ export interface Context {
       get: (key: string) => Promise<string | null>; 
       put: (key: string, value: string) => Promise<void>;
     };
+    MASTER_ADMIN_PRIVATEKEY: string;
   };
 }
 
