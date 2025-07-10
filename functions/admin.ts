@@ -3,6 +3,8 @@ import { Context } from './types';
 import { SimplePool, finalizeEvent, nip19, NostrEvent, verifyEvent } from 'nostr-tools';
 import { hexToBytes } from '@noble/hashes/utils';
 
+const pool = new SimplePool();
+
 export async function onRequestGet(context: Context) {
   try {
     // For GET requests, return public admin data (no authentication required for viewing)
@@ -252,11 +254,12 @@ interface AdminActionData {
 
 type AddArticlePayload = 
   | { action: "add-article"; type: "naddr"; naddr: string }
-  | { action: "add-article"; type: "a"; a: string };
+  | { action: "add-article"; type: "a"; a: string, relay: string };
 
 type AddNewsPayload = {
   action: "add-news";
   eventId: string;
+  relay: string;
 }
 
 async function handleAddEditor(context: Context, authResult: AuthResult, data: AdminActionData) {
@@ -352,12 +355,16 @@ async function handleAddNews(context: Context, authResult: AuthResult, data: Add
     return ErrorResponse(undefined, 'Only editors and admins can add news', 403);
   }
 
-  const { eventId } = data;
+  const { eventId, relay } = data;
   if (!eventId) {
     return ErrorResponse(undefined, 'Event ID is required', 400);
   }
 
-  return await updateNostrContentSet(context, 'news', eventId, 'add', authResult.pubkey);
+  if (!relay) {
+    return ErrorResponse(undefined, 'Relay is required', 400);
+  }
+
+  return await addNews(context, data);
 }
 
 async function handleAddArticle(context: Context, authResult: AuthResult, data: AddArticlePayload) {
@@ -372,7 +379,7 @@ async function handleAddArticle(context: Context, authResult: AuthResult, data: 
   }
 
   let aTag: string;
-
+  let relayTag: string;
   // Parse article information from either naddr or individual components
   if (data.type === 'naddr') {
     try {
@@ -381,13 +388,20 @@ async function handleAddArticle(context: Context, authResult: AuthResult, data: 
         return ErrorResponse(undefined, 'Invalid naddr format', 400);
       }
       
-      const { kind, pubkey, identifier } = decoded.data;
+      const { kind, pubkey, identifier, relays } = decoded.data;
       aTag = `${kind}:${pubkey}:${identifier}`;
+
+      if (!relays || relays.length === 0) {
+        return ErrorResponse(undefined, 'relay is empty for naddr', 400);
+      }
+
+      relayTag = relays[0];
     } catch (error) {
       return ErrorResponse(undefined, 'Failed to decode naddr', 400);
     }
   } else if (data.type === 'a') {
     aTag = data.a;
+    relayTag = data.relay;
   } else {
     return ErrorResponse(undefined, 'Either naddr or a tag is required', 400);
   }
@@ -398,7 +412,7 @@ async function handleAddArticle(context: Context, authResult: AuthResult, data: 
     return ErrorResponse(undefined, 'Invalid a tag format. Must be kind:pubkey:identifier', 400);
   }
 
-  return await updateNostrContentSet(context, 'articles', aTag, 'add', authResult.pubkey);
+  return await addArticle(context, data);
 }
 
 /**
@@ -504,121 +518,108 @@ async function updateNostrUserSet(
   }
 }
 
-/**
- * Update Nostr content set (news or articles)
- */
-async function updateNostrContentSet(
-  context: Context,
-  setType: 'news' | 'articles',
-  contentId: string,
-  operation: 'add' | 'remove',
-  addedBy: string
-): Promise<Response> {
-  try {
-    const masterPrivateKey = context.env.MASTER_ADMIN_PRIVATEKEY;
-    if (!masterPrivateKey) {
-      return ErrorResponse(undefined, 'Master admin private key not configured', 500);
-    }
-
-    // Fetch current content set
-    const pool = new SimplePool();
-    const currentEvents: NostrEvent[] = [];
-
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error(`Timeout fetching ${setType} set`));
-      }, 10000);
-
-      pool.subscribeManyEose(ADMIN_RELAYS, [
-        {
-          authors: [MASTER_ADMIN_PUBKEY],
-          kinds: [30004],
-          "#d": [setType],
-          limit: 1
-        }
-      ], {
-        onevent(evt) {
-          currentEvents.push(evt);
-        },
-        onclose() {
-          clearTimeout(timeout);
-          resolve();
-        }
-      });
-    });
-
-    pool.close(ADMIN_RELAYS);
-
-    // Get existing content - use different tag types for news vs articles
-    let existingContent: string[] = [];
-    if (currentEvents.length > 0) {
-      const latestEvent = currentEvents.sort((a, b) => b.created_at - a.created_at)[0];
-      
-      if (setType === 'news') {
-        // News uses "e" tags for event IDs
-        existingContent = latestEvent.tags
-          .filter((tag: string[]) => tag[0] === 'e')
-          .map((tag: string[]) => tag[1])
-          .filter(Boolean);
-      } else {
-        // Articles use "a" tags for addressable events
-        existingContent = latestEvent.tags
-          .filter((tag: string[]) => tag[0] === 'a')
-          .map((tag: string[]) => tag[1])
-          .filter(Boolean);
-      }
-    }
-
-    // Update content list
-    let updatedContent: string[];
-    if (operation === 'add') {
-      if (existingContent.includes(contentId)) {
-        return ErrorResponse(undefined, `Content already exists in ${setType}`, 400);
-      }
-      updatedContent = [...existingContent, contentId];
-    } else {
-      updatedContent = existingContent.filter(id => id !== contentId);
-    }
-
-    // Create new event - use appropriate tag types
-    const contentTags = setType === 'news' 
-      ? updatedContent.map(content => ['e', content])  // News uses "e" tags
-      : updatedContent.map(content => ['a', content]); // Articles use "a" tags
-
-    const eventTemplate = {
-      kind: 30004,
-      pubkey: MASTER_ADMIN_PUBKEY,
-      created_at: Math.floor(Date.now() / 1000),
-      tags: [
-        ['d', setType],
-        ...contentTags
-      ],
-      content: ''
-    };
-
-    // Sign and publish
-    const signedEvent = finalizeEvent(eventTemplate, hexToBytes(masterPrivateKey));
-    
-    const publishPool = new SimplePool();
-    const publishPromises = ADMIN_RELAYS.map(relay => 
-      publishPool.publish([relay], signedEvent)
-    );
-
-    await Promise.allSettled(publishPromises);
-    publishPool.close(ADMIN_RELAYS);
-
-    const actionText = operation === 'add' ? 'added to' : 'removed from';
-    return SuccessResponse({ 
-      message: `Content ${actionText} ${setType} successfully`, 
-      contentId,
-      setType,
-      operation,
-      addedBy,
-      totalContent: updatedContent.length
-    });
-
-  } catch (error) {
-    console.error(`Error updating ${setType}:`, error);
-    return ErrorResponse(error, `Failed to update ${setType}`);
+async function addNews(context: Context, data: AddNewsPayload) {
+  const masterPrivateKey = context.env.MASTER_ADMIN_PRIVATEKEY;
+  
+  if (!masterPrivateKey) {
+    return ErrorResponse(undefined, 'Master admin private key not configured', 500);
   }
-} 
+
+  const currentEvent: NostrEvent | null = await pool.get(ADMIN_RELAYS, {
+    authors: [MASTER_ADMIN_PUBKEY],
+    kinds: [30004],
+    "#d": ["news"],
+    limit: 1
+  });
+  
+  if (!currentEvent) {
+    return ErrorResponse(undefined, 'News set not found', 404);
+  }
+
+  const eventTemplate = {
+    kind: 30004,
+    pubkey: MASTER_ADMIN_PUBKEY,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ...currentEvent.tags,
+      ['e', data.eventId, data.relay]
+    ],
+    content: ''
+  };
+
+  const signedEvent = finalizeEvent(eventTemplate, hexToBytes(masterPrivateKey));
+
+  pool.publish(ADMIN_RELAYS, signedEvent);
+
+  return SuccessResponse({
+    message: 'News added successfully',
+    eventId: signedEvent.id
+  });
+}
+
+async function addArticle(context: Context, data: AddArticlePayload) {
+  const masterPrivateKey = context.env.MASTER_ADMIN_PRIVATEKEY;
+  
+  if (!masterPrivateKey) {
+    return ErrorResponse(undefined, 'Master admin private key not configured', 500);
+  }
+
+  let aTag: string;
+  let relayTag: string;
+
+  if (data.type === 'naddr') {
+    const decoded = nip19.decode(data.naddr);
+    
+    if (decoded.type !== 'naddr') {
+      return ErrorResponse(undefined, 'Invalid naddr format', 400);
+    }
+
+    const { kind, pubkey, identifier, relays } = decoded.data;
+    
+    aTag = `${kind}:${pubkey}:${identifier}`;
+
+    if (!relays || relays.length === 0) {
+      return ErrorResponse(undefined, 'relay is empty for naddr', 400);
+    }
+
+    relayTag = relays[0];
+  } else if (data.type === 'a') {
+    aTag = data.a;
+    relayTag = data.relay;
+  } else {
+    return ErrorResponse(undefined, 'Either naddr or a tag is required', 400);
+  }
+
+  const currentEvent: NostrEvent | null = await pool.get(ADMIN_RELAYS, {
+    authors: [MASTER_ADMIN_PUBKEY],
+    kinds: [30004],
+    "#d": ["articles"],
+    limit: 1
+  });
+
+  if (!currentEvent) {
+    return ErrorResponse(undefined, 'Article set not found', 404);
+  }
+
+  const eventTemplate = {
+    kind: 30004,
+    pubkey: MASTER_ADMIN_PUBKEY,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ...currentEvent.tags,
+      ['a', aTag, relayTag]
+    ],
+    content: ''
+  };
+
+  const signedEvent = finalizeEvent(eventTemplate, hexToBytes(masterPrivateKey));
+
+  pool.publish(ADMIN_RELAYS, signedEvent);
+
+  return SuccessResponse({
+    message: 'Article added successfully',
+    aTag,
+    relayTag,
+    eventId: signedEvent.id
+  });
+}

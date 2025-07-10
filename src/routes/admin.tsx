@@ -22,7 +22,7 @@ const ADMIN_RELAYS = [
 
 type AddArticlePayload = 
   | { action: "add-article"; type: "naddr"; naddr: string }
-  | { action: "add-article"; type: "a"; a: string };
+  | { action: "add-article"; type: "a"; a: string, relay: string };
 
 type AddNewsPayload = {
   action: "add-news";
@@ -185,7 +185,13 @@ export default function AdminPanel() {
       if (!window.nostr) return;
       
       const pubkey = await window.nostr.getPublicKey();
-      setUserInfo({ pubkey });
+
+      const roles = [
+        adminData?.adminUsers.includes(pubkey) ? 'admin' : null, 
+        adminData?.editorUsers.includes(pubkey) ? 'editor' : null
+      ].filter(Boolean);
+      
+      setUserInfo({ pubkey, roles });
     } catch (err) {
       console.log('Nostr extension not available or user declined');
     }
@@ -264,12 +270,18 @@ export default function AdminPanel() {
 
   const addArticle = async () => {
     if (articleInputMethod === 'naddr') {
-      if (!articleNaddr.trim()) return;
+      if (!articleNaddr.trim()) {
+        setError('NAddr gerekli');
+        return;
+      };
       await performAction({ action: 'add-article', type: 'naddr', naddr: articleNaddr.trim() });
     } else {
-      if (!articlePubkey.trim() || !articleDTag.trim()) return;
+      if (!articlePubkey.trim() || !articleDTag.trim() || !articleRelay.trim()) {
+        setError('Yazar Pubkey, D Tag ve Relay gerekli');
+        return;
+      };
       const aTag = `30023:${articlePubkey.trim()}:${articleDTag.trim()}`;
-      await performAction({ action: 'add-article', type: 'a', a: aTag });
+      await performAction({ action: 'add-article', type: 'a', a: aTag, relay: articleRelay.trim() });
     }
     
     // Clear form
@@ -380,8 +392,8 @@ export default function AdminPanel() {
           </Card>
         </div>
 
-        {/* Article Management - Show if user is editor or admin */}
-        {(userIsAdmin || userIsEditor) && (
+        {/* Article Management - Show if user is editor */}
+        {userIsEditor && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -457,7 +469,7 @@ export default function AdminPanel() {
                   </div>
                   
                   <div>
-                    <Label htmlFor="articleRelay">Önerilen Relay (İsteğe bağlı)</Label>
+                    <Label htmlFor="articleRelay">Önerilen Relay</Label>
                     <Input
                       id="articleRelay"
                       placeholder="wss://relay.example.com"
@@ -662,103 +674,6 @@ export default function AdminPanel() {
                       <p className="text-gray-500 text-sm">Henüz makale eklenmemiş</p>
                     ) : (
                       adminData?.articles.map((articleId) => (
-                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <span className="font-mono text-sm">
-                            {articleId}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {/* Non-Admin Users - Show read-only view */}
-        {!userIsAdmin && adminData && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    Yöneticiler ({adminData.adminUsers.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {adminData.adminUsers.map((pubkey) => (
-                      <div key={pubkey} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <span className="font-mono text-sm">
-                          {pubkey.substring(0, 16)}...
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Editörler ({adminData.editorUsers.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {adminData.editorUsers.map((pubkey) => (
-                      <div key={pubkey} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <span className="font-mono text-sm">
-                          {pubkey.substring(0, 16)}...
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5" />
-                    Haber Küratörlüğü ({adminData.news.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {adminData.news.length === 0 ? (
-                      <p className="text-gray-500 text-sm">Henüz haber eklenmemiş</p>
-                    ) : (
-                      adminData.news.map((articleId) => (
-                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <span className="font-mono text-sm">
-                            {articleId}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <RefreshCw className="h-5 w-5" />
-                    Makale Küratörlüğü ({adminData.articles.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {adminData.articles.length === 0 ? (
-                      <p className="text-gray-500 text-sm">Henüz makale eklenmemiş</p>
-                    ) : (
-                      adminData.articles.map((articleId) => (
                         <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                           <span className="font-mono text-sm">
                             {articleId}
