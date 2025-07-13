@@ -5,6 +5,8 @@ import PriceBar from '../components/PriceBar';
 import NewsCard from '../components/NewsCard';
 import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
+import { useLatestNews, useLatestArticles, useSSGData } from '../hooks/useSSGData';
+import { type NewsItem, type ArticleItem } from '../lib/ssg-data';
 
 export const meta: MetaFunction = () => {
   return [
@@ -14,60 +16,97 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export default function Index() {
-  const featuredNews = {
-    title: "Bitcoin Halving Sonrası Piyasada Büyük Hareketlilik",
-    summary: "Bitcoin'in son halving olayının ardından piyasalarda önemli değişimler yaşanıyor. Uzmanlar, önümüzdeki dönemde fiyat hareketlerinin artacağını öngörüyor.",
-    category: "Bitcoin",
-    time: "30 dakika önce",
-    image: "https://images.unsplash.com/photo-1518544866273-fc95ba4d8b2b?w=800&h=600&fit=crop"
+// Helper function to convert NewsItem/ArticleItem to NewsCard props
+function convertToNewsCardProps(item: NewsItem | ArticleItem) {
+  const timeAgo = getTimeAgo(item.publishedAt);
+  
+  return {
+    title: item.title,
+    summary: item.summary || item.content.substring(0, 150) + '...',
+    category: item.category || 'Bitcoin',
+    time: timeAgo,
+    image: `https://images.unsplash.com/photo-1518544866273-fc95ba4d8b2b?w=800&h=600&fit=crop&q=80`
   };
+}
 
-  const mainNews = [
-    {
-      title: "Lightning Network'te Yeni Rekor: Kapasite 5.000 BTC'yi Aştı",
-      summary: "Bitcoin'in ikinci katman çözümü Lightning Network'te kilitli Bitcoin miktarı yeni bir rekora ulaştı.",
-      category: "Lightning",
-      time: "1 saat önce",
-      image: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=300&fit=crop"
-    },
-    {
-      title: "Türkiye'de Bitcoin Düzenlemeleri Netleşiyor",
-      summary: "BDDK'nın yeni açıklaması ile Bitcoin borsalarına yönelik kurallar belirlendi.",
-      category: "Düzenleme",
-      time: "2 saat önce",
-      image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop"
-    },
-    {
-      title: "Bitcoin Madenciliği Hash Rate'i Yeni Zirveye Çıktı",
-      summary: "Bitcoin ağının güvenliği artarken, madencilik zorluğu da yeni seviyelere ulaştı.",
-      category: "Madencilik",
-      time: "3 saat önce",
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop"
-    },
-    {
-      title: "MicroStrategy Bitcoin Alımlarını Sürdürüyor",
-      summary: "Şirket stratejisini Bitcoin üzerine kuran MicroStrategy, portföyüne yeni Bitcoin'ler eklemeye devam ediyor.",
-      category: "Şirket",
-      time: "4 saat önce",
-      image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop"
-    }
-  ];
+function getTimeAgo(timestamp: number): string {
+  const now = Date.now() / 1000;
+  const diffSeconds = Math.floor(now - timestamp);
+  
+  if (diffSeconds < 60) {
+    return `${diffSeconds} saniye önce`;
+  } else if (diffSeconds < 3600) {
+    const minutes = Math.floor(diffSeconds / 60);
+    return `${minutes} dakika önce`;
+  } else if (diffSeconds < 86400) {
+    const hours = Math.floor(diffSeconds / 3600);
+    return `${hours} saat önce`;
+  } else {
+    const days = Math.floor(diffSeconds / 86400);
+    return `${days} gün önce`;
+  }
+}
 
-  const sideNews = [
-    {
-      title: "El Salvador Bitcoin Rezervlerini Artırıyor",
-      summary: "Latin Amerika ülkesi, Bitcoin'i yasal para birimi ilan ettikten sonra rezervlerini genişletmeye devam ediyor.",
-      category: "Ülke",
-      time: "5 saat önce"
-    },
-    {
-      title: "Tesla'nın Bitcoin Kararı Piyasaları Etkiledi",
-      summary: "Elon Musk'ın şirketinin Bitcoin ile ilgili yeni kararı piyasalarda dalgalanmaya neden oldu.",
-      category: "Şirket",
-      time: "6 saat önce"
-    }
-  ];
+// Fallback data for when SSG data is not available
+const fallbackFeaturedNews = {
+  title: "Bitcoin Halving Sonrası Piyasada Büyük Hareketlilik",
+  summary: "Bitcoin'in son halving olayının ardından piyasalarda önemli değişimler yaşanıyor. Uzmanlar, önümüzdeki dönemde fiyat hareketlerinin artacağını öngörüyor.",
+  category: "Bitcoin",
+  time: "30 dakika önce",
+  image: "https://images.unsplash.com/photo-1518544866273-fc95ba4d8b2b?w=800&h=600&fit=crop"
+};
+
+const fallbackMainNews = [
+  {
+    title: "Lightning Network'te Yeni Rekor: Kapasite 5.000 BTC'yi Aştı",
+    summary: "Bitcoin'in ikinci katman çözümü Lightning Network'te kilitli Bitcoin miktarı yeni bir rekora ulaştı.",
+    category: "Lightning",
+    time: "1 saat önce",
+    image: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=300&fit=crop"
+  },
+  {
+    title: "Türkiye'de Bitcoin Düzenlemeleri Netleşiyor",
+    summary: "BDDK'nın yeni açıklaması ile Bitcoin borsalarına yönelik kurallar belirlendi.",
+    category: "Düzenleme",
+    time: "2 saat önce",
+    image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop"
+  }
+];
+
+const fallbackSideNews = [
+  {
+    title: "El Salvador Bitcoin Rezervlerini Artırıyor",
+    summary: "Latin Amerika ülkesi, Bitcoin'i yasal para birimi ilan ettikten sonra rezervlerini genişletmeye devam ediyor.",
+    category: "Ülke",
+    time: "5 saat önce"
+  }
+];
+
+export default function Index() {
+  const ssgData = useSSGData();
+  const latestNews = useLatestNews(6); // Get latest 6 news items
+  const latestArticles = useLatestArticles(4); // Get latest 4 articles
+  
+  // Combine and sort news and articles by publish date
+  const allContent = [...latestNews, ...latestArticles].sort((a, b) => b.publishedAt - a.publishedAt);
+  
+  // Get featured content (latest item) and main content
+  const featuredContent = allContent[0];
+  const mainContent = allContent.slice(1, 5); // Next 4 items
+  const sideContent = allContent.slice(5, 7); // Next 2 items
+  
+  // Use fallback data if no SSG data is available
+  const featuredNews = featuredContent 
+    ? convertToNewsCardProps(featuredContent)
+    : fallbackFeaturedNews;
+    
+  const mainNews = mainContent.length > 0 
+    ? mainContent.map(convertToNewsCardProps)
+    : fallbackMainNews;
+    
+  const sideNews = sideContent.length > 0 
+    ? sideContent.map(convertToNewsCardProps)
+    : fallbackSideNews;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
@@ -84,7 +123,10 @@ export default function Index() {
             <div className="flex-1 overflow-hidden">
               <div className="animate-pulse">
                 <span className="text-xs sm:text-sm font-medium">
-                  Bitcoin 70.000 doları aştı! Piyasalarda büyük hareketlilik devam ediyor...
+                  {featuredContent 
+                    ? `${featuredContent.title} - ${featuredContent.summary?.substring(0, 100)}...`
+                    : "Bitcoin 70.000 doları aştı! Piyasalarda büyük hareketlilik devam ediyor..."
+                  }
                 </span>
               </div>
             </div>
@@ -135,6 +177,16 @@ export default function Index() {
                 ))}
               </div>
             </div>
+            
+            {/* Debug Info - Only show in development */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <h3 className="font-bold mb-2">SSG Data Debug:</h3>
+                <p>News items: {ssgData.news.length}</p>
+                <p>Articles: {ssgData.articles.length}</p>
+                <p>Last updated: {new Date(ssgData.lastUpdated).toLocaleString()}</p>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}

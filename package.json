@@ -9,7 +9,8 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:ssg": "node scripts/test-ssg.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
