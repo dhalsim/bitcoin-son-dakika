@@ -1,15 +1,28 @@
 import React from "react";
-import { Outlet, Links, Meta, Scripts, isRouteErrorResponse, Route } from "react-router";
-import { TooltipProvider } from "./components/ui/tooltip";
-import { Toaster } from "./components/ui/toaster";
+import {
+  Outlet,
+  Links,
+  Meta,
+  Scripts,
+  isRouteErrorResponse,
+} from "react-router";
 import type { MetaFunction, LinksFunction } from "react-router";
-import "./index.css";
+
 import turkishWindowNostrJs from "@/i18n/tr.json";
+
+import { Toaster } from "./components/ui/toaster";
+import { TooltipProvider } from "./components/ui/tooltip";
+
+import "./index.css";
 
 export const meta: MetaFunction = () => {
   return [
     { title: "Bitcoin Son Dakika - Güncel Bitcoin Haberleri" },
-    { name: "description", content: "Bitcoin ve kripto para dünyasından son dakika haberler, güncel gelişmeler ve analizler." },
+    {
+      name: "description",
+      content:
+        "Bitcoin ve kripto para dünyasından son dakika haberler, güncel gelişmeler ve analizler.",
+    },
   ];
 };
 
@@ -67,7 +80,7 @@ export default function Root() {
               startHidden: true,
               compactMode: true,
               nstartMeLanguage: 'tr',
-            };`
+            };`,
           }}
         />
         <script src="/window.nostr.js"></script>
@@ -75,13 +88,9 @@ export default function Root() {
       </body>
     </html>
   );
-} 
+}
 
-export function ErrorBoundary({
-  error,
-}: {
-  error: unknown;
-}) {
+export function ErrorBoundary({ error }: { error: unknown }) {
   if (isRouteErrorResponse(error)) {
     return (
       <>

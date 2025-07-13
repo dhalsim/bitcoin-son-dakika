@@ -6,4 +6,4 @@ export default [
   // can't use "admin" because it's reserved for admin worker function at /functions/admin.ts
   route("admin-panel", "routes/admin.tsx"),
   route("*", "routes/$.tsx"),
-] satisfies RouteConfig; 
+] satisfies RouteConfig;

@@ -1,12 +1,32 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Shield, Key, AlertCircle, Loader2, Users, UserPlus, Trash2, RefreshCw, Plus, FileText, Rocket } from 'lucide-react';
-import { NostrEvent, SimplePool } from "nostr-tools";
+import {
+  Shield,
+  Key,
+  AlertCircle,
+  Loader2,
+  Users,
+  UserPlus,
+  Trash2,
+  RefreshCw,
+  Plus,
+  FileText,
+  Rocket,
+} from "lucide-react";
+import type { NostrEvent } from "nostr-tools";
+import { SimplePool } from "nostr-tools";
+import { useState, useEffect } from "react";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const ADMIN_RELAYS = [
   "wss://relay.nostr.band",
@@ -17,42 +37,49 @@ const ADMIN_RELAYS = [
   "wss://nostr.bitcoiner.social",
   "wss://nostr.mom",
   "wss://nostr-pub.wellorder.net",
-  "wss://relay.nos.social"
+  "wss://relay.nos.social",
 ];
 
-type AddArticlePayload = 
+type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }
-  | { action: "add-article"; type: "a"; a: string, relay: string };
+  | { action: "add-article"; type: "a"; a: string; relay: string };
 
 type AddNewsPayload = {
   action: "add-news";
   eventId: string;
   relay: string;
-}
+};
 
 type AddAdminPayload = {
   action: "add-admin-pubkey";
   pubkey: string;
-}
+};
 
 type RemoveAdminPayload = {
   action: "remove-admin-pubkey";
   pubkey: string;
-}
+};
 
 type RemoveEditorPayload = {
   action: "remove-editor-pubkey";
   pubkey: string;
-}
+};
 
 type AddEditorPayload = {
   action: "add-editor-pubkey";
   pubkey: string;
-}
+};
 
-type Payload = AddNewsPayload | AddArticlePayload | AddAdminPayload | RemoveAdminPayload | RemoveEditorPayload | AddEditorPayload;
+type Payload =
+  | AddNewsPayload
+  | AddArticlePayload
+  | AddAdminPayload
+  | RemoveAdminPayload
+  | RemoveEditorPayload
+  | AddEditorPayload;
 
-const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
+const MASTER_ADMIN_PUBKEY =
+  "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
 interface AdminData {
   adminUsers: string[];
@@ -70,25 +97,27 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [adminData, setAdminData] = useState<AdminData | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo>({});
-  const [error, setError] = useState<string>('');
-  const [actionLoading, setActionLoading] = useState<string>('');
+  const [error, setError] = useState<string>("");
+  const [actionLoading, setActionLoading] = useState<string>("");
   const [deployLoading, setDeployLoading] = useState(false);
   const [deploySuccess, setDeploySuccess] = useState(false);
 
   // Form states
-  const [newAdminPubkey, setNewAdminPubkey] = useState('');
-  const [newEditorPubkey, setNewEditorPubkey] = useState('');
-  
+  const [newAdminPubkey, setNewAdminPubkey] = useState("");
+  const [newEditorPubkey, setNewEditorPubkey] = useState("");
+
   // News form states
-  const [newsEventId, setNewsEventId] = useState('');
-  const [newsRelay, setNewsRelay] = useState('');
-  
+  const [newsEventId, setNewsEventId] = useState("");
+  const [newsRelay, setNewsRelay] = useState("");
+
   // Article form states
-  const [articleInputMethod, setArticleInputMethod] = useState<'naddr' | 'fields'>('naddr');
-  const [articleNaddr, setArticleNaddr] = useState('');
-  const [articlePubkey, setArticlePubkey] = useState('');
-  const [articleDTag, setArticleDTag] = useState('');
-  const [articleRelay, setArticleRelay] = useState('');
+  const [articleInputMethod, setArticleInputMethod] = useState<
+    "naddr" | "fields"
+  >("naddr");
+  const [articleNaddr, setArticleNaddr] = useState("");
+  const [articlePubkey, setArticlePubkey] = useState("");
+  const [articleDTag, setArticleDTag] = useState("");
+  const [articleRelay, setArticleRelay] = useState("");
 
   useEffect(() => {
     loadAdminData();
@@ -97,242 +126,297 @@ export default function AdminPanel() {
 
   const loadAdminData = async () => {
     setLoading(true);
-    
+
     try {
       const pool = new SimplePool();
 
       const events: NostrEvent[] = [];
-      
-      pool.subscribeManyEose(ADMIN_RELAYS, [
-        {
-          authors: [MASTER_ADMIN_PUBKEY],
-          kinds: [30000],
-          "#d": ["admin-users"],
-          limit: 1
-        },
-        {
-          authors: [MASTER_ADMIN_PUBKEY],
-          kinds: [30000], 
-          "#d": ["editor-users"],
-          limit: 1
-        },
-        {
-          authors: [MASTER_ADMIN_PUBKEY],
-          kinds: [30004], 
-          "#d": ["news"],
-          limit: 1
-        },
-        {
-          authors: [MASTER_ADMIN_PUBKEY],
-          kinds: [30004], 
-          "#d": ["articles"],
-          limit: 1
-        }
-      ], {
-        onevent(evt) {
-          console.log(evt);
 
-          events.push(evt);
+      pool.subscribeManyEose(
+        ADMIN_RELAYS,
+        [
+          {
+            authors: [MASTER_ADMIN_PUBKEY],
+            kinds: [30000],
+            "#d": ["admin-users"],
+            limit: 1,
+          },
+          {
+            authors: [MASTER_ADMIN_PUBKEY],
+            kinds: [30000],
+            "#d": ["editor-users"],
+            limit: 1,
+          },
+          {
+            authors: [MASTER_ADMIN_PUBKEY],
+            kinds: [30004],
+            "#d": ["news"],
+            limit: 1,
+          },
+          {
+            authors: [MASTER_ADMIN_PUBKEY],
+            kinds: [30004],
+            "#d": ["articles"],
+            limit: 1,
+          },
+        ],
+        {
+          onevent(evt) {
+            console.log(evt);
+
+            events.push(evt);
+          },
+          onclose() {
+            let adminUsers: string[] = [];
+            let editorUsers: string[] = [];
+            let news: string[] = [];
+            let articles: string[] = [];
+
+            // Parse the events to extract pubkeys from sets
+            events.forEach((event) => {
+              const dTag = event.tags.find((tag) => tag[0] === "d")?.[1];
+
+              if (dTag === "admin-users") {
+                // Extract pubkeys from 'p' tags
+                adminUsers = event.tags
+                  .filter((tag) => tag[0] === "p")
+                  .map((tag) => tag[1])
+                  .filter(Boolean);
+              } else if (dTag === "editor-users") {
+                // Extract pubkeys from 'p' tags
+                editorUsers = event.tags
+                  .filter((tag) => tag[0] === "p")
+                  .map((tag) => tag[1])
+                  .filter(Boolean);
+              } else if (dTag === "news") {
+                // News uses 'e' tags for event IDs
+                news = event.tags
+                  .filter((tag) => tag[0] === "e")
+                  .map((tag) => tag[1])
+                  .filter(Boolean);
+              } else if (dTag === "articles") {
+                // Articles use 'a' tags for addressable events
+                articles = event.tags
+                  .filter((tag) => tag[0] === "a")
+                  .map((tag) => tag[1])
+                  .filter(Boolean);
+              }
+            });
+
+            setAdminData({
+              adminUsers,
+              editorUsers,
+              news,
+              articles,
+            });
+
+            setLoading(false);
+          },
         },
-        onclose(){
-          let adminUsers: string[] = [];
-          let editorUsers: string[] = [];
-          let news: string[] = [];
-          let articles: string[] = [];
-          
-          // Parse the events to extract pubkeys from sets
-          events.forEach(event => {
-            const dTag = event.tags.find(tag => tag[0] === 'd')?.[1];
-            
-            if (dTag === 'admin-users') {
-              // Extract pubkeys from 'p' tags
-              adminUsers = event.tags
-                .filter(tag => tag[0] === 'p')
-                .map(tag => tag[1])
-                .filter(Boolean);
-            } else if (dTag === 'editor-users') {
-              // Extract pubkeys from 'p' tags  
-              editorUsers = event.tags
-                .filter(tag => tag[0] === 'p')
-                .map(tag => tag[1])
-                .filter(Boolean);
-            } else if (dTag === 'news') {
-              // News uses 'e' tags for event IDs
-              news = event.tags
-                .filter(tag => tag[0] === 'e')
-                .map(tag => tag[1])
-                .filter(Boolean);
-            } else if (dTag === 'articles') {
-              // Articles use 'a' tags for addressable events
-              articles = event.tags
-                .filter(tag => tag[0] === 'a')
-                .map(tag => tag[1])
-                .filter(Boolean);
-            }
-          });
-    
-          setAdminData({
-            adminUsers,
-            editorUsers,
-            news,
-            articles
-          });  
-          
-          setLoading(false);
-        }
-      });
+      );
     } catch (err) {
-      console.error('Error loading admin data from Nostr:', err);
-      setError('Nostr verilerini yüklerken hata oluştu');
+      console.error("Error loading admin data from Nostr:", err);
+      setError("Nostr verilerini yüklerken hata oluştu");
     }
   };
 
   const checkUserInfo = async () => {
     try {
-      if (!window.nostr) return;
-      
+      if (!window.nostr) {
+        return;
+      }
+
       const pubkey = await window.nostr.getPublicKey();
 
       const roles = [
-        adminData?.adminUsers.includes(pubkey) ? 'admin' : null, 
-        adminData?.editorUsers.includes(pubkey) ? 'editor' : null
+        adminData?.adminUsers.includes(pubkey) ? "admin" : null,
+        adminData?.editorUsers.includes(pubkey) ? "editor" : null,
       ].filter(Boolean);
-      
+
       setUserInfo({ pubkey, roles });
-    } catch (err) {
-      console.log('Nostr extension not available or user declined');
+    } catch {
+      console.log("Nostr extension not available or user declined");
     }
   };
 
   const createNIP98Auth = async (method: string, url: string) => {
     if (!window.nostr || !userInfo.pubkey) {
-      throw new Error('Nostr uzantısı gerekli');
+      throw new Error("Nostr uzantısı gerekli");
     }
 
     const authEvent = {
       kind: 27235,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
-        ['u', url],
-        ['method', method]
+        ["u", url],
+        ["method", method],
       ],
-      content: '',
-      pubkey: userInfo.pubkey
+      content: "",
+      pubkey: userInfo.pubkey,
     };
 
     const signedEvent = await window.nostr.signEvent(authEvent);
+
     return `Nostr ${btoa(JSON.stringify(signedEvent))}`;
   };
 
   const performAction = async (data: Payload) => {
     setActionLoading(data.action);
-    setError('');
+    setError("");
 
     try {
-      const authHeader = await createNIP98Auth('POST', `${window.location.origin}/functions/admin`);
-      
-      const response = await fetch('/admin', {
-        method: 'POST',
+      const authHeader = await createNIP98Auth(
+        "POST",
+        `${window.location.origin}/functions/admin`,
+      );
+
+      const response = await fetch("/admin", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': authHeader
+          "Content-Type": "application/json",
+          Authorization: authHeader,
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         await loadAdminData(); // Refresh data
         // Clear form inputs
-        if (data.action.includes('add-admin')) setNewAdminPubkey('');
-        if (data.action.includes('add-editor')) setNewEditorPubkey('');
-        if (data.action === 'add-news') {
-          setNewsEventId('');
-          setNewsRelay('');
+        if (data.action.includes("add-admin")) {
+          setNewAdminPubkey("");
+        }
+
+        if (data.action.includes("add-editor")) {
+          setNewEditorPubkey("");
+        }
+
+        if (data.action === "add-news") {
+          setNewsEventId("");
+          setNewsRelay("");
         }
       } else {
-        setError(result.error || 'İşlem başarısız');
+        setError(result.error || "İşlem başarısız");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bilinmeyen hata');
+      setError(err instanceof Error ? err.message : "Bilinmeyen hata");
     } finally {
-      setActionLoading('');
+      setActionLoading("");
     }
   };
 
   const addAdmin = () => {
-    if (!newAdminPubkey.trim()) return;
-    performAction({ action: 'add-admin-pubkey', pubkey: newAdminPubkey.trim() });
+    if (!newAdminPubkey.trim()) {
+      return;
+    }
+
+    performAction({
+      action: "add-admin-pubkey",
+      pubkey: newAdminPubkey.trim(),
+    });
   };
 
   const removeAdmin = (pubkey: string) => {
-    performAction({ action: 'remove-admin-pubkey', pubkey });
+    performAction({ action: "remove-admin-pubkey", pubkey });
   };
 
   const addEditor = () => {
-    if (!newEditorPubkey.trim()) return;
-    performAction({ action: 'add-editor-pubkey', pubkey: newEditorPubkey.trim() });
+    if (!newEditorPubkey.trim()) {
+      return;
+    }
+
+    performAction({
+      action: "add-editor-pubkey",
+      pubkey: newEditorPubkey.trim(),
+    });
   };
 
   const removeEditor = (pubkey: string) => {
-    performAction({ action: 'remove-editor-pubkey', pubkey });
+    performAction({ action: "remove-editor-pubkey", pubkey });
   };
 
   const addNews = () => {
-    if (!newsEventId.trim() || !newsRelay.trim()) return;
-    performAction({ action: 'add-news', eventId: newsEventId.trim(), relay: newsRelay.trim() });
+    if (!newsEventId.trim() || !newsRelay.trim()) {
+      return;
+    }
+
+    performAction({
+      action: "add-news",
+      eventId: newsEventId.trim(),
+      relay: newsRelay.trim(),
+    });
   };
 
   const addArticle = async () => {
-    if (articleInputMethod === 'naddr') {
+    if (articleInputMethod === "naddr") {
       if (!articleNaddr.trim()) {
-        setError('NAddr gerekli');
+        setError("NAddr gerekli");
+
         return;
-      };
-      await performAction({ action: 'add-article', type: 'naddr', naddr: articleNaddr.trim() });
+      }
+
+      await performAction({
+        action: "add-article",
+        type: "naddr",
+        naddr: articleNaddr.trim(),
+      });
     } else {
-      if (!articlePubkey.trim() || !articleDTag.trim() || !articleRelay.trim()) {
-        setError('Yazar Pubkey, D Tag ve Relay gerekli');
+      if (
+        !articlePubkey.trim() ||
+        !articleDTag.trim() ||
+        !articleRelay.trim()
+      ) {
+        setError("Yazar Pubkey, D Tag ve Relay gerekli");
+
         return;
-      };
+      }
+
       const aTag = `30023:${articlePubkey.trim()}:${articleDTag.trim()}`;
-      await performAction({ action: 'add-article', type: 'a', a: aTag, relay: articleRelay.trim() });
+      await performAction({
+        action: "add-article",
+        type: "a",
+        a: aTag,
+        relay: articleRelay.trim(),
+      });
     }
-    
+
     // Clear form
-    setArticleNaddr('');
-    setArticlePubkey('');
-    setArticleDTag('');
-    setArticleRelay('');
+    setArticleNaddr("");
+    setArticlePubkey("");
+    setArticleDTag("");
+    setArticleRelay("");
   };
 
   const triggerDeploy = async () => {
     setDeployLoading(true);
-    setError('');
+    setError("");
     setDeploySuccess(false);
 
     try {
-      const authHeader = await createNIP98Auth('POST', `${window.location.origin}/functions/deploy-trigger`);
-      
-      const response = await fetch('/deploy-trigger', {
-        method: 'POST',
+      const authHeader = await createNIP98Auth(
+        "POST",
+        `${window.location.origin}/functions/deploy-trigger`,
+      );
+
+      const response = await fetch("/deploy-trigger", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': authHeader
-        }
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setDeploySuccess(true);
         setTimeout(() => setDeploySuccess(false), 5000); // Clear success message after 5 seconds
       } else {
-        setError(result.error || 'Deploy tetikleme başarısız');
+        setError(result.error || "Deploy tetikleme başarısız");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Deploy tetikleme hatası');
+      setError(err instanceof Error ? err.message : "Deploy tetikleme hatası");
     } finally {
       setDeployLoading(false);
     }
@@ -349,18 +433,23 @@ export default function AdminPanel() {
     );
   }
 
-  const userIsAdmin = userInfo.pubkey && adminData?.adminUsers.includes(userInfo.pubkey);
-  const userIsEditor = userInfo.pubkey && adminData?.editorUsers.includes(userInfo.pubkey);
+  const userIsAdmin =
+    userInfo.pubkey && adminData?.adminUsers.includes(userInfo.pubkey);
+  const userIsEditor =
+    userInfo.pubkey && adminData?.editorUsers.includes(userInfo.pubkey);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Yönetim Paneli</h1>
-          <p className="text-gray-600 dark:text-gray-400">Bitcoin Son Dakika - İçerik Yönetimi</p>
-          
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
+            Yönetim Paneli
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Bitcoin Son Dakika - İçerik Yönetimi
+          </p>
+
           {userInfo.pubkey ? (
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="font-mono">
@@ -374,7 +463,8 @@ export default function AdminPanel() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                İşlem yapmak için Nostr uzantısı gerekli. Veriler görüntüleme genel erişime açıktır.
+                İşlem yapmak için Nostr uzantısı gerekli. Veriler görüntüleme
+                genel erişime açıktır.
               </AlertDescription>
             </Alert>
           )}
@@ -395,19 +485,25 @@ export default function AdminPanel() {
               <div className="flex items-center gap-4">
                 <Shield className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-2xl font-bold">{adminData?.adminUsers.length || 0}</p>
-                  <p className="text-gray-600 dark:text-gray-400">Yöneticiler</p>
+                  <p className="text-2xl font-bold">
+                    {adminData?.adminUsers.length || 0}
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Yöneticiler
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <Users className="h-8 w-8 text-green-500" />
                 <div>
-                  <p className="text-2xl font-bold">{adminData?.editorUsers.length || 0}</p>
+                  <p className="text-2xl font-bold">
+                    {adminData?.editorUsers.length || 0}
+                  </p>
                   <p className="text-gray-600 dark:text-gray-400">Editörler</p>
                 </div>
               </div>
@@ -419,7 +515,9 @@ export default function AdminPanel() {
               <div className="flex items-center gap-4">
                 <AlertCircle className="h-8 w-8 text-orange-500" />
                 <div>
-                  <p className="text-2xl font-bold">{adminData?.news.length || 0}</p>
+                  <p className="text-2xl font-bold">
+                    {adminData?.news.length || 0}
+                  </p>
                   <p className="text-gray-600 dark:text-gray-400">Haberler</p>
                 </div>
               </div>
@@ -431,7 +529,9 @@ export default function AdminPanel() {
               <div className="flex items-center gap-4">
                 <RefreshCw className="h-8 w-8 text-purple-500" />
                 <div>
-                  <p className="text-2xl font-bold">{adminData?.articles.length || 0}</p>
+                  <p className="text-2xl font-bold">
+                    {adminData?.articles.length || 0}
+                  </p>
                   <p className="text-gray-600 dark:text-gray-400">Makaleler</p>
                 </div>
               </div>
@@ -457,18 +557,21 @@ export default function AdminPanel() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     {adminData?.news.length === 0 ? (
-                      <p className="text-gray-500 text-sm">Henüz haber eklenmemiş</p>
+                      <p className="text-gray-500 text-sm">
+                        Henüz haber eklenmemiş
+                      </p>
                     ) : (
                       adminData?.news.map((eventId) => (
-                        <div key={eventId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <span className="font-mono text-sm">
-                            {eventId}
-                          </span>
+                        <div
+                          key={eventId}
+                          className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                        >
+                          <span className="font-mono text-sm">{eventId}</span>
                         </div>
                       ))
                     )}
                   </div>
-                  
+
                   <div className="space-y-3 pt-4 border-t">
                     <Label htmlFor="newsEventId">Yeni Haber Ekle</Label>
                     <Input
@@ -482,13 +585,17 @@ export default function AdminPanel() {
                       value={newsRelay}
                       onChange={(e) => setNewsRelay(e.target.value)}
                     />
-                    <Button 
+                    <Button
                       className="w-full"
                       variant="secondary"
-                      disabled={!newsEventId.trim() || !newsRelay.trim() || actionLoading === 'add-news'}
+                      disabled={
+                        !newsEventId.trim() ||
+                        !newsRelay.trim() ||
+                        actionLoading === "add-news"
+                      }
                       onClick={addNews}
                     >
-                      {actionLoading === 'add-news' ? (
+                      {actionLoading === "add-news" ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <Plus className="h-4 w-4 mr-2" />
@@ -513,40 +620,49 @@ export default function AdminPanel() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     {adminData?.articles.length === 0 ? (
-                      <p className="text-gray-500 text-sm">Henüz makale eklenmemiş</p>
+                      <p className="text-gray-500 text-sm">
+                        Henüz makale eklenmemiş
+                      </p>
                     ) : (
                       adminData?.articles.map((articleId) => (
-                        <div key={articleId} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <span className="font-mono text-sm">
-                            {articleId}
-                          </span>
+                        <div
+                          key={articleId}
+                          className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                        >
+                          <span className="font-mono text-sm">{articleId}</span>
                         </div>
                       ))
                     )}
                   </div>
-                  
+
                   <div className="space-y-3 pt-4 border-t">
                     <Label>Yeni Makale Ekle</Label>
-                    
+
                     {/* Input Method Toggle */}
                     <div className="flex gap-2">
                       <Button
-                        variant={articleInputMethod === 'naddr' ? 'default' : 'outline'}
+                        variant={
+                          articleInputMethod === "naddr" ? "default" : "outline"
+                        }
                         size="sm"
-                        onClick={() => setArticleInputMethod('naddr')}
+                        onClick={() => setArticleInputMethod("naddr")}
                       >
                         NAddr Girişi
                       </Button>
                       <Button
-                        variant={articleInputMethod === 'fields' ? 'default' : 'outline'}
+                        variant={
+                          articleInputMethod === "fields"
+                            ? "default"
+                            : "outline"
+                        }
                         size="sm"
-                        onClick={() => setArticleInputMethod('fields')}
+                        onClick={() => setArticleInputMethod("fields")}
                       >
                         Manuel Giriş
                       </Button>
                     </div>
 
-                    {articleInputMethod === 'naddr' ? (
+                    {articleInputMethod === "naddr" ? (
                       <div className="space-y-3">
                         <Input
                           placeholder="naddr1..."
@@ -569,45 +685,50 @@ export default function AdminPanel() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => setArticlePubkey(userInfo.pubkey || '')}
+                              onClick={() =>
+                                setArticlePubkey(userInfo.pubkey || "")
+                              }
                               className="mt-1"
                             >
                               Kendi pubkey'imi kullan
                             </Button>
                           )}
                         </div>
-                        
+
                         <Input
                           placeholder="D Tag (Makale ID)"
                           value={articleDTag}
                           onChange={(e) => setArticleDTag(e.target.value)}
                         />
-                        
+
                         <Input
                           placeholder="wss://relay.example.com (isteğe bağlı)"
                           value={articleRelay}
                           onChange={(e) => setArticleRelay(e.target.value)}
                         />
-                        
+
                         <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
                           <p className="text-sm text-blue-700 dark:text-blue-300">
-                            <strong>A Tag Preview:</strong> {articlePubkey && articleDTag 
-                              ? `30023:${articlePubkey}:${articleDTag}` 
-                              : 'Pubkey ve D Tag gerekli'}
+                            <strong>A Tag Preview:</strong>{" "}
+                            {articlePubkey && articleDTag
+                              ? `30023:${articlePubkey}:${articleDTag}`
+                              : "Pubkey ve D Tag gerekli"}
                           </p>
                         </div>
                       </div>
                     )}
 
-                    <Button 
+                    <Button
                       className="w-full"
                       disabled={
-                        actionLoading === 'add-article' || 
-                        (articleInputMethod === 'naddr' ? !articleNaddr.trim() : !articlePubkey.trim() || !articleDTag.trim())
+                        actionLoading === "add-article" ||
+                        (articleInputMethod === "naddr"
+                          ? !articleNaddr.trim()
+                          : !articlePubkey.trim() || !articleDTag.trim())
                       }
                       onClick={addArticle}
                     >
-                      {actionLoading === 'add-article' ? (
+                      {actionLoading === "add-article" ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <FileText className="h-4 w-4 mr-2" />
@@ -618,49 +739,52 @@ export default function AdminPanel() {
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Deploy Trigger Section */}
             {userIsAdmin && (
               <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Rocket className="h-5 w-5" />
-                  Site Deployment
-                </CardTitle>
-                <CardDescription>
-                  Değişiklikleri canlı siteye uygula
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {deploySuccess && (
-                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-                    <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    <AlertDescription className="text-green-800 dark:text-green-300">
-                      Deploy başarıyla tetiklendi! Site birkaç dakika içinde güncellenecek.
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <div className="flex items-center gap-4">
-                  <Button 
-                    onClick={triggerDeploy}
-                    disabled={deployLoading}
-                    className="flex items-center gap-2"
-                  >
-                    {deployLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Rocket className="h-4 w-4" />
-                    )}
-                    {deployLoading ? 'Deploy Tetikleniyor...' : 'Deploy Tetikle'}
-                  </Button>
-                  
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Son değişiklikleri canlı siteye uygular
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Rocket className="h-5 w-5" />
+                    Site Deployment
+                  </CardTitle>
+                  <CardDescription>
+                    Değişiklikleri canlı siteye uygula
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {deploySuccess && (
+                    <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+                      <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertDescription className="text-green-800 dark:text-green-300">
+                        Deploy başarıyla tetiklendi! Site birkaç dakika içinde
+                        güncellenecek.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="flex items-center gap-4">
+                    <Button
+                      onClick={triggerDeploy}
+                      disabled={deployLoading}
+                      className="flex items-center gap-2"
+                    >
+                      {deployLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Rocket className="h-4 w-4" />
+                      )}
+                      {deployLoading
+                        ? "Deploy Tetikleniyor..."
+                        : "Deploy Tetikle"}
+                    </Button>
+
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Son değişiklikleri canlı siteye uygular
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         )}
@@ -683,17 +807,23 @@ export default function AdminPanel() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     {adminData?.adminUsers.map((pubkey) => (
-                      <div key={pubkey} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div
+                        key={pubkey}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      >
                         <span className="font-mono text-sm">
                           {pubkey.substring(0, 16)}...
                         </span>
                         <Button
                           variant="destructive"
                           size="sm"
-                          disabled={actionLoading === 'remove-admin-pubkey' || adminData.adminUsers.length === 1}
+                          disabled={
+                            actionLoading === "remove-admin-pubkey" ||
+                            adminData.adminUsers.length === 1
+                          }
                           onClick={() => removeAdmin(pubkey)}
                         >
-                          {actionLoading === 'remove-admin-pubkey' ? (
+                          {actionLoading === "remove-admin-pubkey" ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Trash2 className="h-4 w-4" />
@@ -702,7 +832,7 @@ export default function AdminPanel() {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="space-y-3 pt-4 border-t">
                     <Label htmlFor="newAdminPubkey">Yeni Yönetici Ekle</Label>
                     <Input
@@ -711,12 +841,15 @@ export default function AdminPanel() {
                       value={newAdminPubkey}
                       onChange={(e) => setNewAdminPubkey(e.target.value)}
                     />
-                    <Button 
+                    <Button
                       className="w-full"
-                      disabled={!newAdminPubkey.trim() || actionLoading === 'add-admin-pubkey'}
+                      disabled={
+                        !newAdminPubkey.trim() ||
+                        actionLoading === "add-admin-pubkey"
+                      }
                       onClick={addAdmin}
                     >
-                      {actionLoading === 'add-admin-pubkey' ? (
+                      {actionLoading === "add-admin-pubkey" ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <UserPlus className="h-4 w-4 mr-2" />
@@ -741,17 +874,20 @@ export default function AdminPanel() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     {adminData?.editorUsers.map((pubkey) => (
-                      <div key={pubkey} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div
+                        key={pubkey}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      >
                         <span className="font-mono text-sm">
                           {pubkey.substring(0, 16)}...
                         </span>
                         <Button
                           variant="destructive"
                           size="sm"
-                          disabled={actionLoading === 'remove-editor-pubkey'}
+                          disabled={actionLoading === "remove-editor-pubkey"}
                           onClick={() => removeEditor(pubkey)}
                         >
-                          {actionLoading === 'remove-editor-pubkey' ? (
+                          {actionLoading === "remove-editor-pubkey" ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Trash2 className="h-4 w-4" />
@@ -760,7 +896,7 @@ export default function AdminPanel() {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="space-y-3 pt-4 border-t">
                     <Label htmlFor="newEditorPubkey">Yeni Editör Ekle</Label>
                     <Input
@@ -769,13 +905,16 @@ export default function AdminPanel() {
                       value={newEditorPubkey}
                       onChange={(e) => setNewEditorPubkey(e.target.value)}
                     />
-                    <Button 
+                    <Button
                       className="w-full"
                       variant="secondary"
-                      disabled={!newEditorPubkey.trim() || actionLoading === 'add-editor-pubkey'}
+                      disabled={
+                        !newEditorPubkey.trim() ||
+                        actionLoading === "add-editor-pubkey"
+                      }
                       onClick={addEditor}
                     >
-                      {actionLoading === 'add-editor-pubkey' ? (
+                      {actionLoading === "add-editor-pubkey" ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <UserPlus className="h-4 w-4 mr-2" />
@@ -786,8 +925,6 @@ export default function AdminPanel() {
                 </CardContent>
               </Card>
             </div>
-
-
           </div>
         )}
 
@@ -795,12 +932,12 @@ export default function AdminPanel() {
         {userInfo.pubkey && !userIsAdmin && !userIsEditor && (
           <Alert>
             <AlertDescription>
-              Bu hesap için henüz yetki tanımlanmamış. Yöneticiden yetki talep edin.
+              Bu hesap için henüz yetki tanımlanmamış. Yöneticiden yetki talep
+              edin.
             </AlertDescription>
           </Alert>
         )}
-
       </div>
     </div>
   );
-} 
+}

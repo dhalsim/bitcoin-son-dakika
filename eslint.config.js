@@ -1,29 +1,90 @@
-import js from "@eslint/js";
-import globals from "globals";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
+import eslint from "@eslint/js";
+import importPlugin from "eslint-plugin-import";
+import prettier from "eslint-plugin-prettier";
+import valtio from "eslint-plugin-valtio";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
-  { ignores: ["dist"] },
+export default [
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    ignores: ["public/**", "./react-router/**", "scripts/**", "build/**", "dist/**"],
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
+      ecmaVersion: "latest",
+      sourceType: "module",
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+      },
     },
     plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
+      "@typescript-eslint": tseslint.plugin,
+      prettier: prettier,
+      import: importPlugin,
+      valtio: valtio,
+    },
+    settings: {
+      "import/resolver": {
+        typescript: true
+      },
+      "import/internal-regex": "^@(lib|services|components|hooks|types|pages|contexts|data|routes)/",
+      "import/external-regex": "^(?!@(lib|services|components|hooks|types|pages|contexts|data|routes)/)"
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
+      "import/order": [
+        "error",
+        {
+          groups: ["builtin", "external", "internal", "parent", "sibling", "index"],
+          "newlines-between": "always",
+          alphabetize: {
+            order: "asc",
+            caseInsensitive: true,
+          },
+        }
       ],
-      "@typescript-eslint/no-unused-vars": "off",
+      "padding-line-between-statements": [
+        "error",
+        {
+          blankLine: "always",
+          prev: "*",
+          next: "return",
+        },
+        {
+          blankLine: "always",
+          prev: "*",
+          next: "throw",
+        },
+        {
+          blankLine: "always",
+          prev: "multiline-block-like",
+          next: "*",
+        },
+      ],
+      curly: ["error", "all"],
+      "prettier/prettier": "error",
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        {
+          prefer: "type-imports",
+          disallowTypeAnnotations: false,
+          fixStyle: "separate-type-imports",
+        },
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/no-explicit-any": "off",
+      "valtio/state-snapshot-rule": "warn",
+      "valtio/avoid-this-in-proxy": "warn",
     },
-  }
-);
+  },
+];

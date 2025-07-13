@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { type SSGData, type NewsItem, type ArticleItem } from '../lib/ssg-data';
+import { useMemo } from "react";
+
+import { type SSGData, type NewsItem, type ArticleItem } from "../lib/ssg-data";
 
 // Type declaration for global SSG data (only available during prerendering)
 declare global {
@@ -13,15 +14,15 @@ declare global {
 export function useSSGData(): SSGData {
   return useMemo(() => {
     // Check if SSG data is available on global (during prerendering)
-    if (typeof global !== 'undefined' && global.__SSG_DATA__) {
+    if (typeof global !== "undefined" && global.__SSG_DATA__) {
       return global.__SSG_DATA__;
     }
-    
+
     // Fallback to empty data if no SSG data is available
     return {
       news: [],
       articles: [],
-      lastUpdated: Date.now()
+      lastUpdated: Date.now(),
     };
   }, []);
 }
@@ -31,6 +32,7 @@ export function useSSGData(): SSGData {
  */
 export function useNewsItems(): NewsItem[] {
   const ssgData = useSSGData();
+
   return ssgData.news;
 }
 
@@ -39,6 +41,7 @@ export function useNewsItems(): NewsItem[] {
  */
 export function useArticleItems(): ArticleItem[] {
   const ssgData = useSSGData();
+
   return ssgData.articles;
 }
 
@@ -47,6 +50,7 @@ export function useArticleItems(): ArticleItem[] {
  */
 export function useLatestNews(limit: number = 10): NewsItem[] {
   const news = useNewsItems();
+
   return useMemo(() => news.slice(0, limit), [news, limit]);
 }
 
@@ -55,6 +59,7 @@ export function useLatestNews(limit: number = 10): NewsItem[] {
  */
 export function useLatestArticles(limit: number = 10): ArticleItem[] {
   const articles = useArticleItems();
+
   return useMemo(() => articles.slice(0, limit), [articles, limit]);
 }
 
@@ -63,7 +68,8 @@ export function useLatestArticles(limit: number = 10): ArticleItem[] {
  */
 export function useNewsItem(id: string): NewsItem | undefined {
   const news = useNewsItems();
-  return useMemo(() => news.find(item => item.id === id), [news, id]);
+
+  return useMemo(() => news.find((item) => item.id === id), [news, id]);
 }
 
 /**
@@ -71,7 +77,8 @@ export function useNewsItem(id: string): NewsItem | undefined {
  */
 export function useArticleItem(id: string): ArticleItem | undefined {
   const articles = useArticleItems();
-  return useMemo(() => articles.find(item => item.id === id), [articles, id]);
+
+  return useMemo(() => articles.find((item) => item.id === id), [articles, id]);
 }
 
 /**
@@ -79,9 +86,10 @@ export function useArticleItem(id: string): ArticleItem | undefined {
  */
 export function useNewsByCategory(category: string): NewsItem[] {
   const news = useNewsItems();
-  return useMemo(() => 
-    news.filter(item => item.category === category),
-    [news, category]
+
+  return useMemo(
+    () => news.filter((item) => item.category === category),
+    [news, category],
   );
 }
 
@@ -90,8 +98,9 @@ export function useNewsByCategory(category: string): NewsItem[] {
  */
 export function useArticlesByCategory(category: string): ArticleItem[] {
   const articles = useArticleItems();
-  return useMemo(() => 
-    articles.filter(item => item.category === category),
-    [articles, category]
+
+  return useMemo(
+    () => articles.filter((item) => item.category === category),
+    [articles, category],
   );
-} 
+}

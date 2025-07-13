@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 
 const PriceBar = () => {
   const prices = [
@@ -14,7 +13,7 @@ const PriceBar = () => {
     { name: "BIST", value: "8,247", symbol: "📈", change: "+1.8%" },
     { name: "NASDAQ", value: "16,832", symbol: "📊", change: "+0.9%" },
     { name: "S&P 500", value: "4,967", symbol: "📈", change: "+0.4%" },
-    { name: "DAX", value: "17,245", symbol: "📊", change: "-0.2%" }
+    { name: "DAX", value: "17,245", symbol: "📊", change: "-0.2%" },
   ];
 
   // Create enough duplicates for seamless infinite scroll
@@ -35,19 +34,26 @@ const PriceBar = () => {
               </p>
             </div>
           </div>
-          
+
           <div className="relative overflow-hidden bg-black/20 dark:bg-black/30 rounded backdrop-blur-sm">
             <div className="flex items-center space-x-3 sm:space-x-4 price-slider py-1.5 sm:py-2 px-3 sm:px-4">
               {infinitePrices.map((price, index) => (
-                <div key={index} className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap min-w-fit">
-                  <span className="text-white/90 font-medium">{price.symbol} {price.name}:</span>
+                <div
+                  key={index}
+                  className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap min-w-fit"
+                >
+                  <span className="text-white/90 font-medium">
+                    {price.symbol} {price.name}:
+                  </span>
                   <span className="font-bold text-white">{price.value}</span>
                   <span className="text-white satoshi-symbol"></span>
-                  <span className={`text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${
-                    price.change.startsWith('+') 
-                      ? 'text-green-100 bg-green-600/80' 
-                      : 'text-red-100 bg-red-600/80'
-                  }`}>
+                  <span
+                    className={`text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${
+                      price.change.startsWith("+")
+                        ? "text-green-100 bg-green-600/80"
+                        : "text-red-100 bg-red-600/80"
+                    }`}
+                  >
                     {price.change}
                   </span>
                 </div>
@@ -56,12 +62,15 @@ const PriceBar = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='7' cy='7' r='7'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='7' cy='7' r='7'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
     </div>
   );

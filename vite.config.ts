@@ -1,7 +1,7 @@
 import path from "path";
 
-import tailwindcss from "@tailwindcss/vite";
 import { reactRouter } from "@react-router/dev/vite";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 // https://vitejs.dev/config/
@@ -17,14 +17,7 @@ export default defineConfig(() => ({
     },
   },
   optimizeDeps: {
-    exclude: [
-      "nostr-tools"
-    ],
-    include: [
-      "react",
-      "react-dom",
-      "react-router",
-      "react-router-dom"
-    ]
+    exclude: ["nostr-tools"],
+    include: ["react", "react-dom", "react-router", "react-router-dom"],
   },
 }));
