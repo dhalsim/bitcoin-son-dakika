@@ -231,7 +231,7 @@ export default function AdminPanel() {
     try {
       const authHeader = await createNIP98Auth('POST', `${window.location.origin}/functions/admin`);
       
-      const response = await fetch('/functions/admin', {
+      const response = await fetch('/admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -315,7 +315,7 @@ export default function AdminPanel() {
     try {
       const authHeader = await createNIP98Auth('POST', `${window.location.origin}/functions/deploy-trigger`);
       
-      const response = await fetch('/functions/deploy-trigger', {
+      const response = await fetch('/deploy-trigger', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
