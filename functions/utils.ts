@@ -175,6 +175,9 @@ export async function fetchNostrUserSets(context: AuthContext): Promise<{adminUs
   const pool = new SimplePool();
   const events: NostrEvent[] = [];
 
+  console.log('Fetching user sets from relays:', ADMIN_RELAYS);
+  console.log('Looking for events from:', MASTER_ADMIN_PUBKEY);
+
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error('Timeout fetching user sets'));
@@ -195,9 +198,11 @@ export async function fetchNostrUserSets(context: AuthContext): Promise<{adminUs
       }
     ], {
       onevent(evt) {
+        console.log('Found event:', evt);
         events.push(evt);
       },
       onclose() {
+        console.log('Subscription closed, found', events.length, 'events');
         clearTimeout(timeout);
         resolve();
       }
@@ -210,6 +215,7 @@ export async function fetchNostrUserSets(context: AuthContext): Promise<{adminUs
   // Parse the events to extract pubkeys from sets
   events.forEach(event => {
     const dTag = event.tags.find(tag => tag[0] === 'd')?.[1];
+    console.log('Processing event with d tag:', dTag);
     
     if (dTag === 'admin-users') {
       // Extract pubkeys from 'p' tags
@@ -217,15 +223,18 @@ export async function fetchNostrUserSets(context: AuthContext): Promise<{adminUs
         .filter(tag => tag[0] === 'p')
         .map(tag => tag[1])
         .filter(Boolean);
+      console.log('Found admin users:', adminUsers);
     } else if (dTag === 'editor-users') {
       // Extract pubkeys from 'p' tags  
       editorUsers = event.tags
         .filter(tag => tag[0] === 'p')
         .map(tag => tag[1])
         .filter(Boolean);
+      console.log('Found editor users:', editorUsers);
     }
   });
 
+  console.log('Final result - adminUsers:', adminUsers, 'editorUsers:', editorUsers);
   return { adminUsers, editorUsers };
 }
 
