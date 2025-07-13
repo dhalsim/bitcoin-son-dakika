@@ -33,12 +33,26 @@ export async function onRequestPost(context: Context) {
       return ErrorResponse(undefined, authResult.error, authResult.status);
     }
 
-    // Simple test response with auth info
+    const requestBody = await context.request.json();
+    const { action } = requestBody;
+    
+    // Get user sets for debugging
+    const { adminUsers, editorUsers } = await fetchNostrUserSets(context);
+    
+    // Test response with action info and debug data
     return SuccessResponse({
-      message: 'POST handler is working with auth',
+      message: 'POST handler is working with auth and action parsing',
       timestamp: Date.now(),
       pubkey: authResult.pubkey,
-      roles: authResult.roles
+      roles: authResult.roles,
+      action: action,
+      requestBody: requestBody,
+      debug: {
+        adminUsers: adminUsers,
+        editorUsers: editorUsers,
+        isInAdminList: adminUsers.includes(authResult.pubkey),
+        isInEditorList: editorUsers.includes(authResult.pubkey)
+      }
     });
   } catch (error) {
     console.error('Admin POST error:', error);
