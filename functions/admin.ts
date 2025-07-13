@@ -26,32 +26,11 @@ export async function onRequestGet(context: Context) {
 
 export async function onRequestPost(context: Context) {
   try {
-    // MANDATORY AUTHENTICATION for all POST actions
-    const authResult = await authenticateNIP98(context.request, context);
-    
-    if (!authResult.success) {
-      return ErrorResponse(undefined, authResult.error, authResult.status);
-    }
-
-    const requestBody = await context.request.json();
-    const { action } = requestBody;
-    
-    switch(action) {
-      case 'add-editor-pubkey':
-        return handleAddEditor(context, authResult, requestBody);
-      case 'remove-editor-pubkey':
-        return handleRemoveEditor(context, authResult, requestBody);
-      case 'add-admin-pubkey':
-        return handleAddAdmin(context, authResult, requestBody);
-      case 'remove-admin-pubkey':
-        return handleRemoveAdmin(context, authResult, requestBody);
-      case 'add-article':
-        return handleAddArticle(context, authResult, requestBody);
-      case 'add-news':
-        return handleAddNews(context, authResult, requestBody);
-      default:
-        return ErrorResponse(undefined, 'Invalid action', 400);
-    }
+    // Simple test response
+    return SuccessResponse({
+      message: 'POST handler is working',
+      timestamp: Date.now()
+    });
   } catch (error) {
     console.error('Admin POST error:', error);
     return ErrorResponse(error);
@@ -59,9 +38,6 @@ export async function onRequestPost(context: Context) {
 }
 
 // Handle CORS preflight requests
-export async function onRequestOptions() {
-  return CorsResponse();
-}
 
 // Helper functions for user management
 type AuthResult = {
