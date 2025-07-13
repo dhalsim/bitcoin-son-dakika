@@ -26,10 +26,19 @@ export async function onRequestGet(context: Context) {
 
 export async function onRequestPost(context: Context) {
   try {
-    // Simple test response
+    // MANDATORY AUTHENTICATION for all POST actions
+    const authResult = await authenticateNIP98(context.request, context);
+    
+    if (!authResult.success) {
+      return ErrorResponse(undefined, authResult.error, authResult.status);
+    }
+
+    // Simple test response with auth info
     return SuccessResponse({
-      message: 'POST handler is working',
-      timestamp: Date.now()
+      message: 'POST handler is working with auth',
+      timestamp: Date.now(),
+      pubkey: authResult.pubkey,
+      roles: authResult.roles
     });
   } catch (error) {
     console.error('Admin POST error:', error);
