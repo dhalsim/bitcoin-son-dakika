@@ -1,4 +1,4 @@
-import { verifyEvent, Event } from 'nostr-tools/pure';
+import { verifyEvent, SimplePool, NostrEvent } from 'nostr-tools';
 import { AuthContext, AuthResult, UserRole } from './types';
 
 export function ErrorResponse(e?: Error, message?: string, status: number = 500) {
@@ -40,7 +40,7 @@ export function CorsResponse() {
 }
 
 /**
- * Authenticate using NIP-98 Nostr auth scheme and check roles
+ * Authenticate using NIP-98 Nostr auth scheme and check roles from Nostr events
  */
 export async function authenticateNIP98(
   request: Request, 
@@ -60,7 +60,7 @@ export async function authenticateNIP98(
     }
 
     // Parse the Nostr event from the Authorization header
-    let nostrEvent: Event;
+    let nostrEvent: NostrEvent;
     try {
       const eventBase64 = authHeader.slice(6); // Remove 'Nostr ' prefix
       const eventJson = atob(eventBase64);
@@ -107,13 +107,13 @@ export async function authenticateNIP98(
       };
     }
 
-    // Get user roles
-    const userRoles = await getUserRoles(context, nostrEvent.pubkey);
+    // Get user roles from Nostr events
+    const userRoles = await getUserRolesFromNostr(context, nostrEvent.pubkey);
     
     if (userRoles.length === 0) {
       return {
         success: false,
-        error: 'Unauthorized pubkey',
+        error: 'Unauthorized pubkey - not in any permission set',
         status: 403
       };
     }
@@ -146,115 +146,87 @@ export async function authenticateNIP98(
 }
 
 /**
- * Get user roles from KV storage
+ * Get user roles from Nostr events
  */
-export async function getUserRoles(context: AuthContext, pubkey: string): Promise<UserRole[]> {
+export async function getUserRolesFromNostr(context: AuthContext, pubkey: string): Promise<UserRole[]> {
   const roles: UserRole[] = [];
 
   try {
-    // Check admin role
-    const adminPubkeys = await context.env.EDITOR_PUBKEYS.get('admin_pubkeys');
-    if (adminPubkeys) {
-      const adminArray: string[] = JSON.parse(adminPubkeys);
-      if (adminArray.includes(pubkey)) {
-        roles.push('admin');
-      }
+    const { adminUsers, editorUsers } = await fetchNostrUserSets(context);
+
+    if (adminUsers.includes(pubkey)) {
+      roles.push('admin');
     }
 
-    // Check editor role (legacy support for 'pubkeys' key)
-    const editorPubkeys = await context.env.EDITOR_PUBKEYS.get('editor_pubkeys') || 
-                          await context.env.EDITOR_PUBKEYS.get('pubkeys');
-    if (editorPubkeys) {
-      const editorArray: string[] = JSON.parse(editorPubkeys);
-      if (editorArray.includes(pubkey)) {
-        roles.push('editor');
-      }
+    if (editorUsers.includes(pubkey)) {
+      roles.push('editor');
     }
   } catch (error) {
-    console.error('Error getting user roles:', error);
+    console.error('Error getting user roles from Nostr:', error);
   }
 
   return roles;
 }
 
 /**
- * Add a user to a specific role
+ * Fetch admin and editor user sets from Nostr relays
  */
-export async function addUserToRole(
-  context: AuthContext, 
-  pubkey: string, 
-  role: UserRole
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const key = role === 'admin' ? 'admin_pubkeys' : 'editor_pubkeys';
-    const currentUsers = await context.env.EDITOR_PUBKEYS.get(key);
-    let usersArray: string[] = [];
+export async function fetchNostrUserSets(context: AuthContext): Promise<{adminUsers: string[], editorUsers: string[]}> {
+  const pool = new SimplePool();
+  const events: NostrEvent[] = [];
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('Timeout fetching user sets'));
+    }, 10000);
+
+    pool.subscribeManyEose(ADMIN_RELAYS, [
+      {
+        authors: [MASTER_ADMIN_PUBKEY],
+        kinds: [30000],
+        "#d": ["admin-users"],
+        limit: 1
+      },
+      {
+        authors: [MASTER_ADMIN_PUBKEY],
+        kinds: [30000], 
+        "#d": ["editor-users"],
+        limit: 1
+      }
+    ], {
+      onevent(evt) {
+        events.push(evt);
+      },
+      onclose() {
+        clearTimeout(timeout);
+        resolve();
+      }
+    });
+  });
+
+  let adminUsers: string[] = [];
+  let editorUsers: string[] = [];
+  
+  // Parse the events to extract pubkeys from sets
+  events.forEach(event => {
+    const dTag = event.tags.find(tag => tag[0] === 'd')?.[1];
     
-    if (currentUsers) {
-      usersArray = JSON.parse(currentUsers);
+    if (dTag === 'admin-users') {
+      // Extract pubkeys from 'p' tags
+      adminUsers = event.tags
+        .filter(tag => tag[0] === 'p')
+        .map(tag => tag[1])
+        .filter(Boolean);
+    } else if (dTag === 'editor-users') {
+      // Extract pubkeys from 'p' tags  
+      editorUsers = event.tags
+        .filter(tag => tag[0] === 'p')
+        .map(tag => tag[1])
+        .filter(Boolean);
     }
+  });
 
-    if (!usersArray.includes(pubkey)) {
-      usersArray.push(pubkey);
-      await context.env.EDITOR_PUBKEYS.put(key, JSON.stringify(usersArray));
-    }
-
-    return { success: true };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Remove a user from a specific role
- */
-export async function removeUserFromRole(
-  context: AuthContext, 
-  pubkey: string, 
-  role: UserRole
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const key = role === 'admin' ? 'admin_pubkeys' : 'editor_pubkeys';
-    const currentUsers = await context.env.EDITOR_PUBKEYS.get(key);
-    let usersArray: string[] = [];
-    
-    if (currentUsers) {
-      usersArray = JSON.parse(currentUsers);
-    }
-
-    const index = usersArray.indexOf(pubkey);
-    if (index > -1) {
-      usersArray.splice(index, 1);
-      await context.env.EDITOR_PUBKEYS.put(key, JSON.stringify(usersArray));
-    }
-
-    return { success: true };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Get all users by role
- */
-export async function getUsersByRole(
-  context: AuthContext, 
-  role: UserRole
-): Promise<string[]> {
-  try {
-    const key = role === 'admin' ? 'admin_pubkeys' : 'editor_pubkeys';
-    const users = await context.env.EDITOR_PUBKEYS.get(key);
-    return users ? JSON.parse(users) : [];
-  } catch (error) {
-    console.error('Error getting users by role:', error);
-    return [];
-  }
+  return { adminUsers, editorUsers };
 }
 
 export const ADMIN_RELAYS = [
@@ -270,4 +242,3 @@ export const ADMIN_RELAYS = [
 ];
 
 export const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
-

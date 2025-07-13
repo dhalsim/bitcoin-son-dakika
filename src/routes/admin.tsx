@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Shield, Key, AlertCircle, Loader2, Users, UserPlus, Trash2, RefreshCw, Plus, FileText } from 'lucide-react';
+import { Shield, Key, AlertCircle, Loader2, Users, UserPlus, Trash2, RefreshCw, Plus, FileText, Rocket } from 'lucide-react';
 import { NostrEvent, SimplePool } from "nostr-tools";
 
 const ADMIN_RELAYS = [
@@ -72,6 +72,8 @@ export default function AdminPanel() {
   const [userInfo, setUserInfo] = useState<UserInfo>({});
   const [error, setError] = useState<string>('');
   const [actionLoading, setActionLoading] = useState<string>('');
+  const [deployLoading, setDeployLoading] = useState(false);
+  const [deploySuccess, setDeploySuccess] = useState(false);
 
   // Form states
   const [newAdminPubkey, setNewAdminPubkey] = useState('');
@@ -305,6 +307,37 @@ export default function AdminPanel() {
     setArticleRelay('');
   };
 
+  const triggerDeploy = async () => {
+    setDeployLoading(true);
+    setError('');
+    setDeploySuccess(false);
+
+    try {
+      const authHeader = await createNIP98Auth('POST', `${window.location.origin}/functions/deploy-trigger`);
+      
+      const response = await fetch('/functions/deploy-trigger', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
+        }
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setDeploySuccess(true);
+        setTimeout(() => setDeploySuccess(false), 5000); // Clear success message after 5 seconds
+      } else {
+        setError(result.error || 'Deploy tetikleme başarısız');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Deploy tetikleme hatası');
+    } finally {
+      setDeployLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center">
@@ -407,7 +440,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Content Curation - Show if user is editor */}
-        {userIsEditor && (
+        {(userIsEditor || userIsAdmin) && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* News Management */}
@@ -585,6 +618,50 @@ export default function AdminPanel() {
                 </CardContent>
               </Card>
             </div>
+            
+            {/* Deploy Trigger Section */}
+            {userIsAdmin && (
+              <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Rocket className="h-5 w-5" />
+                  Site Deployment
+                </CardTitle>
+                <CardDescription>
+                  Değişiklikleri canlı siteye uygula
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {deploySuccess && (
+                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+                    <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <AlertDescription className="text-green-800 dark:text-green-300">
+                      Deploy başarıyla tetiklendi! Site birkaç dakika içinde güncellenecek.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                <div className="flex items-center gap-4">
+                  <Button 
+                    onClick={triggerDeploy}
+                    disabled={deployLoading}
+                    className="flex items-center gap-2"
+                  >
+                    {deployLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Rocket className="h-4 w-4" />
+                    )}
+                    {deployLoading ? 'Deploy Tetikleniyor...' : 'Deploy Tetikle'}
+                  </Button>
+                  
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Son değişiklikleri canlı siteye uygular
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            )}
           </div>
         )}
 

@@ -1,4 +1,4 @@
-import { ErrorResponse, SuccessResponse, CorsResponse, ADMIN_RELAYS, MASTER_ADMIN_PUBKEY } from './utils';
+import { ErrorResponse, SuccessResponse, CorsResponse, ADMIN_RELAYS, MASTER_ADMIN_PUBKEY, authenticateNIP98, fetchNostrUserSets } from './utils';
 import { Context } from './types';
 import { SimplePool, finalizeEvent, nip19, NostrEvent, verifyEvent } from 'nostr-tools';
 import { hexToBytes } from '@noble/hashes/utils';
@@ -19,6 +19,7 @@ export async function onRequestGet(context: Context) {
 
   } catch (error) {
     console.error('Admin GET error:', error);
+    
     return ErrorResponse(error);
   }
 }
@@ -26,7 +27,7 @@ export async function onRequestGet(context: Context) {
 export async function onRequestPost(context: Context) {
   try {
     // MANDATORY AUTHENTICATION for all POST actions
-    const authResult = await authenticateNIP98Request(context);
+    const authResult = await authenticateNIP98(context.request, context);
     
     if (!authResult.success) {
       return ErrorResponse(undefined, authResult.error, authResult.status);
@@ -62,7 +63,7 @@ export async function onRequestOptions() {
   return CorsResponse();
 }
 
-// Helper functions for authentication and user management
+// Helper functions for user management
 type AuthResult = {
   success: true;
   pubkey: string;
@@ -71,180 +72,6 @@ type AuthResult = {
   success: false;
   error: string;
   status: number;
-}
-
-/**
- * Authenticate NIP-98 request and check user roles from Nostr events
- */
-async function authenticateNIP98Request(context: Context): Promise<AuthResult> {
-  try {
-    // Get the Authorization header
-    const authHeader = context.request.headers.get('Authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Nostr ')) {
-      return {
-        success: false,
-        error: 'Missing or invalid Authorization header',
-        status: 401
-      };
-    }
-
-    // Parse the Nostr event from the Authorization header
-    let nostrEvent: NostrEvent;
-    try {
-      const eventBase64 = authHeader.slice(6); // Remove 'Nostr ' prefix
-      const eventJson = atob(eventBase64);
-      nostrEvent = JSON.parse(eventJson);
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Invalid Nostr event format',
-        status: 401
-      };
-    }
-
-    // Verify the event signature
-    if (!verifyEvent(nostrEvent)) {
-      return {
-        success: false,
-        error: 'Invalid event signature',
-        status: 401
-      };
-    }
-
-    // Verify the event is for the correct method (NIP-98)
-    const urlTag = nostrEvent.tags.find(tag => tag[0] === 'u');
-    const methodTag = nostrEvent.tags.find(tag => tag[0] === 'method');
-    
-    if (!urlTag || !methodTag) {
-      return {
-        success: false,
-        error: 'Invalid NIP-98 auth event - missing required tags',
-        status: 401
-      };
-    }
-
-    // Check if the event is not too old (within 10 minutes)
-    const eventTime = nostrEvent.created_at;
-    const currentTime = Math.floor(Date.now() / 1000);
-    const maxAge = 10 * 60; // 10 minutes
-
-    if (currentTime - eventTime > maxAge) {
-      return {
-        success: false,
-        error: 'Auth event is too old',
-        status: 401
-      };
-    }
-
-    // Get user roles from Nostr sets
-    const userRoles = await getUserRolesFromNostr(context, nostrEvent.pubkey);
-    
-    if (userRoles.length === 0) {
-      return {
-        success: false,
-        error: 'Unauthorized pubkey - not in any permission set',
-        status: 403
-      };
-    }
-
-    return {
-      success: true,
-      pubkey: nostrEvent.pubkey,
-      roles: userRoles
-    };
-
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Authentication error',
-      status: 500
-    };
-  }
-}
-
-/**
- * Fetch admin and editor user sets from Nostr relays
- */
-async function fetchNostrUserSets(context: Context): Promise<{adminUsers: string[], editorUsers: string[]}> {
-  const pool = new SimplePool();
-  const events: NostrEvent[] = [];
-
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error('Timeout fetching user sets'));
-    }, 10000);
-
-    pool.subscribeManyEose(ADMIN_RELAYS, [
-      {
-        authors: [MASTER_ADMIN_PUBKEY],
-        kinds: [30000],
-        "#d": ["admin-users"],
-        limit: 1
-      },
-      {
-        authors: [MASTER_ADMIN_PUBKEY],
-        kinds: [30000], 
-        "#d": ["editor-users"],
-        limit: 1
-      }
-    ], {
-      onevent(evt) {
-        events.push(evt);
-      },
-      onclose() {
-        clearTimeout(timeout);
-        resolve();
-      }
-    });
-  });
-
-  let adminUsers: string[] = [];
-  let editorUsers: string[] = [];
-  
-  // Parse the events to extract pubkeys from sets
-  events.forEach(event => {
-    const dTag = event.tags.find(tag => tag[0] === 'd')?.[1];
-    
-    if (dTag === 'admin-users') {
-      // Extract pubkeys from 'p' tags
-      adminUsers = event.tags
-        .filter(tag => tag[0] === 'p')
-        .map(tag => tag[1])
-        .filter(Boolean);
-    } else if (dTag === 'editor-users') {
-      // Extract pubkeys from 'p' tags  
-      editorUsers = event.tags
-        .filter(tag => tag[0] === 'p')
-        .map(tag => tag[1])
-        .filter(Boolean);
-    }
-  });
-
-  return { adminUsers, editorUsers };
-}
-
-/**
- * Get user roles from Nostr events
- */
-async function getUserRolesFromNostr(context: Context, pubkey: string): Promise<string[]> {
-  const roles: string[] = [];
-
-  try {
-    const { adminUsers, editorUsers } = await fetchNostrUserSets(context);
-
-    if (adminUsers.includes(pubkey)) {
-      roles.push('admin');
-    }
-
-    if (editorUsers.includes(pubkey)) {
-      roles.push('editor');
-    }
-  } catch (error) {
-    console.error('Error getting user roles from Nostr:', error);
-  }
-
-  return roles;
 }
 
 // Action handlers

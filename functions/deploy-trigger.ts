@@ -4,7 +4,7 @@ import { Context } from './types';
 export async function onRequestPost(context: Context) {
   try {
     // Authenticate user - require editor role for deployment
-    const authResult = await authenticateNIP98(context.request, context, ['editor']);
+    const authResult = await authenticateNIP98(context.request, context, ['editor', 'admin']);
     
     if (!authResult.success) {
       return ErrorResponse(undefined, authResult.error, authResult.status);
