@@ -179,40 +179,15 @@ export async function getUserRolesFromNostr(context: AuthContext, pubkey: string
  */
 export async function fetchNostrUserSets(context: AuthContext): Promise<{adminUsers: string[], editorUsers: string[]}> {
   const pool = new SimplePool();
-  const events: NostrEvent[] = [];
 
   console.log('Fetching user sets from relays:', ADMIN_RELAYS);
   console.log('Looking for events from:', MASTER_ADMIN_PUBKEY);
 
-  await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error('Timeout fetching user sets'));
-    }, 10000);
-
-    pool.subscribeManyEose(ADMIN_RELAYS, [
-      {
-        authors: [MASTER_ADMIN_PUBKEY],
-        kinds: [30000],
-        "#d": ["admin-users"],
-        limit: 1
-      },
-      {
-        authors: [MASTER_ADMIN_PUBKEY],
-        kinds: [30000], 
-        "#d": ["editor-users"],
-        limit: 1
-      }
-    ], {
-      onevent(evt) {
-        console.log('Found event:', evt);
-        events.push(evt);
-      },
-      onclose() {
-        console.log('Subscription closed, found', events.length, 'events');
-        clearTimeout(timeout);
-        resolve();
-      }
-    });
+  const events: NostrEvent[] = await pool.querySync(ADMIN_RELAYS, {
+    authors: [MASTER_ADMIN_PUBKEY],
+    kinds: [30000],
+    "#d": ["admin-users", "editor-users"],
+    limit: 1
   });
 
   let adminUsers: string[] = [];
@@ -241,6 +216,7 @@ export async function fetchNostrUserSets(context: AuthContext): Promise<{adminUs
   });
 
   console.log('Final result - adminUsers:', adminUsers, 'editorUsers:', editorUsers);
+  
   return { adminUsers, editorUsers };
 }
 
