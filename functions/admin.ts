@@ -36,24 +36,22 @@ export async function onRequestPost(context: Context) {
     const requestBody = await context.request.json();
     const { action } = requestBody;
     
-    // Get user sets for debugging
-    const { adminUsers, editorUsers } = await fetchNostrUserSets(context);
-    
-    // Test response with action info and debug data
-    return SuccessResponse({
-      message: 'POST handler is working with auth and action parsing',
-      timestamp: Date.now(),
-      pubkey: authResult.pubkey,
-      roles: authResult.roles,
-      action: action,
-      requestBody: requestBody,
-      debug: {
-        adminUsers: adminUsers,
-        editorUsers: editorUsers,
-        isInAdminList: adminUsers.includes(authResult.pubkey),
-        isInEditorList: editorUsers.includes(authResult.pubkey)
-      }
-    });
+    switch(action) {
+      case 'add-editor-pubkey':
+        return handleAddEditor(context, authResult, requestBody);
+      case 'remove-editor-pubkey':
+        return handleRemoveEditor(context, authResult, requestBody);
+      case 'add-admin-pubkey':
+        return handleAddAdmin(context, authResult, requestBody);
+      case 'remove-admin-pubkey':
+        return handleRemoveAdmin(context, authResult, requestBody);
+      case 'add-article':
+        return handleAddArticle(context, authResult, requestBody);
+      case 'add-news':
+        return handleAddNews(context, authResult, requestBody);
+      default:
+        return ErrorResponse(undefined, 'Invalid action', 400);
+    }
   } catch (error) {
     console.error('Admin POST error:', error);
     return ErrorResponse(error);

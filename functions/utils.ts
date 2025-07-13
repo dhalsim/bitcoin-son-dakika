@@ -152,15 +152,21 @@ export async function getUserRolesFromNostr(context: AuthContext, pubkey: string
   const roles: UserRole[] = [];
 
   try {
+    console.log('getUserRolesFromNostr called for pubkey:', pubkey);
     const { adminUsers, editorUsers } = await fetchNostrUserSets(context);
+    console.log('fetchNostrUserSets returned:', { adminUsers, editorUsers });
 
     if (adminUsers.includes(pubkey)) {
+      console.log('Adding admin role for pubkey:', pubkey);
       roles.push('admin');
     }
 
     if (editorUsers.includes(pubkey)) {
+      console.log('Adding editor role for pubkey:', pubkey);
       roles.push('editor');
     }
+
+    console.log('Final roles for pubkey', pubkey, ':', roles);
   } catch (error) {
     console.error('Error getting user roles from Nostr:', error);
   }
