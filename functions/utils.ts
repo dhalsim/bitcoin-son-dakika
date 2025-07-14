@@ -4,6 +4,7 @@ import { verifyEvent, SimplePool } from "nostr-tools";
 import type { AuthResult, UserRole } from "./types";
 
 export const pool = new SimplePool();
+pool.trackRelays = true;
 
 export function ErrorResponse(
   e?: Error,
@@ -247,15 +248,15 @@ export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
 }
 
 export const ADMIN_RELAYS = [
-  "wss://relay.nostr.band",
-  "wss://relay.damus.io",
+  // "wss://relay.nostr.band",
+  // "wss://relay.damus.io",
   "wss://nos.lol",
-  "wss://relay.primal.net",
-  "wss://relay.snort.social",
-  "wss://nostr.bitcoiner.social",
-  "wss://nostr.mom",
-  "wss://nostr-pub.wellorder.net",
-  "wss://relay.nos.social",
+  // "wss://relay.primal.net",
+  // "wss://relay.snort.social",
+  // "wss://nostr.bitcoiner.social",
+  // "wss://nostr.mom",
+  // "wss://nostr-pub.wellorder.net",
+  // "wss://relay.nos.social",
 ];
 
 export const MASTER_ADMIN_PUBKEY =
@@ -282,6 +283,14 @@ const fetchSets = async (): Promise<NostrEvent[]> => {
       {
         onevent(evt) {
           events.push(evt);
+
+          // console.log(evt.tags.find((tag) => tag[0] === "d")?.[1]);
+
+          // const set = pool.seenOn.get(evt.id);
+
+          // if (set) {
+          //   console.log(Array.from(set).map((r) => r.url));
+          // }
 
           if (events.length === 4) {
             resolve(events);
