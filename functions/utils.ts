@@ -3,6 +3,8 @@ import { verifyEvent, SimplePool } from "nostr-tools";
 
 import type { AuthResult, UserRole } from "./types";
 
+export const pool = new SimplePool();
+
 export function ErrorResponse(
   e?: Error,
   message?: string,
@@ -186,12 +188,12 @@ export async function getUserRolesFromNostr(
   return roles;
 }
 
-export type Article = {
+export type ArticleTag = {
   aTag: string;
   relay: string;
 };
 
-export type News = {
+export type NewsTag = {
   eTag: string;
   relay: string;
 };
@@ -199,16 +201,14 @@ export type News = {
 export type FetchNostrSetsResult = {
   adminUsers: string[];
   editorUsers: string[];
-  articles: Article[];
-  news: News[];
+  articles: ArticleTag[];
+  news: NewsTag[];
 };
 
 /**
  * Fetch admin and editor user sets from Nostr relays
  */
 export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
-  const pool = new SimplePool();
-
   const events: NostrEvent[] = await pool.querySync(ADMIN_RELAYS, {
     authors: [MASTER_ADMIN_PUBKEY],
     kinds: [30000, 30004],
@@ -217,8 +217,8 @@ export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
 
   let adminUsers: string[] = [];
   let editorUsers: string[] = [];
-  let articles: Article[] = [];
-  let news: News[] = [];
+  let articles: ArticleTag[] = [];
+  let news: NewsTag[] = [];
 
   console.log("Number of Events:", events.length);
 

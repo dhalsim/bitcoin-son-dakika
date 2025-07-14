@@ -1,8 +1,9 @@
 import { hexToBytes } from "@noble/hashes/utils";
 import type { NostrEvent } from "nostr-tools";
-import { SimplePool, finalizeEvent, nip19 } from "nostr-tools";
+import { finalizeEvent, nip19 } from "nostr-tools";
 
 import type { Context } from "./types";
+import type { ArticleTag, NewsTag } from "./utils";
 import {
   ErrorResponse,
   SuccessResponse,
@@ -10,9 +11,8 @@ import {
   MASTER_ADMIN_PUBKEY,
   authenticateNIP98,
   fetchNostrSets,
+  pool,
 } from "./utils";
-
-const pool = new SimplePool();
 
 export async function onRequestGet() {
   try {
@@ -36,9 +36,7 @@ export async function onRequestPost(context: Context) {
   const masterAdminPrivateKey = context.env.MASTER_ADMIN_PRIVATEKEY;
 
   try {
-    const { adminUsers, editorUsers, news, articles } = await fetchNostrSets();
-
-    console.log({ adminUsers, editorUsers, news, articles });
+    const { adminUsers, editorUsers, articles, news } = await fetchNostrSets();
 
     // MANDATORY AUTHENTICATION for all POST actions
     const authResult = await authenticateNIP98(
@@ -73,7 +71,12 @@ export async function onRequestPost(context: Context) {
           requestBody,
         );
       case "add-article":
-        return handleAddArticle(masterAdminPrivateKey, authResult, requestBody);
+        return handleAddArticle(
+          masterAdminPrivateKey,
+          authResult,
+          articles,
+          requestBody,
+        );
       case "add-news":
         return handleAddNews(
           masterAdminPrivateKey,
@@ -242,7 +245,7 @@ async function handleRemoveAdmin(
 async function handleAddNews(
   masterAdminPrivateKey: string,
   authResult: AuthResult,
-  currentNews: { eTag: string; relay: string }[],
+  currentNews: NewsTag[],
   data: AddNewsPayload,
 ) {
   // Type guard to ensure success
@@ -263,6 +266,7 @@ async function handleAddNews(
   }
 
   const { eventId, relay } = data;
+
   if (!eventId) {
     return ErrorResponse(undefined, "Event ID is required", 400);
   }
@@ -277,6 +281,7 @@ async function handleAddNews(
 async function handleAddArticle(
   masterAdminPrivateKey: string,
   authResult: AuthResult,
+  currentArticles: ArticleTag[],
   data: AddArticlePayload,
 ) {
   // Type guard to ensure success
@@ -335,7 +340,12 @@ async function handleAddArticle(
     );
   }
 
-  return await addArticle(masterAdminPrivateKey, aTag, relayTag);
+  return await addArticle(
+    masterAdminPrivateKey,
+    currentArticles,
+    aTag,
+    relayTag,
+  );
 }
 
 /**
@@ -357,7 +367,6 @@ async function updateNostrUserSet(
     }
 
     // Fetch current user set
-    const pool = new SimplePool();
     const currentEvents: NostrEvent[] = [];
 
     await new Promise<void>((resolve, reject) => {
@@ -432,13 +441,9 @@ async function updateNostrUserSet(
       hexToBytes(masterPrivateKey),
     );
 
-    const publishPool = new SimplePool();
-    const publishPromises = ADMIN_RELAYS.map((relay) =>
-      publishPool.publish([relay], signedEvent),
+    const result = await Promise.allSettled(
+      pool.publish(ADMIN_RELAYS, signedEvent),
     );
-
-    await Promise.allSettled(publishPromises);
-    publishPool.close(ADMIN_RELAYS);
 
     const actionText = operation === "add" ? "added to" : "removed from";
 
@@ -448,6 +453,7 @@ async function updateNostrUserSet(
       setType,
       operation,
       totalUsers: updatedUsers.length,
+      result,
     });
   } catch (error) {
     console.error(`Error updating ${setType}:`, error);
@@ -498,6 +504,7 @@ async function addNews(
 
 async function addArticle(
   masterPrivateKey: string,
+  currentArticles: ArticleTag[],
   aTag: string,
   relayTag: string,
 ) {
@@ -509,22 +516,14 @@ async function addArticle(
     );
   }
 
-  const currentEvent: NostrEvent | null = await pool.get(ADMIN_RELAYS, {
-    authors: [MASTER_ADMIN_PUBKEY],
-    kinds: [30004],
-    "#d": ["articles"],
-    limit: 1,
-  });
-
-  if (!currentEvent) {
-    return ErrorResponse(undefined, "Article set not found", 404);
-  }
-
   const eventTemplate = {
     kind: 30004,
     pubkey: MASTER_ADMIN_PUBKEY,
     created_at: Math.floor(Date.now() / 1000),
-    tags: [...currentEvent.tags, ["a", aTag, relayTag]],
+    tags: [
+      ...currentArticles.map((a) => ["a", a.aTag, a.relay]),
+      ["a", aTag, relayTag],
+    ],
     content: "",
   };
 
