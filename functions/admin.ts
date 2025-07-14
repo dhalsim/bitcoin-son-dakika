@@ -33,6 +33,8 @@ export async function onRequestGet() {
 }
 
 export async function onRequestPost(context: Context) {
+  const masterAdminPrivateKey = context.env.MASTER_ADMIN_PRIVATEKEY;
+
   try {
     const { adminUsers, editorUsers, news } = await fetchNostrSets();
     // MANDATORY AUTHENTICATION for all POST actions
@@ -52,17 +54,30 @@ export async function onRequestPost(context: Context) {
 
     switch (action) {
       case "add-editor-pubkey":
-        return handleAddEditor(context, authResult, requestBody);
+        return handleAddEditor(masterAdminPrivateKey, authResult, requestBody);
       case "remove-editor-pubkey":
-        return handleRemoveEditor(context, authResult, requestBody);
+        return handleRemoveEditor(
+          masterAdminPrivateKey,
+          authResult,
+          requestBody,
+        );
       case "add-admin-pubkey":
-        return handleAddAdmin(context, authResult, requestBody);
+        return handleAddAdmin(masterAdminPrivateKey, authResult, requestBody);
       case "remove-admin-pubkey":
-        return handleRemoveAdmin(context, authResult, requestBody);
+        return handleRemoveAdmin(
+          masterAdminPrivateKey,
+          authResult,
+          requestBody,
+        );
       case "add-article":
-        return handleAddArticle(context, authResult, requestBody);
+        return handleAddArticle(masterAdminPrivateKey, authResult, requestBody);
       case "add-news":
-        return handleAddNews(context, authResult, news, requestBody);
+        return handleAddNews(
+          masterAdminPrivateKey,
+          authResult,
+          news,
+          requestBody,
+        );
       default:
         return ErrorResponse(undefined, "Invalid action", 400);
     }
@@ -104,7 +119,7 @@ type AddNewsPayload = {
 };
 
 async function handleAddEditor(
-  context: Context,
+  masterAdminPrivateKey: string,
   authResult: AuthResult,
   data: AdminActionData,
 ) {
@@ -123,11 +138,16 @@ async function handleAddEditor(
     return ErrorResponse(undefined, "Pubkey is required", 400);
   }
 
-  return await updateNostrUserSet(context, "editor-users", pubkey, "add");
+  return await updateNostrUserSet(
+    masterAdminPrivateKey,
+    "editor-users",
+    pubkey,
+    "add",
+  );
 }
 
 async function handleRemoveEditor(
-  context: Context,
+  masterAdminPrivateKey: string,
   authResult: AuthResult,
   data: AdminActionData,
 ) {
@@ -146,11 +166,16 @@ async function handleRemoveEditor(
     return ErrorResponse(undefined, "Pubkey is required", 400);
   }
 
-  return await updateNostrUserSet(context, "editor-users", pubkey, "remove");
+  return await updateNostrUserSet(
+    masterAdminPrivateKey,
+    "editor-users",
+    pubkey,
+    "remove",
+  );
 }
 
 async function handleAddAdmin(
-  context: Context,
+  masterAdminPrivateKey: string,
   authResult: AuthResult,
   data: AdminActionData,
 ) {
@@ -169,11 +194,16 @@ async function handleAddAdmin(
     return ErrorResponse(undefined, "Pubkey is required", 400);
   }
 
-  return await updateNostrUserSet(context, "admin-users", pubkey, "add");
+  return await updateNostrUserSet(
+    masterAdminPrivateKey,
+    "admin-users",
+    pubkey,
+    "add",
+  );
 }
 
 async function handleRemoveAdmin(
-  context: Context,
+  masterAdminPrivateKey: string,
   authResult: AuthResult,
   data: AdminActionData,
 ) {
@@ -198,11 +228,16 @@ async function handleRemoveAdmin(
     return ErrorResponse(undefined, "Cannot remove the last admin", 400);
   }
 
-  return await updateNostrUserSet(context, "admin-users", pubkey, "remove");
+  return await updateNostrUserSet(
+    masterAdminPrivateKey,
+    "admin-users",
+    pubkey,
+    "remove",
+  );
 }
 
 async function handleAddNews(
-  context: Context,
+  masterAdminPrivateKey: string,
   authResult: AuthResult,
   currentNews: { eTag: string; relay: string }[],
   data: AddNewsPayload,
@@ -233,11 +268,11 @@ async function handleAddNews(
     return ErrorResponse(undefined, "Relay is required", 400);
   }
 
-  return await addNews(context, currentNews, data);
+  return await addNews(masterAdminPrivateKey, currentNews, data);
 }
 
 async function handleAddArticle(
-  context: Context,
+  masterAdminPrivateKey: string,
   authResult: AuthResult,
   data: AddArticlePayload,
 ) {
@@ -297,20 +332,19 @@ async function handleAddArticle(
     );
   }
 
-  return await addArticle(context, aTag, relayTag);
+  return await addArticle(masterAdminPrivateKey, aTag, relayTag);
 }
 
 /**
  * Update Nostr user set (admin-users or editor-users)
  */
 async function updateNostrUserSet(
-  context: Context,
+  masterPrivateKey: string,
   setType: "admin-users" | "editor-users",
   pubkey: string,
   operation: "add" | "remove",
 ): Promise<Response> {
   try {
-    const masterPrivateKey = context.env.MASTER_ADMIN_PRIVATEKEY;
     if (!masterPrivateKey) {
       return ErrorResponse(
         undefined,
@@ -420,12 +454,10 @@ async function updateNostrUserSet(
 }
 
 async function addNews(
-  context: Context,
+  masterPrivateKey: string,
   currentNews: { eTag: string; relay: string }[],
   data: AddNewsPayload,
 ) {
-  const masterPrivateKey = context.env.MASTER_ADMIN_PRIVATEKEY;
-
   if (!masterPrivateKey) {
     return ErrorResponse(
       undefined,
@@ -461,9 +493,11 @@ async function addNews(
   });
 }
 
-async function addArticle(context: Context, aTag: string, relayTag: string) {
-  const masterPrivateKey = context.env.MASTER_ADMIN_PRIVATEKEY;
-
+async function addArticle(
+  masterPrivateKey: string,
+  aTag: string,
+  relayTag: string,
+) {
   if (!masterPrivateKey) {
     return ErrorResponse(
       undefined,

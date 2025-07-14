@@ -201,15 +201,17 @@ export async function getUserRolesFromNostr(
   return roles;
 }
 
-/**
- * Fetch admin and editor user sets from Nostr relays
- */
-export async function fetchNostrSets(): Promise<{
+export type FetchNostrSetsResult = {
   adminUsers: string[];
   editorUsers: string[];
   articles: { aTag: string; relay: string }[];
   news: { eTag: string; relay: string }[];
-}> {
+};
+
+/**
+ * Fetch admin and editor user sets from Nostr relays
+ */
+export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
   const pool = new SimplePool();
 
   console.log("Fetching user sets from relays:", ADMIN_RELAYS);
@@ -217,9 +219,8 @@ export async function fetchNostrSets(): Promise<{
 
   const events: NostrEvent[] = await pool.querySync(ADMIN_RELAYS, {
     authors: [MASTER_ADMIN_PUBKEY],
-    kinds: [30000],
+    kinds: [30000, 30004],
     "#d": ["admin-users", "editor-users", "articles", "news"],
-    limit: 1,
   });
 
   let adminUsers: string[] = [];
@@ -227,10 +228,11 @@ export async function fetchNostrSets(): Promise<{
   let articles: { aTag: string; relay: string }[] = [];
   let news: { eTag: string; relay: string }[] = [];
 
+  console.log("Events:", events);
+
   // Parse the events to extract pubkeys from sets
   events.forEach((event) => {
     const dTag = event.tags.find((tag) => tag[0] === "d")?.[1];
-    console.log("Processing event with d tag:", dTag);
 
     if (dTag === "admin-users") {
       // Extract pubkeys from 'p' tags
@@ -238,37 +240,24 @@ export async function fetchNostrSets(): Promise<{
         .filter((tag) => tag[0] === "p")
         .map((tag) => tag[1])
         .filter(Boolean);
-      console.log("Found admin users:", adminUsers);
     } else if (dTag === "editor-users") {
       // Extract pubkeys from 'p' tags
       editorUsers = event.tags
         .filter((tag) => tag[0] === "p")
         .map((tag) => tag[1])
         .filter(Boolean);
-      console.log("Found editor users:", editorUsers);
     } else if (dTag === "articles") {
       articles = event.tags
         .filter((tag) => tag[0] === "a")
         .map((tag) => ({ aTag: tag[1], relay: tag[2] }));
-      console.log("Found articles:", articles);
     } else if (dTag === "news") {
       news = event.tags
         .filter((tag) => tag[0] === "e")
         .map((tag) => ({ eTag: tag[1], relay: tag[2] }));
-      console.log("Found news:", news);
     }
   });
 
-  console.log(
-    "Final result - adminUsers:",
-    adminUsers,
-    "editorUsers:",
-    editorUsers,
-    "articles:",
-    articles,
-    "news:",
-    news,
-  );
+  console.log(adminUsers, editorUsers, articles, news);
 
   return { adminUsers, editorUsers, articles, news };
 }
