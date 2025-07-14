@@ -450,11 +450,14 @@ async function addNews(
     hexToBytes(masterPrivateKey),
   );
 
-  pool.publish(ADMIN_RELAYS, signedEvent);
+  const result = await Promise.allSettled(
+    pool.publish(ADMIN_RELAYS, signedEvent),
+  );
 
   return SuccessResponse({
     message: "News added successfully",
     eventId: signedEvent.id,
+    result,
   });
 }
 
