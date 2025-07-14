@@ -496,12 +496,15 @@ async function addArticle(context: Context, aTag: string, relayTag: string) {
     hexToBytes(masterPrivateKey),
   );
 
-  pool.publish(ADMIN_RELAYS, signedEvent);
+  const result = await Promise.allSettled(
+    pool.publish(ADMIN_RELAYS, signedEvent),
+  );
 
   return SuccessResponse({
     message: "Article added successfully",
     aTag,
     relayTag,
     eventId: signedEvent.id,
+    result,
   });
 }
