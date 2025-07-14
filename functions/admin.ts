@@ -36,7 +36,10 @@ export async function onRequestPost(context: Context) {
   const masterAdminPrivateKey = context.env.MASTER_ADMIN_PRIVATEKEY;
 
   try {
-    const { adminUsers, editorUsers, news } = await fetchNostrSets();
+    const { adminUsers, editorUsers, news, articles } = await fetchNostrSets();
+
+    console.log({ adminUsers, editorUsers, news, articles });
+
     // MANDATORY AUTHENTICATION for all POST actions
     const authResult = await authenticateNIP98(
       context.request.headers.get("Authorization") || "",

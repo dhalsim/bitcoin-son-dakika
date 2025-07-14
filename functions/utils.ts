@@ -170,33 +170,37 @@ export async function getUserRolesFromNostr(
   const roles: UserRole[] = [];
 
   try {
-    console.log("getUserRolesFromNostr called for pubkey:", pubkey);
-
     if (adminUsers.includes(pubkey)) {
-      console.log("Adding admin role for pubkey:", pubkey);
-
       roles.push("admin");
     }
 
     if (editorUsers.includes(pubkey)) {
-      console.log("Adding editor role for pubkey:", pubkey);
-
       roles.push("editor");
     }
-
-    console.log("Final roles for pubkey", pubkey, ":", roles);
   } catch (error) {
     console.error("Error getting user roles from Nostr:", error);
+
+    throw error;
   }
 
   return roles;
 }
 
+export type Article = {
+  aTag: string;
+  relay: string;
+};
+
+export type News = {
+  eTag: string;
+  relay: string;
+};
+
 export type FetchNostrSetsResult = {
   adminUsers: string[];
   editorUsers: string[];
-  articles: { aTag: string; relay: string }[];
-  news: { eTag: string; relay: string }[];
+  articles: Article[];
+  news: News[];
 };
 
 /**
@@ -204,9 +208,6 @@ export type FetchNostrSetsResult = {
  */
 export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
   const pool = new SimplePool();
-
-  console.log("Fetching user sets from relays:", ADMIN_RELAYS);
-  console.log("Looking for events from:", MASTER_ADMIN_PUBKEY);
 
   const events: NostrEvent[] = await pool.querySync(ADMIN_RELAYS, {
     authors: [MASTER_ADMIN_PUBKEY],
@@ -216,10 +217,10 @@ export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
 
   let adminUsers: string[] = [];
   let editorUsers: string[] = [];
-  let articles: { aTag: string; relay: string }[] = [];
-  let news: { eTag: string; relay: string }[] = [];
+  let articles: Article[] = [];
+  let news: News[] = [];
 
-  console.log("Events:", events);
+  console.log("Number of Events:", events.length);
 
   // Parse the events to extract pubkeys from sets
   events.forEach((event) => {
@@ -247,8 +248,6 @@ export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
         .map((tag) => ({ eTag: tag[1], relay: tag[2] }));
     }
   });
-
-  console.log(adminUsers, editorUsers, articles, news);
 
   return { adminUsers, editorUsers, articles, news };
 }
