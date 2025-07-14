@@ -135,7 +135,7 @@ export async function authenticateNIP98(
     );
 
     if (!hasRequiredRole) {
-      const requiredRolesString = requiredRoles.join(", ");
+      const requiredRolesString = requiredRoles.join(" or ");
       const userRolesString = userRoles.join(", ");
 
       return {
