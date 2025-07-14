@@ -60,15 +60,13 @@ export function CorsResponse() {
  * Authenticate using NIP-98 Nostr auth scheme and check roles from Nostr events
  */
 export async function authenticateNIP98(
-  request: Request,
+  authHeader: string,
   adminUsers: string[],
   editorUsers: string[],
-  requiredRoles?: UserRole[],
+  requiredRoles: UserRole[],
 ): Promise<AuthResult> {
   try {
     // Get the Authorization header
-    const authHeader = request.headers.get("Authorization");
-
     if (!authHeader || !authHeader.startsWith("Nostr ")) {
       return {
         success: false,
@@ -132,26 +130,19 @@ export async function authenticateNIP98(
       editorUsers,
     );
 
-    if (userRoles.length === 0) {
+    const hasRequiredRole = requiredRoles.some((role) =>
+      userRoles.includes(role),
+    );
+
+    if (!hasRequiredRole) {
+      const requiredRolesString = requiredRoles.join(", ");
+      const userRolesString = userRoles.join(", ");
+
       return {
         success: false,
-        error: "Unauthorized pubkey - not in any permission set",
+        error: `Insufficient permissions. Required: ${requiredRolesString}. Has: ${userRolesString}`,
         status: 403,
       };
-    }
-
-    // Check if user has required roles
-    if (requiredRoles && requiredRoles.length > 0) {
-      const hasRequiredRole = requiredRoles.some((role) =>
-        userRoles.includes(role),
-      );
-      if (!hasRequiredRole) {
-        return {
-          success: false,
-          error: `Insufficient permissions. Required: ${requiredRoles.join(" or ")}`,
-          status: 403,
-        };
-      }
     }
 
     return {

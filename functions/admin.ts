@@ -39,7 +39,7 @@ export async function onRequestPost(context: Context) {
     const { adminUsers, editorUsers, news } = await fetchNostrSets();
     // MANDATORY AUTHENTICATION for all POST actions
     const authResult = await authenticateNIP98(
-      context.request,
+      context.request.headers.get("Authorization") || "",
       adminUsers,
       editorUsers,
       ["editor", "admin"],
