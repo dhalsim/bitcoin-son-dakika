@@ -262,7 +262,7 @@ export const MASTER_ADMIN_PUBKEY =
   "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
 const fetchSets = async (): Promise<NostrEvent[]> => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const events: NostrEvent[] = [];
 
     pool.subscribeManyEose(
@@ -286,9 +286,6 @@ const fetchSets = async (): Promise<NostrEvent[]> => {
           if (events.length === 4) {
             resolve(events);
           }
-        },
-        onclose(reasons) {
-          reject(new Error("Fetch sets closed: " + reasons.join(", ")));
         },
       },
     );
