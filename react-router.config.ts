@@ -1,4 +1,5 @@
 import type { Config } from "@react-router/dev/config";
+import { vercelPreset } from "@vercel/react-router/vite";
 
 import { fetchSSGData, type SSGData } from "./src/lib/ssg-data";
 
@@ -12,6 +13,8 @@ export default {
   appDirectory: "src",
 
   ssr: false,
+
+  presets: [vercelPreset()],
 
   // Use route discovery for client-side routing
   routeDiscovery: {
