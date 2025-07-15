@@ -8,7 +8,5 @@
     }
   },
   "env": {
-    "MASTER_ADMIN_PRIVATEKEY": "@master-admin-privatekey",
-    "VERCEL_DEPLOY_HOOK_URL": "@vercel-deploy-hook-url"
   }
 } 
