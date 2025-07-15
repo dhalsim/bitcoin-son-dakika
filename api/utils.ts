@@ -293,6 +293,8 @@ const fetchSets = async (setName: string): Promise<NostrEvent[]> => {
       "#d": [setName],
     });
 
+    console.log({ setName, eventsFromRelays });
+
     if (eventsFromRelays) {
       events.push(eventsFromRelays);
     }
