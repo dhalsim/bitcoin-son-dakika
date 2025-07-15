@@ -1,6 +1,7 @@
 import { hexToBytes } from "@noble/hashes/utils";
 import { finalizeEvent, nip19, Relay } from "nostr-tools";
 
+import type { AuthResult } from "./types";
 import type { ArticleTag, NewsTag } from "./utils";
 // TODO: use pool instead of relays
 import {
@@ -115,17 +116,6 @@ export async function OPTIONS() {
 }
 
 // Helper functions for user management
-type AuthResult =
-  | {
-      success: true;
-      pubkey: string;
-      roles: string[];
-    }
-  | {
-      success: false;
-      error: string;
-      status: number;
-    };
 
 // Action handlers
 interface AdminActionData {

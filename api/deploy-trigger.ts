@@ -23,12 +23,8 @@ export async function POST(request: Request) {
     }
 
     // All checks passed, trigger the deployment
-    // For Vercel, you'll need to set up a deployment webhook
-    const deployHookUrl = process.env.VERCEL_DEPLOY_HOOK_URL;
-
-    if (!deployHookUrl) {
-      return ErrorResponse(undefined, "Deploy hook URL not configured", 500);
-    }
+    const deployHookUrl =
+      "https://api.vercel.com/v1/integrations/deploy/prj_MgZWqBPzwJKbsZCUAy4r45WVHVpK/6EPluOk49C";
 
     const response = await fetch(deployHookUrl, {
       method: "POST",
