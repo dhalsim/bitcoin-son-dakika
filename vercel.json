@@ -1,10 +1,10 @@
 {
   "functions": {
     "api/admin.ts": {
-      "runtime": "edge"
+      "runtime": "@vercel/edge@1.0.0"
     },
     "api/deploy-trigger.ts": {
-      "runtime": "edge"
+      "runtime": "@vercel/edge@1.0.0"
     }
   },
   "env": {
