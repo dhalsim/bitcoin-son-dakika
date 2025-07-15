@@ -1,10 +1,9 @@
 import type { NostrEvent } from "nostr-tools";
 import { verifyEvent, SimplePool } from "nostr-tools";
 
-import type { AuthResult, UserRole } from "./types";
+import type { AuthResult, UserRole } from "./types.js";
 
 export const pool = new SimplePool();
-pool.trackRelays = true;
 
 // Nostr relays for admin operations
 export const ADMIN_RELAYS = [

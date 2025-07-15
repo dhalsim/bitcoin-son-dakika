@@ -3,7 +3,7 @@ import {
   ErrorResponse,
   SuccessResponse,
   fetchNostrSets,
-} from "./utils";
+} from "./utils.js";
 
 // Vercel Edge Function handler for POST requests
 export async function POST(request: Request) {
