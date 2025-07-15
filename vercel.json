@@ -1,9 +1,8 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "build/client",
   "functions": {
-    "api/admin.ts": {
-      "runtime": "@vercel/edge@1.0.0"
-    },
-    "api/deploy-trigger.ts": {
+    "api/**/*.ts": {
       "runtime": "@vercel/edge@1.0.0"
     }
   },
