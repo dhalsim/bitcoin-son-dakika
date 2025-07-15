@@ -267,10 +267,10 @@ export default function AdminPanel() {
     try {
       const authHeader = await createNIP98Auth(
         "POST",
-        `${window.location.origin}/functions/admin`,
+        `${window.location.origin}/api/admin`,
       );
 
-      const response = await fetch("/admin", {
+      const response = await fetch("/api/admin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
