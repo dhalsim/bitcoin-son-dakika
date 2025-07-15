@@ -225,47 +225,38 @@ export type FetchNostrSetsResult = {
 /**
  * Fetch Nostr sets for admin users, editor users, articles, and news
  */
-// TODO: Try with subscription
 export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
   try {
-    const adminUsers: string[] = [];
-    const editorUsers: string[] = [];
-    const articles: ArticleTag[] = [];
-    const news: NewsTag[] = [];
+    let adminUsers: string[] = [];
+    let editorUsers: string[] = [];
+    let articles: ArticleTag[] = [];
+    let news: NewsTag[] = [];
 
     // Fetch admin users set
-    const adminUsersEvents = await fetchSets("admin-users");
-    for (const event of adminUsersEvents) {
-      if (event.content) {
-        adminUsers.push(event.content);
+    const eventResults: EventResult[] = await fetchSets();
+    for (const resultItem of eventResults) {
+      if (resultItem.set === "admin-users") {
+        adminUsers = resultItem.event.tags
+          .filter((tag) => tag[0] === "p" && tag[1])
+          .map((tag) => tag[1]);
       }
-    }
 
-    // Fetch editor users set
-    const editorUsersEvents = await fetchSets("editor-users");
-    for (const event of editorUsersEvents) {
-      if (event.content) {
-        editorUsers.push(event.content);
+      if (resultItem.set === "editor-users") {
+        editorUsers = resultItem.event.tags
+          .filter((tag) => tag[0] === "p" && tag[1])
+          .map((tag) => tag[1]);
       }
-    }
 
-    // Fetch articles set
-    const articlesEvents = await fetchSets("articles");
-    for (const event of articlesEvents) {
-      const aTag = event.tags.find((tag) => tag[0] === "a")?.[1];
-      const relayTag = event.tags.find((tag) => tag[0] === "relay")?.[1];
-      if (aTag && relayTag) {
-        articles.push({ aTag, relay: relayTag });
+      if (resultItem.set === "articles") {
+        articles = resultItem.event.tags
+          .filter((tag) => tag[0] === "a" && tag[1] && tag[2])
+          .map((tag) => ({ aTag: tag[1], relay: tag[2] }));
       }
-    }
 
-    // Fetch news set
-    const newsEvents = await fetchSets("news");
-    for (const event of newsEvents) {
-      const eTag = event.tags.find((tag) => tag[0] === "e")?.[1];
-      const relayTag = event.tags.find((tag) => tag[0] === "relay")?.[1];
-      if (eTag && relayTag) {
-        news.push({ eTag, relay: relayTag });
+      if (resultItem.set === "news") {
+        news = resultItem.event.tags
+          .filter((tag) => tag[0] === "e" && tag[1] && tag[2])
+          .map((tag) => ({ eTag: tag[1], relay: tag[2] }));
       }
     }
 
@@ -282,25 +273,37 @@ export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
   }
 }
 
-const fetchSets = async (setName: string): Promise<NostrEvent[]> => {
-  const events: NostrEvent[] = [];
+type EventSet = "admin-users" | "editor-users" | "articles" | "news";
 
-  try {
+type EventResult = {
+  event: NostrEvent;
+  set: EventSet;
+};
+
+const fetchSets = async (): Promise<EventResult[]> => {
+  return new Promise((resolve) => {
+    const events: EventResult[] = [];
+
     // Use the correct nostr-tools API for fetching events
-    const eventsFromRelays = await pool.get(ADMIN_RELAYS, {
-      kinds: [30000],
-      authors: [MASTER_ADMIN_PUBKEY],
-      "#d": [setName],
-    });
+    pool.subscribeEose(
+      ADMIN_RELAYS,
+      {
+        kinds: [30000, 30004],
+        authors: [MASTER_ADMIN_PUBKEY],
+        "#d": ["admin-users", "editor-users", "articles", "news"],
+      },
+      {
+        onevent(evt) {
+          events.push({
+            event: evt,
+            set: evt.tags.find((tag) => tag[0] === "d")?.[1] as EventSet,
+          });
 
-    console.log({ setName, eventsFromRelays });
-
-    if (eventsFromRelays) {
-      events.push(eventsFromRelays);
-    }
-  } catch (error) {
-    console.error(`Error fetching ${setName} set:`, error);
-  }
-
-  return events;
+          if (events.length === 4) {
+            resolve(events);
+          }
+        },
+      },
+    );
+  });
 };
