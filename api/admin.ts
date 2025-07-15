@@ -1,8 +1,8 @@
 import { hexToBytes } from "@noble/hashes/utils";
 import { finalizeEvent, nip19, Relay } from "nostr-tools";
 
-import type { AuthResult } from "./types";
-import type { ArticleTag, NewsTag } from "./utils";
+import type { AuthResult } from "./types.js";
+import type { ArticleTag, NewsTag } from "./utils.js";
 // TODO: use pool instead of relays
 import {
   ErrorResponse,
@@ -11,7 +11,7 @@ import {
   authenticateNIP98,
   fetchNostrSets,
   // pool,
-} from "./utils";
+} from "./utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET(_request: Request) {
