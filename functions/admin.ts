@@ -500,12 +500,14 @@ async function addNews(
         .publish(signedEvent)
         .then((result) => {
           return {
+            status: "success",
             relay,
             result,
           };
         })
         .catch((error) => {
           return {
+            status: "error",
             relay,
             error,
           };

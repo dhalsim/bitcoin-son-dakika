@@ -13,7 +13,7 @@ export async function onRequestPost(context: Context) {
 
     // Authenticate user - require editor role for deployment
     const authResult = await authenticateNIP98(
-      context.request,
+      context.request.headers.get("Authorization") ?? "",
       adminUsers,
       editorUsers,
       ["editor", "admin"],
