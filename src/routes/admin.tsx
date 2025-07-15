@@ -234,7 +234,7 @@ export default function AdminPanel() {
       ].filter(Boolean);
 
       setUserInfo({ pubkey, roles });
-    } catch {
+    } catch (err) {
       console.log("Nostr extension not available or user declined");
     }
   };
@@ -396,10 +396,10 @@ export default function AdminPanel() {
     try {
       const authHeader = await createNIP98Auth(
         "POST",
-        `${window.location.origin}/functions/deploy-trigger`,
+        `${window.location.origin}/api/deploy-trigger`,
       );
 
-      const response = await fetch("/deploy-trigger", {
+      const response = await fetch("/api/deploy-trigger", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
