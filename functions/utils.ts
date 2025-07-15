@@ -250,15 +250,15 @@ export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
 }
 
 export const ADMIN_RELAYS = [
-  // "wss://relay.nostr.band",
-  // "wss://relay.damus.io",
+  "wss://relay.nostr.band",
+  "wss://relay.damus.io",
   "wss://nos.lol",
-  // "wss://relay.primal.net",
-  // "wss://relay.snort.social",
-  // "wss://nostr.bitcoiner.social",
-  // "wss://nostr.mom",
-  // "wss://nostr-pub.wellorder.net",
-  // "wss://relay.nos.social",
+  "wss://relay.primal.net",
+  "wss://relay.snort.social",
+  "wss://nostr.bitcoiner.social",
+  "wss://nostr.mom",
+  "wss://nostr-pub.wellorder.net",
+  "wss://relay.nos.social",
 ];
 
 export const MASTER_ADMIN_PUBKEY =

@@ -1,6 +1,6 @@
 import { hexToBytes } from "@noble/hashes/utils";
 import type { NostrEvent } from "nostr-tools";
-import { finalizeEvent, nip19 } from "nostr-tools";
+import { finalizeEvent, nip19, Relay } from "nostr-tools";
 
 import type { Context } from "./types";
 import type { ArticleTag, NewsTag } from "./utils";
@@ -492,7 +492,25 @@ async function addNews(
   );
 
   const result = await Promise.allSettled(
-    pool.publish(ADMIN_RELAYS, signedEvent),
+    ADMIN_RELAYS.map((relay) => {
+      const r = new Relay(relay);
+      r.connect();
+
+      return r
+        .publish(signedEvent)
+        .then((result) => {
+          return {
+            relay,
+            result,
+          };
+        })
+        .catch((error) => {
+          return {
+            relay,
+            error,
+          };
+        });
+    }),
   );
 
   return SuccessResponse({
