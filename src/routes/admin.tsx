@@ -234,7 +234,7 @@ export default function AdminPanel() {
       ].filter(Boolean);
 
       setUserInfo({ pubkey, roles });
-    } catch (err) {
+    } catch {
       console.log("Nostr extension not available or user declined");
     }
   };

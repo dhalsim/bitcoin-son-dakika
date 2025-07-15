@@ -9,6 +9,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "noImplicitAny": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,
