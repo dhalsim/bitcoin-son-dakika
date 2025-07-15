@@ -212,6 +212,8 @@ export type FetchNostrSetsResult = {
 export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
   const events: NostrEvent[] = await fetchSets();
 
+  console.log(events.length);
+
   let adminUsers: string[] = [];
   let editorUsers: string[] = [];
   let articles: ArticleTag[] = [];
@@ -263,40 +265,26 @@ export const MASTER_ADMIN_PUBKEY =
   "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
 const fetchSets = async (): Promise<NostrEvent[]> => {
-  return new Promise((resolve) => {
-    const events: NostrEvent[] = [];
-
-    pool.subscribeManyEose(
-      ADMIN_RELAYS,
-      [
-        {
-          authors: [MASTER_ADMIN_PUBKEY],
-          kinds: [30000],
-          "#d": ["admin-users", "editor-users"],
-        },
-        {
-          authors: [MASTER_ADMIN_PUBKEY],
-          kinds: [30004],
-          "#d": ["articles", "news"],
-        },
-      ],
-      {
-        onevent(evt) {
-          events.push(evt);
-
-          // console.log(evt.tags.find((tag) => tag[0] === "d")?.[1]);
-
-          // const set = pool.seenOn.get(evt.id);
-
-          // if (set) {
-          //   console.log(Array.from(set).map((r) => r.url));
-          // }
-
-          if (events.length === 4) {
-            resolve(events);
-          }
-        },
-      },
-    );
-  });
+  return Promise.all([
+    pool.get(ADMIN_RELAYS, {
+      authors: [MASTER_ADMIN_PUBKEY],
+      kinds: [30000],
+      "#d": ["admin-users"],
+    }),
+    pool.get(ADMIN_RELAYS, {
+      authors: [MASTER_ADMIN_PUBKEY],
+      kinds: [30000],
+      "#d": ["editor-users"],
+    }),
+    pool.get(ADMIN_RELAYS, {
+      authors: [MASTER_ADMIN_PUBKEY],
+      kinds: [30004],
+      "#d": ["articles"],
+    }),
+    pool.get(ADMIN_RELAYS, {
+      authors: [MASTER_ADMIN_PUBKEY],
+      kinds: [30004],
+      "#d": ["news"],
+    }),
+  ]).then((e) => e.filter((e) => e !== null));
 };
