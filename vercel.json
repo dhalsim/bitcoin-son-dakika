@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "api/admin.ts": {
+      "runtime": "edge"
+    },
+    "api/deploy-trigger.ts": {
+      "runtime": "edge"
+    }
+  },
+  "env": {
+    "MASTER_ADMIN_PRIVATEKEY": "@master-admin-privatekey",
+    "VERCEL_DEPLOY_HOOK_URL": "@vercel-deploy-hook-url"
+  }
+} 
