@@ -1,16 +1,15 @@
 import { hexToBytes } from "@noble/hashes/utils";
-import { finalizeEvent, nip19, Relay } from "nostr-tools";
+import { finalizeEvent, nip19 } from "nostr-tools";
 
 import type { AuthResult } from "./types.js";
 import type { ArticleTag, NewsTag } from "./utils.js";
-// TODO: use pool instead of relays
 import {
   ErrorResponse,
   SuccessResponse,
   ADMIN_RELAYS,
   authenticateNIP98,
   fetchNostrSets,
-  // pool,
+  pool,
 } from "./utils.js";
 
 // Vercel Edge Function handler for GET requests
@@ -46,6 +45,8 @@ export async function POST(request: Request) {
 
   try {
     const { adminUsers, editorUsers, articles, news } = await fetchNostrSets();
+
+    console.log({ adminUsers, editorUsers, articles, news });
 
     // MANDATORY AUTHENTICATION for all POST actions
     const authResult = await authenticateNIP98(
@@ -352,26 +353,21 @@ async function updateNostrUserSet(
     };
 
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
+    const publishPromises = pool.publish(ADMIN_RELAYS, event);
 
     // Publish to relays
-    const publishPromises = ADMIN_RELAYS.map(async (relayUrl) => {
-      try {
-        const relay = new Relay(relayUrl);
-        await relay.connect();
-        await relay.publish(event);
-        relay.close();
-      } catch (error) {
-        console.error(`Failed to publish to ${relayUrl}:`, error);
-      }
-    });
-
-    await Promise.allSettled(publishPromises);
+    const result = (await Promise.allSettled(publishPromises)).map((r) =>
+      r.status === "fulfilled"
+        ? { value: r.value, seenOn: pool.seenOn.get(r.value) }
+        : r.reason,
+    );
 
     return SuccessResponse({
       message: `${operation === "add" ? "Added" : "Removed"} ${pubkey} from ${setType}`,
       operation,
       pubkey,
       setType,
+      result,
     });
   } catch (error) {
     console.error("Error updating Nostr user set:", error);
@@ -400,7 +396,7 @@ async function addNews(
 
     // Create the event
     const eventTemplate = {
-      kind: 30000,
+      kind: 30004,
       created_at: currentTime,
       tags: [
         ["d", "news"],
@@ -411,25 +407,19 @@ async function addNews(
     };
 
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
+    const publishPromises = pool.publish(ADMIN_RELAYS, event);
 
-    // Publish to relays
-    const publishPromises = ADMIN_RELAYS.map(async (relayUrl) => {
-      try {
-        const relay = new Relay(relayUrl);
-        await relay.connect();
-        await relay.publish(event);
-        relay.close();
-      } catch (error) {
-        console.error(`Failed to publish to ${relayUrl}:`, error);
-      }
-    });
-
-    await Promise.allSettled(publishPromises);
+    const result = (await Promise.allSettled(publishPromises)).map((r) =>
+      r.status === "fulfilled"
+        ? { value: r.value, seenOn: pool.seenOn.get(r.value) }
+        : r.reason,
+    );
 
     return SuccessResponse({
       message: "News added successfully",
       eventId: data.eventId,
       relay: data.relay,
+      result,
     });
   } catch (error) {
     console.error("Error adding news:", error);
@@ -459,7 +449,7 @@ async function addArticle(
 
     // Create the event
     const eventTemplate = {
-      kind: 30000,
+      kind: 30004,
       created_at: currentTime,
       tags: [
         ["d", "articles"],
@@ -470,25 +460,19 @@ async function addArticle(
     };
 
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
+    const publishPromises = pool.publish(ADMIN_RELAYS, event);
 
-    // Publish to relays
-    const publishPromises = ADMIN_RELAYS.map(async (relayUrl) => {
-      try {
-        const relay = new Relay(relayUrl);
-        await relay.connect();
-        await relay.publish(event);
-        relay.close();
-      } catch (error) {
-        console.error(`Failed to publish to ${relayUrl}:`, error);
-      }
-    });
-
-    await Promise.allSettled(publishPromises);
+    const result = (await Promise.allSettled(publishPromises)).map((r) =>
+      r.status === "fulfilled"
+        ? { value: r.value, seenOn: pool.seenOn.get(r.value) }
+        : r.reason,
+    );
 
     return SuccessResponse({
       message: "Article added successfully",
       aTag,
       relay: relayTag,
+      result,
     });
   } catch (error) {
     console.error("Error adding article:", error);
