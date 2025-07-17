@@ -464,10 +464,10 @@ function publishToRelays(
 ): Promise<PublishToRelaysResult[]> {
   return Promise.all(
     relayStrings.map(async (r) => {
-      const relay = new Relay(r);
-      await relay.connect();
-
       try {
+        const relay = new Relay(r);
+
+        await relay.connect();
         await relay.publish(event);
 
         return { success: true, relay: r };
