@@ -46,21 +46,24 @@ export function ErrorResponse(
   );
 }
 
+export type PublishToRelaysResult =
+  | { success: true; relay: string }
+  | { success: false; relay: string; error: string };
+
 export type PublishEventResponse = {
   message: string;
-  result: {
-    value: string;
-    seenOn: string[];
-  }[];
+  result: PublishToRelaysResult[];
 };
 
 export function PublishEventResponse(
-  data: PublishEventResponse,
+  response: PublishEventResponse,
+  data: Record<string, unknown> = {},
   status: number = 200,
 ) {
   return new Response(
     JSON.stringify({
-      success: true,
+      success: response.result.some((r) => r.success),
+      ...response,
       ...data,
     }),
     {

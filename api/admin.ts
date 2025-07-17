@@ -1,15 +1,15 @@
 import { hexToBytes } from "@noble/hashes/utils";
-import { finalizeEvent, nip19 } from "nostr-tools";
+import type { NostrEvent } from "nostr-tools";
+import { finalizeEvent, nip19, Relay } from "nostr-tools";
 
 import type { AuthResult } from "./types.js";
-import type { ArticleTag, NewsTag } from "./utils.js";
+import type { ArticleTag, NewsTag, PublishToRelaysResult } from "./utils.js";
 import {
   ErrorResponse,
   SuccessResponse,
   ADMIN_RELAYS,
   authenticateNIP98,
   fetchNostrSets,
-  pool,
   PublishEventResponse,
 } from "./utils.js";
 
@@ -76,47 +76,59 @@ export async function POST(request: Request) {
 
     switch (action) {
       case "add-editor-pubkey":
-        return handleAddEditor(masterAdminPrivateKey, authResult, requestBody);
+        return handleAddEditor(
+          masterAdminPrivateKey,
+          editorUsers,
+          authResult,
+          requestBody,
+        );
       case "remove-editor-pubkey":
         return handleRemoveEditor(
           masterAdminPrivateKey,
+          editorUsers,
           authResult,
           requestBody,
         );
       case "add-admin-pubkey":
-        return handleAddAdmin(masterAdminPrivateKey, authResult, requestBody);
+        return handleAddAdmin(
+          masterAdminPrivateKey,
+          adminUsers,
+          authResult,
+          requestBody,
+        );
       case "remove-admin-pubkey":
         return handleRemoveAdmin(
           masterAdminPrivateKey,
+          adminUsers,
           authResult,
           requestBody,
         );
       case "add-article":
         return handleAddArticle(
           masterAdminPrivateKey,
-          authResult,
           articles,
+          authResult,
           requestBody,
         );
       case "add-news":
         return handleAddNews(
           masterAdminPrivateKey,
-          authResult,
           news,
+          authResult,
           requestBody,
         );
       case "remove-news":
         return handleRemoveNews(
           masterAdminPrivateKey,
-          authResult,
           news,
+          authResult,
           requestBody,
         );
       case "remove-article":
         return handleRemoveArticle(
           masterAdminPrivateKey,
-          authResult,
           articles,
+          authResult,
           requestBody,
         );
       default:
@@ -154,6 +166,12 @@ type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }
   | { action: "add-article"; type: "a"; a: string; relay: string };
 
+type AddArticleResolvedPayload = {
+  aTag: string;
+  relayTag: string;
+  action: "add-article";
+};
+
 type AddNewsPayload = {
   action: "add-news";
   eventId: string;
@@ -174,6 +192,7 @@ type RemoveArticlePayload = {
 
 async function handleAddEditor(
   masterAdminPrivateKey: string,
+  editorUsers: string[],
   authResult: AuthResult,
   data: AdminActionData,
 ) {
@@ -195,6 +214,7 @@ async function handleAddEditor(
   return await updateNostrUserSet(
     masterAdminPrivateKey,
     "editor-users",
+    editorUsers,
     pubkey,
     "add",
   );
@@ -202,6 +222,7 @@ async function handleAddEditor(
 
 async function handleRemoveEditor(
   masterAdminPrivateKey: string,
+  editorUsers: string[],
   authResult: AuthResult,
   data: AdminActionData,
 ) {
@@ -223,6 +244,7 @@ async function handleRemoveEditor(
   return await updateNostrUserSet(
     masterAdminPrivateKey,
     "editor-users",
+    editorUsers,
     pubkey,
     "remove",
   );
@@ -230,6 +252,7 @@ async function handleRemoveEditor(
 
 async function handleAddAdmin(
   masterAdminPrivateKey: string,
+  currentAdminUsers: string[],
   authResult: AuthResult,
   data: AdminActionData,
 ) {
@@ -251,6 +274,7 @@ async function handleAddAdmin(
   return await updateNostrUserSet(
     masterAdminPrivateKey,
     "admin-users",
+    currentAdminUsers,
     pubkey,
     "add",
   );
@@ -258,6 +282,7 @@ async function handleAddAdmin(
 
 async function handleRemoveAdmin(
   masterAdminPrivateKey: string,
+  currentAdminUsers: string[],
   authResult: AuthResult,
   data: AdminActionData,
 ) {
@@ -279,6 +304,7 @@ async function handleRemoveAdmin(
   return await updateNostrUserSet(
     masterAdminPrivateKey,
     "admin-users",
+    currentAdminUsers,
     pubkey,
     "remove",
   );
@@ -286,8 +312,8 @@ async function handleRemoveAdmin(
 
 async function handleAddNews(
   masterAdminPrivateKey: string,
-  authResult: AuthResult,
   currentNews: NewsTag[],
+  authResult: AuthResult,
   data: AddNewsPayload,
 ) {
   // Type guard to ensure success
@@ -308,6 +334,7 @@ async function handleAddNews(
   }
 
   const { eventId, relay } = data;
+
   if (!eventId || !relay) {
     return ErrorResponse(undefined, "Event ID and relay are required", 400);
   }
@@ -317,8 +344,8 @@ async function handleAddNews(
 
 async function handleRemoveNews(
   masterAdminPrivateKey: string,
-  authResult: AuthResult,
   currentNews: NewsTag[],
+  authResult: AuthResult,
   data: RemoveNewsPayload,
 ) {
   // Type guard to ensure success
@@ -348,8 +375,8 @@ async function handleRemoveNews(
 
 async function handleAddArticle(
   masterAdminPrivateKey: string,
-  authResult: AuthResult,
   currentArticles: ArticleTag[],
+  authResult: AuthResult,
   data: AddArticlePayload,
 ) {
   // Type guard to ensure success
@@ -393,18 +420,17 @@ async function handleAddArticle(
     return ErrorResponse(undefined, "Article data is required", 400);
   }
 
-  return await addArticle(
-    masterAdminPrivateKey,
-    currentArticles,
+  return await addArticle(masterAdminPrivateKey, currentArticles, {
     aTag,
     relayTag,
-  );
+    action: data.action,
+  });
 }
 
 async function handleRemoveArticle(
   masterAdminPrivateKey: string,
-  authResult: AuthResult,
   currentArticles: ArticleTag[],
+  authResult: AuthResult,
   data: RemoveArticlePayload,
 ) {
   // Type guard to ensure success
@@ -432,9 +458,30 @@ async function handleRemoveArticle(
   return await removeArticle(masterAdminPrivateKey, currentArticles, data);
 }
 
+function publishToRelays(
+  event: NostrEvent,
+  relayStrings: string[],
+): Promise<PublishToRelaysResult[]> {
+  return Promise.all(
+    relayStrings.map(async (r) => {
+      const relay = new Relay(r);
+      await relay.connect();
+
+      try {
+        await relay.publish(event);
+
+        return { success: true, relay: r };
+      } catch (error) {
+        return { success: false, relay: r, error: error.message };
+      }
+    }),
+  );
+}
+
 async function updateNostrUserSet(
   masterPrivateKey: string,
   setType: "admin-users" | "editor-users",
+  currentUsers: string[],
   pubkey: string,
   operation: "add" | "remove",
 ): Promise<Response> {
@@ -442,34 +489,41 @@ async function updateNostrUserSet(
     const privateKeyBytes = hexToBytes(masterPrivateKey);
     const currentTime = Math.floor(Date.now() / 1000);
 
-    // Create the event
+    const existingUser = currentUsers.find((u) => u === pubkey);
+
+    if (operation === "add") {
+      if (existingUser) {
+        return ErrorResponse(undefined, "User already exists", 409);
+      }
+    } else {
+      if (!existingUser) {
+        return ErrorResponse(undefined, "User not found", 404);
+      }
+    }
+
+    const updatedUserTags =
+      operation === "add"
+        ? [...currentUsers.map((u) => ["p", u]), ["p", pubkey]]
+        : currentUsers.filter((u) => u !== pubkey).map((u) => ["p", u]);
+
+    // Create the event template
     const eventTemplate = {
       kind: 30000,
       created_at: currentTime,
-      tags: [
-        ["d", setType],
-        ["content", pubkey],
-      ],
-      content: operation === "add" ? pubkey : "",
+      tags: [["d", setType], ...updatedUserTags],
+      content: "",
     };
 
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
-    const publishPromises = pool.publish(ADMIN_RELAYS, event);
+    const result = await publishToRelays(event, ADMIN_RELAYS);
 
-    // Publish to relays
-    const result = (await Promise.allSettled(publishPromises)).map((r) =>
-      r.status === "fulfilled"
-        ? { value: r.value, seenOn: pool.seenOn.get(r.value) }
-        : r.reason,
+    return PublishEventResponse(
+      {
+        message: `${operation === "add" ? "Added" : "Removed"} ${pubkey} from ${setType}`,
+        result,
+      },
+      { pubkey, setType, operation },
     );
-
-    return SuccessResponse({
-      message: `${operation === "add" ? "Added" : "Removed"} ${pubkey} from ${setType}`,
-      operation,
-      pubkey,
-      setType,
-      result,
-    });
   } catch (error) {
     console.error("Error updating Nostr user set:", error);
 
@@ -508,25 +562,15 @@ async function addNews(
     };
 
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
-    const publishPromises = pool.publish(ADMIN_RELAYS, event);
+    const result = await publishToRelays(event, ADMIN_RELAYS);
 
-    const result = (await Promise.allSettled(publishPromises)).map((r) => {
-      if (r.status === "fulfilled") {
-        const seenOn = pool.seenOn.get(r.value);
-
-        return {
-          value: r.value,
-          seenOn: seenOn ? Array.from(seenOn.values()).map((e) => e.url) : [],
-        };
-      } else {
-        return r.reason;
-      }
-    });
-
-    return PublishEventResponse({
-      message: "News added successfully",
-      result,
-    });
+    return PublishEventResponse(
+      {
+        message: `News added successfully`,
+        result,
+      },
+      data,
+    );
   } catch (error) {
     console.error("Error adding news:", error);
 
@@ -565,31 +609,15 @@ async function removeNews(
     };
 
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
-    const publishPromises = pool.publish(ADMIN_RELAYS, event);
-    const promiseResult = await Promise.allSettled(publishPromises);
+    const result = await publishToRelays(event, ADMIN_RELAYS);
 
-    console.log("promiseResult", promiseResult);
-    console.log("pool.seenOn", pool.seenOn);
-
-    const result = promiseResult.map((r) => {
-      if (r.status === "fulfilled") {
-        const seenOn = pool.seenOn.get(r.value);
-
-        if (seenOn) {
-          return {
-            value: r.value,
-            seenOn: Array.from(seenOn.values()).map((e) => e.url),
-          };
-        }
-      } else {
-        return r.reason;
-      }
-    });
-
-    return PublishEventResponse({
-      message: "News removed successfully",
-      result,
-    });
+    return PublishEventResponse(
+      {
+        message: "News removed successfully",
+        result,
+      },
+      data,
+    );
   } catch (error) {
     console.error("Error removing news:", error);
 
@@ -600,8 +628,7 @@ async function removeNews(
 async function addArticle(
   masterPrivateKey: string,
   currentArticles: ArticleTag[],
-  aTag: string,
-  relayTag: string,
+  data: AddArticleResolvedPayload,
 ) {
   try {
     const privateKeyBytes = hexToBytes(masterPrivateKey);
@@ -609,7 +636,8 @@ async function addArticle(
 
     // Check if article already exists
     const existingArticle = currentArticles.find(
-      (article) => article.aTag === aTag && article.relay === relayTag,
+      (article) =>
+        article.aTag === data.aTag && article.relay === data.relayTag,
     );
 
     if (existingArticle) {
@@ -623,26 +651,21 @@ async function addArticle(
       tags: [
         ["d", "articles"],
         ...currentArticles.map((article) => ["a", article.aTag, article.relay]),
-        ["a", aTag, relayTag],
+        ["a", data.aTag, data.relayTag],
       ],
       content: "",
     };
 
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
-    const publishPromises = pool.publish(ADMIN_RELAYS, event);
+    const result = await publishToRelays(event, ADMIN_RELAYS);
 
-    const result = (await Promise.allSettled(publishPromises)).map((r) =>
-      r.status === "fulfilled"
-        ? { value: r.value, seenOn: pool.seenOn.get(r.value) }
-        : r.reason,
+    return PublishEventResponse(
+      {
+        message: "Article added successfully",
+        result,
+      },
+      data,
     );
-
-    return SuccessResponse({
-      message: "Article added successfully",
-      aTag,
-      relay: relayTag,
-      result,
-    });
   } catch (error) {
     console.error("Error adding article:", error);
 
@@ -683,27 +706,15 @@ async function removeArticle(
     };
 
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
-    const publishPromises = pool.publish(ADMIN_RELAYS, event);
+    const result = await publishToRelays(event, ADMIN_RELAYS);
 
-    const result = (await Promise.allSettled(publishPromises)).map((r) => {
-      if (r.status === "fulfilled") {
-        const seenOn = pool.seenOn.get(r.value);
-
-        if (seenOn) {
-          return {
-            value: r.value,
-            seenOn: Array.from(seenOn.values()).map((e) => e.url),
-          };
-        }
-      } else {
-        return r.reason;
-      }
-    });
-
-    return PublishEventResponse({
-      message: "Article removed successfully",
-      result,
-    });
+    return PublishEventResponse(
+      {
+        message: "Article removed successfully",
+        result,
+      },
+      data,
+    );
   } catch (error) {
     console.error("Error removing article:", error);
 

@@ -867,8 +867,9 @@ export default function AdminPanel() {
 
                         <p>Gönderilen eventler:</p>
                         {publishSuccess.result.map((result) => (
-                          <p key={result.value}>
-                            {result.value} ({result.seenOn.join(", ")})
+                          <p key={result.relay}>
+                            {result.success ? "Başarılı" : "Başarısız"} (
+                            {result.relay})
                           </p>
                         ))}
                       </AlertDescription>
