@@ -23,13 +23,6 @@ export default {
 
   // Enable static pre-rendering for main site (SSG mode)
   async prerender() {
-    // TODO: Skip prerendering during Vercel build temporarily
-    if (process.env.VERCEL) {
-      console.log("Skipping prerender during Vercel build");
-
-      return ["/", "/admin-panel"];
-    }
-
     console.log("Starting prerender with SSG data fetch...");
 
     try {

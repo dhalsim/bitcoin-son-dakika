@@ -1,20 +1,6 @@
 import type { NostrEvent } from "nostr-tools";
-import { SimplePool } from "nostr-tools";
 
-const ADMIN_RELAYS = [
-  "wss://relay.nostr.band",
-  "wss://relay.damus.io",
-  "wss://nos.lol",
-  "wss://relay.primal.net",
-  "wss://relay.snort.social",
-  "wss://nostr.bitcoiner.social",
-  "wss://nostr.mom",
-  "wss://nostr-pub.wellorder.net",
-  "wss://relay.nos.social",
-];
-
-const MASTER_ADMIN_PUBKEY =
-  "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
+import { fetchNostrSets, pool } from "../../api/utils";
 
 export interface NewsItem {
   id: string;
@@ -96,89 +82,52 @@ function processArticleEvent(event: NostrEvent): ArticleItem {
 }
 
 export async function fetchSSGData(): Promise<SSGData> {
-  const pool = new SimplePool();
-
   console.log("Fetching SSG data from Nostr relays...");
 
-  // Fetch news and articles sets
-  const [newsSetEvent, articlesSetEvent] = await Promise.all([
-    pool.get(ADMIN_RELAYS, {
-      authors: [MASTER_ADMIN_PUBKEY],
-      kinds: [30004],
-      "#d": ["news"],
-      limit: 1,
-    }),
-    pool.get(ADMIN_RELAYS, {
-      authors: [MASTER_ADMIN_PUBKEY],
-      kinds: [30004],
-      "#d": ["articles"],
-      limit: 1,
-    }),
+  const { news: newsTags, articles: articleTags } = await fetchNostrSets([
+    "news",
+    "articles",
   ]);
 
-  if (newsSetEvent == null) {
-    throw new Error("News set event not found");
+  if (newsTags.length === 0) {
+    throw new Error("News tags not found");
   }
 
-  if (articlesSetEvent == null) {
-    throw new Error("Articles set event not found");
-  }
-
-  const newsEventParams = newsSetEvent.tags
-    .filter((tag) => tag[0] === "e")
-    .map((tag) => ({ id: tag[1], relay: tag[2] }));
-
-  if (newsEventParams.length === 0) {
-    throw new Error("News event params not found");
-  }
-
-  if (newsEventParams.some((p) => p.id == null || p.relay == null)) {
-    throw new Error("News event params are invalid");
-  }
-
-  const articlesEventParams = articlesSetEvent.tags
-    .filter((tag) => tag[0] === "a")
-    .map((tag) => ({ aTag: tag[1], relay: tag[2] }));
-
-  if (articlesEventParams.length === 0) {
-    throw new Error("Articles event params not found");
-  }
-
-  if (articlesEventParams.some((p) => p.aTag == null || p.relay == null)) {
-    throw new Error("Articles event params are invalid");
+  if (articleTags.length === 0) {
+    throw new Error("Article tags not found");
   }
 
   const [newsEvents, articlesEvents] = await Promise.all([
     pool.querySync(
-      newsEventParams.map((p) => p.relay),
+      newsTags.map((tag) => tag.relay),
       {
-        ids: newsEventParams.map((p) => p.id),
+        ids: newsTags.map((tag) => tag.eTag),
         kinds: [1],
       },
     ),
     pool.querySync(
-      articlesEventParams.map((p) => p.relay),
+      articleTags.map((tag) => tag.relay),
       {
-        "#a": articlesEventParams.map((p) => p.aTag),
+        "#a": articleTags.map((tag) => tag.aTag),
         kinds: [30023],
       },
     ),
   ]);
 
-  const news: NewsItem[] = newsEvents.map(processNewsEvent);
-  const articles: ArticleItem[] = articlesEvents.map(processArticleEvent);
+  const newsItems: NewsItem[] = newsEvents.map(processNewsEvent);
+  const articleItems: ArticleItem[] = articlesEvents.map(processArticleEvent);
 
   // Sort by publication date (newest first)
-  news.sort((a, b) => b.publishedAt - a.publishedAt);
-  articles.sort((a, b) => b.publishedAt - a.publishedAt);
+  newsItems.sort((a, b) => b.publishedAt - a.publishedAt);
+  articleItems.sort((a, b) => b.publishedAt - a.publishedAt);
 
   console.log(
-    `Fetched ${news.length} news items and ${articles.length} articles`,
+    `Fetched ${newsItems.length} news items and ${articleItems.length} articles`,
   );
 
   return {
-    news: news.slice(0, 50), // Limit to recent 50 news
-    articles: articles.slice(0, 50), // Limit to recent 50 articles
+    news: newsItems.slice(0, 50), // Limit to recent 50 news
+    articles: articleItems.slice(0, 50), // Limit to recent 50 articles
     lastUpdated: Date.now(),
   };
 }

@@ -16,7 +16,12 @@ import {
 export async function GET(_request: Request) {
   try {
     // For GET requests, return public admin data (no authentication required for viewing)
-    const { adminUsers, editorUsers, articles, news } = await fetchNostrSets();
+    const { adminUsers, editorUsers, articles, news } = await fetchNostrSets([
+      "admin-users",
+      "editor-users",
+      "articles",
+      "news",
+    ]);
 
     return SuccessResponse({
       adminUsers,
@@ -44,7 +49,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { adminUsers, editorUsers, articles, news } = await fetchNostrSets();
+    const { adminUsers, editorUsers, articles, news } = await fetchNostrSets([
+      "admin-users",
+      "editor-users",
+      "articles",
+      "news",
+    ]);
 
     console.log({ adminUsers, editorUsers, articles, news });
 

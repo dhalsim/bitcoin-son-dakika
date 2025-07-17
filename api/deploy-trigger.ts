@@ -8,7 +8,10 @@ import {
 // Vercel Edge Function handler for POST requests
 export async function POST(request: Request) {
   try {
-    const { adminUsers, editorUsers } = await fetchNostrSets();
+    const { adminUsers, editorUsers } = await fetchNostrSets([
+      "admin-users",
+      "editor-users",
+    ]);
 
     // Authenticate user - require editor role for deployment
     const authResult = await authenticateNIP98(

@@ -226,7 +226,9 @@ export type FetchNostrSetsResult = {
 /**
  * Fetch Nostr sets for admin users, editor users, articles, and news
  */
-export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
+export async function fetchNostrSets(
+  sets: EventSet[],
+): Promise<FetchNostrSetsResult> {
   try {
     let adminUsers: string[] = [];
     let editorUsers: string[] = [];
@@ -234,7 +236,8 @@ export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
     let news: NewsTag[] = [];
 
     // Fetch admin users set
-    const eventResults: EventResult[] = await fetchSets();
+    const eventResults: EventResult[] = await fetchSets(sets);
+
     for (const resultItem of eventResults) {
       if (resultItem.set === "admin-users") {
         adminUsers = resultItem.event.tags
@@ -274,14 +277,14 @@ export async function fetchNostrSets(): Promise<FetchNostrSetsResult> {
   }
 }
 
-type EventSet = "admin-users" | "editor-users" | "articles" | "news";
+export type EventSet = "admin-users" | "editor-users" | "articles" | "news";
 
 type EventResult = {
   event: NostrEvent;
   set: EventSet;
 };
 
-const fetchSets = async (): Promise<EventResult[]> => {
+const fetchSets = async (sets: EventSet[]): Promise<EventResult[]> => {
   return new Promise((resolve) => {
     const events: EventResult[] = [];
 
@@ -291,7 +294,7 @@ const fetchSets = async (): Promise<EventResult[]> => {
       {
         kinds: [30000, 30004],
         authors: [MASTER_ADMIN_PUBKEY],
-        "#d": ["admin-users", "editor-users", "articles", "news"],
+        "#d": sets,
       },
       {
         onevent(evt) {
