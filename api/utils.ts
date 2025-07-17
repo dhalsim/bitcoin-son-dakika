@@ -92,17 +92,6 @@ export function SuccessResponse(
   );
 }
 
-export function CorsResponse() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    },
-  });
-}
-
 /**
  * Authenticate using NIP-98 Nostr auth scheme and check roles from Nostr events
  */

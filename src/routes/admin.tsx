@@ -290,12 +290,10 @@ export default function AdminPanel() {
     setPublishSuccess(null);
 
     try {
-      const authHeader = await createNIP98Auth(
-        "POST",
-        `${window.location.origin}/api/admin`,
-      );
+      const url = "https://bitcoinsondakika.com/api/admin";
+      const authHeader = await createNIP98Auth("POST", url);
 
-      const response = await fetch("/api/admin", {
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

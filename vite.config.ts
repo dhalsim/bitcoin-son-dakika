@@ -21,4 +21,21 @@ export default defineConfig(() => ({
     exclude: ["nostr-tools"],
     include: ["react", "react-dom", "react-router", "react-router-dom"],
   },
+  build: {
+    minify: process.env.NODE_ENV === "production", // Only minify in production
+    sourcemap: process.env.NODE_ENV !== "production", // Source maps in development
+    rollupOptions: {
+      output: {
+        // Keep readable chunk names
+        chunkFileNames:
+          process.env.NODE_ENV === "production"
+            ? "assets/[name]-[hash].js"
+            : "assets/[name].js",
+        entryFileNames:
+          process.env.NODE_ENV === "production"
+            ? "assets/[name]-[hash].js"
+            : "assets/[name].js",
+      },
+    },
+  },
 }));
