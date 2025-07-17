@@ -84,6 +84,14 @@ export default function Root() {
           }}
         />
         <script src="/window.nostr.js"></script>
+        {/* SSG Data Injection */}
+        {typeof global !== "undefined" && (global as any).__SSG_DATA_HTML__ && (
+          <div
+            dangerouslySetInnerHTML={{
+              __html: (global as any).__SSG_DATA_HTML__,
+            }}
+          />
+        )}
         <Scripts />
       </body>
     </html>

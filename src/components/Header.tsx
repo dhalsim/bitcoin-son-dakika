@@ -3,6 +3,19 @@ import React, { useState } from "react";
 
 import { useTheme } from "../hooks/useTheme";
 
+// Function to format current date in Turkish
+const getCurrentDateInTurkish = () => {
+  const now = new Date();
+  const options: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    weekday: "long",
+  };
+
+  return now.toLocaleDateString("tr-TR", options);
+};
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +49,7 @@ const Header = () => {
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm">
             <span className="hidden sm:block text-gray-600 dark:text-gray-400">
-              22 Haziran 2025, Pazar
+              {getCurrentDateInTurkish()}
             </span>
             <div className="flex space-x-1 sm:space-x-2">
               <span className="bg-[#F7931A] text-white px-1 sm:px-2 py-1 rounded text-xs">

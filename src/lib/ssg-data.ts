@@ -16,6 +16,7 @@ export interface NewsItem {
   tags: string[];
   category?: string;
   relay?: string;
+  image?: string;
 }
 
 export interface ArticleItem {
@@ -33,6 +34,7 @@ export interface ArticleItem {
   category?: string;
   relay?: string;
   identifier?: string;
+  image?: string;
 }
 
 export interface SSGData {
@@ -45,6 +47,7 @@ function processNewsEvent(event: NostrEvent): NewsItem {
   const titleTag = event.tags.find((tag) => tag[0] === "title");
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
   const categoryTag = event.tags.find((tag) => tag[0] === "t");
+  const imageTag = event.tags.find((tag) => tag[0] === "image");
 
   return {
     id: event.id,
@@ -57,6 +60,7 @@ function processNewsEvent(event: NostrEvent): NewsItem {
     },
     tags: event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1]),
     category: categoryTag?.[1],
+    image: imageTag?.[1] || "",
   };
 }
 
@@ -65,6 +69,7 @@ function processArticleEvent(event: NostrEvent): ArticleItem {
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
   const categoryTag = event.tags.find((tag) => tag[0] === "t");
   const dTag = event.tags.find((tag) => tag[0] === "d");
+  const imageTag = event.tags.find((tag) => tag[0] === "image");
 
   return {
     id: event.id,
@@ -78,6 +83,7 @@ function processArticleEvent(event: NostrEvent): ArticleItem {
     tags: event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1]),
     category: categoryTag?.[1],
     identifier: dTag?.[1],
+    image: imageTag?.[1] || "",
   };
 }
 
@@ -137,6 +143,6 @@ export async function fetchSSGData(): Promise<SSGData> {
   return {
     news: newsItems.slice(0, 50), // Limit to recent 50 news
     articles: articleItems.slice(0, 50), // Limit to recent 50 articles
-    lastUpdated: Date.now(),
+    lastUpdated: Date.now(), // Use actual build time for SSG
   };
 }

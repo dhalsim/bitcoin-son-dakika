@@ -38,7 +38,7 @@ function convertToNewsCardProps(item: NewsItem | ArticleItem) {
     summary: item.summary || item.content.substring(0, 150) + "...",
     category: item.category || "Bitcoin",
     time: timeAgo,
-    image: `https://images.unsplash.com/photo-1518544866273-fc95ba4d8b2b?w=800&h=600&fit=crop&q=80`,
+    image: item.image,
   };
 }
 

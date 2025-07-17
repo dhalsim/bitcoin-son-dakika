@@ -18,11 +18,16 @@ export function useSSGData(): SSGData {
       return global.__SSG_DATA__;
     }
 
+    // Check if SSG data is available on window (client-side after hydration)
+    if (typeof window !== "undefined" && (window as any).__SSG_DATA__) {
+      return (window as any).__SSG_DATA__;
+    }
+
     // Fallback to empty data if no SSG data is available
     return {
       news: [],
       articles: [],
-      lastUpdated: Date.now(),
+      lastUpdated: Date.now(), // Use actual time for fallback
     };
   }, []);
 }
