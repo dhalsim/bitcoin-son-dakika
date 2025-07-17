@@ -568,8 +568,12 @@ async function removeNews(
 
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
     const publishPromises = pool.publish(ADMIN_RELAYS, event);
+    const promiseResult = await Promise.allSettled(publishPromises);
 
-    const result = (await Promise.allSettled(publishPromises)).map((r) => {
+    console.log("promiseResult", promiseResult);
+    console.log("pool.seenOn", pool.seenOn);
+
+    const result = promiseResult.map((r) => {
       if (r.status === "fulfilled") {
         const seenOn = pool.seenOn.get(r.value);
 
