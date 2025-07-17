@@ -277,6 +277,12 @@ export async function fetchNostrSets(
   }
 }
 
+function getEventSetType(set: EventSet, type: "follow" | "curation"): boolean {
+  return set === "admin-users" || set === "editor-users"
+    ? type === "follow"
+    : type === "curation";
+}
+
 export type EventSet = "admin-users" | "editor-users" | "articles" | "news";
 
 type EventResult = {
@@ -285,6 +291,14 @@ type EventResult = {
 };
 
 const fetchSets = async (sets: EventSet[]): Promise<EventResult[]> => {
+  const hasFollowSet = sets.some((set) => getEventSetType(set, "follow"));
+  const hasCurationSet = sets.some((set) => getEventSetType(set, "curation"));
+
+  const kinds = [
+    hasFollowSet ? 30000 : null,
+    hasCurationSet ? 30004 : null,
+  ].filter(Boolean);
+
   return new Promise((resolve) => {
     const events: EventResult[] = [];
 
@@ -292,7 +306,7 @@ const fetchSets = async (sets: EventSet[]): Promise<EventResult[]> => {
     pool.subscribeEose(
       ADMIN_RELAYS,
       {
-        kinds: [30000, 30004],
+        kinds,
         authors: [MASTER_ADMIN_PUBKEY],
         "#d": sets,
       },
@@ -303,7 +317,7 @@ const fetchSets = async (sets: EventSet[]): Promise<EventResult[]> => {
             set: evt.tags.find((tag) => tag[0] === "d")?.[1] as EventSet,
           });
 
-          if (events.length === 4) {
+          if (events.length === sets.length) {
             resolve(events);
           }
         },

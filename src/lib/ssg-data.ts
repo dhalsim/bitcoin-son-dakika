@@ -97,21 +97,18 @@ export async function fetchSSGData(): Promise<SSGData> {
     throw new Error("Article tags not found");
   }
 
+  const newsRelays = newsTags.map((tag) => tag.relay);
+  const articleRelays = articleTags.map((tag) => tag.relay);
+
   const [newsEvents, articlesEvents] = await Promise.all([
-    pool.querySync(
-      newsTags.map((tag) => tag.relay),
-      {
-        ids: newsTags.map((tag) => tag.eTag),
-        kinds: [1],
-      },
-    ),
-    pool.querySync(
-      articleTags.map((tag) => tag.relay),
-      {
-        "#a": articleTags.map((tag) => tag.aTag),
-        kinds: [30023],
-      },
-    ),
+    pool.querySync(newsRelays, {
+      ids: newsTags.map((tag) => tag.eTag),
+      kinds: [1],
+    }),
+    pool.querySync(articleRelays, {
+      "#a": articleTags.map((tag) => tag.aTag),
+      kinds: [30023],
+    }),
   ]);
 
   const newsItems: NewsItem[] = newsEvents.map(processNewsEvent);

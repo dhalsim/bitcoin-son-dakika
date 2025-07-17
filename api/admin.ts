@@ -410,8 +410,8 @@ async function addNews(
       created_at: currentTime,
       tags: [
         ["d", "news"],
-        ["e", data.eventId],
-        ["relay", data.relay],
+        ...currentNews.map((news) => ["e", news.eTag, news.relay]),
+        ["e", data.eventId, data.relay],
       ],
       content: "",
     };
@@ -463,8 +463,8 @@ async function addArticle(
       created_at: currentTime,
       tags: [
         ["d", "articles"],
-        ["a", aTag],
-        ["relay", relayTag],
+        ...currentArticles.map((article) => ["a", article.aTag, article.relay]),
+        ["a", aTag, relayTag],
       ],
       content: "",
     };

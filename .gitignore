@@ -17,6 +17,9 @@ dist-ssr
 # React Router
 .react-router
 
+# Vercel
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
