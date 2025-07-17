@@ -98,17 +98,29 @@ export async function fetchSSGData(): Promise<SSGData> {
   }
 
   const newsRelays = newsTags.map((tag) => tag.relay);
-  const articleRelays = articleTags.map((tag) => tag.relay);
+  const articleResults = articleTags.map((tag) => {
+    const [_kind, pubkey, dTag] = tag.aTag.split(":");
+
+    return {
+      dTag,
+      pubkey,
+      relay: tag.relay,
+    };
+  });
 
   const [newsEvents, articlesEvents] = await Promise.all([
     pool.querySync(newsRelays, {
       ids: newsTags.map((tag) => tag.eTag),
       kinds: [1],
     }),
-    pool.querySync(articleRelays, {
-      "#a": articleTags.map((tag) => tag.aTag),
-      kinds: [30023],
-    }),
+    pool.querySync(
+      articleResults.map((result) => result.relay),
+      {
+        "#d": articleResults.map((result) => result.dTag),
+        authors: articleResults.map((result) => result.pubkey),
+        kinds: [30023],
+      },
+    ),
   ]);
 
   const newsItems: NewsItem[] = newsEvents.map(processNewsEvent);
