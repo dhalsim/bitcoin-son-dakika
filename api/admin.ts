@@ -514,12 +514,10 @@ async function addNews(
       if (r.status === "fulfilled") {
         const seenOn = pool.seenOn.get(r.value);
 
-        if (seenOn) {
-          return {
-            value: r.value,
-            seenOn: Array.from(seenOn.values()).map((e) => e.url),
-          };
-        }
+        return {
+          value: r.value,
+          seenOn: seenOn ? Array.from(seenOn.values()).map((e) => e.url) : [],
+        };
       } else {
         return r.reason;
       }
