@@ -12,7 +12,7 @@ import {
   Rocket,
 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
-import { SimplePool } from "nostr-tools";
+import { nip19, SimplePool } from "nostr-tools";
 import { useState, useEffect } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { PublishEventResponse } from "api/utils";
 
 const ADMIN_RELAYS = [
   "wss://relay.nostr.band",
@@ -47,6 +48,18 @@ type AddArticlePayload =
 type AddNewsPayload = {
   action: "add-news";
   eventId: string;
+  relay: string;
+};
+
+type RemoveNewsPayload = {
+  action: "remove-news";
+  eventId: string;
+  relay: string;
+};
+
+type RemoveArticlePayload = {
+  action: "remove-article";
+  aTag: string;
   relay: string;
 };
 
@@ -72,7 +85,9 @@ type AddEditorPayload = {
 
 type Payload =
   | AddNewsPayload
+  | RemoveNewsPayload
   | AddArticlePayload
+  | RemoveArticlePayload
   | AddAdminPayload
   | RemoveAdminPayload
   | RemoveEditorPayload
@@ -84,8 +99,8 @@ const MASTER_ADMIN_PUBKEY =
 interface AdminData {
   adminUsers: string[];
   editorUsers: string[];
-  news: string[];
-  articles: string[];
+  news: { eTag: string; relay: string }[];
+  articles: { aTag: string; relay: string }[];
 }
 
 interface UserInfo {
@@ -118,6 +133,9 @@ export default function AdminPanel() {
   const [articlePubkey, setArticlePubkey] = useState("");
   const [articleDTag, setArticleDTag] = useState("");
   const [articleRelay, setArticleRelay] = useState("");
+
+  const [publishSuccess, setPublishSuccess] =
+    useState<PublishEventResponse | null>(null);
 
   useEffect(() => {
     loadAdminData();
@@ -169,8 +187,8 @@ export default function AdminPanel() {
           onclose() {
             let adminUsers: string[] = [];
             let editorUsers: string[] = [];
-            let news: string[] = [];
-            let articles: string[] = [];
+            let news: { eTag: string; relay: string }[] = [];
+            let articles: { aTag: string; relay: string }[] = [];
 
             // Parse the events to extract pubkeys from sets
             events.forEach((event) => {
@@ -189,17 +207,23 @@ export default function AdminPanel() {
                   .map((tag) => tag[1])
                   .filter(Boolean);
               } else if (dTag === "news") {
-                // News uses 'e' tags for event IDs
+                // News uses 'e' tags for event IDs with relay
                 news = event.tags
                   .filter((tag) => tag[0] === "e")
-                  .map((tag) => tag[1])
-                  .filter(Boolean);
+                  .map((tag) => ({
+                    eTag: tag[1],
+                    relay: tag[2],
+                  }))
+                  .filter((item) => item.eTag);
               } else if (dTag === "articles") {
-                // Articles use 'a' tags for addressable events
+                // Articles use 'a' tags for addressable events with relay
                 articles = event.tags
                   .filter((tag) => tag[0] === "a")
-                  .map((tag) => tag[1])
-                  .filter(Boolean);
+                  .map((tag) => ({
+                    aTag: tag[1],
+                    relay: tag[2] || "wss://relay.damus.io",
+                  }))
+                  .filter((item) => item.aTag);
               }
             });
 
@@ -263,6 +287,7 @@ export default function AdminPanel() {
   const performAction = async (data: Payload) => {
     setActionLoading(data.action);
     setError("");
+    setPublishSuccess(null);
 
     try {
       const authHeader = await createNIP98Auth(
@@ -282,20 +307,8 @@ export default function AdminPanel() {
       const result = await response.json();
 
       if (result.success) {
-        await loadAdminData(); // Refresh data
-        // Clear form inputs
-        if (data.action.includes("add-admin")) {
-          setNewAdminPubkey("");
-        }
-
-        if (data.action.includes("add-editor")) {
-          setNewEditorPubkey("");
-        }
-
-        if (data.action === "add-news") {
-          setNewsEventId("");
-          setNewsRelay("");
-        }
+        await loadAdminData();
+        setPublishSuccess(result);
       } else {
         setError(result.error || "İşlem başarısız");
       }
@@ -386,6 +399,22 @@ export default function AdminPanel() {
     setArticlePubkey("");
     setArticleDTag("");
     setArticleRelay("");
+  };
+
+  const removeNews = (eventId: string, relay: string) => {
+    performAction({
+      action: "remove-news",
+      eventId,
+      relay,
+    });
+  };
+
+  const removeArticle = (aTag: string, relay: string) => {
+    performAction({
+      action: "remove-article",
+      aTag,
+      relay,
+    });
   };
 
   const triggerDeploy = async () => {
@@ -561,12 +590,42 @@ export default function AdminPanel() {
                         Henüz haber eklenmemiş
                       </p>
                     ) : (
-                      adminData?.news.map((eventId) => (
+                      adminData?.news.map((newsItem) => (
                         <div
-                          key={eventId}
-                          className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                          key={`${newsItem.eTag}-${newsItem.relay}`}
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                         >
-                          <span className="font-mono text-sm">{eventId}</span>
+                          <div>
+                            <a
+                              className="font-mono text-sm"
+                              href={`https://njump.me/${nip19.neventEncode({
+                                id: newsItem.eTag,
+                                relays: [newsItem.relay],
+                              })}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {newsItem.eTag.substring(0, 6)}...
+                              {newsItem.eTag.substring(
+                                newsItem.eTag.length - 6,
+                                newsItem.eTag.length,
+                              )}
+                            </a>
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={actionLoading === "remove-news"}
+                            onClick={() =>
+                              removeNews(newsItem.eTag, newsItem.relay)
+                            }
+                          >
+                            {actionLoading === "remove-news" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
                         </div>
                       ))
                     )}
@@ -624,14 +683,53 @@ export default function AdminPanel() {
                         Henüz makale eklenmemiş
                       </p>
                     ) : (
-                      adminData?.articles.map((articleId) => (
-                        <div
-                          key={articleId}
-                          className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                        >
-                          <span className="font-mono text-sm">{articleId}</span>
-                        </div>
-                      ))
+                      adminData?.articles.map((articleItem) => {
+                        const [kind, pubkey, dTag] =
+                          articleItem.aTag.split(":");
+
+                        return (
+                          <div
+                            key={`${articleItem.aTag}-${articleItem.relay}`}
+                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                          >
+                            <div>
+                              <a
+                                className="font-mono text-sm"
+                                href={`https://njump.me/${nip19.naddrEncode({
+                                  identifier: dTag,
+                                  kind: Number(kind),
+                                  pubkey: pubkey,
+                                })}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {articleItem.aTag.substring(0, 6)}...
+                                {articleItem.aTag.substring(
+                                  articleItem.aTag.length - 6,
+                                  articleItem.aTag.length,
+                                )}
+                              </a>
+                            </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={actionLoading === "remove-article"}
+                              onClick={() =>
+                                removeArticle(
+                                  articleItem.aTag,
+                                  articleItem.relay,
+                                )
+                              }
+                            >
+                              {actionLoading === "remove-article" ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
 
@@ -759,6 +857,22 @@ export default function AdminPanel() {
                       <AlertDescription className="text-green-800 dark:text-green-300">
                         Deploy başarıyla tetiklendi! Site birkaç dakika içinde
                         güncellenecek.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {publishSuccess && (
+                    <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+                      <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertDescription className="text-green-800 dark:text-green-300">
+                        {publishSuccess.message}
+
+                        <p>Gönderilen eventler:</p>
+                        {publishSuccess.result.map((result) => (
+                          <p key={result.value}>
+                            {result.value} ({result.seenOn.join(", ")})
+                          </p>
+                        ))}
                       </AlertDescription>
                     </Alert>
                   )}

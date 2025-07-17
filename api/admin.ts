@@ -10,6 +10,7 @@ import {
   authenticateNIP98,
   fetchNostrSets,
   pool,
+  PublishEventResponse,
 } from "./utils.js";
 
 // Vercel Edge Function handler for GET requests
@@ -104,6 +105,20 @@ export async function POST(request: Request) {
           news,
           requestBody,
         );
+      case "remove-news":
+        return handleRemoveNews(
+          masterAdminPrivateKey,
+          authResult,
+          news,
+          requestBody,
+        );
+      case "remove-article":
+        return handleRemoveArticle(
+          masterAdminPrivateKey,
+          authResult,
+          articles,
+          requestBody,
+        );
       default:
         return ErrorResponse(undefined, "Invalid action", 400);
     }
@@ -140,6 +155,18 @@ type AddArticlePayload =
 type AddNewsPayload = {
   action: "add-news";
   eventId: string;
+  relay: string;
+};
+
+type RemoveNewsPayload = {
+  action: "remove-news";
+  eventId: string;
+  relay: string;
+};
+
+type RemoveArticlePayload = {
+  action: "remove-article";
+  aTag: string;
   relay: string;
 };
 
@@ -286,6 +313,37 @@ async function handleAddNews(
   return await addNews(masterAdminPrivateKey, currentNews, data);
 }
 
+async function handleRemoveNews(
+  masterAdminPrivateKey: string,
+  authResult: AuthResult,
+  currentNews: NewsTag[],
+  data: RemoveNewsPayload,
+) {
+  // Type guard to ensure success
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  // Only editors and admins can remove news
+  if (
+    !authResult.roles.includes("editor") &&
+    !authResult.roles.includes("admin")
+  ) {
+    return ErrorResponse(
+      undefined,
+      "Only editors and admins can remove news",
+      403,
+    );
+  }
+
+  const { eventId, relay } = data;
+  if (!eventId || !relay) {
+    return ErrorResponse(undefined, "Event ID and relay are required", 400);
+  }
+
+  return await removeNews(masterAdminPrivateKey, currentNews, data);
+}
+
 async function handleAddArticle(
   masterAdminPrivateKey: string,
   authResult: AuthResult,
@@ -339,6 +397,37 @@ async function handleAddArticle(
     aTag,
     relayTag,
   );
+}
+
+async function handleRemoveArticle(
+  masterAdminPrivateKey: string,
+  authResult: AuthResult,
+  currentArticles: ArticleTag[],
+  data: RemoveArticlePayload,
+) {
+  // Type guard to ensure success
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  // Only editors and admins can remove articles
+  if (
+    !authResult.roles.includes("editor") &&
+    !authResult.roles.includes("admin")
+  ) {
+    return ErrorResponse(
+      undefined,
+      "Only editors and admins can remove articles",
+      403,
+    );
+  }
+
+  const { aTag, relay } = data;
+  if (!aTag || !relay) {
+    return ErrorResponse(undefined, "Article data is required", 400);
+  }
+
+  return await removeArticle(masterAdminPrivateKey, currentArticles, data);
 }
 
 async function updateNostrUserSet(
@@ -419,20 +508,86 @@ async function addNews(
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
     const publishPromises = pool.publish(ADMIN_RELAYS, event);
 
-    const result = (await Promise.allSettled(publishPromises)).map((r) =>
-      r.status === "fulfilled"
-        ? { value: r.value, seenOn: pool.seenOn.get(r.value) }
-        : r.reason,
-    );
+    const result = (await Promise.allSettled(publishPromises)).map((r) => {
+      if (r.status === "fulfilled") {
+        const seenOn = pool.seenOn.get(r.value);
 
-    return SuccessResponse({
+        if (seenOn) {
+          return {
+            value: r.value,
+            seenOn: Array.from(seenOn.values()).map((e) => e.url),
+          };
+        }
+      } else {
+        return r.reason;
+      }
+    });
+
+    return PublishEventResponse({
       message: "News added successfully",
-      eventId: data.eventId,
-      relay: data.relay,
       result,
     });
   } catch (error) {
     console.error("Error adding news:", error);
+
+    return ErrorResponse(error);
+  }
+}
+
+async function removeNews(
+  masterPrivateKey: string,
+  currentNews: { eTag: string; relay: string }[],
+  data: RemoveNewsPayload,
+) {
+  try {
+    const privateKeyBytes = hexToBytes(masterPrivateKey);
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    // Filter out the news item to be removed
+    const toBeRemoved = currentNews.find((news) => news.eTag === data.eventId);
+
+    // Check if the news item exists
+    if (!toBeRemoved) {
+      return ErrorResponse(undefined, "News item not found", 404);
+    }
+
+    // Create the event with the updated list
+    const eventTemplate = {
+      kind: 30004,
+      created_at: currentTime,
+      tags: [
+        ["d", "news"],
+        ...currentNews
+          .filter((news) => news.eTag !== data.eventId)
+          .map((news) => ["e", news.eTag, news.relay]),
+      ],
+      content: "",
+    };
+
+    const event = finalizeEvent(eventTemplate, privateKeyBytes);
+    const publishPromises = pool.publish(ADMIN_RELAYS, event);
+
+    const result = (await Promise.allSettled(publishPromises)).map((r) => {
+      if (r.status === "fulfilled") {
+        const seenOn = pool.seenOn.get(r.value);
+
+        if (seenOn) {
+          return {
+            value: r.value,
+            seenOn: Array.from(seenOn.values()).map((e) => e.url),
+          };
+        }
+      } else {
+        return r.reason;
+      }
+    });
+
+    return PublishEventResponse({
+      message: "News removed successfully",
+      result,
+    });
+  } catch (error) {
+    console.error("Error removing news:", error);
 
     return ErrorResponse(error);
   }
@@ -486,6 +641,67 @@ async function addArticle(
     });
   } catch (error) {
     console.error("Error adding article:", error);
+
+    return ErrorResponse(error);
+  }
+}
+
+async function removeArticle(
+  masterPrivateKey: string,
+  currentArticles: ArticleTag[],
+  data: RemoveArticlePayload,
+) {
+  try {
+    const privateKeyBytes = hexToBytes(masterPrivateKey);
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    // Filter out the article to be removed
+    const toBeRemoved = currentArticles.find(
+      (article) => article.aTag === data.aTag && article.relay === data.relay,
+    );
+
+    // Check if the article exists
+    if (!toBeRemoved) {
+      return ErrorResponse(undefined, "Article not found", 404);
+    }
+
+    // Create the event with the updated list
+    const eventTemplate = {
+      kind: 30004,
+      created_at: currentTime,
+      tags: [
+        ["d", "articles"],
+        ...currentArticles
+          .filter((article) => article.aTag !== data.aTag)
+          .map((article) => ["a", article.aTag, article.relay]),
+      ],
+      content: "",
+    };
+
+    const event = finalizeEvent(eventTemplate, privateKeyBytes);
+    const publishPromises = pool.publish(ADMIN_RELAYS, event);
+
+    const result = (await Promise.allSettled(publishPromises)).map((r) => {
+      if (r.status === "fulfilled") {
+        const seenOn = pool.seenOn.get(r.value);
+
+        if (seenOn) {
+          return {
+            value: r.value,
+            seenOn: Array.from(seenOn.values()).map((e) => e.url),
+          };
+        }
+      } else {
+        return r.reason;
+      }
+    });
+
+    return PublishEventResponse({
+      message: "Article removed successfully",
+      result,
+    });
+  } catch (error) {
+    console.error("Error removing article:", error);
 
     return ErrorResponse(error);
   }

@@ -46,6 +46,33 @@ export function ErrorResponse(
   );
 }
 
+export type PublishEventResponse = {
+  message: string;
+  result: {
+    value: string;
+    seenOn: string[];
+  }[];
+};
+
+export function PublishEventResponse(
+  data: PublishEventResponse,
+  status: number = 200,
+) {
+  return new Response(
+    JSON.stringify({
+      success: true,
+      ...data,
+    }),
+    {
+      status,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    },
+  );
+}
+
 export function SuccessResponse(
   data: Record<string, unknown>,
   status: number = 200,
