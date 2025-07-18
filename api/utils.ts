@@ -19,6 +19,13 @@ export const ADMIN_RELAYS = [
   "wss://relay.nos.social",
 ];
 
+export const PROFILE_RELAYS = [
+  "wss://purplepag.es",
+  "wss://relay.nos.social",
+  "wss://user.kindpag.es",
+  "wss://relay.nostr.band",
+];
+
 // Master admin public key (derived from private key)
 export const MASTER_ADMIN_PUBKEY =
   "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
@@ -238,8 +245,8 @@ export type NewsTag = {
 export type FetchNostrSetsResult = {
   adminUsers: string[];
   editorUsers: string[];
-  articles: ArticleTag[];
-  news: NewsTag[];
+  articleTags: ArticleTag[];
+  newsTags: NewsTag[];
 };
 
 /**
@@ -251,8 +258,8 @@ export async function fetchNostrSets(
   try {
     let adminUsers: string[] = [];
     let editorUsers: string[] = [];
-    let articles: ArticleTag[] = [];
-    let news: NewsTag[] = [];
+    let articleTags: ArticleTag[] = [];
+    let newsTags: NewsTag[] = [];
 
     // Fetch admin users set
     const eventResults: EventResult[] = await fetchSets(sets);
@@ -271,23 +278,30 @@ export async function fetchNostrSets(
       }
 
       if (resultItem.set === "articles") {
-        articles = resultItem.event.tags
+        articleTags = resultItem.event.tags
           .filter((tag) => tag[0] === "a" && tag[1] && tag[2])
-          .map((tag) => ({ aTag: tag[1], relay: tag[2] }));
+          .map((tag) => ({
+            aTag: tag[1],
+            relay: tag[2],
+          }));
       }
 
       if (resultItem.set === "news") {
-        news = resultItem.event.tags
+        newsTags = resultItem.event.tags
           .filter((tag) => tag[0] === "e" && tag[1] && tag[2])
-          .map((tag) => ({ eTag: tag[1], relay: tag[2] }));
+          .map((tag) => ({
+            eTag: tag[1],
+            relay: tag[2],
+            pubkey: resultItem.event.pubkey,
+          }));
       }
     }
 
     return {
       adminUsers,
       editorUsers,
-      articles,
-      news,
+      articleTags: articleTags,
+      newsTags: newsTags,
     };
   } catch (error) {
     console.error("Error fetching Nostr sets:", error);

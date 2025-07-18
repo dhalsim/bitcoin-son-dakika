@@ -1,4 +1,3 @@
-import React from "react";
 import type { MetaFunction } from "react-router";
 
 import Footer from "../components/Footer";
@@ -39,6 +38,7 @@ function convertToNewsCardProps(item: NewsItem | ArticleItem) {
     category: item.category || "Bitcoin",
     time: timeAgo,
     image: item.image,
+    author: item.author,
   };
 }
 
@@ -63,48 +63,6 @@ function getTimeAgo(timestamp: number): string {
   }
 }
 
-// Fallback data for when SSG data is not available
-const fallbackFeaturedNews = {
-  title: "Bitcoin Halving Sonrası Piyasada Büyük Hareketlilik",
-  summary:
-    "Bitcoin'in son halving olayının ardından piyasalarda önemli değişimler yaşanıyor. Uzmanlar, önümüzdeki dönemde fiyat hareketlerinin artacağını öngörüyor.",
-  category: "Bitcoin",
-  time: "30 dakika önce",
-  image:
-    "https://images.unsplash.com/photo-1518544866273-fc95ba4d8b2b?w=800&h=600&fit=crop",
-};
-
-const fallbackMainNews = [
-  {
-    title: "Lightning Network'te Yeni Rekor: Kapasite 5.000 BTC'yi Aştı",
-    summary:
-      "Bitcoin'in ikinci katman çözümü Lightning Network'te kilitli Bitcoin miktarı yeni bir rekora ulaştı.",
-    category: "Lightning",
-    time: "1 saat önce",
-    image:
-      "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=300&fit=crop",
-  },
-  {
-    title: "Türkiye'de Bitcoin Düzenlemeleri Netleşiyor",
-    summary:
-      "BDDK'nın yeni açıklaması ile Bitcoin borsalarına yönelik kurallar belirlendi.",
-    category: "Düzenleme",
-    time: "2 saat önce",
-    image:
-      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop",
-  },
-];
-
-const fallbackSideNews = [
-  {
-    title: "El Salvador Bitcoin Rezervlerini Artırıyor",
-    summary:
-      "Latin Amerika ülkesi, Bitcoin'i yasal para birimi ilan ettikten sonra rezervlerini genişletmeye devam ediyor.",
-    category: "Ülke",
-    time: "5 saat önce",
-  },
-];
-
 export default function Index() {
   const ssgData = useSSGData();
   const latestNews = useLatestNews(6); // Get latest 6 news items
@@ -120,20 +78,31 @@ export default function Index() {
   const mainContent = allContent.slice(1, 5); // Next 4 items
   const sideContent = allContent.slice(5, 7); // Next 2 items
 
-  // Use fallback data if no SSG data is available
-  const featuredNews = featuredContent
-    ? convertToNewsCardProps(featuredContent)
-    : fallbackFeaturedNews;
+  // If no content is available, show empty state
+  if (allContent.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-background">
+        <Header />
+        <PriceBar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              Haberler Yükleniyor...
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Güncel Bitcoin haberleri ve analizler yakında burada olacak.
+            </p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
-  const mainNews =
-    mainContent.length > 0
-      ? mainContent.map(convertToNewsCardProps)
-      : fallbackMainNews;
-
-  const sideNews =
-    sideContent.length > 0
-      ? sideContent.map(convertToNewsCardProps)
-      : fallbackSideNews;
+  // Convert content to NewsCard props
+  const featuredNews = convertToNewsCardProps(featuredContent!);
+  const mainNews = mainContent.map(convertToNewsCardProps);
+  const sideNews = sideContent.map(convertToNewsCardProps);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
@@ -150,9 +119,7 @@ export default function Index() {
             <div className="flex-1 overflow-hidden">
               <div className="animate-pulse">
                 <span className="text-xs sm:text-sm font-medium">
-                  {featuredContent
-                    ? `${featuredContent.title} - ${featuredContent.summary?.substring(0, 100)}...`
-                    : "Bitcoin 70.000 doları aştı! Piyasalarda büyük hareketlilik devam ediyor..."}
+                  {`${featuredContent.title} - ${featuredContent.summary?.substring(0, 100)}...`}
                 </span>
               </div>
             </div>

@@ -17,18 +17,14 @@ import {
 export async function GET(_request: Request) {
   try {
     // For GET requests, return public admin data (no authentication required for viewing)
-    const { adminUsers, editorUsers, articles, news } = await fetchNostrSets([
-      "admin-users",
-      "editor-users",
-      "articles",
-      "news",
-    ]);
+    const { adminUsers, editorUsers, articleTags, newsTags } =
+      await fetchNostrSets(["admin-users", "editor-users", "articles", "news"]);
 
     return SuccessResponse({
       adminUsers,
       editorUsers,
-      articles,
-      news,
+      articles: articleTags,
+      news: newsTags,
     });
   } catch (error) {
     console.error("Admin GET error:", error);
@@ -50,14 +46,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { adminUsers, editorUsers, articles, news } = await fetchNostrSets([
-      "admin-users",
-      "editor-users",
-      "articles",
-      "news",
-    ]);
+    const { adminUsers, editorUsers, articleTags, newsTags } =
+      await fetchNostrSets(["admin-users", "editor-users", "articles", "news"]);
 
-    console.log({ adminUsers, editorUsers, articles, news });
+    console.log({
+      adminUsers,
+      editorUsers,
+      articles: articleTags,
+      news: newsTags,
+    });
 
     // MANDATORY AUTHENTICATION for all POST actions
     const authResult = await authenticateNIP98(
@@ -106,28 +103,28 @@ export async function POST(request: Request) {
       case "add-article":
         return handleAddArticle(
           masterAdminPrivateKey,
-          articles,
+          articleTags,
           authResult,
           requestBody,
         );
       case "add-news":
         return handleAddNews(
           masterAdminPrivateKey,
-          news,
+          newsTags,
           authResult,
           requestBody,
         );
       case "remove-news":
         return handleRemoveNews(
           masterAdminPrivateKey,
-          news,
+          newsTags,
           authResult,
           requestBody,
         );
       case "remove-article":
         return handleRemoveArticle(
           masterAdminPrivateKey,
-          articles,
+          articleTags,
           authResult,
           requestBody,
         );

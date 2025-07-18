@@ -9,7 +9,7 @@ declare global {
 
 /**
  * Hook to access SSG data that was fetched during prerendering
- * Falls back to empty data if not available (e.g., in development)
+ * Throws an error if no SSG data is available
  */
 export function useSSGData(): SSGData {
   return useMemo(() => {
@@ -23,12 +23,11 @@ export function useSSGData(): SSGData {
       return (window as any).__SSG_DATA__;
     }
 
-    // Fallback to empty data if no SSG data is available
-    return {
-      news: [],
-      articles: [],
-      lastUpdated: Date.now(), // Use actual time for fallback
-    };
+    // Throw error if no SSG data is available
+    throw new Error(
+      "SSG data is not available. This should not happen in production builds. " +
+        "The build process should have failed if data could not be fetched.",
+    );
   }, []);
 }
 

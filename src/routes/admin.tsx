@@ -477,6 +477,30 @@ export default function AdminPanel() {
             Bitcoin Son Dakika - İçerik Yönetimi
           </p>
 
+          {publishSuccess && (
+            <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+              <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <AlertDescription className="text-green-800 dark:text-green-300">
+                {publishSuccess.message}
+
+                <p>Gönderilen eventler:</p>
+                {publishSuccess.result.map((result) => {
+                  if (result.success) {
+                    return (
+                      <p key={result.relay}>"Başarılı" ({result.relay})</p>
+                    );
+                  } else {
+                    return (
+                      <p key={result.relay} className="text-red-500">
+                        "Başarısız" ({result.relay}) {(result as any).error}
+                      </p>
+                    );
+                  }
+                })}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {userInfo.pubkey ? (
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="font-mono">
@@ -855,23 +879,6 @@ export default function AdminPanel() {
                       <AlertDescription className="text-green-800 dark:text-green-300">
                         Deploy başarıyla tetiklendi! Site birkaç dakika içinde
                         güncellenecek.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {publishSuccess && (
-                    <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-                      <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      <AlertDescription className="text-green-800 dark:text-green-300">
-                        {publishSuccess.message}
-
-                        <p>Gönderilen eventler:</p>
-                        {publishSuccess.result.map((result) => (
-                          <p key={result.relay}>
-                            {result.success ? "Başarılı" : "Başarısız"} (
-                            {result.relay})
-                          </p>
-                        ))}
                       </AlertDescription>
                     </Alert>
                   )}

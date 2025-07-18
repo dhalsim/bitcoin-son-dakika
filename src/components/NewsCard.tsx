@@ -1,5 +1,7 @@
 import React from "react";
 
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+
 interface NewsCardProps {
   title: string;
   summary: string;
@@ -7,6 +9,10 @@ interface NewsCardProps {
   time: string;
   image?: string;
   featured?: boolean;
+  author?: {
+    display_name?: string;
+    picture?: string;
+  };
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({
@@ -16,6 +22,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   time,
   image,
   featured = false,
+  author,
 }) => {
   return (
     <article
@@ -35,8 +42,26 @@ const NewsCard: React.FC<NewsCardProps> = ({
       )}
 
       <div className={`p-${featured ? "4 sm:p-6" : "3 sm:p-4"}`}>
-        <div className="flex items-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
+        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span>{time}</span>
+          {author && (
+            <div className="flex items-center space-x-2">
+              <Avatar className="h-6 w-6">
+                {author.picture ? (
+                  <AvatarImage
+                    src={author.picture}
+                    alt={author.display_name || ""}
+                  />
+                ) : null}
+                <AvatarFallback className="text-xs">
+                  {author.display_name?.charAt(0)?.toUpperCase() || "?"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-gray-600 dark:text-gray-400 font-medium">
+                {author.display_name}
+              </span>
+            </div>
+          )}
         </div>
 
         <h3
