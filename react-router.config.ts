@@ -34,11 +34,10 @@ export default {
 
     // Also embed the data in the HTML for client-side access
     if (typeof global !== "undefined") {
-      (global as any).__SSG_DATA_HTML__ = `
-        <script>
-          window.__SSG_DATA__ = ${JSON.stringify(ssgData)};
-        </script>
-      `;
+      console.log(`ssgData is set to window.__SSG_DATA__ in the client`);
+
+      (global as any).__SSG_DATA_HTML__ =
+        `window.__SSG_DATA__ = ${JSON.stringify(ssgData)};`;
     }
 
     console.log(

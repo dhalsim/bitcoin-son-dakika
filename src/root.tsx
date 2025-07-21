@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Outlet,
   Links,
@@ -86,7 +85,7 @@ export default function Root() {
         <script src="/window.nostr.js"></script>
         {/* SSG Data Injection */}
         {typeof global !== "undefined" && (global as any).__SSG_DATA_HTML__ && (
-          <div
+          <script
             dangerouslySetInnerHTML={{
               __html: (global as any).__SSG_DATA_HTML__,
             }}
