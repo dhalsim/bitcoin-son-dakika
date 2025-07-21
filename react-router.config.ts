@@ -36,8 +36,8 @@ export default {
     if (typeof global !== "undefined") {
       console.log(`ssgData is set to window.__SSG_DATA__ in the client`);
 
-      (global as any).__SSG_DATA_HTML__ =
-        `window.__SSG_DATA__ = ${JSON.stringify(ssgData)};`;
+      // Store the data as a string that will be embedded in the HTML
+      (global as any).__SSG_DATA_HTML__ = JSON.stringify(ssgData);
     }
 
     console.log(

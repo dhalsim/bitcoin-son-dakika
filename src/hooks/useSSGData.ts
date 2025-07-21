@@ -19,7 +19,11 @@ export function useSSGData(): SSGData {
     }
 
     // Check if SSG data is available on window (client-side after hydration)
-    if (typeof window !== "undefined" && (window as any).__SSG_DATA__) {
+    if (
+      typeof window !== "undefined" &&
+      (window as any).__SSG_DATA__ &&
+      (window as any).__SSG_DATA__ !== null
+    ) {
       return (window as any).__SSG_DATA__;
     }
 

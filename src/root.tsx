@@ -84,10 +84,13 @@ export default function Root() {
         />
         <script src="/window.nostr.js"></script>
         {/* SSG Data Injection */}
-        {typeof global !== "undefined" && (global as any).__SSG_DATA_HTML__ && (
+        {typeof global !== "undefined" && (
           <script
             dangerouslySetInnerHTML={{
-              __html: (global as any).__SSG_DATA_HTML__,
+              __html: `
+              window.__SSG_DATA__ = ${(global as any).__SSG_DATA_HTML__ || "null"};
+              console.log("SSG Data Injection - window.__SSG_DATA__:", window.__SSG_DATA__);
+              `,
             }}
           />
         )}
