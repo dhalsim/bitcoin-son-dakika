@@ -12,7 +12,7 @@ export default {
   // Use src directory instead of app
   appDirectory: "src",
 
-  ssr: true, // Enable SSR for proper SSG
+  ssr: false, // Enable SSR for proper SSG
 
   presets: [vercelPreset()],
 
