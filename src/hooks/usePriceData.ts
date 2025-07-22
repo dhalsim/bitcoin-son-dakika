@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 
-import type { FinalPriceData } from "../../api/schemas.js";
+import type { FinalPriceData } from "../../api/price-feed/schemas.js";
 
 interface PriceResponse {
   success: boolean;
@@ -39,7 +39,7 @@ export function usePriceData(
       setError(null);
 
       // Use the main gateway API endpoint
-      const response = await fetch("/api/prices");
+      const response = await fetch("/api/price-feed/gateway");
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

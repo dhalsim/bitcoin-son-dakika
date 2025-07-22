@@ -1,6 +1,7 @@
-import { applyCacheHeaders } from "./cache-utils.js";
+import { applyCacheHeaders } from "../cache-utils.js";
+import { ErrorResponse, SuccessResponse } from "../utils.js";
+
 import { ExchangeRateDataSchema, type CurrencyPriceData } from "./schemas.js";
-import { ErrorResponse, SuccessResponse } from "./utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {

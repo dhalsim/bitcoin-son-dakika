@@ -1,6 +1,7 @@
-import { applyCacheHeaders } from "./cache-utils.js";
+import { applyCacheHeaders } from "../cache-utils.js";
+import { ErrorResponse, SuccessResponse } from "../utils.js";
+
 import { CoinGeckoPriceSchema, type CommodityPriceData } from "./schemas.js";
-import { ErrorResponse, SuccessResponse } from "./utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {
@@ -41,6 +42,7 @@ export async function GET() {
 
     commodities.forEach(({ id, name, symbol }) => {
       const commodity = coinGeckoData.find((item) => item.id === id);
+
       if (commodity) {
         prices.push({
           name,

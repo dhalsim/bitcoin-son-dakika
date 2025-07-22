@@ -1,13 +1,13 @@
-import { WEBSITE_URL } from "../src/lib/constants.js";
+import { WEBSITE_URL } from "../../src/lib/constants.js";
+import { applyCacheHeaders } from "../cache-utils.js";
+import { ErrorResponse, SuccessResponse } from "../utils.js";
 
-import { applyCacheHeaders } from "./cache-utils.js";
 import {
   CryptoEndpointResponseSchema,
   CommodityEndpointResponseSchema,
   ForexEndpointResponseSchema,
   type FinalPriceData,
 } from "./schemas.js";
-import { ErrorResponse, SuccessResponse } from "./utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {
@@ -15,9 +15,9 @@ export async function GET() {
     // Fetch data from all three endpoints in parallel
     const [cryptoResponse, commodityResponse, forexResponse] =
       await Promise.allSettled([
-        fetch(`${WEBSITE_URL}/api/crypto-prices`),
-        fetch(`${WEBSITE_URL}/api/commodity-prices`),
-        fetch(`${WEBSITE_URL}/api/forex-prices`),
+        fetch(`${WEBSITE_URL}/api/price-feed/crypto`),
+        fetch(`${WEBSITE_URL}/api/price-feed/commodity`),
+        fetch(`${WEBSITE_URL}/api/price-feed/forex`),
       ]);
 
     // Check if any endpoint failed and return error immediately
