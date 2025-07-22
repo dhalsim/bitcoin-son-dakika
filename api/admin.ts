@@ -131,6 +131,7 @@ export async function POST(request: Request) {
       case "publish-news":
         return handlePublishNews(
           masterAdminPrivateKey,
+          newsTags,
           authResult,
           requestBody,
         );
@@ -227,7 +228,30 @@ async function handleAddNews(
     return ErrorResponse(undefined, "Event ID and relay are required", 400);
   }
 
-  return await addNews(masterAdminPrivateKey, currentNews, data);
+  // Check if news already exists
+  const existingNews = currentNews.find(
+    (news) => news.eTag === data.eventId && news.relay === data.relay,
+  );
+
+  if (existingNews) {
+    return ErrorResponse(undefined, "News already exists", 409);
+  }
+
+  try {
+    const result = await addNews(masterAdminPrivateKey, currentNews, data);
+
+    return PublishEventResponse(
+      {
+        message: `News added successfully`,
+        result,
+      },
+      data,
+    );
+  } catch (error) {
+    console.error("Error adding news:", error);
+
+    return ErrorResponse(error);
+  }
 }
 
 async function handleRemoveNews(
@@ -327,6 +351,7 @@ async function handleRemoveArticle(
 
 async function handlePublishNews(
   masterAdminPrivateKey: string,
+  currentNews: NewsTag[],
   authResult: AuthResult,
   data: PublishNewsPayload,
 ) {
@@ -349,7 +374,12 @@ async function handlePublishNews(
     );
   }
 
-  return await publishNews(masterAdminPrivateKey, authResult.pubkey, data);
+  return await publishNews(
+    masterAdminPrivateKey,
+    currentNews,
+    authResult.pubkey,
+    data,
+  );
 }
 
 /** Editor Actions */
@@ -359,46 +389,24 @@ async function addNews(
   currentNews: { eTag: string; relay: string }[],
   data: AddNewsPayload,
 ) {
-  try {
-    const privateKeyBytes = hexToBytes(masterPrivateKey);
-    const currentTime = Math.floor(Date.now() / 1000);
+  const privateKeyBytes = hexToBytes(masterPrivateKey);
+  const currentTime = Math.floor(Date.now() / 1000);
 
-    // Check if news already exists
-    const existingNews = currentNews.find(
-      (news) => news.eTag === data.eventId && news.relay === data.relay,
-    );
+  // Create the event
+  const eventTemplate = {
+    kind: 30004,
+    created_at: currentTime,
+    tags: [
+      ["d", "news"],
+      ...currentNews.map((news) => ["e", news.eTag, news.relay]),
+      ["e", data.eventId, data.relay],
+    ],
+    content: "",
+  };
 
-    if (existingNews) {
-      return ErrorResponse(undefined, "News already exists", 409);
-    }
+  const event = finalizeEvent(eventTemplate, privateKeyBytes);
 
-    // Create the event
-    const eventTemplate = {
-      kind: 30004,
-      created_at: currentTime,
-      tags: [
-        ["d", "news"],
-        ...currentNews.map((news) => ["e", news.eTag, news.relay]),
-        ["e", data.eventId, data.relay],
-      ],
-      content: "",
-    };
-
-    const event = finalizeEvent(eventTemplate, privateKeyBytes);
-    const result = await publishToRelays(event, ADMIN_RELAYS);
-
-    return PublishEventResponse(
-      {
-        message: `News added successfully`,
-        result,
-      },
-      data,
-    );
-  } catch (error) {
-    console.error("Error adding news:", error);
-
-    return ErrorResponse(error);
-  }
+  return await publishToRelays(event, ADMIN_RELAYS);
 }
 
 async function removeNews(
@@ -547,6 +555,7 @@ async function removeArticle(
 
 async function publishNews(
   masterPrivateKey: string,
+  currentNews: NewsTag[],
   userPubkey: string,
   data: PublishNewsPayload,
 ): Promise<Response> {
@@ -582,13 +591,29 @@ async function publishNews(
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
     const result = await publishToRelays(event, ADMIN_RELAYS);
 
-    return PublishEventResponse(
-      {
-        message: "News published successfully",
-        result,
-      },
-      { eventId: event.id },
-    );
+    const relay = result.find((r) => r.success)?.relay;
+
+    if (!relay) {
+      return ErrorResponse(undefined, "Failed to publish news", 500);
+    }
+
+    const addNewsResult = await addNews(masterPrivateKey, currentNews, {
+      action: "add-news",
+      eventId: event.id,
+      relay,
+    });
+
+    if (addNewsResult.some((r) => r.success)) {
+      return PublishEventResponse(
+        {
+          message: "News published successfully",
+          result,
+        },
+        { eventId: event.id, relay, addNewsResult },
+      );
+    }
+
+    return ErrorResponse(undefined, "Failed to publish news", 500);
   } catch (error) {
     console.error("Error publishing news:", error);
 
