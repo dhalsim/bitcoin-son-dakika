@@ -1,29 +1,19 @@
 import { useEffect, useState, useCallback } from "react";
 
-interface PriceData {
-  name: string;
-  symbol: string;
-  value: string;
-  change: string;
-  btcValue: string;
-  category: "crypto" | "currency" | "commodity" | "stock";
-  usdValue: number;
-}
+import type { FinalPriceData } from "../../api/schemas.js";
 
 interface PriceResponse {
   success: boolean;
-  data: {
-    prices: PriceData[];
-    btcPrice: number;
-    btcChange: number;
-    lastUpdated: string;
-    source: string;
-    totalAssets: number;
-  };
+  prices: FinalPriceData[];
+  btcPrice: number;
+  btcChange: number;
+  lastUpdated: string;
+  source: string;
+  totalAssets: number;
 }
 
 interface UsePriceDataReturn {
-  prices: PriceData[];
+  prices: FinalPriceData[];
   btcPrice: number | null;
   btcChange: number | null;
   loading: boolean;
@@ -36,7 +26,7 @@ export function usePriceData(
   refreshInterval: number = 600000,
 ): UsePriceDataReturn {
   // 10 minutes default
-  const [prices, setPrices] = useState<PriceData[]>([]);
+  const [prices, setPrices] = useState<FinalPriceData[]>([]);
   const [btcPrice, setBtcPrice] = useState<number | null>(null);
   const [btcChange, setBtcChange] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,11 +47,11 @@ export function usePriceData(
 
       const result: PriceResponse = await response.json();
 
-      if (result.success && result.data) {
-        setPrices(result.data.prices);
-        setBtcPrice(result.data.btcPrice);
-        setBtcChange(result.data.btcChange);
-        setLastUpdated(result.data.lastUpdated);
+      if (result.success && result.prices) {
+        setPrices(result.prices);
+        setBtcPrice(result.btcPrice);
+        setBtcChange(result.btcChange);
+        setLastUpdated(result.lastUpdated);
       } else {
         throw new Error("Invalid response format");
       }
