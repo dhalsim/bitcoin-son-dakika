@@ -5,5 +5,7 @@ export default [
   index("routes/_index.tsx"),
   // can't use "admin" because it's reserved for admin worker function at /functions/admin.ts
   route("admin-panel", "routes/admin.tsx"),
+  route("news", "routes/news.tsx"),
+  route("articles", "routes/articles.tsx"),
   route("*", "routes/$.tsx"),
 ] satisfies RouteConfig;

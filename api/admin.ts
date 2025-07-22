@@ -128,6 +128,12 @@ export async function POST(request: Request) {
           authResult,
           requestBody,
         );
+      case "publish-news":
+        return handlePublishNews(
+          masterAdminPrivateKey,
+          authResult,
+          requestBody,
+        );
       default:
         return ErrorResponse(undefined, "Invalid action", 400);
     }
@@ -187,125 +193,17 @@ type RemoveArticlePayload = {
   relay: string;
 };
 
-async function handleAddEditor(
-  masterAdminPrivateKey: string,
-  editorUsers: string[],
-  authResult: AuthResult,
-  data: AdminActionData,
-) {
-  // Type guard to ensure success
-  if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
-  }
+type PublishNewsPayload = {
+  action: "publish-news";
+  content: string;
+  title: string;
+  category: string;
+  summary?: string;
+  image?: string;
+  tags: string[];
+};
 
-  // Only admins can add editors
-  if (!authResult.roles.includes("admin")) {
-    return ErrorResponse(undefined, "Only admins can add editors", 403);
-  }
-
-  const { pubkey } = data;
-  if (!pubkey) {
-    return ErrorResponse(undefined, "Pubkey is required", 400);
-  }
-
-  return await updateNostrUserSet(
-    masterAdminPrivateKey,
-    "editor-users",
-    editorUsers,
-    pubkey,
-    "add",
-  );
-}
-
-async function handleRemoveEditor(
-  masterAdminPrivateKey: string,
-  editorUsers: string[],
-  authResult: AuthResult,
-  data: AdminActionData,
-) {
-  // Type guard to ensure success
-  if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
-  }
-
-  // Only admins can remove editors
-  if (!authResult.roles.includes("admin")) {
-    return ErrorResponse(undefined, "Only admins can remove editors", 403);
-  }
-
-  const { pubkey } = data;
-  if (!pubkey) {
-    return ErrorResponse(undefined, "Pubkey is required", 400);
-  }
-
-  return await updateNostrUserSet(
-    masterAdminPrivateKey,
-    "editor-users",
-    editorUsers,
-    pubkey,
-    "remove",
-  );
-}
-
-async function handleAddAdmin(
-  masterAdminPrivateKey: string,
-  currentAdminUsers: string[],
-  authResult: AuthResult,
-  data: AdminActionData,
-) {
-  // Type guard to ensure success
-  if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
-  }
-
-  // Only admins can add other admins
-  if (!authResult.roles.includes("admin")) {
-    return ErrorResponse(undefined, "Only admins can add other admins", 403);
-  }
-
-  const { pubkey } = data;
-  if (!pubkey) {
-    return ErrorResponse(undefined, "Pubkey is required", 400);
-  }
-
-  return await updateNostrUserSet(
-    masterAdminPrivateKey,
-    "admin-users",
-    currentAdminUsers,
-    pubkey,
-    "add",
-  );
-}
-
-async function handleRemoveAdmin(
-  masterAdminPrivateKey: string,
-  currentAdminUsers: string[],
-  authResult: AuthResult,
-  data: AdminActionData,
-) {
-  // Type guard to ensure success
-  if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
-  }
-
-  // Only admins can remove other admins
-  if (!authResult.roles.includes("admin")) {
-    return ErrorResponse(undefined, "Only admins can remove other admins", 403);
-  }
-
-  const { pubkey } = data;
-  if (!pubkey) {
-    return ErrorResponse(undefined, "Pubkey is required", 400);
-  }
-
-  return await updateNostrUserSet(
-    masterAdminPrivateKey,
-    "admin-users",
-    currentAdminUsers,
-    pubkey,
-    "remove",
-  );
-}
+/** Editor Handlers */
 
 async function handleAddNews(
   masterAdminPrivateKey: string,
@@ -319,15 +217,8 @@ async function handleAddNews(
   }
 
   // Only editors and admins can add news
-  if (
-    !authResult.roles.includes("editor") &&
-    !authResult.roles.includes("admin")
-  ) {
-    return ErrorResponse(
-      undefined,
-      "Only editors and admins can add news",
-      403,
-    );
+  if (!authResult.roles.includes("editor")) {
+    return ErrorResponse(undefined, "Only editors can add news", 403);
   }
 
   const { eventId, relay } = data;
@@ -351,15 +242,8 @@ async function handleRemoveNews(
   }
 
   // Only editors and admins can remove news
-  if (
-    !authResult.roles.includes("editor") &&
-    !authResult.roles.includes("admin")
-  ) {
-    return ErrorResponse(
-      undefined,
-      "Only editors and admins can remove news",
-      403,
-    );
+  if (!authResult.roles.includes("editor")) {
+    return ErrorResponse(undefined, "Only editors can remove news", 403);
   }
 
   const { eventId, relay } = data;
@@ -382,15 +266,8 @@ async function handleAddArticle(
   }
 
   // Only editors and admins can add articles
-  if (
-    !authResult.roles.includes("editor") &&
-    !authResult.roles.includes("admin")
-  ) {
-    return ErrorResponse(
-      undefined,
-      "Only editors and admins can add articles",
-      403,
-    );
+  if (!authResult.roles.includes("editor")) {
+    return ErrorResponse(undefined, "Only editors can add articles", 403);
   }
 
   let aTag: string;
@@ -436,15 +313,8 @@ async function handleRemoveArticle(
   }
 
   // Only editors and admins can remove articles
-  if (
-    !authResult.roles.includes("editor") &&
-    !authResult.roles.includes("admin")
-  ) {
-    return ErrorResponse(
-      undefined,
-      "Only editors and admins can remove articles",
-      403,
-    );
+  if (!authResult.roles.includes("editor")) {
+    return ErrorResponse(undefined, "Only editors can remove articles", 403);
   }
 
   const { aTag, relay } = data;
@@ -455,78 +325,34 @@ async function handleRemoveArticle(
   return await removeArticle(masterAdminPrivateKey, currentArticles, data);
 }
 
-function publishToRelays(
-  event: NostrEvent,
-  relayStrings: string[],
-): Promise<PublishToRelaysResult[]> {
-  return Promise.all(
-    relayStrings.map(async (r) => {
-      try {
-        const relay = new Relay(r);
-
-        await relay.connect();
-        await relay.publish(event);
-
-        return { success: true, relay: r };
-      } catch (error) {
-        return { success: false, relay: r, error: error.message };
-      }
-    }),
-  );
-}
-
-async function updateNostrUserSet(
-  masterPrivateKey: string,
-  setType: "admin-users" | "editor-users",
-  currentUsers: string[],
-  pubkey: string,
-  operation: "add" | "remove",
-): Promise<Response> {
-  try {
-    const privateKeyBytes = hexToBytes(masterPrivateKey);
-    const currentTime = Math.floor(Date.now() / 1000);
-
-    const existingUser = currentUsers.find((u) => u === pubkey);
-
-    if (operation === "add") {
-      if (existingUser) {
-        return ErrorResponse(undefined, "User already exists", 409);
-      }
-    } else {
-      if (!existingUser) {
-        return ErrorResponse(undefined, "User not found", 404);
-      }
-    }
-
-    const updatedUserTags =
-      operation === "add"
-        ? [...currentUsers.map((u) => ["p", u]), ["p", pubkey]]
-        : currentUsers.filter((u) => u !== pubkey).map((u) => ["p", u]);
-
-    // Create the event template
-    const eventTemplate = {
-      kind: 30000,
-      created_at: currentTime,
-      tags: [["d", setType], ...updatedUserTags],
-      content: "",
-    };
-
-    const event = finalizeEvent(eventTemplate, privateKeyBytes);
-    const result = await publishToRelays(event, ADMIN_RELAYS);
-
-    return PublishEventResponse(
-      {
-        message: `${operation === "add" ? "Added" : "Removed"} ${pubkey} from ${setType}`,
-        result,
-      },
-      { pubkey, setType, operation },
-    );
-  } catch (error) {
-    console.error("Error updating Nostr user set:", error);
-
-    return ErrorResponse(error);
+async function handlePublishNews(
+  masterAdminPrivateKey: string,
+  authResult: AuthResult,
+  data: PublishNewsPayload,
+) {
+  // Type guard to ensure success
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
   }
+
+  // Only editors and admins can publish news
+  if (!authResult.roles.includes("editor")) {
+    return ErrorResponse(undefined, "Only editors can publish news", 403);
+  }
+
+  const { content, title, category } = data;
+  if (!content || !title || !category) {
+    return ErrorResponse(
+      undefined,
+      "Content, title, and category are required",
+      400,
+    );
+  }
+
+  return await publishNews(masterAdminPrivateKey, authResult.pubkey, data);
 }
+
+/** Editor Actions */
 
 async function addNews(
   masterPrivateKey: string,
@@ -717,4 +543,254 @@ async function removeArticle(
 
     return ErrorResponse(error);
   }
+}
+
+async function publishNews(
+  masterPrivateKey: string,
+  userPubkey: string,
+  data: PublishNewsPayload,
+): Promise<Response> {
+  try {
+    const privateKeyBytes = hexToBytes(masterPrivateKey);
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    // Prepare tags for the kind 1 event
+    const eventTags = [
+      ["title", data.title],
+      ["category", data.category],
+      ["editor", userPubkey],
+      ...data.tags.map((tag) => ["t", tag]),
+    ];
+
+    // Add optional tags if provided
+    if (data.summary) {
+      eventTags.push(["summary", data.summary]);
+    }
+
+    if (data.image) {
+      eventTags.push(["image", data.image]);
+    }
+
+    // Create the kind 1 event
+    const eventTemplate = {
+      kind: 1,
+      created_at: currentTime,
+      tags: eventTags,
+      content: data.content,
+    };
+
+    const event = finalizeEvent(eventTemplate, privateKeyBytes);
+    const result = await publishToRelays(event, ADMIN_RELAYS);
+
+    return PublishEventResponse(
+      {
+        message: "News published successfully",
+        result,
+      },
+      { eventId: event.id },
+    );
+  } catch (error) {
+    console.error("Error publishing news:", error);
+
+    return ErrorResponse(error);
+  }
+}
+
+/** Admin Handlers */
+
+async function handleAddEditor(
+  masterAdminPrivateKey: string,
+  editorUsers: string[],
+  authResult: AuthResult,
+  data: AdminActionData,
+) {
+  // Type guard to ensure success
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  // Only admins can add editors
+  if (!authResult.roles.includes("admin")) {
+    return ErrorResponse(undefined, "Only admins can add editors", 403);
+  }
+
+  const { pubkey } = data;
+  if (!pubkey) {
+    return ErrorResponse(undefined, "Pubkey is required", 400);
+  }
+
+  return await updateNostrUserSet(
+    masterAdminPrivateKey,
+    "editor-users",
+    editorUsers,
+    pubkey,
+    "add",
+  );
+}
+
+async function handleRemoveEditor(
+  masterAdminPrivateKey: string,
+  editorUsers: string[],
+  authResult: AuthResult,
+  data: AdminActionData,
+) {
+  // Type guard to ensure success
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  // Only admins can remove editors
+  if (!authResult.roles.includes("admin")) {
+    return ErrorResponse(undefined, "Only admins can remove editors", 403);
+  }
+
+  const { pubkey } = data;
+  if (!pubkey) {
+    return ErrorResponse(undefined, "Pubkey is required", 400);
+  }
+
+  return await updateNostrUserSet(
+    masterAdminPrivateKey,
+    "editor-users",
+    editorUsers,
+    pubkey,
+    "remove",
+  );
+}
+
+async function handleAddAdmin(
+  masterAdminPrivateKey: string,
+  currentAdminUsers: string[],
+  authResult: AuthResult,
+  data: AdminActionData,
+) {
+  // Type guard to ensure success
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  // Only admins can add other admins
+  if (!authResult.roles.includes("admin")) {
+    return ErrorResponse(undefined, "Only admins can add other admins", 403);
+  }
+
+  const { pubkey } = data;
+  if (!pubkey) {
+    return ErrorResponse(undefined, "Pubkey is required", 400);
+  }
+
+  return await updateNostrUserSet(
+    masterAdminPrivateKey,
+    "admin-users",
+    currentAdminUsers,
+    pubkey,
+    "add",
+  );
+}
+
+async function handleRemoveAdmin(
+  masterAdminPrivateKey: string,
+  currentAdminUsers: string[],
+  authResult: AuthResult,
+  data: AdminActionData,
+) {
+  // Type guard to ensure success
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  // Only admins can remove other admins
+  if (!authResult.roles.includes("admin")) {
+    return ErrorResponse(undefined, "Only admins can remove other admins", 403);
+  }
+
+  const { pubkey } = data;
+  if (!pubkey) {
+    return ErrorResponse(undefined, "Pubkey is required", 400);
+  }
+
+  return await updateNostrUserSet(
+    masterAdminPrivateKey,
+    "admin-users",
+    currentAdminUsers,
+    pubkey,
+    "remove",
+  );
+}
+
+/** Admin Actions */
+
+async function updateNostrUserSet(
+  masterPrivateKey: string,
+  setType: "admin-users" | "editor-users",
+  currentUsers: string[],
+  pubkey: string,
+  operation: "add" | "remove",
+): Promise<Response> {
+  try {
+    const privateKeyBytes = hexToBytes(masterPrivateKey);
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    const existingUser = currentUsers.find((u) => u === pubkey);
+
+    if (operation === "add") {
+      if (existingUser) {
+        return ErrorResponse(undefined, "User already exists", 409);
+      }
+    } else {
+      if (!existingUser) {
+        return ErrorResponse(undefined, "User not found", 404);
+      }
+    }
+
+    const updatedUserTags =
+      operation === "add"
+        ? [...currentUsers.map((u) => ["p", u]), ["p", pubkey]]
+        : currentUsers.filter((u) => u !== pubkey).map((u) => ["p", u]);
+
+    // Create the event template
+    const eventTemplate = {
+      kind: 30000,
+      created_at: currentTime,
+      tags: [["d", setType], ...updatedUserTags],
+      content: "",
+    };
+
+    const event = finalizeEvent(eventTemplate, privateKeyBytes);
+    const result = await publishToRelays(event, ADMIN_RELAYS);
+
+    return PublishEventResponse(
+      {
+        message: `${operation === "add" ? "Added" : "Removed"} ${pubkey} from ${setType}`,
+        result,
+      },
+      { pubkey, setType, operation },
+    );
+  } catch (error) {
+    console.error("Error updating Nostr user set:", error);
+
+    return ErrorResponse(error);
+  }
+}
+
+/** Utility Functions */
+
+function publishToRelays(
+  event: NostrEvent,
+  relayStrings: string[],
+): Promise<PublishToRelaysResult[]> {
+  return Promise.all(
+    relayStrings.map(async (r) => {
+      try {
+        const relay = new Relay(r);
+
+        await relay.connect();
+        await relay.publish(event);
+
+        return { success: true, relay: r };
+      } catch (error) {
+        return { success: false, relay: r, error: error.message };
+      }
+    }),
+  );
 }

@@ -1,4 +1,13 @@
-import { Search, Menu, Moon, Sun, Rss, X, ChevronDown } from "lucide-react";
+import {
+  Search,
+  Menu,
+  Moon,
+  Sun,
+  Rss,
+  Atom,
+  X,
+  ChevronDown,
+} from "lucide-react";
 import React, { useState } from "react";
 
 import { useTheme } from "../hooks/useTheme";
@@ -51,29 +60,33 @@ const Header = () => {
             <span className="hidden sm:block text-gray-600 dark:text-gray-400">
               {getCurrentDateInTurkish()}
             </span>
-            <div className="flex space-x-1 sm:space-x-2">
-              <span className="bg-[#F7931A] text-white px-1 sm:px-2 py-1 rounded text-xs">
-                TR
-              </span>
-              <span className="text-gray-600 dark:text-gray-400 px-1 sm:px-2 py-1 text-xs">
-                EN
-              </span>
-            </div>
 
             {/* Social Links */}
             <div className="flex items-center space-x-1 sm:space-x-2">
               <a
-                href="#"
+                href="/feed/rss.xml"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
               >
                 <Rss className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
               </a>
               <a
-                href="#"
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
+                href="/feed/atom.xml"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+              >
+                <Atom className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
+              </a>
+              <a
+                href="https://njump.me/bitcoinsondakika"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
               >
                 <img
-                  src="https://raw.githubusercontent.com/SovrynMatt/Nostr-Website-Button-Design/main/nostr-icon-purple-256x256.png"
+                  src="/nostr-icon.png"
                   alt="Nostr"
                   className="h-3 w-3 sm:h-4 sm:w-4"
                 />
@@ -102,7 +115,7 @@ const Header = () => {
         {/* Main header */}
         <div className="flex items-center justify-between py-4">
           <div className="flex items-center space-x-4 sm:space-x-8">
-            <div className="flex items-center">
+            <a href="/" className="flex items-center">
               {/* Light mode logo */}
               <img
                 src="/siyah-logo-yazisi.png"
@@ -117,12 +130,12 @@ const Header = () => {
                 className="h-8 sm:h-12 hidden dark:block"
                 style={{ width: "auto" }}
               />
-            </div>
+            </a>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-6">
               <a
-                href="#"
+                href="/"
                 className="text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded"
               >
                 Ana Sayfa
@@ -208,7 +221,7 @@ const Header = () => {
               >
                 <div className="flex flex-col space-y-6 mt-6">
                   <a
-                    href="#"
+                    href="/"
                     className="text-gray-700 dark:text-gray-300 font-medium text-lg border-b border-gray-200 dark:border-gray-700 pb-2"
                   >
                     Ana Sayfa

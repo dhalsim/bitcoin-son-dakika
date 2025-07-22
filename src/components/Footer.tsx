@@ -1,5 +1,7 @@
 import React from "react";
 
+import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
+
 const Footer = () => {
   return (
     <footer className="bg-gray-900 dark:bg-black text-white mt-12 dark:border-t dark:border-gray-800 relative">
@@ -25,9 +27,7 @@ const Footer = () => {
                 style={{ width: "64px", height: "24px" }}
               />
             </div>
-            <p className="text-gray-400 text-sm">
-              Bitcoin dünyasındaki en güncel haberleri ve analizleri takip edin.
-            </p>
+            <p className="text-gray-400 text-sm">{WEBSITE_DESCRIPTION}</p>
           </div>
 
           <div>
@@ -111,10 +111,22 @@ const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
-                  href="#"
+                  href="/feed/rss.xml"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-gray-400 hover:text-[#F7931A] transition-colors"
                 >
-                  RSS
+                  RSS Feed
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/feed/atom.xml"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                >
+                  Atom Feed
                 </a>
               </li>
               <li>
@@ -146,7 +158,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-          <p>&copy; 2025 Bitcoin Haber. Tüm hakları saklıdır.</p>
+          <p>&copy; 2025 {WEBSITE_NAME}. Tüm hakları saklıdır.</p>
         </div>
       </div>
     </footer>

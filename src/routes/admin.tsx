@@ -10,6 +10,8 @@ import {
   Plus,
   FileText,
   Rocket,
+  X,
+  Upload,
 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
 import { nip19, SimplePool } from "nostr-tools";
@@ -27,19 +29,16 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { PublishEventResponse } from "api/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
-const ADMIN_RELAYS = [
-  "wss://relay.nostr.band",
-  "wss://relay.damus.io",
-  "wss://nos.lol",
-  "wss://relay.primal.net",
-  "wss://relay.snort.social",
-  "wss://nostr.bitcoiner.social",
-  "wss://nostr.mom",
-  "wss://nostr-pub.wellorder.net",
-  "wss://relay.nos.social",
-];
+import { ADMIN_RELAYS, type PublishEventResponse } from "../../api/utils";
 
 type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }
@@ -83,6 +82,16 @@ type AddEditorPayload = {
   pubkey: string;
 };
 
+type PublishNewsPayload = {
+  action: "publish-news";
+  content: string;
+  title: string;
+  category: string;
+  summary?: string;
+  image?: string;
+  tags: string[];
+};
+
 type Payload =
   | AddNewsPayload
   | RemoveNewsPayload
@@ -91,7 +100,8 @@ type Payload =
   | AddAdminPayload
   | RemoveAdminPayload
   | RemoveEditorPayload
-  | AddEditorPayload;
+  | AddEditorPayload
+  | PublishNewsPayload;
 
 const MASTER_ADMIN_PUBKEY =
   "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
@@ -107,6 +117,25 @@ interface UserInfo {
   pubkey?: string;
   roles?: string[];
 }
+
+const CATEGORY_OPTIONS = [
+  "bitcoin",
+  "nostr",
+  "analiz",
+  "piyasa",
+  "teknoloji",
+  "ekonomi",
+  "regülasyon",
+  "mining",
+  "defi",
+  "nft",
+  "ethereum",
+  "altcoin",
+  "güvenlik",
+  "eğitim",
+  "haber",
+  "geliştirme",
+];
 
 export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
@@ -136,6 +165,16 @@ export default function AdminPanel() {
 
   const [publishSuccess, setPublishSuccess] =
     useState<PublishEventResponse | null>(null);
+
+  // News creation form states
+  const [newsContent, setNewsContent] = useState("");
+  const [newsTitle, setNewsTitle] = useState("");
+  const [newsSummary, setNewsSummary] = useState("");
+  const [newsImageUrl, setNewsImageUrl] = useState("");
+  const [_newsImageFile, setNewsImageFile] = useState<File | null>(null);
+  const [newsTags, setNewsTags] = useState<string[]>([]);
+  const [newsCategory, setNewsCategory] = useState("");
+  const [newsPublishLoading, setNewsPublishLoading] = useState(false);
 
   useEffect(() => {
     loadAdminData();
@@ -449,6 +488,61 @@ export default function AdminPanel() {
     }
   };
 
+  const publishNews = async () => {
+    if (!newsContent.trim() || !newsTitle.trim() || !newsCategory) {
+      setError("İçerik, başlık ve kategori alanları zorunludur");
+
+      return;
+    }
+
+    setNewsPublishLoading(true);
+    setError("");
+
+    try {
+      const payload: PublishNewsPayload = {
+        action: "publish-news",
+        content: newsContent.trim(),
+        title: newsTitle.trim(),
+        category: newsCategory,
+        tags: newsTags,
+      };
+
+      // Add optional fields if provided
+      if (newsSummary.trim()) {
+        payload.summary = newsSummary.trim();
+      }
+
+      if (newsImageUrl.trim()) {
+        payload.image = newsImageUrl.trim();
+      }
+
+      await performAction(payload);
+
+      // Clear form on success
+      setNewsContent("");
+      setNewsTitle("");
+      setNewsSummary("");
+      setNewsImageUrl("");
+      setNewsImageFile(null);
+      setNewsTags([]);
+      setNewsCategory("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Haber yayınlama hatası");
+    } finally {
+      setNewsPublishLoading(false);
+    }
+  };
+
+  const addTag = (tag: string) => {
+    if (tag.trim() && !newsTags.includes(tag.trim())) {
+      setNewsTags([...newsTags, tag.trim()]);
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setNewsTags(newsTags.filter((tag) => tag !== tagToRemove));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center">
@@ -589,6 +683,200 @@ export default function AdminPanel() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Bitcoinsondakika olarak Haber Gir - Show if user is editor */}
+        {userIsEditor && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Bitcoinsondakika olarak Haber Gir
+              </CardTitle>
+              <CardDescription>
+                Yeni bir haber içeriği oluştur ve doğrudan yayınla
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Content Column */}
+                <div className="space-y-4">
+                  <div>
+                    <Label
+                      htmlFor="newsContent"
+                      className="text-base font-medium"
+                    >
+                      Haber İçeriği *
+                    </Label>
+                    <Textarea
+                      id="newsContent"
+                      placeholder="Haberinizin içeriğini buraya yazın..."
+                      value={newsContent}
+                      onChange={(e) => setNewsContent(e.target.value)}
+                      className="min-h-[300px] resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Metadata Column */}
+                <div className="space-y-4">
+                  {/* Title */}
+                  <div>
+                    <Label
+                      htmlFor="newsTitle"
+                      className="text-base font-medium"
+                    >
+                      Başlık *
+                    </Label>
+                    <Input
+                      id="newsTitle"
+                      placeholder="Haber başlığı"
+                      value={newsTitle}
+                      onChange={(e) => setNewsTitle(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <Label
+                      htmlFor="newsCategory"
+                      className="text-base font-medium"
+                    >
+                      Kategori *
+                    </Label>
+                    <Select
+                      value={newsCategory}
+                      onValueChange={setNewsCategory}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Kategori seçin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORY_OPTIONS.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category.charAt(0).toUpperCase() +
+                              category.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Summary */}
+                  <div>
+                    <Label
+                      htmlFor="newsSummary"
+                      className="text-base font-medium"
+                    >
+                      Özet (İsteğe bağlı)
+                    </Label>
+                    <Textarea
+                      id="newsSummary"
+                      placeholder="Haberin kısa özeti..."
+                      value={newsSummary}
+                      onChange={(e) => setNewsSummary(e.target.value)}
+                      className="min-h-[80px] resize-none"
+                    />
+                  </div>
+
+                  {/* Image */}
+                  <div>
+                    <Label className="text-base font-medium">Görsel</Label>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Görsel URL'si"
+                        value={newsImageUrl}
+                        onChange={(e) => setNewsImageUrl(e.target.value)}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2"
+                          disabled
+                        >
+                          <Upload className="h-4 w-4" />
+                          Dosya Yükle
+                        </Button>
+                        <span className="text-sm text-gray-500">
+                          (Yakında eklenecek)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div>
+                    <Label className="text-base font-medium">Etiketler</Label>
+                    <div className="space-y-2">
+                      <Select onValueChange={addTag}>
+                        <SelectTrigger className="bg-white dark:bg-gray-800">
+                          <SelectValue placeholder="Etiket ekle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORY_OPTIONS.filter(
+                            (tag) => !newsTags.includes(tag),
+                          ).map((tag) => (
+                            <SelectItem key={tag} value={tag}>
+                              {tag.charAt(0).toUpperCase() + tag.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Selected Tags */}
+                      {newsTags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {newsTags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
+                              {tag}
+                              <button
+                                onClick={() => removeTag(tag)}
+                                className="ml-1 hover:text-red-500"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Publish Button */}
+                  <div className="pt-4">
+                    <Button
+                      onClick={publishNews}
+                      disabled={
+                        newsPublishLoading ||
+                        !newsContent.trim() ||
+                        !newsTitle.trim() ||
+                        !newsCategory
+                      }
+                      className="w-full"
+                      size="lg"
+                    >
+                      {newsPublishLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Yayınlanıyor...
+                        </>
+                      ) : (
+                        <>
+                          <Rocket className="h-4 w-4 mr-2" />
+                          Haberi Yayınla
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Content Curation - Show if user is editor */}
         {(userIsEditor || userIsAdmin) && (

@@ -1,6 +1,10 @@
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
+
 import type { Config } from "@react-router/dev/config";
 import { vercelPreset } from "@vercel/react-router/vite";
 
+import { generateFeeds } from "./src/lib/feed-generator";
 import { fetchSSGData, type SSGData } from "./src/lib/ssg-data";
 
 // Type declaration for global SSG data
@@ -12,7 +16,7 @@ export default {
   // Use src directory instead of app
   appDirectory: "src",
 
-  ssr: false, // Enable SSR for proper SSG
+  ssr: false,
 
   presets: [vercelPreset()],
 
@@ -44,8 +48,29 @@ export default {
       `Prerendering with ${ssgData.news.length} news items and ${ssgData.articles.length} articles`,
     );
 
+    // Generate RSS and Atom feeds
+    const { rssFeed, atomFeed } = generateFeeds(ssgData);
+
+    // Write feed files to build directory
+    const buildDir = join(process.cwd(), "build", "client");
+    const feedDir = join(buildDir, "feed");
+
+    try {
+      // Ensure directory exists
+      await mkdir(feedDir, { recursive: true });
+
+      // Write files
+      await writeFile(join(feedDir, "rss.xml"), rssFeed);
+      await writeFile(join(feedDir, "atom.xml"), atomFeed);
+
+      console.log("✅ RSS and Atom feeds generated successfully");
+    } catch (error) {
+      console.error("❌ Error generating feeds:", error);
+    }
+
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
+      "/news", // Haberler sayfası - static
       "/admin-panel", // Admin panel - dynamic, but needs to be discovered
       "/ssg-debug", // SSG debug page - only available in development
     ];

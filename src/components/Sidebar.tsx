@@ -1,58 +1,14 @@
 import { TrendingUp, PenTool } from "lucide-react";
-import React from "react";
 
-const Sidebar = () => {
-  const trendingNews = [
-    {
-      title: "Bitcoin 70.000 Doları Aştı: Yeni Rekor Gelir Mi?",
-      time: "2 saat önce",
-    },
-    {
-      title: "Lightning Network Büyük Güncelleme Aldı",
-      time: "4 saat önce",
-    },
-    {
-      title: "Tesla Bitcoin Satışlarını Durdurdu",
-      time: "6 saat önce",
-    },
-    {
-      title: "Türkiye'de Bitcoin Düzenlemeleri Netleşiyor",
-      time: "8 saat önce",
-    },
-    {
-      title: "Bitcoin Madenciliğinde Yeni Rekor",
-      time: "10 saat önce",
-    },
-  ];
+import type { ArticleItem, NewsItem } from "@/lib/ssg-data";
 
-  const recentColumns = [
-    {
-      title: "Bitcoin'in Geleceği ve Kurumsal Yatırımcılar",
-      author: "Ahmet Yılmaz",
-      time: "1 gün önce",
-    },
-    {
-      title: "Merkez Bankası Dijital Para Birimlerinin Etkisi",
-      author: "Fatma Demir",
-      time: "2 gün önce",
-    },
-    {
-      title: "Enflasyona Karşı Bitcoin: Gerçek Koruma mu?",
-      author: "Mehmet Özkan",
-      time: "3 gün önce",
-    },
-    {
-      title: "Lightning Network: Bitcoin'in Ölçekleme Çözümü",
-      author: "Ayşe Kaya",
-      time: "4 gün önce",
-    },
-    {
-      title: "Türkiye'de Kripto Para Düzenlemeleri",
-      author: "Can Şahin",
-      time: "5 gün önce",
-    },
-  ];
-
+const Sidebar = ({
+  news,
+  articles,
+}: {
+  news: NewsItem[];
+  articles: ArticleItem[];
+}) => {
   return (
     <aside className="space-y-6">
       {/* Recent Columns */}
@@ -65,24 +21,30 @@ const Sidebar = () => {
         </div>
 
         <div className="space-y-4">
-          {recentColumns.map((column, index) => (
+          {articles.map((article, index) => (
             <div
               key={index}
               className="border-b border-gray-100 dark:border-gray-800 pb-3 last:border-b-0 last:pb-0"
             >
               <h4 className="font-medium text-gray-900 dark:text-gray-100 hover:text-[#F7931A] cursor-pointer text-sm leading-snug mb-1">
-                {column.title}
+                {article.title}
               </h4>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-600 dark:text-gray-400">
-                  {column.author}
+                  {article.author.display_name}
                 </span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {column.time}
+                  {new Date(article.publishedAt).toLocaleDateString()}
                 </span>
               </div>
             </div>
           ))}
+          <a
+            href="/articles"
+            className="flex items-center text-gray-700 dark:text-gray-300 hover:text-[#F7931A] transition-colors"
+          >
+            <span className="text-sm font-medium">Tüm Makaleler →</span>
+          </a>
         </div>
       </div>
 
@@ -96,19 +58,25 @@ const Sidebar = () => {
         </div>
 
         <div className="space-y-4">
-          {trendingNews.map((news, index) => (
+          {news.map((n, index) => (
             <div
               key={index}
               className="border-b border-gray-100 dark:border-gray-800 pb-3 last:border-b-0 last:pb-0"
             >
               <h4 className="font-medium text-gray-900 dark:text-gray-100 hover:text-[#F7931A] cursor-pointer text-sm leading-snug mb-1">
-                {news.title}
+                {n.title}
               </h4>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {news.time}
+                {new Date(n.publishedAt).toLocaleDateString()}
               </span>
             </div>
           ))}
+          <a
+            href="/news"
+            className="flex items-center text-gray-700 dark:text-gray-300 hover:text-[#F7931A] transition-colors"
+          >
+            <span className="text-sm font-medium">Tüm Haberler →</span>
+          </a>
         </div>
       </div>
 

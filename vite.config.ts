@@ -24,6 +24,7 @@ export default defineConfig(() => ({
   build: {
     minify: process.env.NODE_ENV === "production", // Only minify in production
     sourcemap: process.env.NODE_ENV !== "production", // Source maps in development
+    assetsInclude: ["**/*.xml"],
     rollupOptions: {
       output: {
         // Keep readable chunk names

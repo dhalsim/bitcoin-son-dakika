@@ -10,15 +10,14 @@ import {
   useLatestArticles,
   useSSGData,
 } from "../hooks/useSSGData";
-import { type NewsItem, type ArticleItem } from "../lib/ssg-data";
+import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Bitcoin Son Dakika - Güncel Bitcoin Haberleri ve Analizler" },
+    { title: `${WEBSITE_NAME} - Güncel Bitcoin Haberleri ve Analizler` },
     {
       name: "description",
-      content:
-        "Bitcoin dünyasından son dakika haberleri, güncel gelişmeler, analizler ve uzman yorumları. Lightning Network, madencilik ve kripto para düzenlemeleri.",
+      content: WEBSITE_DESCRIPTION,
     },
     {
       name: "keywords",
@@ -29,11 +28,14 @@ export const meta: MetaFunction = () => {
 };
 
 // Helper function to convert NewsItem/ArticleItem to NewsCard props
-function convertToNewsCardProps(item: NewsItem | ArticleItem) {
+function convertToNewsCardProps(item: any) {
   const timeAgo = getTimeAgo(item.publishedAt);
+  const isArticle = "identifier" in item;
+  const prefix = isArticle ? "Makale: " : "Haber - ";
+  const title = `${prefix}${item.title}`;
 
   return {
-    title: item.title,
+    title,
     summary: item.summary || item.content.substring(0, 150) + "...",
     category: item.category || "Bitcoin",
     time: timeAgo,
@@ -188,7 +190,7 @@ export default function Index() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1 mt-6 lg:mt-0">
-            <Sidebar />
+            <Sidebar news={ssgData.news} articles={ssgData.articles} />
           </div>
         </div>
       </div>
