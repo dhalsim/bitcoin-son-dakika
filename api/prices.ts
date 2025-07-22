@@ -71,29 +71,45 @@ export async function GET() {
 
     // Process crypto data
     const rawCryptoData = await cryptoResponse.value.json();
+
+    // Check if the response indicates an error
+    if (!rawCryptoData.success) {
+      throw new Error(
+        `Crypto API error: ${rawCryptoData.message || "Unknown error"}`,
+      );
+    }
+
     const cryptoData = CryptoEndpointResponseSchema.parse(rawCryptoData);
 
     // Add BTC rates to crypto prices
-    cryptoData.data.prices.forEach((price) => {
+    cryptoData.prices.forEach((price) => {
       allPrices.push({
         ...price,
         btcValue:
           price.category === "crypto" && price.name === "Bitcoin"
             ? "1.00000000"
-            : (price.usdValue / cryptoData.data.btcPrice).toFixed(8),
+            : (price.usdValue / cryptoData.btcPrice).toFixed(8),
       });
     });
 
-    const btcPrice = cryptoData.data.btcPrice;
-    const btcChange = cryptoData.data.btcChange;
+    const btcPrice = cryptoData.btcPrice;
+    const btcChange = cryptoData.btcChange;
 
     // Process commodity data
     const rawCommodityData = await commodityResponse.value.json();
+
+    // Check if the response indicates an error
+    if (!rawCommodityData.success) {
+      throw new Error(
+        `Commodity API error: ${rawCommodityData.message || "Unknown error"}`,
+      );
+    }
+
     const commodityData =
       CommodityEndpointResponseSchema.parse(rawCommodityData);
 
     // Add BTC rates to commodity prices
-    commodityData.data.prices.forEach((price) => {
+    commodityData.prices.forEach((price) => {
       allPrices.push({
         ...price,
         btcValue: (price.usdValue / btcPrice).toFixed(8),
@@ -102,10 +118,18 @@ export async function GET() {
 
     // Process forex data
     const rawForexData = await forexResponse.value.json();
+
+    // Check if the response indicates an error
+    if (!rawForexData.success) {
+      throw new Error(
+        `Forex API error: ${rawForexData.message || "Unknown error"}`,
+      );
+    }
+
     const forexData = ForexEndpointResponseSchema.parse(rawForexData);
 
     // Add BTC rates to forex prices
-    forexData.data.prices.forEach((price) => {
+    forexData.prices.forEach((price) => {
       allPrices.push({
         ...price,
         btcValue: (price.usdValue / btcPrice).toFixed(8),

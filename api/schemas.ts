@@ -6,10 +6,11 @@ export const BasePriceDataSchema = z.object({
   symbol: z.string(),
   value: z.string(),
   change: z.string(),
+  category: z.enum(["crypto", "currency", "commodity", "stock"]),
   usdValue: z.number(),
 });
 
-// Category-specific price data schemas
+// Category-specific price data schemas (for type safety)
 export const CryptoPriceDataSchema = BasePriceDataSchema.extend({
   category: z.literal("crypto"),
 });
@@ -97,42 +98,24 @@ export const ExchangeRateDataSchema = z.object({
 // Endpoint response schemas
 export const BaseEndpointResponseSchema = z.object({
   success: z.boolean(),
-  data: z.object({
-    prices: z.array(BasePriceDataSchema),
-    lastUpdated: z.string(),
-    source: z.string(),
-    totalAssets: z.number(),
-  }),
+  prices: z.array(BasePriceDataSchema),
+  lastUpdated: z.string(),
+  source: z.string(),
+  totalAssets: z.number(),
 });
 
 export const CryptoEndpointResponseSchema = BaseEndpointResponseSchema.extend({
-  data: z.object({
-    prices: z.array(CryptoPriceDataSchema),
-    btcPrice: z.number(),
-    btcChange: z.number(),
-    lastUpdated: z.string(),
-    source: z.string(),
-    totalAssets: z.number(),
-  }),
+  btcPrice: z.number(),
+  btcChange: z.number(),
 });
 
 export const CommodityEndpointResponseSchema =
   BaseEndpointResponseSchema.extend({
-    data: z.object({
-      prices: z.array(CommodityPriceDataSchema),
-      lastUpdated: z.string(),
-      source: z.string(),
-      totalAssets: z.number(),
-    }),
+    // No additional fields needed
   });
 
 export const ForexEndpointResponseSchema = BaseEndpointResponseSchema.extend({
-  data: z.object({
-    prices: z.array(CurrencyPriceDataSchema),
-    lastUpdated: z.string(),
-    source: z.string(),
-    totalAssets: z.number(),
-  }),
+  // No additional fields needed
 });
 
 // Final price data with BTC value (used in main gateway)
