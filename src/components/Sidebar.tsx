@@ -1,5 +1,6 @@
 import { TrendingUp, PenTool } from "lucide-react";
 
+import { useBitcoinStats } from "@/hooks/useBitcoinStats";
 import type { ArticleItem, NewsItem } from "@/lib/ssg-data";
 
 const Sidebar = ({
@@ -9,8 +10,10 @@ const Sidebar = ({
   news: NewsItem[];
   articles: ArticleItem[];
 }) => {
+  const { stats, loading, error } = useBitcoinStats();
+
   return (
-    <aside className="space-y-6">
+    <aside className="w-full lg:w-80 space-y-6">
       {/* Recent Columns */}
       <div className="bg-white dark:bg-black rounded-lg shadow-sm p-6 dark:border dark:border-gray-800">
         <div className="flex items-center mb-4">
@@ -86,58 +89,108 @@ const Sidebar = ({
           Bitcoin İstatistikleri
         </h3>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-gray-900 dark:text-gray-100">
-                Hash Oranı
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 mb-1"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+                </div>
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 mb-1"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12"></div>
+                </div>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                EH/s
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="font-medium text-gray-900 dark:text-gray-100">
-                485.2
-              </div>
-              <div className="text-xs text-green-600">+3.2%</div>
-            </div>
+            ))}
           </div>
+        ) : error ? (
+          <div className="text-red-500 text-sm">
+            Veri yüklenirken hata oluştu
+          </div>
+        ) : stats ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-gray-900 dark:text-gray-100">
+                  Hash Oranı
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {stats.hashrate.unit}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-medium text-gray-900 dark:text-gray-100">
+                  {stats.hashrate.value}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Güncel
+                </div>
+              </div>
+            </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-gray-900 dark:text-gray-100">
-                Zorluk
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-gray-900 dark:text-gray-100">
+                  Zorluk
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Trilyon
+                </div>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Trilyon
+              <div className="text-right">
+                <div className="font-medium text-gray-900 dark:text-gray-100">
+                  {stats.difficulty.value}
+                </div>
+                {stats.difficulty.change && (
+                  <div
+                    className={`text-xs ${stats.difficulty.change.startsWith("+") ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {stats.difficulty.change}
+                  </div>
+                )}
               </div>
             </div>
-            <div className="text-right">
-              <div className="font-medium text-gray-900 dark:text-gray-100">
-                62.46T
-              </div>
-              <div className="text-xs text-red-600">-1.2%</div>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-gray-900 dark:text-gray-100">
-                Mempool
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-gray-900 dark:text-gray-100">
+                  Mempool
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {stats.mempool.status}
+                </div>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Bekleyen TX
+              <div className="text-right">
+                <div className="font-medium text-gray-900 dark:text-gray-100">
+                  {stats.mempool.count.toLocaleString()}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {stats.mempool.size}
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <div className="font-medium text-gray-900 dark:text-gray-100">
-                8,432
+
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-gray-900 dark:text-gray-100">
+                  Önerilen Ücret
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  sat/vB
+                </div>
               </div>
-              <div className="text-xs text-green-600">-15.3%</div>
+              <div className="text-right">
+                <div className="font-medium text-gray-900 dark:text-gray-100">
+                  {stats.fees.halfHour}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  30 dk
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
       </div>
 
       {/* Advertisement Placeholder */}
