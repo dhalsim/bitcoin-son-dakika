@@ -63,14 +63,15 @@ export async function GET() {
 
     // Process hashrate data
     let hashrateData;
+    let currentDifficulty = 0;
     if (hashrateResponse.status === "fulfilled" && hashrateResponse.value.ok) {
       const rawHashrateData = await hashrateResponse.value.json();
 
-      // The current hashrate endpoint returns a simple object with hashrate value
+      // The 3d hashrate endpoint returns an object with hashrates array and currentHashrate
       if (typeof rawHashrateData === "object" && rawHashrateData !== null) {
-        const hashrateInEH =
-          (rawHashrateData.hashrate || rawHashrateData.avgHashrate || 500e18) /
-          1e18; // Convert to exahash
+        const currentHashrate = rawHashrateData.currentHashrate || 500e18;
+        const hashrateInEH = currentHashrate / 1e18; // Convert to exahash
+        currentDifficulty = rawHashrateData.currentDifficulty || 0;
 
         hashrateData = {
           value: hashrateInEH.toFixed(2),
@@ -108,11 +109,12 @@ export async function GET() {
       const difficulty = MempoolDifficultySchema.parse(rawDifficultyData);
 
       difficultyData = {
-        value: (difficulty.difficulty / 1e12).toFixed(2) + "T", // Convert to terahash
-        change: difficulty.difficultyChange
-          ? `${difficulty.difficultyChange > 0 ? "+" : ""}${difficulty.difficultyChange.toFixed(2)}%`
-          : undefined,
-        height: difficulty.height,
+        value:
+          currentDifficulty > 0
+            ? (currentDifficulty / 1e12).toFixed(2) + "T"
+            : "Current",
+        change: `${difficulty.difficultyChange > 0 ? "+" : ""}${(difficulty.difficultyChange * 100).toFixed(2)}%`,
+        height: difficulty.nextRetargetHeight,
       };
     } else {
       throw new Error("Failed to fetch difficulty data");

@@ -16,17 +16,18 @@ export const MempoolFeesSchema = z.object({
 });
 
 export const MempoolDifficultySchema = z.object({
-  difficulty: z.number(),
-  height: z.number(),
-  timestamp: z.number(),
-  bits: z.string(),
-  size: z.number(),
-  weight: z.number(),
-  version: z.number(),
-  previousblockhash: z.string(),
-  mediantime: z.number(),
-  nonce: z.number(),
-  difficultyChange: z.number().optional(),
+  progressPercent: z.number(),
+  difficultyChange: z.number(),
+  estimatedRetargetDate: z.number(),
+  remainingBlocks: z.number(),
+  remainingTime: z.number(),
+  previousRetarget: z.number(),
+  previousTime: z.number(),
+  nextRetargetHeight: z.number(),
+  timeAvg: z.number(),
+  adjustedTimeAvg: z.number(),
+  timeOffset: z.number(),
+  expectedBlocks: z.number(),
 });
 
 export const MempoolMempoolSchema = z.object({
