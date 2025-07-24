@@ -2,9 +2,14 @@ import { z } from "zod";
 
 // Mempool.space API schemas
 export const MempoolHashrateSchema = z.object({
-  timestamp: z.number(),
-  avgHashrate: z.number(),
-  share: z.number(),
+  hashrates: z.array(
+    z.object({
+      avgHashrate: z.number(),
+      timestamp: z.number(),
+    }),
+  ),
+  currentHashrate: z.number(),
+  currentDifficulty: z.number(),
 });
 
 export const MempoolFeesSchema = z.object({
@@ -44,16 +49,10 @@ export const BitcoinStatsDataSchema = z.object({
     unit: z.string(),
     timestamp: z.number(),
   }),
-  fees: z.object({
-    fastest: z.number(),
-    halfHour: z.number(),
-    hour: z.number(),
-    economy: z.number(),
-    minimum: z.number(),
-  }),
+  fees: MempoolFeesSchema,
   difficulty: z.object({
     value: z.string(),
-    change: z.string().optional(),
+    change: z.string(),
     height: z.number(),
   }),
   mempool: z.object({

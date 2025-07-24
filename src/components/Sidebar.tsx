@@ -192,7 +192,7 @@ const Sidebar = ({
               </div>
               <div className="text-right">
                 <div className="font-medium text-gray-900 dark:text-gray-100">
-                  {stats.fees.halfHour}
+                  {stats.fees.halfHourFee}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   30 dk

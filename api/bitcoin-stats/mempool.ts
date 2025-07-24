@@ -1,10 +1,12 @@
 import { applyCacheHeaders } from "../cache-utils.js";
 import { ErrorResponse, SuccessResponse } from "../utils.js";
 
+import type { BitcoinStatsData } from "./schemas.js";
 import {
   MempoolFeesSchema,
   MempoolDifficultySchema,
   MempoolMempoolSchema,
+  MempoolHashrateSchema,
 } from "./schemas.js";
 
 // Vercel Edge Function handler for GET requests
@@ -82,17 +84,14 @@ export async function GET() {
 
     // Process hashrate data
     const rawHashrateData = await hashrateResponse.value.json();
-
-    if (typeof rawHashrateData !== "object" || rawHashrateData === null) {
-      throw new Error("Invalid hashrate data");
-    }
+    const hashrateData = MempoolHashrateSchema.parse(rawHashrateData);
 
     // The 3d hashrate endpoint returns an object with hashrates array and currentHashrate
-    const currentHashrate = rawHashrateData.currentHashrate || 500e18;
+    const currentHashrate = hashrateData.currentHashrate;
     const hashrateInEH = currentHashrate / 1e18; // Convert to exahash
-    const currentDifficulty = rawHashrateData.currentDifficulty || 0;
+    const currentDifficulty = hashrateData.currentDifficulty;
 
-    const hashrateData = {
+    const hashrate = {
       value: hashrateInEH.toFixed(2),
       unit: "EH/s",
       timestamp: Date.now(),
@@ -103,44 +102,44 @@ export async function GET() {
     const feesData = MempoolFeesSchema.parse(rawFeesData);
 
     const rawDifficultyData = await difficultyResponse.value.json();
-    const difficulty = MempoolDifficultySchema.parse(rawDifficultyData);
+    const difficultyData = MempoolDifficultySchema.parse(rawDifficultyData);
 
-    const difficultyData = {
+    const difficulty = {
       value:
         currentDifficulty > 0
           ? (currentDifficulty / 1e12).toFixed(2) + "T"
           : "Current",
-      change: `${difficulty.difficultyChange > 0 ? "+" : ""}${(difficulty.difficultyChange * 100).toFixed(2)}%`,
-      height: difficulty.nextRetargetHeight,
+      change: `${difficultyData.difficultyChange > 0 ? "+" : ""}${(difficultyData.difficultyChange * 100).toFixed(2)}%`,
+      height: difficultyData.nextRetargetHeight,
     };
 
     // Process mempool data
     const rawMempoolData = await mempoolResponse.value.json();
-    const mempool = MempoolMempoolSchema.parse(rawMempoolData);
+    const mempoolData = MempoolMempoolSchema.parse(rawMempoolData);
 
     // Determine mempool status based on transaction count
     let status = "Normal";
-    if (mempool.count > 50000) {
+    if (mempoolData.count > 50000) {
       status = "Yoğun";
-    } else if (mempool.count > 20000) {
+    } else if (mempoolData.count > 20000) {
       status = "Orta";
-    } else if (mempool.count < 5000) {
+    } else if (mempoolData.count < 5000) {
       status = "Az";
     }
 
-    const mempoolData = {
-      count: mempool.count,
-      size: (mempool.vsize / 1e6).toFixed(2) + " MB", // Convert to MB
-      totalFee: (mempool.total_fee / 1e8).toFixed(4) + " BTC", // Convert to BTC
+    const mempool = {
+      count: mempoolData.count,
+      size: (mempoolData.vsize / 1e6).toFixed(2) + " MB", // Convert to MB
+      totalFee: (mempoolData.total_fee / 1e8).toFixed(4) + " BTC", // Convert to BTC
       status,
     };
 
     // Prepare response data
-    const responseData = {
-      hashrate: hashrateData,
+    const responseData: BitcoinStatsData = {
+      hashrate,
       fees: feesData,
-      difficulty: difficultyData,
-      mempool: mempoolData,
+      difficulty,
+      mempool,
       lastUpdated: new Date().toISOString(),
       source: "Mempool.space",
     };

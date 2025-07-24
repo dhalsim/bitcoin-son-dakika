@@ -2,41 +2,24 @@ import { useState, useEffect } from "react";
 
 import { WEBSITE_URL } from "@/lib/constants";
 
-interface BitcoinStats {
-  hashrate: {
-    value: string;
-    unit: string;
-    timestamp: number;
-  };
-  fees: {
-    fastest: number;
-    halfHour: number;
-    hour: number;
-    economy: number;
-    minimum: number;
-  };
-  difficulty: {
-    value: string;
-    change?: string;
-    height: number;
-  };
-  mempool: {
-    count: number;
-    size: string;
-    totalFee: string;
-    status: string;
-  };
-  lastUpdated: string;
-  source: string;
+import {
+  BitcoinStatsDataSchema,
+  type BitcoinStatsData,
+} from "../../api/bitcoin-stats/schemas.js";
+
+type BitcoinStatsResponse =
+  | (BitcoinStatsData & { success: true })
+  | { success: false; message: string; error: string };
+
+// Type guard to help TypeScript narrow the type
+function isSuccessResponse(
+  response: BitcoinStatsResponse,
+): response is BitcoinStatsData & { success: true } {
+  return response.success === true;
 }
 
-type BitcoinStatsResponse = {
-  success: boolean;
-  message?: string;
-} & BitcoinStats;
-
 export const useBitcoinStats = () => {
-  const [stats, setStats] = useState<BitcoinStats | null>(null);
+  const [stats, setStats] = useState<BitcoinStatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,14 +39,18 @@ export const useBitcoinStats = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data: BitcoinStatsResponse = await response.json();
-        console.log("Bitcoin stats data:", data);
+        const rawBitcoinStats: BitcoinStatsResponse = await response.json();
+        console.log("Bitcoin stats data:", rawBitcoinStats);
 
-        if (!data.success) {
-          throw new Error(data.message || "Failed to fetch Bitcoin stats");
+        if (!isSuccessResponse(rawBitcoinStats)) {
+          throw new Error(
+            rawBitcoinStats.error || "Failed to fetch Bitcoin stats",
+          );
         }
 
-        setStats(data);
+        const bitcoinStats = BitcoinStatsDataSchema.parse(rawBitcoinStats);
+
+        setStats(bitcoinStats);
         console.log("Bitcoin stats set successfully");
       } catch (err) {
         console.error("Error fetching Bitcoin stats:", err);
