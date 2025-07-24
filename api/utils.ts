@@ -262,23 +262,23 @@ export async function fetchNostrSets(
     let newsTags: NewsTag[] = [];
 
     // Fetch admin users set
-    const eventResults: EventResult[] = await fetchSets(sets);
+    const eventResults: Map<EventSet, NostrEvent> = await fetchSets(sets);
 
-    for (const resultItem of eventResults) {
-      if (resultItem.set === "admin-users") {
-        adminUsers = resultItem.event.tags
+    for (const [set, event] of eventResults) {
+      if (set === "admin-users") {
+        adminUsers = event.tags
           .filter((tag) => tag[0] === "p" && tag[1])
           .map((tag) => tag[1]);
       }
 
-      if (resultItem.set === "editor-users") {
-        editorUsers = resultItem.event.tags
+      if (set === "editor-users") {
+        editorUsers = event.tags
           .filter((tag) => tag[0] === "p" && tag[1])
           .map((tag) => tag[1]);
       }
 
-      if (resultItem.set === "articles") {
-        articleTags = resultItem.event.tags
+      if (set === "articles") {
+        articleTags = event.tags
           .filter((tag) => tag[0] === "a" && tag[1] && tag[2])
           .map((tag) => ({
             aTag: tag[1],
@@ -286,13 +286,13 @@ export async function fetchNostrSets(
           }));
       }
 
-      if (resultItem.set === "news") {
-        newsTags = resultItem.event.tags
+      if (set === "news") {
+        newsTags = event.tags
           .filter((tag) => tag[0] === "e" && tag[1] && tag[2])
           .map((tag) => ({
             eTag: tag[1],
             relay: tag[2],
-            pubkey: resultItem.event.pubkey,
+            pubkey: event.pubkey,
           }));
       }
     }
@@ -318,12 +318,9 @@ function getEventSetType(set: EventSet, type: "follow" | "curation"): boolean {
 
 export type EventSet = "admin-users" | "editor-users" | "articles" | "news";
 
-type EventResult = {
-  event: NostrEvent;
-  set: EventSet;
-};
-
-const fetchSets = async (sets: EventSet[]): Promise<EventResult[]> => {
+const fetchSets = async (
+  sets: EventSet[],
+): Promise<Map<EventSet, NostrEvent>> => {
   const hasFollowSet = sets.some((set) => getEventSetType(set, "follow"));
   const hasCurationSet = sets.some((set) => getEventSetType(set, "curation"));
 
@@ -332,8 +329,8 @@ const fetchSets = async (sets: EventSet[]): Promise<EventResult[]> => {
     hasCurationSet ? 30004 : null,
   ].filter(Boolean);
 
-  return new Promise((resolve) => {
-    const events: EventResult[] = [];
+  return new Promise((resolve, reject) => {
+    const events = new Map<EventSet, NostrEvent>();
 
     // Use the correct nostr-tools API for fetching events
     pool.subscribeEose(
@@ -345,13 +342,32 @@ const fetchSets = async (sets: EventSet[]): Promise<EventResult[]> => {
       },
       {
         onevent(evt) {
-          events.push({
-            event: evt,
-            set: evt.tags.find((tag) => tag[0] === "d")?.[1] as EventSet,
-          });
+          const dTag = evt.tags.find((tag) => tag[0] === "d")?.[1];
 
-          if (events.length === sets.length) {
+          if (!dTag) {
+            return;
+          }
+
+          if (!sets.includes(dTag as EventSet)) {
+            return;
+          }
+
+          if (events.has(dTag as EventSet)) {
+            // check if the event in the map is newer
+            const existingEvent = events.get(dTag as EventSet);
+
+            if (existingEvent && existingEvent.created_at > evt.created_at) {
+              return;
+            }
+          }
+
+          events.set(dTag as EventSet, evt);
+        },
+        onclose() {
+          if (events.size === sets.length) {
             resolve(events);
+          } else {
+            reject(new Error("Not all events received"));
           }
         },
       },

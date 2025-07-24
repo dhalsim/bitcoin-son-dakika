@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+import { WEBSITE_URL } from "@/lib/constants";
+
 interface BitcoinStats {
   hashrate: {
     value: string;
@@ -28,11 +30,10 @@ interface BitcoinStats {
   source: string;
 }
 
-interface BitcoinStatsResponse {
+type BitcoinStatsResponse = {
   success: boolean;
-  data: BitcoinStats;
   message?: string;
-}
+} & BitcoinStats;
 
 export const useBitcoinStats = () => {
   const [stats, setStats] = useState<BitcoinStats | null>(null);
@@ -42,22 +43,28 @@ export const useBitcoinStats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        console.log("Fetching Bitcoin stats...");
         setLoading(true);
         setError(null);
 
-        const response = await fetch("/api/bitcoin-stats/mempool");
+        const response = await fetch(
+          `${WEBSITE_URL}/api/bitcoin-stats/mempool`,
+        );
+        console.log("Response status:", response.status);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data: BitcoinStatsResponse = await response.json();
+        console.log("Bitcoin stats data:", data);
 
         if (!data.success) {
           throw new Error(data.message || "Failed to fetch Bitcoin stats");
         }
 
-        setStats(data.data);
+        setStats(data);
+        console.log("Bitcoin stats set successfully");
       } catch (err) {
         console.error("Error fetching Bitcoin stats:", err);
         setError(

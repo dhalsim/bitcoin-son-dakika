@@ -61,90 +61,79 @@ export async function GET() {
       });
     }
 
-    // Process hashrate data
-    let hashrateData;
-    let currentDifficulty = 0;
-    if (hashrateResponse.status === "fulfilled" && hashrateResponse.value.ok) {
-      const rawHashrateData = await hashrateResponse.value.json();
-
-      // The 3d hashrate endpoint returns an object with hashrates array and currentHashrate
-      if (typeof rawHashrateData === "object" && rawHashrateData !== null) {
-        const currentHashrate = rawHashrateData.currentHashrate || 500e18;
-        const hashrateInEH = currentHashrate / 1e18; // Convert to exahash
-        currentDifficulty = rawHashrateData.currentDifficulty || 0;
-
-        hashrateData = {
-          value: hashrateInEH.toFixed(2),
-          unit: "EH/s",
-          timestamp: Date.now(),
-        };
-      } else {
-        // Fallback
-        hashrateData = {
-          value: "500.00",
-          unit: "EH/s",
-          timestamp: Date.now(),
-        };
-      }
-    } else {
+    if (hashrateResponse.status !== "fulfilled" || !hashrateResponse.value.ok) {
       throw new Error("Failed to fetch hashrate data");
     }
 
-    // Process fees data
-    let feesData;
-    if (feesResponse.status === "fulfilled" && feesResponse.value.ok) {
-      const rawFeesData = await feesResponse.value.json();
-      feesData = MempoolFeesSchema.parse(rawFeesData);
-    } else {
+    if (feesResponse.status !== "fulfilled" || !feesResponse.value.ok) {
       throw new Error("Failed to fetch fees data");
     }
 
-    // Process difficulty data
-    let difficultyData;
     if (
-      difficultyResponse.status === "fulfilled" &&
-      difficultyResponse.value.ok
+      difficultyResponse.status !== "fulfilled" ||
+      !difficultyResponse.value.ok
     ) {
-      const rawDifficultyData = await difficultyResponse.value.json();
-      const difficulty = MempoolDifficultySchema.parse(rawDifficultyData);
-
-      difficultyData = {
-        value:
-          currentDifficulty > 0
-            ? (currentDifficulty / 1e12).toFixed(2) + "T"
-            : "Current",
-        change: `${difficulty.difficultyChange > 0 ? "+" : ""}${(difficulty.difficultyChange * 100).toFixed(2)}%`,
-        height: difficulty.nextRetargetHeight,
-      };
-    } else {
       throw new Error("Failed to fetch difficulty data");
     }
 
-    // Process mempool data
-    let mempoolData;
-    if (mempoolResponse.status === "fulfilled" && mempoolResponse.value.ok) {
-      const rawMempoolData = await mempoolResponse.value.json();
-      const mempool = MempoolMempoolSchema.parse(rawMempoolData);
-
-      // Determine mempool status based on transaction count
-      let status = "Normal";
-      if (mempool.count > 50000) {
-        status = "High";
-      } else if (mempool.count > 20000) {
-        status = "Medium";
-      } else if (mempool.count < 5000) {
-        status = "Low";
-      }
-
-      mempoolData = {
-        count: mempool.count,
-        size: (mempool.vsize / 1e6).toFixed(2) + " MB", // Convert to MB
-        totalFee: (mempool.total_fee / 1e8).toFixed(4) + " BTC", // Convert to BTC
-        status,
-      };
-    } else {
+    if (mempoolResponse.status !== "fulfilled" || !mempoolResponse.value.ok) {
       throw new Error("Failed to fetch mempool data");
     }
+
+    // Process hashrate data
+    const rawHashrateData = await hashrateResponse.value.json();
+
+    if (typeof rawHashrateData !== "object" || rawHashrateData === null) {
+      throw new Error("Invalid hashrate data");
+    }
+
+    // The 3d hashrate endpoint returns an object with hashrates array and currentHashrate
+    const currentHashrate = rawHashrateData.currentHashrate || 500e18;
+    const hashrateInEH = currentHashrate / 1e18; // Convert to exahash
+    const currentDifficulty = rawHashrateData.currentDifficulty || 0;
+
+    const hashrateData = {
+      value: hashrateInEH.toFixed(2),
+      unit: "EH/s",
+      timestamp: Date.now(),
+    };
+
+    // Process fees data
+    const rawFeesData = await feesResponse.value.json();
+    const feesData = MempoolFeesSchema.parse(rawFeesData);
+
+    const rawDifficultyData = await difficultyResponse.value.json();
+    const difficulty = MempoolDifficultySchema.parse(rawDifficultyData);
+
+    const difficultyData = {
+      value:
+        currentDifficulty > 0
+          ? (currentDifficulty / 1e12).toFixed(2) + "T"
+          : "Current",
+      change: `${difficulty.difficultyChange > 0 ? "+" : ""}${(difficulty.difficultyChange * 100).toFixed(2)}%`,
+      height: difficulty.nextRetargetHeight,
+    };
+
+    // Process mempool data
+    const rawMempoolData = await mempoolResponse.value.json();
+    const mempool = MempoolMempoolSchema.parse(rawMempoolData);
+
+    // Determine mempool status based on transaction count
+    let status = "Normal";
+    if (mempool.count > 50000) {
+      status = "Yoğun";
+    } else if (mempool.count > 20000) {
+      status = "Orta";
+    } else if (mempool.count < 5000) {
+      status = "Az";
+    }
+
+    const mempoolData = {
+      count: mempool.count,
+      size: (mempool.vsize / 1e6).toFixed(2) + " MB", // Convert to MB
+      totalFee: (mempool.total_fee / 1e8).toFixed(4) + " BTC", // Convert to BTC
+      status,
+    };
 
     // Prepare response data
     const responseData = {

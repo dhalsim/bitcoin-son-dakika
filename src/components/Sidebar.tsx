@@ -1,7 +1,8 @@
 import { TrendingUp, PenTool } from "lucide-react";
 
-import { useBitcoinStats } from "@/hooks/useBitcoinStats";
 import type { ArticleItem, NewsItem } from "@/lib/ssg-data";
+
+import { useBitcoinStats } from "../hooks/useBitcoinStats.js";
 
 const Sidebar = ({
   news,
@@ -11,6 +12,15 @@ const Sidebar = ({
   articles: ArticleItem[];
 }) => {
   const { stats, loading, error } = useBitcoinStats();
+
+  console.log(
+    "Sidebar render - stats:",
+    stats,
+    "loading:",
+    loading,
+    "error:",
+    error,
+  );
 
   return (
     <aside className="w-full lg:w-80 space-y-6">
@@ -163,10 +173,10 @@ const Sidebar = ({
               </div>
               <div className="text-right">
                 <div className="font-medium text-gray-900 dark:text-gray-100">
-                  {stats.mempool.count.toLocaleString()}
+                  {stats.mempool.count.toLocaleString()} Txs
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  {stats.mempool.size}
+                  {stats.mempool.size} vB
                 </div>
               </div>
             </div>

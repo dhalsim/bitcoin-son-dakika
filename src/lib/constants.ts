@@ -1,4 +1,4 @@
-export const WEBSITE_URL = "https://bitcoinsondakika.com";
+export const WEBSITE_URL = "https://www.bitcoinsondakika.com";
 export const WEBSITE_NAME = "Bitcoin Son Dakika";
 export const WEBSITE_DESCRIPTION =
   "Bitcoin dünyasından son dakika haberleri, güncel gelişmeler, analizler ve uzman yorumları";
