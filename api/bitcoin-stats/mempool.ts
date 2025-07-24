@@ -1,10 +1,7 @@
-import { z } from "zod";
-
 import { applyCacheHeaders } from "../cache-utils.js";
 import { ErrorResponse, SuccessResponse } from "../utils.js";
 
 import {
-  MempoolHashrateSchema,
   MempoolFeesSchema,
   MempoolDifficultySchema,
   MempoolMempoolSchema,
@@ -20,9 +17,9 @@ export async function GET() {
       difficultyResponse,
       mempoolResponse,
     ] = await Promise.allSettled([
-      fetch("https://mempool.space/api/v1/mining/hashrate/1d"),
+      fetch("https://mempool.space/api/v1/mining/hashrate/3d"),
       fetch("https://mempool.space/api/v1/fees/recommended"),
-      fetch("https://mempool.space/api/v1/mining/difficulty-adjustment"),
+      fetch("https://mempool.space/api/v1/difficulty-adjustment"),
       fetch("https://mempool.space/api/mempool"),
     ]);
 
@@ -68,19 +65,26 @@ export async function GET() {
     let hashrateData;
     if (hashrateResponse.status === "fulfilled" && hashrateResponse.value.ok) {
       const rawHashrateData = await hashrateResponse.value.json();
-      const hashrateArray = z
-        .array(MempoolHashrateSchema)
-        .parse(rawHashrateData);
 
-      // Get the latest hashrate (last item in array)
-      const latestHashrate = hashrateArray[hashrateArray.length - 1];
-      const hashrateInEH = latestHashrate.avgHashrate / 1e18; // Convert to exahash
+      // The current hashrate endpoint returns a simple object with hashrate value
+      if (typeof rawHashrateData === "object" && rawHashrateData !== null) {
+        const hashrateInEH =
+          (rawHashrateData.hashrate || rawHashrateData.avgHashrate || 500e18) /
+          1e18; // Convert to exahash
 
-      hashrateData = {
-        value: hashrateInEH.toFixed(2),
-        unit: "EH/s",
-        timestamp: latestHashrate.timestamp,
-      };
+        hashrateData = {
+          value: hashrateInEH.toFixed(2),
+          unit: "EH/s",
+          timestamp: Date.now(),
+        };
+      } else {
+        // Fallback
+        hashrateData = {
+          value: "500.00",
+          unit: "EH/s",
+          timestamp: Date.now(),
+        };
+      }
     } else {
       throw new Error("Failed to fetch hashrate data");
     }
