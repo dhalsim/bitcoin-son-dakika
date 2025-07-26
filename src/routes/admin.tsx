@@ -38,7 +38,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { ADMIN_RELAYS, type PublishEventResponse } from "../../api/utils";
+import {
+  ADMIN_RELAYS,
+  PROFILE_RELAYS,
+  type PublishEventResponse,
+} from "../../api/utils";
 
 type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }
@@ -1219,9 +1223,18 @@ export default function AdminPanel() {
                         key={pubkey}
                         className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                       >
-                        <span className="font-mono text-sm">
-                          {pubkey.substring(0, 16)}...
-                        </span>
+                        <a
+                          className="font-mono text-sm"
+                          href={`https://njump.me/${nip19.nprofileEncode({
+                            pubkey: pubkey,
+                            relays: PROFILE_RELAYS,
+                          })}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {pubkey.substring(0, 6)}...
+                          {pubkey.substring(pubkey.length - 6, pubkey.length)}
+                        </a>
                         <Button
                           variant="destructive"
                           size="sm"
@@ -1286,9 +1299,18 @@ export default function AdminPanel() {
                         key={pubkey}
                         className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                       >
-                        <span className="font-mono text-sm">
-                          {pubkey.substring(0, 16)}...
-                        </span>
+                        <a
+                          className="font-mono text-sm"
+                          href={`https://njump.me/${nip19.nprofileEncode({
+                            pubkey: pubkey,
+                            relays: PROFILE_RELAYS,
+                          })}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {pubkey.substring(0, 6)}...
+                          {pubkey.substring(pubkey.length - 6, pubkey.length)}
+                        </a>
                         <Button
                           variant="destructive"
                           size="sm"
