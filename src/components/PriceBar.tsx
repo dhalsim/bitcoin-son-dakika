@@ -109,17 +109,17 @@ const PriceBar = () => {
                 her şey bitcoin karşısında sıfıra gidiyor
                 {btcPrice && (
                   <span className="ml-2">
-                    ₿{" "}
-                    {btcPrice.toLocaleString("en-US", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
+                    ₿ {btcPrice}
                     {btcChange && (
                       <span
-                        className={`ml-1 ${btcChange >= 0 ? "text-green-300" : "text-red-300"}`}
+                        className={`ml-1 ${
+                          parseFloat(btcChange) >= 0
+                            ? "text-green-300"
+                            : "text-red-300"
+                        }`}
                       >
-                        {btcChange >= 0 ? "+" : ""}
-                        {btcChange.toFixed(1)}%
+                        {parseFloat(btcChange) >= 0 ? "+" : ""}
+                        {parseFloat(btcChange).toFixed(2)}%
                       </span>
                     )}
                   </span>

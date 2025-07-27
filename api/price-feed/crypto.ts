@@ -1,141 +1,48 @@
-import { applyCacheHeaders } from "../cache-utils.js";
-import { ErrorResponse, SuccessResponse } from "../utils.js";
+import type TradingView from "@mathieuc/tradingview";
 
-import {
-  BTCTurkResponseSchema,
-  type BTCTurkTicker,
-  type CryptoPriceData,
-} from "./schemas.js";
+import { getPriceData } from "./common";
+import type { PriceData, Ticker } from "./schemas";
 
-// Vercel Edge Function handler for GET requests
-export async function GET() {
-  try {
-    // Fetch crypto prices from BTCTurk API (all USDT pairs)
-    const apiResponse = await fetch(
-      "https://api.btcturk.com/api/v2/ticker/currency?symbol=usdt",
-      {
-        headers: {
-          Accept: "application/json",
-        },
-      },
-    );
+export async function getCrypto(
+  client: TradingView.Client,
+): Promise<[PriceData, PriceData[]]> {
+  const prices: PriceData[] = [];
 
-    if (!apiResponse.ok) {
-      throw new Error(`BTCTurk API error: ${apiResponse.status}`);
-    }
+  const crypto: Ticker[] = [
+    { symbol: "ETH", description: "Ethereum", currency: "BTC", emoji: "Ξ" },
+    { symbol: "SOL", description: "Solana", currency: "BTC", emoji: "◎" },
+    { symbol: "XRP", description: "XRP", currency: "BTC", emoji: "Ⓧ" },
+    { symbol: "DOGE", description: "Dogecoin", currency: "BTC", emoji: "🐶" },
+    { symbol: "ADA", description: "Cardano", currency: "BTC", emoji: "🌐" },
+    { symbol: "XMR", description: "Monero", currency: "BTC", emoji: "🔒" },
+  ];
 
-    const rawBtcturkResponse = await apiResponse.json();
-    const btcturkResponse = BTCTurkResponseSchema.parse(rawBtcturkResponse);
+  const btcPriceData = await getPriceData(client, {
+    symbol: "BTC",
+    description: "Bitcoin",
+    currency: "USD",
+    emoji: "₿",
+  });
 
-    if (!btcturkResponse.success || !btcturkResponse.data) {
-      throw new Error("BTCTurk API returned unsuccessful response");
-    }
+  const btcPrice: PriceData = {
+    name: "Bitcoin",
+    symbol: btcPriceData.symbol,
+    value: btcPriceData.current.toString(),
+    change: btcPriceData.change.toString(),
+    category: "crypto",
+  };
 
-    // Create a map for easy lookup
-    const tickerMap = new Map<string, BTCTurkTicker>();
-    btcturkResponse.data.forEach((ticker) => {
-      tickerMap.set(ticker.pair, ticker);
-    });
+  for (const ticker of crypto) {
+    const priceData = await getPriceData(client, ticker);
 
-    // Get BTC price as reference
-    const btcTicker = tickerMap.get("BTCUSDT");
-    if (!btcTicker) {
-      throw new Error("BTC price not found in response");
-    }
-
-    const btcPrice = btcTicker.last;
-    const btcChange = btcTicker.dailyPercent;
-
-    // Prepare prices array
-    const prices: CryptoPriceData[] = [
-      // Bitcoin (reference)
-      {
-        name: "Bitcoin",
-        symbol: "₿",
-        value: btcPrice.toLocaleString("en-US", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }),
-        change: `${btcChange >= 0 ? "+" : ""}${btcChange.toFixed(1)}%`,
-        category: "crypto",
-        usdValue: btcPrice,
-      },
-    ];
-
-    // Add other cryptocurrencies
-    const cryptoPairs = [
-      { pair: "ETHUSDT", name: "Ethereum", symbol: "Ξ" },
-      { pair: "ADAUSDT", name: "Cardano", symbol: "₳" },
-      { pair: "SOLUSDT", name: "Solana", symbol: "◎" },
-      { pair: "DOTUSDT", name: "Polkadot", symbol: "●" },
-      { pair: "DOGEUSDT", name: "Dogecoin", symbol: "Ð" },
-      { pair: "AVAXUSDT", name: "Avalanche", symbol: "❄" },
-      { pair: "LINKUSDT", name: "Chainlink", symbol: "🔗" },
-    ];
-
-    cryptoPairs.forEach(({ pair, name, symbol }) => {
-      const ticker = tickerMap.get(pair);
-      if (ticker) {
-        prices.push({
-          name,
-          symbol,
-          value: ticker.last.toLocaleString("en-US", {
-            minimumFractionDigits:
-              ticker.last < 1 ? 4 : ticker.last < 10 ? 2 : 0,
-            maximumFractionDigits:
-              ticker.last < 1 ? 4 : ticker.last < 10 ? 2 : 0,
-          }),
-          change: `${ticker.dailyPercent >= 0 ? "+" : ""}${ticker.dailyPercent.toFixed(1)}%`,
-          category: "crypto",
-          usdValue: ticker.last,
-        });
-      }
-    });
-
-    // Validate the response structure
-    const responseData = {
-      prices,
-      btcPrice,
-      btcChange,
-      lastUpdated: new Date().toISOString(),
-      source: "BTCTurk",
-      totalAssets: prices.length,
-    };
-
-    const response = SuccessResponse(responseData);
-
-    // Apply crypto-specific caching strategy (1 minute cache)
-    return applyCacheHeaders(response, {
-      maxAge: 60,
-      staleWhileRevalidate: 30,
-      cdnMaxAge: 60,
-    });
-  } catch (error) {
-    console.error("Crypto Price API error:", error);
-
-    const errorResponse = ErrorResponse(
-      error,
-      "Failed to fetch crypto price data",
-      500,
-    );
-
-    // Apply error caching strategy
-    return applyCacheHeaders(errorResponse, {
-      maxAge: 60,
-      staleWhileRevalidate: 30,
-      cdnMaxAge: 60,
+    prices.push({
+      name: ticker.description,
+      symbol: priceData.symbol,
+      value: priceData.current.toString(),
+      change: priceData.change.toString(),
+      category: "crypto",
     });
   }
-}
 
-// Vercel Edge Function handler for OPTIONS requests (CORS)
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
+  return [btcPrice, prices];
 }

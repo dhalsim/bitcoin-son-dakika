@@ -2,22 +2,15 @@ import { useEffect, useState, useCallback } from "react";
 
 import { WEBSITE_URL } from "@/lib/constants.js";
 
-import type { FinalPriceData } from "../../api/price-feed/schemas.js";
-
-interface PriceResponse {
-  success: boolean;
-  prices: FinalPriceData[];
-  btcPrice: number;
-  btcChange: number;
-  lastUpdated: string;
-  source: string;
-  totalAssets: number;
-}
+import type {
+  BaseEndpointResponse,
+  PriceData,
+} from "../../api/price-feed/schemas.js";
 
 interface UsePriceDataReturn {
-  prices: FinalPriceData[];
-  btcPrice: number | null;
-  btcChange: number | null;
+  prices: PriceData[];
+  btcPrice: string | null;
+  btcChange: string | null;
   loading: boolean;
   error: string | null;
   lastUpdated: string | null;
@@ -28,9 +21,9 @@ export function usePriceData(
   refreshInterval: number = 600000,
 ): UsePriceDataReturn {
   // 10 minutes default
-  const [prices, setPrices] = useState<FinalPriceData[]>([]);
-  const [btcPrice, setBtcPrice] = useState<number | null>(null);
-  const [btcChange, setBtcChange] = useState<number | null>(null);
+  const [prices, setPrices] = useState<PriceData[]>([]);
+  const [btcPrice, setBtcPrice] = useState<string | null>(null);
+  const [btcChange, setBtcChange] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -41,13 +34,13 @@ export function usePriceData(
       setError(null);
 
       // Use the main gateway API endpoint
-      const response = await fetch(`${WEBSITE_URL}/api/price-feed/gateway`);
+      const response = await fetch(`${WEBSITE_URL}/api/price-feed`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result: PriceResponse = await response.json();
+      const result: BaseEndpointResponse = await response.json();
 
       if (result.success && result.prices) {
         setPrices(result.prices);
@@ -62,39 +55,6 @@ export function usePriceData(
       setError(
         err instanceof Error ? err.message : "Failed to fetch price data",
       );
-
-      // Fallback to static data if API fails
-      setPrices([
-        {
-          name: "Bitcoin",
-          symbol: "₿",
-          value: "45,000",
-          change: "+2.1%",
-          btcValue: "1.00000000",
-          category: "crypto",
-          usdValue: 45000,
-        },
-        {
-          name: "Ethereum",
-          symbol: "Ξ",
-          value: "2,800",
-          change: "+1.5%",
-          btcValue: "0.06222222",
-          category: "crypto",
-          usdValue: 2800,
-        },
-        {
-          name: "Tether",
-          symbol: "₮",
-          value: "1.00",
-          change: "0.0%",
-          btcValue: "0.00002222",
-          category: "crypto",
-          usdValue: 1,
-        },
-      ]);
-      setBtcPrice(45000);
-      setBtcChange(2.1);
     } finally {
       setLoading(false);
     }
