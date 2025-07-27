@@ -6,7 +6,9 @@ import { ErrorResponse, SuccessResponse } from "../utils.js";
 
 import { type FinalPriceData } from "./schemas.js";
 
-const redis = await createClient().connect();
+const redis = await createClient({
+  url: process.env.REDIS_URL,
+}).connect();
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {
