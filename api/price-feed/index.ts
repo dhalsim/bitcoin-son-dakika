@@ -99,11 +99,41 @@ async function getCommodities(
   const prices: PriceData[] = [];
 
   const commodities: Ticker[] = [
-    { symbol: "XAU", description: "Altın", currency: "BTC", emoji: "🥇" },
-    { symbol: "XAG", description: "Gümüş", currency: "BTC", emoji: "🥈" },
-    { symbol: "XCU", description: "Bakır", currency: "USD", emoji: "🥉" },
-    { symbol: "XPD", description: "Palladyum", currency: "USD", emoji: "🥈" },
-    { symbol: "XPT", description: "Platin", currency: "USD", emoji: "🥉" },
+    {
+      symbol: "XAU",
+      description: "Altın",
+      currency: "BTC",
+      emoji: "🥇",
+      category: "commodity",
+    },
+    {
+      symbol: "XAG",
+      description: "Gümüş",
+      currency: "BTC",
+      emoji: "🥈",
+      category: "commodity",
+    },
+    {
+      symbol: "XCU",
+      description: "Bakır",
+      currency: "USD",
+      emoji: "🥉",
+      category: "commodity",
+    },
+    {
+      symbol: "XPD",
+      description: "Palladyum",
+      currency: "USD",
+      emoji: "🥈",
+      category: "commodity",
+    },
+    {
+      symbol: "XPT",
+      description: "Platin",
+      currency: "USD",
+      emoji: "🥉",
+      category: "commodity",
+    },
   ];
 
   for (const ticker of commodities) {
@@ -127,12 +157,48 @@ async function getCrypto(
   const prices: PriceData[] = [];
 
   const crypto: Ticker[] = [
-    { symbol: "ETH", description: "Ethereum", currency: "BTC", emoji: "Ξ" },
-    { symbol: "SOL", description: "Solana", currency: "BTC", emoji: "◎" },
-    { symbol: "XRP", description: "XRP", currency: "BTC", emoji: "Ⓧ" },
-    { symbol: "DOGE", description: "Dogecoin", currency: "BTC", emoji: "🐶" },
-    { symbol: "ADA", description: "Cardano", currency: "BTC", emoji: "🌐" },
-    { symbol: "XMR", description: "Monero", currency: "BTC", emoji: "🔒" },
+    {
+      symbol: "ETH",
+      description: "Ethereum",
+      currency: "BTC",
+      emoji: "Ξ",
+      category: "crypto",
+    },
+    {
+      symbol: "SOL",
+      description: "Solana",
+      currency: "BTC",
+      emoji: "◎",
+      category: "crypto",
+    },
+    {
+      symbol: "XRP",
+      description: "XRP",
+      currency: "BTC",
+      emoji: "Ⓧ",
+      category: "crypto",
+    },
+    {
+      symbol: "DOGE",
+      description: "Dogecoin",
+      currency: "BTC",
+      emoji: "🐶",
+      category: "crypto",
+    },
+    {
+      symbol: "ADA",
+      description: "Cardano",
+      currency: "BTC",
+      emoji: "🌐",
+      category: "crypto",
+    },
+    {
+      symbol: "XMR",
+      description: "Monero",
+      currency: "BTC",
+      emoji: "🔒",
+      category: "crypto",
+    },
   ];
 
   const btcPriceData = await getPriceData(client, {
@@ -140,6 +206,7 @@ async function getCrypto(
     description: "Bitcoin",
     currency: "USD",
     emoji: "₿",
+    category: "crypto",
   });
 
   const btcPrice: PriceData = {
@@ -169,22 +236,48 @@ async function getCurrency(client: TradingView.Client): Promise<PriceData[]> {
   const prices: PriceData[] = [];
 
   const forex: Ticker[] = [
-    { symbol: "EUR", description: "Avro", currency: "USD", emoji: "🇪🇺" },
+    {
+      symbol: "EUR",
+      description: "Avro",
+      currency: "USD",
+      emoji: "🇪🇺",
+      category: "currency",
+    },
     {
       symbol: "GBP",
       description: "İngiliz Sterlini",
       currency: "USD",
       emoji: "🇬🇧",
+      category: "currency",
     },
-    { symbol: "JPY", description: "Japon Yeni", currency: "USD", emoji: "🇯🇵" },
+    {
+      symbol: "JPY",
+      description: "Japon Yeni",
+      currency: "USD",
+      emoji: "🇯🇵",
+      category: "currency",
+    },
     {
       symbol: "CHF",
       description: "İsviçre Frangı",
       currency: "USD",
       emoji: "🇨🇭",
+      category: "currency",
     },
-    { symbol: "CNY", description: "Çin Yuanı", currency: "USD", emoji: "🇨🇳" },
-    { symbol: "TRY", description: "Türk Lirası", currency: "USD", emoji: "🇹🇷" },
+    {
+      symbol: "CNY",
+      description: "Çin Yuanı",
+      currency: "USD",
+      emoji: "🇨🇳",
+      category: "currency",
+    },
+    {
+      symbol: "TRY",
+      description: "Türk Lirası",
+      currency: "USD",
+      emoji: "🇹🇷",
+      category: "currency",
+    },
   ];
 
   for (const ticker of forex) {
@@ -206,14 +299,62 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
   const prices: PriceData[] = [];
 
   const stocks: Ticker[] = [
-    { symbol: "AAPL", description: "Apple", currency: "USD", emoji: "🍎" },
-    { symbol: "GOOG", description: "Google", currency: "USD", emoji: "🔍" },
-    { symbol: "MSFT", description: "Microsoft", currency: "USD", emoji: "💻" },
-    { symbol: "AMZN", description: "Amazon", currency: "USD", emoji: "🛒" },
-    { symbol: "TSLA", description: "Tesla", currency: "USD", emoji: "🚗" },
-    { symbol: "NVDA", description: "NVIDIA", currency: "USD", emoji: "🎮" },
-    { symbol: "META", description: "Meta", currency: "USD", emoji: "🤖" },
-    { symbol: "NFLX", description: "Netflix", currency: "USD", emoji: "🎥" },
+    {
+      symbol: "AAPL",
+      description: "Apple",
+      currency: "USD",
+      emoji: "🍎",
+      category: "stock",
+    },
+    {
+      symbol: "GOOG",
+      description: "Google",
+      currency: "USD",
+      emoji: "🔍",
+      category: "stock",
+    },
+    {
+      symbol: "MSFT",
+      description: "Microsoft",
+      currency: "USD",
+      emoji: "💻",
+      category: "stock",
+    },
+    {
+      symbol: "AMZN",
+      description: "Amazon",
+      currency: "USD",
+      emoji: "🛒",
+      category: "stock",
+    },
+    {
+      symbol: "TSLA",
+      description: "Tesla",
+      currency: "USD",
+      emoji: "🚗",
+      category: "stock",
+    },
+    {
+      symbol: "NVDA",
+      description: "NVIDIA",
+      currency: "USD",
+      emoji: "🎮",
+      category: "stock",
+    },
+    {
+      symbol: "META",
+      description: "Meta",
+      currency: "USD",
+      emoji: "🤖",
+      category: "stock",
+    },
+    {
+      symbol: "NFLX",
+      description: "Netflix",
+      currency: "USD",
+      emoji: "🎥",
+      category: "stock",
+    },
   ];
 
   for (const ticker of stocks) {
@@ -238,6 +379,10 @@ function assertNever(value: never): never {
 function getSymbol(ticker: Ticker) {
   if (ticker.symbol === "BTC" && ticker.currency === "USD") {
     return `${ticker.symbol}USD`;
+  }
+
+  if (ticker.category === "stock") {
+    return `${ticker.symbol}/BTCUSD`;
   }
 
   switch (ticker.currency) {
@@ -303,5 +448,6 @@ type Ticker = {
   symbol: string;
   description: string;
   currency: "BTC" | "USD";
+  category: "crypto" | "currency" | "commodity" | "stock";
   emoji: string;
 };
