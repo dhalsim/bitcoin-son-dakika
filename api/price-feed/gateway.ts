@@ -16,7 +16,7 @@ export async function GET() {
     const [cryptoResponse, commodityResponse, forexResponse] =
       await Promise.allSettled([
         fetch(`${WEBSITE_URL}/api/price-feed/crypto`),
-        fetch(`${WEBSITE_URL}/api/price-feed/commodity`),
+        fetch(`${WEBSITE_URL}/api/price-feed/new-price-feed`),
         fetch(`${WEBSITE_URL}/api/price-feed/forex`),
       ]);
 
