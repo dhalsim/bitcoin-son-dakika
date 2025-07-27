@@ -2,18 +2,57 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 
 import { usePriceData } from "../hooks/usePriceData";
 
+import Chart from "./Chart";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+
 const PriceBar = () => {
   const { prices, btcPrice, btcChange, loading, error } = usePriceData(300000); // 5 minutes refresh for BTC
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartY, setDragStartY] = useState(0);
 
   // Create enough duplicates for seamless infinite scroll
   const infinitePrices = [...prices, ...prices, ...prices];
 
+  const handlePriceClick = useCallback(
+    (symbol: string, e: React.MouseEvent) => {
+      // Only trigger click if we haven't dragged significantly
+      const dragDistance = Math.sqrt(
+        Math.pow(e.clientX - dragStartX, 2) +
+          Math.pow(e.clientY - dragStartY, 2),
+      );
+
+      if (dragDistance < 5) {
+        // 5px threshold for drag vs click
+        setSelectedSymbol(symbol);
+        setIsDialogOpen(true);
+      }
+    },
+    [dragStartX, dragStartY],
+  );
+
+  const handleDialogClose = useCallback(() => {
+    setIsDialogOpen(false);
+    setSelectedSymbol(null);
+  }, []);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!scrollContainerRef.current) {
+      return;
+    }
+
+    // Track drag start position for all mouse events
+    setDragStartX(e.clientX);
+    setDragStartY(e.clientY);
+
+    // Don't start dragging if clicking on a price item
+    const target = e.target as HTMLElement;
+    if (target.closest("[data-price-item]")) {
       return;
     }
 
@@ -160,10 +199,12 @@ const PriceBar = () => {
                 {infinitePrices.map((price, index) => (
                   <div
                     key={index}
-                    className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap min-w-fit flex-shrink-0"
+                    data-price-item
+                    className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap min-w-fit flex-shrink-0 cursor-pointer hover:bg-white/10 rounded-lg px-2 py-1 transition-colors duration-200"
+                    onClick={(e) => handlePriceClick(price.symbol, e)}
                   >
                     <span className="text-white/90 font-medium">
-                      {price.symbol} {price.name}:
+                      {price.name}:
                     </span>
                     <span className="font-bold text-white">{price.value}</span>
                     <span className="text-white satoshi-symbol"></span>
@@ -193,6 +234,21 @@ const PriceBar = () => {
           }}
         />
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+        <DialogContent className="max-w-screen-xl h-[90vh] p-0 bg-background flex flex-col">
+          <DialogHeader className="p-6 pb-2 flex-shrink-0">
+            <DialogTitle className="text-foreground">
+              {selectedSymbol ? `${selectedSymbol} Grafiği` : "Fiyat Grafiği"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 p-6 pt-0 min-h-0">
+            {selectedSymbol && (
+              <Chart key={selectedSymbol} symbol={selectedSymbol} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

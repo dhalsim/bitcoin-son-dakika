@@ -423,8 +423,8 @@ function getPriceData(
 
       const data: GetPriceDataResponse = {
         symbol,
-        current,
-        change: percentageChange,
+        current: Number(current.toFixed(8)),
+        change: Number(percentageChange.toFixed(2)),
       };
 
       resolve(data);
