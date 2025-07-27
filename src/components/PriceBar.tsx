@@ -13,27 +13,21 @@ const PriceBar = () => {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [dragStartY, setDragStartY] = useState(0);
 
   // Create enough duplicates for seamless infinite scroll
   const infinitePrices = [...prices, ...prices, ...prices];
 
   const handlePriceClick = useCallback(
-    (symbol: string, e: React.MouseEvent) => {
-      // Only trigger click if we haven't dragged significantly
-      const dragDistance = Math.sqrt(
-        Math.pow(e.clientX - dragStartX, 2) +
-          Math.pow(e.clientY - dragStartY, 2),
-      );
-
-      if (dragDistance < 5) {
-        // 5px threshold for drag vs click
-        setSelectedSymbol(symbol);
-        setIsDialogOpen(true);
+    (symbol: string, _e: React.MouseEvent) => {
+      // Prevent the click if we're dragging
+      if (isDragging) {
+        return;
       }
+
+      setSelectedSymbol(symbol);
+      setIsDialogOpen(true);
     },
-    [dragStartX, dragStartY],
+    [isDragging],
   );
 
   const handleDialogClose = useCallback(() => {
@@ -43,16 +37,6 @@ const PriceBar = () => {
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!scrollContainerRef.current) {
-      return;
-    }
-
-    // Track drag start position for all mouse events
-    setDragStartX(e.clientX);
-    setDragStartY(e.clientY);
-
-    // Don't start dragging if clicking on a price item
-    const target = e.target as HTMLElement;
-    if (target.closest("[data-price-item]")) {
       return;
     }
 
@@ -210,12 +194,13 @@ const PriceBar = () => {
                     <span className="text-white satoshi-symbol"></span>
                     <span
                       className={`text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${
-                        price.change.startsWith("+")
+                        parseFloat(price.change) >= 0
                           ? "text-green-100 bg-green-600/80"
                           : "text-red-100 bg-red-600/80"
                       }`}
                     >
-                      {price.change}
+                      {parseFloat(price.change) >= 0 ? "+" : ""}
+                      {parseFloat(price.change).toFixed(2)}%
                     </span>
                   </div>
                 ))}

@@ -30,11 +30,11 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
           "calendar": false,
           "details": false,
           "hide_side_toolbar": true,
-          "hide_top_toolbar": false,
-          "hide_legend": false,
+          "hide_top_toolbar": true,
+          "hide_legend": true,
           "hide_volume": false,
           "hotlist": false,
-          "interval": "D",
+          "interval": "W",
           "locale": "en",
           "save_image": false,
           "style": "1",
@@ -46,7 +46,6 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
           "watchlist": [],
           "withdateranges": false,
           "compareSymbols": [],
-          "show_popup_button": false,
           "studies": [],
           "autosize": true
         }`;
