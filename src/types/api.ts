@@ -24,10 +24,3 @@ export const BaseEndpointResponseSchema = z.object({
 
 export type PriceData = z.infer<typeof PriceDataSchema>;
 export type BaseEndpointResponse = z.infer<typeof BaseEndpointResponseSchema>;
-
-export type Ticker = {
-  symbol: string;
-  description: string;
-  currency: "BTC" | "USD";
-  emoji: string;
-};

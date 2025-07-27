@@ -2,10 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 
 import { WEBSITE_URL } from "@/lib/constants.js";
 
-import type {
-  BaseEndpointResponse,
-  PriceData,
-} from "../../api/price-feed/schemas.js";
+import type { BaseEndpointResponse, PriceData } from "../types/api.js";
 
 interface UsePriceDataReturn {
   prices: PriceData[];
