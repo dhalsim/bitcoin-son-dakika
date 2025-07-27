@@ -13,7 +13,6 @@ export default defineConfig(() => ({
   plugins: [reactRouter(), tailwindcss()].filter(Boolean),
   resolve: {
     alias: {
-      "@/api": path.resolve(__dirname, "./api"),
       "@": path.resolve(__dirname, "./src"),
     },
   },
