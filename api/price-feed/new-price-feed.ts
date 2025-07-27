@@ -34,11 +34,19 @@ export async function GET() {
 
     const prices: FinalPriceData[] = [];
 
-    for (const symbol of ["XAUUSD", "XAGUSD", "XCUUSD", "XPDUSD", "XPTUSD"]) {
-      const priceData = await getPriceData(client, symbol);
+    const tickers: Ticker[] = [
+      { symbol: "XAU", description: "Altın", currency: "BTC" },
+      { symbol: "XAG", description: "Gümüş", currency: "BTC" },
+      { symbol: "XCU", description: "Bakır", currency: "USD" },
+      { symbol: "XPD", description: "Palladyum", currency: "USD" },
+      { symbol: "XPT", description: "Platin", currency: "USD" },
+    ];
+
+    for (const ticker of tickers) {
+      const priceData = await getPriceData(client, ticker);
 
       prices.push({
-        name: priceData.description,
+        name: ticker.description,
         symbol: priceData.symbol,
         value: priceData.current.toString(),
         change: priceData.previous.toString(),
@@ -93,6 +101,21 @@ export async function OPTIONS() {
   });
 }
 
+function assertNever(value: never): never {
+  throw new Error(`Unexpected value: ${value}`);
+}
+
+function getSymbol(ticker: Ticker) {
+  switch (ticker.currency) {
+    case "BTC":
+      return `${ticker.symbol}BTC`;
+    case "USD":
+      return `${ticker.symbol}USD/BTCUSD`;
+    default:
+      return assertNever(ticker.currency);
+  }
+}
+
 type PriceData = {
   symbol: string;
   current: number;
@@ -101,21 +124,29 @@ type PriceData = {
   description: string;
 };
 
+type Ticker = {
+  symbol: string;
+  description: string;
+  currency: "BTC" | "USD";
+};
+
 async function getPriceData(
   client: TradingView.Client,
-  symbol: string,
+  ticker: Ticker,
 ): Promise<PriceData> {
   return new Promise((resolve, reject) => {
     const chart = new client.Session.Chart();
 
-    chart.setMarket(`${symbol}/BTCUSD`, {
+    const symbol = getSymbol(ticker);
+
+    chart.setMarket(symbol, {
       timeframe: "D",
       range: 2,
     });
 
     chart.onUpdate(() => {
       const data: PriceData = {
-        symbol: `${symbol}/BTCUSD`,
+        symbol,
         current: chart.periods[0].close,
         previous: chart.periods[1]
           ? chart.periods[1].close
