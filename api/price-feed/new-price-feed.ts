@@ -113,7 +113,7 @@ async function getPriceData(
       range: 2,
     });
 
-    chart.on("update", () => {
+    chart.onUpdate(() => {
       const data: PriceData = {
         symbol: `${symbol}/BTCUSD`,
         current: chart.periods[0].close,
@@ -129,7 +129,7 @@ async function getPriceData(
       cleanup();
     });
 
-    chart.on("error", (...error) => {
+    chart.onError((...error) => {
       reject(new Error(`Chart error for ${symbol}: ${error.join(" ")}`));
 
       cleanup();
