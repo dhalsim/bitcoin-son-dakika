@@ -1,4 +1,4 @@
-import { SuccessResponse } from "../../../../api-helpers/utils";
+import { SuccessResponse } from "../../../api-helpers/utils";
 
 export async function GET(
   request: Request,
