@@ -88,17 +88,17 @@ export default function NewsPage() {
       <PriceBar />
 
       <div className="container mx-auto px-4 py-4 sm:py-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            Tüm Haberler
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Bitcoin dünyasından en güncel haberler
-          </p>
-        </div>
-
         {/* News List - Single Column */}
         <div className="max-w-4xl mx-auto space-y-6">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              Tüm Haberler
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Bitcoin dünyasından en güncel haberler
+            </p>
+          </div>
+
           {newsItems.map((news, index) => (
             <NewsCard key={index} {...news} />
           ))}

@@ -14,7 +14,7 @@ import {
   Upload,
 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
-import { nip19, SimplePool } from "nostr-tools";
+import { nip19 } from "nostr-tools";
 import { useState, useEffect } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -37,12 +37,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { pool } from "@/lib/utils";
 
 import {
   ADMIN_RELAYS,
   PROFILE_RELAYS,
   type PublishEventResponse,
-} from "../../api/utils";
+} from "../../api-helpers/utils";
 
 type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }
@@ -189,8 +190,6 @@ export default function AdminPanel() {
     setLoading(true);
 
     try {
-      const pool = new SimplePool();
-
       const events: NostrEvent[] = [];
 
       pool.subscribeManyEose(
@@ -466,11 +465,14 @@ export default function AdminPanel() {
     try {
       const authHeader = await createNIP98Auth(
         "POST",
-        `${window.location.origin}/api/deploy-trigger`,
+        `${window.location.origin}/api/admin/trigger-deploy`,
       );
 
-      const response = await fetch("/api/deploy-trigger", {
+      const response = await fetch("/api/admin", {
         method: "POST",
+        body: JSON.stringify({
+          action: "trigger-deploy",
+        }),
         headers: {
           "Content-Type": "application/json",
           Authorization: authHeader,

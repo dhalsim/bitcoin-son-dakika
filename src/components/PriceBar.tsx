@@ -8,24 +8,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 const PriceBar = () => {
   const { prices, btcPrice, btcChange, loading, error } = usePriceData(300000); // 5 minutes refresh for BTC
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Create enough duplicates for seamless infinite scroll
-  const infinitePrices = [...prices, ...prices, ...prices];
+  // Create a simple duplicated array for continuous scrolling
+  const displayPrices = [...prices, ...prices, ...prices];
 
   const handlePriceClick = useCallback(
-    (symbol: string, _e: React.MouseEvent) => {
-      // Prevent the click if we're dragging
-      if (isDragging) {
-        return;
+    (symbol: string) => {
+      if (!isDragging) {
+        setSelectedSymbol(symbol);
+        setIsDialogOpen(true);
       }
-
-      setSelectedSymbol(symbol);
-      setIsDialogOpen(true);
     },
     [isDragging],
   );
@@ -35,6 +32,7 @@ const PriceBar = () => {
     setSelectedSymbol(null);
   }, []);
 
+  // Simple mouse drag handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!scrollContainerRef.current) {
       return;
@@ -55,7 +53,7 @@ const PriceBar = () => {
 
       e.preventDefault();
       const x = e.pageX - scrollContainerRef.current.offsetLeft;
-      const walk = (x - startX) * 2; // Scroll speed multiplier
+      const walk = (x - startX) * 1.5; // Moderate scroll speed
       scrollContainerRef.current.scrollLeft = scrollLeft - walk;
     },
     [isDragging, startX, scrollLeft],
@@ -75,7 +73,7 @@ const PriceBar = () => {
     handleMouseUp();
   }, [handleMouseUp]);
 
-  // Touch event handlers
+  // Touch handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (!scrollContainerRef.current) {
       return;
@@ -93,7 +91,7 @@ const PriceBar = () => {
       }
 
       const x = e.touches[0].pageX - scrollContainerRef.current.offsetLeft;
-      const walk = (x - startX) * 2;
+      const walk = (x - startX) * 1.5;
       scrollContainerRef.current.scrollLeft = scrollLeft - walk;
     },
     [isDragging, startX, scrollLeft],
@@ -103,7 +101,7 @@ const PriceBar = () => {
     setIsDragging(false);
   }, []);
 
-  // Clean up event listeners
+  // Global mouse up handler
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       if (isDragging) {
@@ -113,10 +111,76 @@ const PriceBar = () => {
 
     document.addEventListener("mouseup", handleGlobalMouseUp);
 
-    return () => {
-      document.removeEventListener("mouseup", handleGlobalMouseUp);
-    };
+    return () => document.removeEventListener("mouseup", handleGlobalMouseUp);
   }, [isDragging, handleMouseUp]);
+
+  // Autoscroll functionality
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || prices.length === 0) {
+      return;
+    }
+
+    let autoscrollInterval: NodeJS.Timeout;
+    let isUserInteracting = false;
+
+    const startAutoscroll = () => {
+      if (isUserInteracting) {
+        return;
+      }
+
+      autoscrollInterval = setInterval(() => {
+        if (!container || isUserInteracting) {
+          return;
+        }
+
+        const { scrollLeft, scrollWidth } = container;
+        const singleSetWidth = scrollWidth / 3;
+
+        // Move slowly to the right
+        const newScrollLeft = scrollLeft + 1;
+
+        // Reset to middle copy when reaching boundaries
+        if (newScrollLeft >= singleSetWidth * 2) {
+          container.scrollLeft = singleSetWidth;
+        } else {
+          container.scrollLeft = newScrollLeft;
+        }
+      }, 50); // Move every 50ms for smooth scrolling
+    };
+
+    const stopAutoscroll = () => {
+      if (autoscrollInterval) {
+        clearInterval(autoscrollInterval);
+      }
+    };
+
+    const handleUserInteraction = () => {
+      isUserInteracting = true;
+      stopAutoscroll();
+
+      // Resume autoscroll after user stops interacting
+      setTimeout(() => {
+        isUserInteracting = false;
+        startAutoscroll();
+      }, 2000); // Wait 2 seconds after user interaction
+    };
+
+    // Start autoscroll
+    startAutoscroll();
+
+    // Listen for user interactions
+    container.addEventListener("mousedown", handleUserInteraction);
+    container.addEventListener("touchstart", handleUserInteraction);
+    container.addEventListener("wheel", handleUserInteraction);
+
+    return () => {
+      stopAutoscroll();
+      container.removeEventListener("mousedown", handleUserInteraction);
+      container.removeEventListener("touchstart", handleUserInteraction);
+      container.removeEventListener("wheel", handleUserInteraction);
+    };
+  }, [prices]);
 
   return (
     <div className="bg-main-accent text-white py-2 border-b border-orange-300 relative overflow-hidden">
@@ -166,7 +230,7 @@ const PriceBar = () => {
             {!loading && !error && (
               <div
                 ref={scrollContainerRef}
-                className="flex items-center space-x-3 sm:space-x-4 price-slider py-1.5 sm:py-2 px-3 sm:px-4 overflow-x-auto scrollbar-hide cursor-grab select-none"
+                className="flex items-center space-x-4 py-2 px-4 overflow-x-auto scrollbar-hide cursor-grab select-none"
                 style={{
                   scrollbarWidth: "none",
                   msOverflowStyle: "none",
@@ -180,12 +244,11 @@ const PriceBar = () => {
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
               >
-                {infinitePrices.map((price, index) => (
+                {displayPrices.map((price, index) => (
                   <div
-                    key={index}
-                    data-price-item
-                    className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm whitespace-nowrap min-w-fit flex-shrink-0 cursor-pointer hover:bg-white/10 rounded-lg px-2 py-1 transition-colors duration-200"
-                    onClick={(e) => handlePriceClick(price.symbol, e)}
+                    key={`${price.symbol}-${index}`}
+                    className="flex items-center space-x-2 text-sm whitespace-nowrap flex-shrink-0 cursor-pointer hover:bg-white/10 rounded-lg px-3 py-1.5 transition-colors duration-200"
+                    onClick={() => handlePriceClick(price.symbol)}
                   >
                     <span className="text-white/90 font-medium">
                       {price.name}:
@@ -193,7 +256,7 @@ const PriceBar = () => {
                     <span className="font-bold text-white">{price.value}</span>
                     <span className="text-white satoshi-symbol"></span>
                     <span
-                      className={`text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full ${
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                         parseFloat(price.change) >= 0
                           ? "text-green-100 bg-green-600/80"
                           : "text-red-100 bg-red-600/80"

@@ -5,7 +5,12 @@ import type { Config } from "@react-router/dev/config";
 import { vercelPreset } from "@vercel/react-router/vite";
 
 import { generateFeeds } from "./src/lib/feed-generator";
-import { fetchSSGData, type SSGData } from "./src/lib/ssg-data";
+import {
+  fetchSSGData,
+  type SSGData,
+  getUniqueProfiles,
+  createProfileSlug,
+} from "./src/lib/ssg-data";
 
 // Type declaration for global SSG data
 declare global {
@@ -68,11 +73,20 @@ export default {
       console.error("❌ Error generating feeds:", error);
     }
 
+    // Generate profile routes for all unique profiles
+    const profiles = getUniqueProfiles(ssgData);
+    const profileRoutes = profiles
+      .filter((profile) => profile.display_name)
+      .map((profile) => `/profile/${createProfileSlug(profile.display_name!)}`);
+
+    console.log(`Generated ${profileRoutes.length} profile routes`);
+
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
       "/news", // Haberler sayfası - static
       "/admin-panel", // Admin panel - dynamic, but needs to be discovered
       "/ssg-debug", // SSG debug page - only available in development
+      ...profileRoutes, // Profile pages - static
     ];
   },
 } satisfies Config;

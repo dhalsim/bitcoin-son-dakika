@@ -1,13 +1,15 @@
-import { applyCacheHeaders } from "../cache-utils.js";
-import { ErrorResponse, SuccessResponse } from "../utils.js";
-
-import type { BitcoinStatsData } from "./schemas.js";
+import type { BitcoinStatsData } from "../../api-helpers/bitcoin-stats/schemas.js";
 import {
   MempoolFeesSchema,
   MempoolDifficultySchema,
   MempoolMempoolSchema,
   MempoolHashrateSchema,
-} from "./schemas.js";
+} from "../../api-helpers/bitcoin-stats/schemas.js";
+import {
+  applyCacheHeaders,
+  ErrorResponse,
+  SuccessResponse,
+} from "../../api-helpers/utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {

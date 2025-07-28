@@ -7,5 +7,6 @@ export default [
   route("admin-panel", "routes/admin.tsx"),
   route("news", "routes/news.tsx"),
   route("articles", "routes/articles.tsx"),
+  route("profile/:slug", "routes/profile.tsx"),
   route("*", "routes/$.tsx"),
 ] satisfies RouteConfig;

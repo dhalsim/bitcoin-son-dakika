@@ -5,7 +5,7 @@ import { WEBSITE_URL } from "@/lib/constants";
 import {
   BitcoinStatsDataSchema,
   type BitcoinStatsData,
-} from "../../api/bitcoin-stats/schemas.js";
+} from "../../common/bitcoin-stats/schemas.js";
 
 type BitcoinStatsResponse =
   | (BitcoinStatsData & { success: true })

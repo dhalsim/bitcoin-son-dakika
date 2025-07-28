@@ -1,9 +1,8 @@
 import { hexToBytes } from "@noble/hashes/utils";
-import type { NostrEvent } from "nostr-tools";
-import { finalizeEvent, nip19, Relay } from "nostr-tools";
+import { finalizeEvent, nip19 } from "nostr-tools";
 
-import type { AuthResult } from "./types.js";
-import type { ArticleTag, NewsTag, PublishToRelaysResult } from "./utils.js";
+import type { AuthResult } from "../api-helpers/types.js";
+import type { ArticleTag, NewsTag } from "../api-helpers/utils.js";
 import {
   ErrorResponse,
   SuccessResponse,
@@ -11,7 +10,8 @@ import {
   authenticateNIP98,
   fetchNostrSets,
   PublishEventResponse,
-} from "./utils.js";
+} from "../api-helpers/utils.js";
+import { publishToRelays } from "../src/lib/utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET(_request: Request) {
@@ -72,6 +72,8 @@ export async function POST(request: Request) {
     const { action } = requestBody;
 
     switch (action) {
+      case "trigger-deploy":
+        return handleTriggerDeploy(request);
       case "add-editor-pubkey":
         return handleAddEditor(
           masterAdminPrivateKey,
@@ -621,6 +623,55 @@ async function publishNews(
   }
 }
 
+async function handleTriggerDeploy(request: Request) {
+  try {
+    const { adminUsers, editorUsers } = await fetchNostrSets([
+      "admin-users",
+      "editor-users",
+    ]);
+
+    // Authenticate user - require editor role for deployment
+    const authResult = await authenticateNIP98(
+      request.headers.get("Authorization") ?? "",
+      adminUsers,
+      editorUsers,
+      ["editor", "admin"],
+    );
+
+    if (!authResult.success) {
+      return ErrorResponse(undefined, authResult.error, authResult.status);
+    }
+
+    // All checks passed, trigger the deployment
+    const deployHookUrl =
+      "https://api.vercel.com/v1/integrations/deploy/prj_MgZWqBPzwJKbsZCUAy4r45WVHVpK/6EPluOk49C";
+
+    const response = await fetch(deployHookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      return SuccessResponse({
+        message: "Deploy hook triggered successfully",
+        status: response.status,
+        authorizedBy: authResult.pubkey,
+        userRoles: authResult.roles,
+      });
+    } else {
+      return ErrorResponse(
+        undefined,
+        "Failed to trigger deploy hook",
+        response.status,
+      );
+    }
+  } catch (error) {
+    return ErrorResponse(error);
+  }
+}
+
 /** Admin Handlers */
 
 async function handleAddEditor(
@@ -796,26 +847,4 @@ async function updateNostrUserSet(
 
     return ErrorResponse(error);
   }
-}
-
-/** Utility Functions */
-
-function publishToRelays(
-  event: NostrEvent,
-  relayStrings: string[],
-): Promise<PublishToRelaysResult[]> {
-  return Promise.all(
-    relayStrings.map(async (r) => {
-      try {
-        const relay = new Relay(r);
-
-        await relay.connect();
-        await relay.publish(event);
-
-        return { success: true, relay: r };
-      } catch (error) {
-        return { success: false, relay: r, error: error.message };
-      }
-    }),
-  );
 }

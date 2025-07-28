@@ -1,4 +1,7 @@
 import React from "react";
+import { Link } from "react-router";
+
+import { createProfileSlug } from "../lib/ssg-data";
 
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 
@@ -44,7 +47,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
       <div className={`p-${featured ? "4 sm:p-6" : "3 sm:p-4"}`}>
         <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span>{time}</span>
-          {author && (
+          {author && author.display_name && (
             <div className="flex items-center space-x-2">
               <Avatar className="h-6 w-6">
                 {author.picture ? (
@@ -57,9 +60,12 @@ const NewsCard: React.FC<NewsCardProps> = ({
                   {author.display_name?.charAt(0)?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
+              <Link
+                to={`/profile/${createProfileSlug(author.display_name)}`}
+                className="text-gray-600 dark:text-gray-400 font-medium hover:text-main-accent transition-colors"
+              >
                 {author.display_name}
-              </span>
+              </Link>
             </div>
           )}
         </div>

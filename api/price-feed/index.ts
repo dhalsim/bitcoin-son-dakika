@@ -2,11 +2,14 @@ import TradingView from "@mathieuc/tradingview";
 import { createClient } from "redis";
 
 import {
+  applyCacheHeaders,
+  ErrorResponse,
+  SuccessResponse,
+} from "../../api-helpers/utils.js";
+import {
   type BaseEndpointResponse,
   type PriceData,
 } from "../../src/types/api.js";
-import { applyCacheHeaders } from "../cache-utils.js";
-import { ErrorResponse, SuccessResponse } from "../utils.js";
 
 const redis = await createClient({
   url: process.env.REDIS_URL,

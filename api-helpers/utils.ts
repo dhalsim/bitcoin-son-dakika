@@ -1,6 +1,8 @@
 import type { NostrEvent } from "nostr-tools";
 import { verifyEvent, SimplePool } from "nostr-tools";
 
+import type { PublishToRelaysResult } from "@/lib/utils.js";
+
 import type { AuthResult, UserRole } from "./types.js";
 
 export const pool = new SimplePool();
@@ -52,10 +54,6 @@ export function ErrorResponse(
     },
   );
 }
-
-export type PublishToRelaysResult =
-  | { success: true; relay: string }
-  | { success: false; relay: string; error: string };
 
 export type PublishEventResponse = {
   message: string;
@@ -374,3 +372,33 @@ const fetchSets = async (
     );
   });
 };
+
+/**
+ * Cache utilities for Vercel Edge Functions
+ * Implements different caching strategies based on data type and volatility
+ */
+
+export interface CacheConfig {
+  maxAge: number; // Primary cache duration in seconds
+  staleWhileRevalidate: number; // How long to serve stale content while revalidating
+  cdnMaxAge?: number; // CDN-specific cache duration
+}
+
+export function applyCacheHeaders(
+  response: Response,
+  strategy: CacheConfig,
+): Response {
+  const cacheControl = `s-maxage=${strategy.maxAge}, stale-while-revalidate=${strategy.staleWhileRevalidate}`;
+
+  response.headers.set("Cache-Control", cacheControl);
+  response.headers.set(
+    "CDN-Cache-Control",
+    `s-maxage=${strategy.cdnMaxAge || strategy.maxAge}`,
+  );
+
+  // Add ETag for better cache validation
+  const etag = `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`;
+  response.headers.set("ETag", etag);
+
+  return response;
+}

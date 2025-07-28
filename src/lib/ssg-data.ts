@@ -1,6 +1,6 @@
 import type { NostrEvent } from "nostr-tools";
 
-import { fetchNostrSets, pool, PROFILE_RELAYS } from "../../api/utils";
+import { fetchNostrSets, pool, PROFILE_RELAYS } from "../../api-helpers/utils";
 
 export interface NewsItem {
   id: string;
@@ -195,4 +195,48 @@ export async function fetchSSGData(): Promise<SSGData> {
     articles: articleItems.slice(0, 50), // Limit to recent 50 articles
     lastUpdated: Date.now(), // Use actual build time for SSG
   };
+}
+
+// Helper function to get unique profiles from SSG data
+export function getUniqueProfiles(ssgData: SSGData): ProfileItem[] {
+  const profileMap = new Map<string, ProfileItem>();
+
+  // Collect profiles from news
+  ssgData.news.forEach((item) => {
+    if (item.author.display_name) {
+      profileMap.set(item.author.pubkey, item.author);
+    }
+  });
+
+  // Collect profiles from articles
+  ssgData.articles.forEach((item) => {
+    if (item.author.display_name) {
+      profileMap.set(item.author.pubkey, item.author);
+    }
+  });
+
+  return Array.from(profileMap.values());
+}
+
+// Helper function to create profile slug from display name
+export function createProfileSlug(displayName: string): string {
+  return displayName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+    .trim();
+}
+
+// Helper function to find profile by slug
+export function findProfileBySlug(
+  ssgData: SSGData,
+  slug: string,
+): ProfileItem | undefined {
+  const profiles = getUniqueProfiles(ssgData);
+
+  return profiles.find(
+    (profile) =>
+      profile.display_name && createProfileSlug(profile.display_name) === slug,
+  );
 }
