@@ -144,7 +144,7 @@ export function ProfileAvatar({
               </h4>
               {profile?.nip05 && (
                 <p className="text-sm text-blue-600 dark:text-blue-400">
-                  @{profile.nip05}
+                  {profile.nip05}
                 </p>
               )}
             </div>

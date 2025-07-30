@@ -63,6 +63,7 @@ interface EventStatisticsProps {
 
 interface ReactionGroup {
   type: string;
+  key: string;
   icon: React.ReactNode;
   count: number;
   events: NostrEvent[];
@@ -171,6 +172,7 @@ export function EventStatistics({
   const [loadingThread, setLoadingThread] = useState(false);
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [showEmojiModal, setShowEmojiModal] = useState(false);
+  const [showOnlyCompose, setShowOnlyCompose] = useState(false);
   const [profiles, setProfiles] = useState<{ [pubkey: string]: UserProfile }>(
     {},
   );
@@ -218,6 +220,7 @@ export function EventStatistics({
 
         subscribeKind0Event(uniquePubkeys, (pubkey, event) => {
           const profile = parseProfileEvent(event);
+
           if (profile) {
             setProfiles((prev) => ({
               ...prev,
@@ -240,13 +243,14 @@ export function EventStatistics({
   // Handle mobile keyboard behavior
   const handleTextareaFocus = () => {
     // On mobile, hide replies when keyboard opens
+    // TODO: hiding won't work because textarea is in the same div
     if (window.innerWidth <= 768) {
-      setShowReplies(false);
+      setShowOnlyCompose(true);
     }
   };
 
   const handleTextareaBlur = () => {
-    // Optional: Add any blur handling if needed
+    setShowOnlyCompose(false);
   };
 
   if (loading) {
@@ -254,7 +258,7 @@ export function EventStatistics({
       <div
         className={`flex items-center space-x-4 text-sm text-muted-foreground ${className}`}
       >
-        <div className="animate-pulse">Loading statistics...</div>
+        <div className="animate-pulse">İstatistikler yükleniyor...</div>
       </div>
     );
   }
@@ -262,7 +266,7 @@ export function EventStatistics({
   if (error) {
     return (
       <div className={`text-sm text-destructive ${className}`}>
-        Error loading statistics: {error}
+        İstatistikler yüklenirken bir hata oluştu: {error}
       </div>
     );
   }
@@ -289,6 +293,7 @@ export function EventStatistics({
   if (repostsCount > 0) {
     reactionGroups.push({
       type: "repost",
+      key: "repost",
       icon: <Repeat2 className="h-4 w-4" />,
       count: repostsCount,
       events: statistics?.reposts || [],
@@ -300,6 +305,7 @@ export function EventStatistics({
   if (likesCount > 0) {
     reactionGroups.push({
       type: "like",
+      key: "like",
       icon: <Heart className="h-4 w-4" />,
       count: likesCount,
       events: statistics?.likes || [],
@@ -311,6 +317,7 @@ export function EventStatistics({
   if (dislikesCount > 0) {
     reactionGroups.push({
       type: "dislike",
+      key: "dislike",
       icon: <ThumbsDown className="h-4 w-4" />,
       count: dislikesCount,
       events: statistics?.dislikes || [],
@@ -324,6 +331,7 @@ export function EventStatistics({
       if (events && events.length > 0 && emoji !== "+") {
         reactionGroups.push({
           type: "emoji",
+          key: `emoji-${emoji}`,
           icon: <span className="text-lg">{emoji}</span>,
           count: events.length,
           events: events,
@@ -338,6 +346,7 @@ export function EventStatistics({
   if (zapCount > 0) {
     reactionGroups.push({
       type: "zap",
+      key: "zap",
       icon: <Zap className="h-4 w-4" />,
       count: zapCount,
       events: [], // Zaps would be different events
@@ -372,14 +381,6 @@ export function EventStatistics({
         threadData = createNip10Thread(statistics.replies, event.id);
       } else if (event.kind === 30023) {
         threadData = createNip22Thread(statistics.replies, event.id);
-      } else {
-        // For other event types, create a simple flat structure
-        threadData = statistics.replies.map((reply) => ({
-          event: reply,
-          children: [],
-          depth: 0,
-          isRoot: false,
-        }));
       }
 
       setThread(threadData);
@@ -454,6 +455,9 @@ export function EventStatistics({
               size="sm"
               onClick={toggleExpanded}
               className="h-6 w-6 p-0"
+              title={
+                isExpanded ? "Reaksiyonları daralt" : "Reaksiyonları genişlet"
+              }
             >
               {isExpanded ? (
                 <ChevronUp className="h-4 w-4" />
@@ -469,7 +473,7 @@ export function EventStatistics({
             className={`flex items-center space-x-1 transition-colors cursor-pointer ${
               showReplies ? "text-purple-600" : "hover:text-purple-600"
             }`}
-            title={showReplies ? "Hide replies" : "Show replies"}
+            title={showReplies ? "Yanıtları gizle" : "Yanıtları göster"}
           >
             <MessageSquare className="h-4 w-4" />
             <span>{repliesCount}</span>
@@ -478,9 +482,12 @@ export function EventStatistics({
           {/* Reaction popup */}
           <Popover open={showReactionPopup} onOpenChange={setShowReactionPopup}>
             <PopoverTrigger asChild>
-              <button className="flex items-center space-x-1 hover:text-red-600 transition-colors cursor-pointer">
+              <button
+                className="flex items-center space-x-1 hover:text-red-600 transition-colors cursor-pointer"
+                title="Beğen"
+              >
                 <Heart className="h-4 w-4" />
-                <span>{likesCount}</span>
+                <span>{totalReactions}</span>
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-2" align="start">
@@ -517,7 +524,7 @@ export function EventStatistics({
           <button
             onClick={handleRepostClick}
             className="flex items-center space-x-1 hover:text-blue-600 transition-colors cursor-pointer"
-            title="Repost this note"
+            title="Yeniden paylaş"
           >
             <Repeat2 className="h-4 w-4" />
             <span>{repostsCount}</span>
@@ -543,9 +550,9 @@ export function EventStatistics({
 
         {/* Expanded reactions panel */}
         {isExpanded && totalReactions > 0 && (
-          <div className="border-t pt-3 space-y-3">
+          <div className="pt-3 space-y-3">
             {reactionGroups.map((group) => (
-              <div key={group.type} className="flex items-center">
+              <div key={group.key} className="flex items-center">
                 <div className="flex items-right w-[14px]">
                   <span className={`flex items-center ${group.color}`}>
                     {group.icon}
@@ -587,7 +594,11 @@ export function EventStatistics({
         {showReplies && (
           <div className="mt-4 border-l-2 border-purple-600 pl-4 space-y-3">
             {/* Thread view - scrollable with dynamic height */}
-            <div className="space-y-2 relative">
+            <div
+              className={`space-y-2 relative ${
+                showOnlyCompose ? "hidden" : ""
+              }`}
+            >
               <div className="max-h-[300px] overflow-y-auto overflow-x-hidden pr-2">
                 {loadingThread ? (
                   <div className="animate-pulse space-y-2">

@@ -44,6 +44,8 @@ export class LocalStorageCache {
   }
 
   private setToStorage(key: string, value: any): void {
+    console.log("setToStorage", key);
+
     try {
       const storageKey = this.getStorageKey(key);
       localStorage.setItem(storageKey, JSON.stringify(value));

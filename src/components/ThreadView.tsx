@@ -71,7 +71,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
             </span>
             {profile?.nip05 && (
               <span className="text-xs text-blue-600 dark:text-blue-400">
-                @{profile.nip05}
+                {profile.nip05}
               </span>
             )}
             <span className="text-xs text-gray-500">
@@ -125,10 +125,22 @@ export function ThreadView({
     );
   }
 
+  const getRepliesCount = (node: ReplyNode): number => {
+    // Count this node as a reply plus all its children
+    return (
+      1 + node.children.reduce((acc, child) => acc + getRepliesCount(child), 0)
+    );
+  };
+
+  const repliesCount = thread.reduce(
+    (acc, node) => acc + getRepliesCount(node),
+    0,
+  );
+
   return (
     <div className={`space-y-1 ${className}`}>
       <h3 className="text-lg font-semibold text-purple-600 mb-4">
-        Yanıtlar ({thread.length})
+        Yanıtlar ({repliesCount})
       </h3>
 
       {thread.map((node) => (

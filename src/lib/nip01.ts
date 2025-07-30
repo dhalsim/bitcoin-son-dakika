@@ -34,6 +34,11 @@ export function subscribeKind0Event(
           return;
         }
 
+        if (cachedEvent && event.created_at < cachedEvent.created_at) {
+          // nothing to update
+          return;
+        }
+
         cache.setKind0Event(event.pubkey, event);
 
         onUpdate(event.pubkey, event);

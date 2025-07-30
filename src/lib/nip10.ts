@@ -9,7 +9,6 @@ export type ReplyNode = {
   event: NostrEvent;
   children: ReplyNode[];
   depth: number;
-  isRoot: boolean;
 };
 
 export function getEventIdentifier(event: NostrEvent) {
@@ -102,6 +101,11 @@ export function getKind1Replies(
     },
     {
       onevent: (evt) => {
+        // validate event tags that it has to have an e tag with marker root
+        if (!evt.tags.some((tag) => tag[0] === "e" && tag[3] === "root")) {
+          return;
+        }
+
         replies.push(evt);
       },
       onclose: () => {
@@ -158,15 +162,31 @@ export function createNip10Thread(
     // Find the e tags (event references)
     const eTags = event.tags.filter((tag) => tag[0] === "e");
 
-    if (eTags.length > 0) {
-      // The last e tag is the direct parent
-      const parentId = eTags[eTags.length - 1][1];
+    let replyToId: string | null = null;
 
-      if (!childrenMap.has(parentId)) {
-        childrenMap.set(parentId, []);
+    // Parse NIP-10 markers according to spec
+    for (const tag of eTags) {
+      const [, eventId, , marker] = tag;
+
+      if (marker === "reply") {
+        // This is the direct parent being replied to
+        replyToId = eventId;
+        break;
+      }
+    }
+
+    // If no "reply" marker found, this is a direct reply to the root
+    if (!replyToId) {
+      replyToId = rootEventId;
+    }
+
+    // Add to children map (except for root event itself)
+    if (replyToId && replyToId !== rootEventId) {
+      if (!childrenMap.has(replyToId)) {
+        childrenMap.set(replyToId, []);
       }
 
-      childrenMap.get(parentId)!.push(event);
+      childrenMap.get(replyToId)!.push(event);
     }
   });
 
@@ -186,15 +206,18 @@ export function createNip10Thread(
       event,
       children: childNodes,
       depth,
-      isRoot: eventId === rootEventId,
     };
   }
 
-  // Find root-level replies (those that directly reference the root event)
+  // Find root-level replies (direct replies to root event)
   const rootLevelReplies = events.filter((event) => {
     const eTags = event.tags.filter((tag) => tag[0] === "e");
 
-    return eTags.length === 1 && eTags[0][1] === rootEventId;
+    // Check if this event has a "reply" marker
+    const hasReplyMarker = eTags.some((tag) => tag[3] === "reply");
+
+    // If no "reply" marker, it's a root-level reply
+    return !hasReplyMarker;
   });
 
   // Build the thread structure
