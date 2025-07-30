@@ -46,6 +46,21 @@ export async function getNip07Relays(
   const relays: RelaysEntries = await window.nostr.getRelays();
   const result = toReadWriteRelays(relays);
 
+  const sortedReadRelays = result.readRelays.sort();
+  const sortedWriteRelays = result.writeRelays.sort();
+
+  const sortedHash = `${sortedReadRelays.join(",")},${sortedWriteRelays.join(",")}`;
+
+  const sortedCacheReadRelays = cachedFromStorage?.readRelays.sort();
+  const sortedCacheWriteRelays = cachedFromStorage?.writeRelays.sort();
+
+  const sortedCacheHash = `${sortedCacheReadRelays.join(",")},${sortedCacheWriteRelays.join(",")}`;
+
+  if (sortedHash === sortedCacheHash) {
+    // nothing to update
+    return;
+  }
+
   cache.setNip07(pubkey, result);
 
   onUpdate(result);

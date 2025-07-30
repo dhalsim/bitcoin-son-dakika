@@ -1,23 +1,18 @@
-import { UserCheck, UserPlus, X } from "lucide-react";
-import type { NostrEvent } from "nostr-tools";
+import { X } from "lucide-react";
 import { nip19 } from "nostr-tools";
 import { useState, useEffect } from "react";
 import type { MetaFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 
-import { getFollowsEvent } from "@/lib/nip02.js";
-import {
-  getNip07Relays,
-  getUserPubkey,
-  signEventByNip07,
-} from "@/lib/nip07.js";
-import { fetchNip65Relays } from "@/lib/nip65.js";
-import { publishToRelays } from "@/lib/utils.js";
+import { FollowButton } from "@/components/ui/FollowButton.js";
 
 import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
-import NewsCard from "../components/NewsCard";
+import NewsCard, {
+  convertNewsItemToNewsCardProps,
+  convertArticleItemToNewsCardProps,
+} from "../components/NewsCard";
 import PriceBar from "../components/PriceBar";
 import { useContentByAuthor } from "../hooks/useSSGData";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
@@ -67,57 +62,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   return { profile, slug };
-}
-
-// Helper function to convert NewsItem to NewsCard props
-function convertToNewsCardProps(item: NewsItem) {
-  const timeAgo = getTimeAgo(item.publishedAt);
-  const title = `Haber - ${item.title}`;
-
-  return {
-    title,
-    summary: item.summary || item.content.substring(0, 150) + "...",
-    category: item.category || "Bitcoin",
-    time: timeAgo,
-    image: item.image,
-    author: item.author,
-  };
-}
-
-// Helper function to convert ArticleItem to NewsCard props
-function convertToArticleCardProps(item: ArticleItem) {
-  const timeAgo = getTimeAgo(item.publishedAt);
-  const title = `Makale - ${item.title}`;
-
-  return {
-    title,
-    summary: item.summary || item.content.substring(0, 150) + "...",
-    category: item.category || "Bitcoin",
-    time: timeAgo,
-    image: item.image,
-    author: item.author,
-  };
-}
-
-function getTimeAgo(timestamp: number): string {
-  const now = Date.now() / 1000;
-  const diffSeconds = Math.floor(now - timestamp);
-
-  if (diffSeconds < 60) {
-    return `${diffSeconds} saniye önce`;
-  } else if (diffSeconds < 3600) {
-    const minutes = Math.floor(diffSeconds / 60);
-
-    return `${minutes} dakika önce`;
-  } else if (diffSeconds < 86400) {
-    const hours = Math.floor(diffSeconds / 3600);
-
-    return `${hours} saat önce`;
-  } else {
-    const days = Math.floor(diffSeconds / 86400);
-
-    return `${days} gün önce`;
-  }
 }
 
 // NIP-05 Verification Badge Component
@@ -198,188 +142,6 @@ function NIP05Badge({ nip05, pubkey }: { nip05: string; pubkey: string }) {
   );
 }
 
-// Follow Button Component
-function FollowButton({
-  pubkey,
-  setError,
-}: {
-  pubkey: string;
-  setError: (error: string | null) => void;
-}) {
-  const [isFollowing, setIsFollowing] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkFollowStatus = async () => {
-      try {
-        if (!window.nostr) {
-          setIsFollowing(false);
-
-          return;
-        }
-
-        const userPubkey = await getUserPubkey();
-
-        if (!userPubkey) {
-          setIsFollowing(false);
-
-          return;
-        }
-
-        setIsLoading(true);
-
-        getFollowsEvent(userPubkey, (followEvent) => {
-          const following = followEvent?.tags
-            .filter((tag) => tag[0] === "p")
-            .map((tag) => tag[1])
-            .includes(pubkey);
-
-          setIsLoading(false);
-          setIsFollowing(following);
-        });
-      } catch (error) {
-        console.error("Follow status check failed:", error);
-        setIsLoading(false);
-        setIsFollowing(false);
-      }
-    };
-
-    checkFollowStatus();
-  }, [pubkey]);
-
-  const publishEvent = async (event: NostrEvent, relays: string[]) => {
-    const result = await publishToRelays(event, relays);
-
-    console.log(result);
-
-    return result.some((r) => r.success);
-  };
-
-  const handleFollowToggle = async () => {
-    setError(null);
-
-    try {
-      const toggleFollow = async () => {
-        const userPubkey = await getUserPubkey();
-
-        if (!userPubkey) {
-          return;
-        }
-
-        setIsLoading(true);
-
-        getFollowsEvent(userPubkey, async (followEvent) => {
-          if (!followEvent) {
-            return;
-          }
-
-          const following = followEvent.tags
-            .filter((tag) => tag[0] === "p")
-            .map((tag) => tag[1])
-            .includes(pubkey);
-
-          const newFollowTags = following
-            ? followEvent?.tags.filter((t) => t[0] === "p" && t[1] !== pubkey)
-            : [...(followEvent?.tags || []), ["p", pubkey]];
-
-          const event = {
-            kind: 3,
-            tags: newFollowTags,
-            content: "",
-            created_at: Math.floor(Date.now() / 1000),
-          };
-
-          const signedEvent = await signEventByNip07(event);
-
-          if (!signedEvent) {
-            setError("Nostr uyumlu bir tarayıcı/eklenti kullanınız.");
-            setIsFollowing(false);
-
-            return;
-          }
-
-          getNip07Relays(userPubkey, (nip07Relays) => {
-            fetchNip65Relays(
-              PROFILE_RELAYS,
-              userPubkey,
-              async (nip65Relays) => {
-                const userOutboxRelays = new Set([
-                  ...nip07Relays.writeRelays,
-                  ...nip65Relays.writeRelays,
-                ]);
-
-                const published = await publishEvent(
-                  signedEvent,
-                  Array.from(userOutboxRelays),
-                );
-
-                if (!published) {
-                  setError(
-                    "Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.",
-                  );
-                  setIsFollowing(false);
-
-                  return;
-                }
-
-                setIsFollowing(true);
-                setIsLoading(false);
-
-                getFollowsEvent(userPubkey, (followEvent) => {
-                  const following = followEvent?.tags
-                    .filter((tag) => tag[0] === "p")
-                    .map((tag) => tag[1])
-                    .includes(pubkey);
-
-                  setIsFollowing(following);
-                });
-              },
-            );
-          });
-        });
-      };
-
-      toggleFollow();
-    } catch (error) {
-      console.error("Follow toggle failed:", error);
-
-      setIsLoading(false);
-      setError("Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.");
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <button
-        disabled
-        className="inline-flex items-center px-4 py-2 bg-gray-400 text-white text-sm font-medium rounded-lg cursor-not-allowed"
-      >
-        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-        Yükleniyor...
-      </button>
-    );
-  }
-
-  return (
-    <button
-      onClick={handleFollowToggle}
-      className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 text-white"
-    >
-      {isFollowing ? (
-        <>
-          <UserCheck className="w-4 h-4 mr-2" />
-          Takibi Bırak
-        </>
-      ) : (
-        <>
-          <UserPlus className="w-4 h-4 mr-2" />
-          Takip Et
-        </>
-      )}
-    </button>
-  );
-}
-
 export default function ProfilePage() {
   const { profile } = useLoaderData<typeof loader>();
   const [error, setError] = useState<string | null>(null);
@@ -396,12 +158,12 @@ export default function ProfilePage() {
   const newsItems = authorContent
     .filter((item): item is NewsItem => "identifier" in item === false)
     .sort((a, b) => b.publishedAt - a.publishedAt)
-    .map(convertToNewsCardProps);
+    .map(convertNewsItemToNewsCardProps);
 
   const articleItems = authorContent
     .filter((item): item is ArticleItem => "identifier" in item === true)
     .sort((a, b) => b.publishedAt - a.publishedAt)
-    .map(convertToArticleCardProps);
+    .map(convertArticleItemToNewsCardProps);
 
   // Combine all content and sort by date
   const allContent = [...newsItems, ...articleItems].sort((a, b) => {
@@ -520,7 +282,7 @@ export default function ProfilePage() {
 
             {/* Action Buttons */}
             <div className="flex justify-center gap-4 mb-4">
-              <FollowButton pubkey={profile.pubkey} setError={setError} />
+              <FollowButton pubkey={profile.pubkey} />
               <a
                 href={`https://njump.me/${nprofile}`}
                 target="_blank"
@@ -567,15 +329,7 @@ export default function ProfilePage() {
 
               <div className="grid gap-6">
                 {allContent.map((item, index) => (
-                  <NewsCard
-                    key={`${item.title}-${index}`}
-                    title={item.title}
-                    summary={item.summary}
-                    category={item.category}
-                    time={item.time}
-                    image={item.image}
-                    author={item.author}
-                  />
+                  <NewsCard key={`${item.title}-${index}`} {...item} />
                 ))}
               </div>
             </div>

@@ -51,7 +51,6 @@ export const useBitcoinStats = () => {
         const bitcoinStats = BitcoinStatsDataSchema.parse(rawBitcoinStats);
 
         setStats(bitcoinStats);
-        console.log("Bitcoin stats set successfully");
       } catch (err) {
         console.error("Error fetching Bitcoin stats:", err);
         setError(

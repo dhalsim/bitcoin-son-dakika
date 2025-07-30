@@ -2,7 +2,7 @@ import type { MetaFunction } from "react-router";
 
 import Footer from "../components/Footer";
 import Header from "../components/Header";
-import NewsCard from "../components/NewsCard";
+import NewsCard, { convertToNewsCardProps } from "../components/NewsCard";
 import PriceBar from "../components/PriceBar";
 import { useSSGData } from "../hooks/useSSGData";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
@@ -18,40 +18,6 @@ export const meta: MetaFunction = () => {
 };
 
 // Helper function to convert NewsItem to NewsCard props
-function convertToNewsCardProps(item: any) {
-  const timeAgo = getTimeAgo(item.publishedAt);
-  const title = `Haber - ${item.title}`;
-
-  return {
-    title,
-    summary: item.summary || item.content.substring(0, 150) + "...",
-    category: item.category || "Bitcoin",
-    time: timeAgo,
-    image: item.image,
-    author: item.author,
-  };
-}
-
-function getTimeAgo(timestamp: number): string {
-  const now = Date.now() / 1000;
-  const diffSeconds = Math.floor(now - timestamp);
-
-  if (diffSeconds < 60) {
-    return `${diffSeconds} saniye önce`;
-  } else if (diffSeconds < 3600) {
-    const minutes = Math.floor(diffSeconds / 60);
-
-    return `${minutes} dakika önce`;
-  } else if (diffSeconds < 86400) {
-    const hours = Math.floor(diffSeconds / 3600);
-
-    return `${hours} saat önce`;
-  } else {
-    const days = Math.floor(diffSeconds / 86400);
-
-    return `${days} gün önce`;
-  }
-}
 
 export default function NewsPage() {
   const ssgData = useSSGData();

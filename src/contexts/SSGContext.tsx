@@ -21,6 +21,13 @@ interface SSGProviderProps {
   children: ReactNode;
 }
 
+// Fallback data for development mode
+const createFallbackData = (): SSGData => ({
+  news: [],
+  articles: [],
+  lastUpdated: Date.now(),
+});
+
 export function SSGProvider({ children }: SSGProviderProps) {
   const contextValue = useMemo(() => {
     let ssgData: SSGData;
@@ -37,7 +44,14 @@ export function SSGProvider({ children }: SSGProviderProps) {
     ) {
       ssgData = (window as any).__SSG_DATA__;
     }
-    // Throw error if no SSG data is available
+    // In development mode, provide fallback data instead of throwing
+    else if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "SSG data not available in development mode. Using fallback data.",
+      );
+      ssgData = createFallbackData();
+    }
+    // Throw error if no SSG data is available in production
     else {
       throw new Error(
         "SSG data is not available. This should not happen in production builds. " +

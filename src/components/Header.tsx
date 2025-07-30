@@ -80,7 +80,7 @@ const Header = () => {
                 <Atom className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
               </a>
               <a
-                href="https://njump.me/bitcoinsondakika"
+                href="https://njump.me/_@bitcoinsondakika.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
@@ -143,27 +143,43 @@ const Header = () => {
 
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
-                  Haberler
+                  <a href="/news">Haberler</a>
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
-                  <DropdownMenuItem>Son Dakika</DropdownMenuItem>
-                  <DropdownMenuItem>Piyasa Analizi</DropdownMenuItem>
-                  <DropdownMenuItem>Teknoloji</DropdownMenuItem>
-                  <DropdownMenuItem>Düzenlemeler</DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/enson">Son Dakika</a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/tag/analiz?type=news">Piyasa Analizi</a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/tag/teknoloji?type=news">Teknoloji</a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/tag/duzenlemeler?type=news">Düzenlemeler</a>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
-                  Köşe Yazıları
+                  <a href="/articles">Köşe Yazıları</a>
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
-                  <DropdownMenuItem>Güncel Yorumlar</DropdownMenuItem>
-                  <DropdownMenuItem>Teknik Analiz</DropdownMenuItem>
-                  <DropdownMenuItem>Ekonomi</DropdownMenuItem>
-                  <DropdownMenuItem>Teknoloji</DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/tag/yorum?type=article">Güncel Yorumlar</a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/tag/analiz?type=article">Teknik Analiz</a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/tag/ekonomi?type=article">Ekonomi</a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/tag/teknoloji?type=article">Teknoloji</a>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 

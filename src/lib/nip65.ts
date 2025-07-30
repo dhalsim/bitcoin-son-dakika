@@ -32,12 +32,13 @@ const cache = getCache();
 export async function fetchNip65Relays(
   relays: string[],
   pubkey: string,
-  onUpdate: (relays: Nip65Relays) => void,
+  onUpdate: (relays: Nip65Relays | null) => void,
 ) {
-  const cachedFromStorage = cache.getNip65(pubkey);
+  const cachedNip65Event = cache.getNip65Event(pubkey);
 
-  if (cachedFromStorage) {
-    onUpdate(cachedFromStorage);
+  // send it even if it's null
+  if (cachedNip65Event) {
+    onUpdate(toReadWriteRelays(cachedNip65Event.tags));
   }
 
   const nip65Event = await pool.get(relays, {
@@ -47,23 +48,20 @@ export async function fetchNip65Relays(
   });
 
   if (!nip65Event) {
-    const emptyResult = {
-      readRelays: [],
-      writeRelays: [],
-      flatRelays: [],
-    };
-
-    // Cache empty result to avoid repeated fetches
-    cache.setNip65(pubkey, emptyResult);
-
-    onUpdate(emptyResult);
+    // it is still null
+    onUpdate(null);
 
     return;
   }
 
-  const result = toReadWriteRelays(nip65Event.tags);
+  if (cachedNip65Event?.id === nip65Event.id) {
+    // nothing to update
+    return;
+  }
 
-  cache.setNip65(pubkey, result);
+  cache.setNip65Event(pubkey, nip65Event);
+
+  const result = toReadWriteRelays(nip65Event.tags);
 
   onUpdate(result);
 }

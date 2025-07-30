@@ -6,6 +6,7 @@ export interface NewsItem {
   id: string;
   title: string;
   content: string;
+  event: NostrEvent;
   summary?: string;
   publishedAt: number;
   author: ProfileItem;
@@ -19,6 +20,7 @@ export interface ArticleItem {
   id: string;
   title: string;
   content: string;
+  event: NostrEvent;
   summary?: string;
   publishedAt: number;
   author: ProfileItem;
@@ -56,6 +58,7 @@ function processNewsEvent(event: NostrEvent, author: ProfileItem): NewsItem {
     id: event.id,
     title: titleTag?.[1] || "Untitled",
     content: event.content,
+    event,
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
@@ -79,6 +82,7 @@ function processArticleEvent(
     id: event.id,
     title: titleTag?.[1] || "Untitled Article",
     content: event.content,
+    event,
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
@@ -195,6 +199,20 @@ export async function fetchSSGData(): Promise<SSGData> {
     articles: articleItems.slice(0, 50), // Limit to recent 50 articles
     lastUpdated: Date.now(), // Use actual build time for SSG
   };
+}
+
+export function getUniqueTags(ssgData: SSGData): string[] {
+  const tagSet = new Set<string>();
+
+  ssgData.news.forEach((item) => {
+    item.tags.forEach((tag) => tagSet.add(tag));
+  });
+
+  ssgData.articles.forEach((item) => {
+    item.tags.forEach((tag) => tagSet.add(tag));
+  });
+
+  return Array.from(tagSet);
 }
 
 // Helper function to get unique profiles from SSG data

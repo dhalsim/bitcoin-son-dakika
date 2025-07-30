@@ -13,15 +13,6 @@ const Sidebar = ({
 }) => {
   const { stats, loading, error } = useBitcoinStats();
 
-  console.log(
-    "Sidebar render - stats:",
-    stats,
-    "loading:",
-    loading,
-    "error:",
-    error,
-  );
-
   return (
     <aside className="w-full lg:w-80 space-y-6">
       {/* Recent Columns */}

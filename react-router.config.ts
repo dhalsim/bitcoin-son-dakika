@@ -10,6 +10,7 @@ import {
   type SSGData,
   getUniqueProfiles,
   createProfileSlug,
+  getUniqueTags,
 } from "./src/lib/ssg-data";
 
 // Type declaration for global SSG data
@@ -81,12 +82,17 @@ export default {
 
     console.log(`Generated ${profileRoutes.length} profile routes`);
 
+    // Generate tag routes for all unique tags
+    const tags = getUniqueTags(ssgData);
+    const tagRoutes = tags.map((tag) => `/tag/${tag}`);
+
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
       "/news", // Haberler sayfası - static
       "/admin-panel", // Admin panel - dynamic, but needs to be discovered
       "/ssg-debug", // SSG debug page - only available in development
       ...profileRoutes, // Profile pages - static
+      ...tagRoutes, // Tag pages - static
     ];
   },
 } satisfies Config;
