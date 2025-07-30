@@ -4,6 +4,7 @@ import { Link } from "react-router";
 
 import { createProfileSlug } from "@/lib/ssg-data";
 import type { NewsItem, ArticleItem } from "@/lib/ssg-data";
+import { RenderedText } from "@/lib/text-renderer";
 
 import { EventStatistics } from "./EventStatistics";
 import { Card, CardHeader, CardContent } from "./ui/card";
@@ -189,7 +190,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
         </h3>
 
         <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm leading-relaxed">
-          {summary}
+          <RenderedText enableRichPreviews>{summary}</RenderedText>
         </p>
 
         {/* Interactive Statistics */}

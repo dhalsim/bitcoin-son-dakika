@@ -8,6 +8,7 @@ import {
   type UserProfile,
 } from "@/components/ui/ProfileAvatar";
 import type { ReplyNode } from "@/lib/nip10";
+import { RenderedText } from "@/lib/text-renderer";
 
 interface ThreadViewProps {
   thread: ReplyNode[];
@@ -80,7 +81,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
           </div>
 
           <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-            {node.event.content}
+            <RenderedText enableRichPreviews>{node.event.content}</RenderedText>
           </p>
 
           {/* Reply button */}

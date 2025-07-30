@@ -34,12 +34,7 @@ import {
   type UserProfile,
 } from "@/components/ui/ProfileAvatar";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { getCache } from "@/lib/cache";
 import { DEFAULT_EMOJI_USAGE } from "@/lib/constants";
 import type { EventStatistics } from "@/lib/event-statistics";
@@ -58,6 +53,7 @@ interface EventStatisticsProps {
   className?: string;
   onReaction?: (event: NostrEvent, reaction: string) => void;
   onRepost?: (event: NostrEvent) => void;
+  onQuote?: (event: NostrEvent) => void;
   onReply?: (event: NostrEvent) => void;
 }
 
@@ -159,6 +155,7 @@ export function EventStatistics({
   className = "",
   onReaction,
   onRepost,
+  onQuote,
   onReply,
 }: EventStatisticsProps) {
   const [statistics, setStatistics] = useState<EventStatistics | null>(null);
@@ -301,6 +298,18 @@ export function EventStatistics({
     });
   }
 
+  // Add quotes
+  if (quotesCount > 0) {
+    reactionGroups.push({
+      type: "quote",
+      key: "quote",
+      icon: <Quote className="h-4 w-4" />,
+      count: quotesCount,
+      events: statistics?.quotes || [],
+      color: "text-gray-600",
+    });
+  }
+
   // Add likes
   if (likesCount > 0) {
     reactionGroups.push({
@@ -362,6 +371,12 @@ export function EventStatistics({
   const handleRepostClick = () => {
     if (onRepost) {
       onRepost(event);
+    }
+  };
+
+  const handleQuoteClick = () => {
+    if (onQuote) {
+      onQuote(event);
     }
   };
 
@@ -531,21 +546,14 @@ export function EventStatistics({
           </button>
 
           {/* Quotes */}
-          {quotesCount > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center space-x-1">
-                  <Quote className="h-4 w-4" />
-                  <span>{quotesCount}</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {quotesCount} quote{quotesCount !== 1 ? "s" : ""}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          )}
+          <button
+            onClick={handleQuoteClick}
+            className="flex items-center space-x-1 hover:text-blue-600 transition-colors cursor-pointer"
+            title="Alıntı Yap"
+          >
+            <Quote className="h-4 w-4" />
+            <span>{quotesCount}</span>
+          </button>
         </div>
 
         {/* Expanded reactions panel */}
