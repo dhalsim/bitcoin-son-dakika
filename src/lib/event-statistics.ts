@@ -4,8 +4,10 @@ import { getKind1Quotes, getKind1Replies } from "./nip10";
 import { getReposts } from "./nip18";
 import { getArticleReplies } from "./nip22";
 import { type CustomEmoji, getReactions } from "./nip25";
+import { type ZapReceipt, getZaps } from "./nip57";
 
 export type EventStatistics = {
+  zaps: Map<string, ZapReceipt>;
   replies: Map<string, NostrEvent>;
   quotes: Map<string, NostrEvent>;
   reposts: NostrEvent[];
@@ -29,6 +31,9 @@ export type EventStatistics = {
   Reactions:
     - NIP-25: https://nips.nostr.com/25, + (or empty) is used for a like, - is used for a dislike.
       Can be used with https://nips.nostr.com/30 emoji tags to show the reaction.
+
+  Zaps:
+    - NIP-57: https://nips.nostr.com/57, Lightning Zaps. Kind 9735 (zap receipt) events.
 
   Considerations:
     - NIP-45: https://nips.nostr.com/45, Using Count Verb for fast retrieval of number of replies, reposts, etc.
@@ -103,6 +108,7 @@ export function getEventStatistics(
 ) {
   // Initialize statistics object
   const stats: EventStatistics = {
+    zaps: new Map(),
     replies: new Map(),
     quotes: new Map(),
     reposts: [],
@@ -161,6 +167,13 @@ export function getEventStatistics(
     stats.likes = likes;
     stats.dislikes = dislikes;
     stats.emojis = emojis;
+
+    onUpdate({ ...stats });
+  });
+
+  // Get zaps (NIP-57) - works for all event types
+  getZaps(event, STATISTICS_RELAYS, (zaps) => {
+    stats.zaps = zaps || new Map();
 
     onUpdate({ ...stats });
   });

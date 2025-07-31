@@ -12,7 +12,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,9 +43,18 @@ import { subscribeKind0Event } from "@/lib/nip01";
 import { createNip10Thread } from "@/lib/nip10";
 import type { ReplyNode } from "@/lib/nip10";
 import { createNip22Thread } from "@/lib/nip22";
+import { extractAmountFromBolt11 } from "@/lib/nip57";
+import { RenderedText } from "@/lib/text-renderer";
 
 import { EmojiBoard } from "./EmojiBoard";
 import { ThreadView } from "./ThreadView";
+import { ZapDialog } from "./ZapDialog";
+
+// Helper function to clean quote content by removing nostr: links
+function cleanQuoteContent(content: string): string {
+  // Remove nostr: links (nostr:note1... or nostr:nevent1... etc.)
+  return content.replace(/\s*nostr:[a-zA-Z0-9]+\s*$/g, "").trim();
+}
 
 interface EventStatisticsProps {
   event: NostrEvent;
@@ -57,7 +66,7 @@ interface EventStatisticsProps {
 }
 
 interface ReactionGroup {
-  type: string;
+  type: "zap" | "repost" | "like" | "dislike" | "emoji";
   key: string;
   icon: React.ReactNode;
   count: number;
@@ -168,9 +177,13 @@ export function EventStatistics({
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [showEmojiModal, setShowEmojiModal] = useState(false);
   const [showOnlyCompose, setShowOnlyCompose] = useState(false);
+  const [showQuotes, setShowQuotes] = useState(false);
+  const [quoteContent, setQuoteContent] = useState("");
+  const [showQuotePreview, setShowQuotePreview] = useState(false);
   const [profiles, setProfiles] = useState<{ [pubkey: string]: UserProfile }>(
     {},
   );
+  const [showZapDialog, setShowZapDialog] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load draft on mount
@@ -187,6 +200,21 @@ export function EventStatistics({
       saveDraft(event.id, replyContent);
     }
   }, [replyContent, event?.id]);
+
+  // Load quote draft on mount
+  useEffect(() => {
+    if (event?.id) {
+      const quoteDraft = loadDraft(`quote-${event.id}`);
+      setQuoteContent(quoteDraft);
+    }
+  }, [event?.id]);
+
+  // Save quote draft when content changes
+  useEffect(() => {
+    if (event?.id && quoteContent !== loadDraft(`quote-${event.id}`)) {
+      saveDraft(`quote-${event.id}`, quoteContent);
+    }
+  }, [quoteContent, event?.id]);
 
   useEffect(() => {
     if (!event) {
@@ -235,165 +263,160 @@ export function EventStatistics({
     }
   }, [event]);
 
-  // Handle mobile keyboard behavior
-  const handleTextareaFocus = () => {
-    // On mobile, hide replies when keyboard opens
-    // TODO: hiding won't work because textarea is in the same div
-    if (window.innerWidth <= 768) {
-      setShowOnlyCompose(true);
+  // Memoize expensive calculations
+  const {
+    repliesCount,
+    quotesCount,
+    repostsCount,
+    reactionGroups,
+    totalReactions,
+    _zapCount,
+    zapAmount,
+  } = useMemo(() => {
+    const zaps = Array.from(statistics?.zaps?.values() || []);
+
+    // Calculate counts from event arrays with null checks
+    const _repliesCount = statistics?.replies?.size || 0;
+    const _quotesCount = statistics?.quotes?.size || 0;
+    const _repostsCount = statistics?.reposts?.length || 0;
+    const _likesCount = statistics?.likes?.length || 0;
+    const _dislikesCount = statistics?.dislikes?.length || 0;
+    const _zapCount = zaps.length;
+    const _zapAmount = zaps.reduce((sum, zap) => sum + zap.amount, 0);
+
+    // Calculate emoji counts with null checks
+    const _emojiCounts: { [emoji: string]: number } = {};
+    if (statistics?.emojis) {
+      Object.entries(statistics.emojis).forEach(([emoji, customEmoji]) => {
+        _emojiCounts[emoji] = customEmoji?.events?.length || 0;
+      });
     }
-  };
 
-  const handleTextareaBlur = () => {
-    setShowOnlyCompose(false);
-  };
+    // Create reaction groups for the expanded view
+    const _reactionGroups: ReactionGroup[] = [];
 
-  if (loading) {
-    return (
-      <div
-        className={`flex items-center space-x-4 text-sm text-muted-foreground ${className}`}
-      >
-        <div className="animate-pulse">İstatistikler yükleniyor...</div>
-      </div>
-    );
-  }
+    // Add zaps
+    if (_zapCount > 0) {
+      // Sort zaps by amount (highest first)
+      const sortedZaps = zaps.sort((a, b) => b.amount - a.amount);
 
-  if (error) {
-    return (
-      <div className={`text-sm text-destructive ${className}`}>
-        İstatistikler yüklenirken bir hata oluştu: {error}
-      </div>
-    );
-  }
+      _reactionGroups.push({
+        type: "zap",
+        key: "zap",
+        icon: <Zap className="h-4 w-4" />,
+        count: sortedZaps.length,
+        events: sortedZaps.map((zap) => zap.event),
+        color: "text-orange-500",
+      });
+    }
 
-  // Calculate counts from event arrays with null checks
-  const repliesCount = statistics?.replies?.size || 0;
-  const quotesCount = statistics?.quotes?.size || 0;
-  const repostsCount = statistics?.reposts?.length || 0;
-  const likesCount = statistics?.likes?.length || 0;
-  const dislikesCount = statistics?.dislikes?.length || 0;
+    // Add reposts
+    if (_repostsCount > 0) {
+      _reactionGroups.push({
+        type: "repost",
+        key: "repost",
+        icon: <Repeat2 className="h-4 w-4" />,
+        count: _repostsCount,
+        events: statistics?.reposts || [],
+        color: "text-blue-600",
+      });
+    }
 
-  // Calculate emoji counts with null checks
-  const emojiCounts: { [emoji: string]: number } = {};
-  if (statistics?.emojis) {
-    Object.entries(statistics.emojis).forEach(([emoji, customEmoji]) => {
-      emojiCounts[emoji] = customEmoji?.events?.length || 0;
-    });
-  }
+    // Add likes
+    if (_likesCount > 0) {
+      _reactionGroups.push({
+        type: "like",
+        key: "like",
+        icon: <Heart className="h-4 w-4" />,
+        count: _likesCount,
+        events: statistics?.likes || [],
+        color: "text-red-600",
+      });
+    }
 
-  // Create reaction groups for the expanded view
-  const reactionGroups: ReactionGroup[] = [];
+    // Add dislikes
+    if (_dislikesCount > 0) {
+      _reactionGroups.push({
+        type: "dislike",
+        key: "dislike",
+        icon: <ThumbsDown className="h-4 w-4" />,
+        count: _dislikesCount,
+        events: statistics?.dislikes || [],
+        color: "text-gray-600",
+      });
+    }
 
-  // Add reposts
-  if (repostsCount > 0) {
-    reactionGroups.push({
-      type: "repost",
-      key: "repost",
-      icon: <Repeat2 className="h-4 w-4" />,
-      count: repostsCount,
-      events: statistics?.reposts || [],
-      color: "text-blue-600",
-    });
-  }
+    // Add emoji reactions
+    if (statistics?.emojis) {
+      // Sort emojis by count (highest first)
+      const sortedEmojis = Object.entries(statistics.emojis).sort(
+        ([, a], [, b]) => b.events.length - a.events.length,
+      );
 
-  // Add quotes
-  if (quotesCount > 0) {
-    reactionGroups.push({
-      type: "quote",
-      key: "quote",
-      icon: <Quote className="h-4 w-4" />,
-      count: quotesCount,
-      events: Object.values(statistics?.quotes || {}),
-      color: "text-gray-600",
-    });
-  }
+      sortedEmojis.forEach(([emojiName, customEmoji]) => {
+        if (
+          customEmoji &&
+          customEmoji.events &&
+          customEmoji.events.length > 0
+        ) {
+          // Determine the icon to display
+          let icon: React.ReactNode;
 
-  // Add likes
-  if (likesCount > 0) {
-    reactionGroups.push({
-      type: "like",
-      key: "like",
-      icon: <Heart className="h-4 w-4" />,
-      count: likesCount,
-      events: statistics?.likes || [],
-      color: "text-red-600",
-    });
-  }
+          if (customEmoji.url) {
+            // Custom emoji with URL
+            icon = (
+              <img
+                src={customEmoji.url}
+                alt={`:${customEmoji.name}:`}
+                className="h-4 w-4 object-contain"
+                onError={(e) => {
+                  // Fallback to text if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                  const parent = target.parentElement;
+                  if (parent) {
+                    const fallback = document.createElement("span");
+                    fallback.className = "text-lg";
+                    fallback.textContent = `:${customEmoji.name}:`;
+                    parent.appendChild(fallback);
+                  }
+                }}
+              />
+            );
+          } else {
+            // Unicode emoji or text fallback
+            icon = <span className="text-lg">{emojiName}</span>;
+          }
 
-  // Add dislikes
-  if (dislikesCount > 0) {
-    reactionGroups.push({
-      type: "dislike",
-      key: "dislike",
-      icon: <ThumbsDown className="h-4 w-4" />,
-      count: dislikesCount,
-      events: statistics?.dislikes || [],
-      color: "text-gray-600",
-    });
-  }
-
-  // Add emoji reactions
-  if (statistics?.emojis) {
-    Object.entries(statistics.emojis).forEach(([emojiName, customEmoji]) => {
-      if (customEmoji && customEmoji.events && customEmoji.events.length > 0) {
-        // Determine the icon to display
-        let icon: React.ReactNode;
-
-        if (customEmoji.url) {
-          // Custom emoji with URL
-          icon = (
-            <img
-              src={customEmoji.url}
-              alt={`:${customEmoji.name}:`}
-              className="h-4 w-4 object-contain"
-              onError={(e) => {
-                // Fallback to text if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                const parent = target.parentElement;
-                if (parent) {
-                  const fallback = document.createElement("span");
-                  fallback.className = "text-lg";
-                  fallback.textContent = `:${customEmoji.name}:`;
-                  parent.appendChild(fallback);
-                }
-              }}
-            />
-          );
-        } else {
-          // Unicode emoji or text fallback
-          icon = <span className="text-lg">{emojiName}</span>;
+          _reactionGroups.push({
+            type: "emoji",
+            key: `emoji-${customEmoji.name}`,
+            icon,
+            count: customEmoji.events.length,
+            events: customEmoji.events,
+            color: "text-yellow-600",
+          });
         }
+      });
+    }
 
-        reactionGroups.push({
-          type: "emoji",
-          key: `emoji-${customEmoji.name}`,
-          icon,
-          count: customEmoji.events.length,
-          events: customEmoji.events,
-          color: "text-yellow-600",
-        });
-      }
-    });
-  }
+    const _totalReactions = _reactionGroups.reduce(
+      (sum, group) =>
+        sum +
+        (["like", "dislike", "emoji"].includes(group.type) ? group.count : 0),
+      0,
+    );
 
-  // Add zaps (placeholder - you'll need to implement zap fetching)
-  const zapCount = 0; // This would come from zap statistics
-  if (zapCount > 0) {
-    reactionGroups.push({
-      type: "zap",
-      key: "zap",
-      icon: <Zap className="h-4 w-4" />,
-      count: zapCount,
-      events: [], // Zaps would be different events
-      color: "text-yellow-500",
-    });
-  }
-
-  const totalReactions = reactionGroups.reduce(
-    (sum, group) => sum + group.count,
-    0,
-  );
+    return {
+      repliesCount: _repliesCount,
+      quotesCount: _quotesCount,
+      repostsCount: _repostsCount,
+      reactionGroups: _reactionGroups,
+      totalReactions: _totalReactions,
+      _zapCount: _zapCount,
+      zapAmount: _zapAmount,
+    };
+  }, [statistics]);
 
   const handleRepostClick = () => {
     if (onRepost) {
@@ -402,8 +425,14 @@ export function EventStatistics({
   };
 
   const handleQuoteClick = () => {
-    if (onQuote) {
-      onQuote(event);
+    setShowQuotes(!showQuotes);
+
+    if (isExpanded) {
+      setIsExpanded(false);
+    }
+
+    if (showReplies) {
+      setShowReplies(false);
     }
   };
 
@@ -463,6 +492,31 @@ export function EventStatistics({
     }
   };
 
+  const handlePostQuote = () => {
+    if (quoteContent.trim()) {
+      // TODO: Implement actual quote posting
+      console.log("Posting quote:", quoteContent);
+
+      // Clear draft after successful post
+      setQuoteContent("");
+      cache.deleteDraft(`quote-${event.id}`);
+
+      // Optionally close quotes section
+      setShowQuotes(false);
+
+      // TODO: Implement actual quote posting,
+      // publish and return the quote event
+      onQuote?.(event);
+    }
+  };
+
+  const handleQuoteKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      handlePostQuote();
+    }
+  };
+
   const handleThreadReply = (replyEvent: NostrEvent) => {
     console.log("Reply to thread event:", replyEvent.id);
     // TODO: Implement reply to specific thread event
@@ -480,10 +534,39 @@ export function EventStatistics({
     setShowReactionPopup(false);
   };
 
+  const handleTextareaFocus = () => {
+    setShowOnlyCompose(true);
+  };
+
+  const handleTextareaBlur = () => {
+    setShowOnlyCompose(false);
+  };
+
   const handleEmojiModalSelect = (emoji: string) => {
     handleReactionClick(emoji);
     setShowEmojiModal(false);
   };
+
+  const handleZap = (event: NostrEvent, amount: number, comment?: string) => {
+    console.log(
+      "Zapping event:",
+      event.id,
+      "amount:",
+      amount,
+      "comment:",
+      comment,
+    );
+    // TODO: Implement actual zap functionality
+    // This will be implemented later as requested
+  };
+
+  if (loading) {
+    return <div>Yükleniyor...</div>;
+  }
+
+  if (error) {
+    return <div>Hata: {error}</div>;
+  }
 
   return (
     <TooltipProvider>
@@ -583,6 +666,16 @@ export function EventStatistics({
             <Quote className="h-4 w-4" />
             <span>{quotesCount}</span>
           </button>
+
+          {/* Zaps */}
+          <button
+            onClick={() => setShowZapDialog(true)}
+            className="flex items-center space-x-1 hover:text-orange-600 transition-colors cursor-pointer"
+            title="Zap Gönder"
+          >
+            <Zap className="h-4 w-4" />
+            <span>{zapAmount}</span>
+          </button>
         </div>
 
         {/* Expanded reactions panel */}
@@ -591,32 +684,66 @@ export function EventStatistics({
             {reactionGroups.map((group) => (
               <div
                 key={group.key}
-                className="grid grid-cols-[auto_auto_1fr] gap-3 items-start"
+                className="grid grid-cols-[auto_auto_1fr] gap-3 items-center"
               >
                 <span className={`flex items-center ${group.color}`}>
                   {group.icon}
                 </span>
 
-                <span className="text-sm font-medium text-right min-w-[1rem]">
+                <span className="text-sm font-medium text-right min-w-[1rem] flex items-center">
                   {group.count}
                 </span>
 
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 items-center">
                   {group.events.slice(0, 10).map((reactionEvent) => {
-                    const profile = profiles[reactionEvent.pubkey];
+                    let pubkey = reactionEvent.pubkey;
+                    let badge = null;
+
+                    if (group.type === "zap") {
+                      const Ptag = reactionEvent.tags.find(
+                        (tag) => tag[0] === "P",
+                      )?.[1];
+
+                      const bolt11 = reactionEvent.tags.find(
+                        (tag) => tag[0] === "bolt11",
+                      )?.[1];
+
+                      if (Ptag && bolt11) {
+                        pubkey = Ptag;
+                        const amount = extractAmountFromBolt11(bolt11);
+
+                        badge = (
+                          <Badge
+                            variant="secondary"
+                            className="text-[8px] flex items-center bg-orange-500/70 text-gray-600 border-0 px-0.5 py-0 h-2 w-8 justify-center leading-none rounded-none"
+                          >
+                            {amount}
+                          </Badge>
+                        );
+                      } else {
+                        // Skip this zap if we don't have complete information
+                        return null;
+                      }
+                    }
+
+                    const profile = profiles[pubkey];
 
                     return (
                       <ProfileAvatar
                         key={reactionEvent.id}
-                        pubkey={reactionEvent.pubkey}
+                        pubkey={pubkey}
                         profile={profile}
                         size="sm"
+                        badge={badge}
                       />
                     );
                   })}
 
                   {group.events.length > 10 && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge
+                      variant="secondary"
+                      className="text-xs flex items-center"
+                    >
                       +{group.events.length - 10} daha
                     </Badge>
                   )}
@@ -707,7 +834,119 @@ export function EventStatistics({
             </div>
           </div>
         )}
+
+        {/* Expandable quotes section */}
+        {showQuotes && (
+          <div className="mt-4 border-l-2 border-blue-600 pl-4 space-y-3">
+            {/* Existing quotes display */}
+            <div className="space-y-2">
+              <div className="max-h-[200px] overflow-y-auto overflow-x-hidden pr-2">
+                {quotesCount > 0 ? (
+                  <div className="space-y-2">
+                    {Array.from(statistics?.quotes?.values() || []).map(
+                      (quote) => {
+                        const profile = profiles[quote.pubkey];
+
+                        return (
+                          <div
+                            key={quote.id}
+                            className="flex items-start space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors rounded-md"
+                          >
+                            <ProfileAvatar
+                              pubkey={quote.pubkey}
+                              profile={profile}
+                              size="sm"
+                              className="flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {profile?.name ||
+                                    `${quote.pubkey.slice(0, 8)}...${quote.pubkey.slice(-8)}`}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(
+                                    quote.created_at * 1000,
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="text-sm text-gray-700 dark:text-gray-300">
+                                <RenderedText enableRichPreviews>
+                                  {cleanQuoteContent(quote.content)}
+                                </RenderedText>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      },
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500 italic">
+                    Henüz alıntı yapılmamış
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quote composer */}
+            <div className="border-t pt-3 space-y-2">
+              <Textarea
+                value={quoteContent}
+                onChange={(e) => setQuoteContent(e.target.value)}
+                onKeyDown={handleQuoteKeyDown}
+                placeholder="Alıntı yorumunuzu yazın..."
+                className="min-h-[80px] resize-none"
+              />
+
+              {/* Preview toggle */}
+              {quoteContent.trim() && (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowQuotePreview(!showQuotePreview)}
+                    className="text-xs"
+                  >
+                    {showQuotePreview ? (
+                      <EyeOff className="h-3 w-3 mr-1" />
+                    ) : (
+                      <Eye className="h-3 w-3 mr-1" />
+                    )}
+                    {showQuotePreview
+                      ? "Önizlemeyi gizle"
+                      : "Önizlemeyi göster"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Preview */}
+              {showQuotePreview && quoteContent.trim() && (
+                <RichTextPreview content={quoteContent} />
+              )}
+
+              {/* Action buttons */}
+              <div className="flex justify-between items-center">
+                <Button
+                  onClick={handlePostQuote}
+                  disabled={!quoteContent.trim()}
+                  size="sm"
+                  variant="default"
+                  className="w-full cursor-pointer hover:bg-blue-600"
+                >
+                  Alıntı Yap
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+      <ZapDialog
+        open={showZapDialog}
+        onOpenChange={setShowZapDialog}
+        event={event}
+        onZap={handleZap}
+      />
     </TooltipProvider>
   );
 }

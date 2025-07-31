@@ -26,6 +26,7 @@ interface ProfileAvatarProps {
   size?: "sm" | "md" | "lg";
   className?: string;
   fallbackSrc?: string;
+  badge?: React.ReactNode;
 }
 
 // Helper function to parse kind 0 profile event
@@ -95,6 +96,7 @@ export function ProfileAvatar({
   size = "md",
   className = "",
   fallbackSrc,
+  badge,
 }: ProfileAvatarProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const displayName = getDisplayName(profile, pubkey);
@@ -114,15 +116,22 @@ export function ProfileAvatar({
   };
 
   const avatarElement = (
-    <Avatar
-      className={`${sizeClasses} ${className} ${"cursor-pointer hover:opacity-80 transition-opacity"}`}
-      onClick={handleAvatarClick}
-    >
-      <AvatarImage src={avatarUrl} alt={displayName} />
-      <AvatarFallback className="text-xs">
-        {displayName.slice(0, 2).toUpperCase()}
-      </AvatarFallback>
-    </Avatar>
+    <div className="relative inline-block">
+      <Avatar
+        className={`${sizeClasses} ${className} ${"cursor-pointer hover:opacity-80 transition-opacity"} overflow-hidden`}
+        onClick={handleAvatarClick}
+      >
+        <AvatarImage src={avatarUrl} alt={displayName} />
+        <AvatarFallback className="text-xs">
+          {displayName.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+        {badge && (
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+            {badge}
+          </div>
+        )}
+      </Avatar>
+    </div>
   );
 
   // Mobile: Use Popover for better mobile UX

@@ -4,6 +4,7 @@ import type { NostrEvent } from "nostr-tools";
 import type { EmojiCategories, EmojiUsage } from "@/types/emoji";
 
 import type { Nip07Relays } from "./nip07";
+import type { ZapReceipt } from "./nip57";
 
 export class LocalStorageCache {
   private static instance: LocalStorageCache;
@@ -226,6 +227,20 @@ export class LocalStorageCache {
 
   setNip25Reactions(eventId: string, value: Map<string, NostrEvent>): void {
     const key = `nip25-reactions-${eventId}`;
+    this.cache.set(key, value);
+    this.setToStorage(key, Array.from(value.entries()));
+  }
+
+  getNip57Zaps(eventId: string): Map<string, ZapReceipt> | null {
+    const parsedArray = this.getCachedValue<[string, ZapReceipt][]>(
+      `nip57-zaps-${eventId}`,
+    );
+
+    return new Map(parsedArray);
+  }
+
+  setNip57Zaps(eventId: string, value: Map<string, ZapReceipt>): void {
+    const key = `nip57-zaps-${eventId}`;
     this.cache.set(key, value);
     this.setToStorage(key, Array.from(value.entries()));
   }
