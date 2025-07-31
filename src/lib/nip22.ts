@@ -78,18 +78,12 @@ export function getArticleReplies(
  * @returns A tree structure of ReplyNode objects
  */
 export function createNip22Thread(
-  events: NostrEvent[],
+  events: Map<string, NostrEvent>,
   rootEventId: string,
 ): ReplyNode[] {
-  if (!events || events.length === 0) {
+  if (!events || events.size === 0) {
     return [];
   }
-
-  // Create a map of event ID to event for quick lookup
-  const eventMap = new Map<string, NostrEvent>();
-  events.forEach((event) => {
-    eventMap.set(event.id, event);
-  });
 
   // Create a map of parent ID to children
   const childrenMap = new Map<string, NostrEvent[]>();
@@ -112,7 +106,7 @@ export function createNip22Thread(
 
   // Recursive function to build the tree
   function buildNode(eventId: string, depth: number): ReplyNode | null {
-    const event = eventMap.get(eventId);
+    const event = events.get(eventId);
     if (!event) {
       return null;
     }
@@ -131,7 +125,7 @@ export function createNip22Thread(
   }
 
   // Find root-level replies (those that directly reference the root event)
-  const rootLevelReplies = events.filter((event) => {
+  const rootLevelReplies = Array.from(events.values()).filter((event) => {
     const aTags = event.tags.filter((tag) => tag[0] === "A");
 
     return aTags.length === 1 && aTags[0][1] === rootEventId;

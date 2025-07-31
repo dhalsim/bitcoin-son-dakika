@@ -27,6 +27,11 @@ export class LocalStorageCache {
   }
 
   private getFromStorage(key: string): any {
+    // Check if we're in a browser environment
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return undefined;
+    }
+
     try {
       const storageKey = this.getStorageKey(key);
       const stored = localStorage.getItem(storageKey);
@@ -44,7 +49,10 @@ export class LocalStorageCache {
   }
 
   private setToStorage(key: string, value: any): void {
-    console.log("setToStorage", key);
+    // Check if we're in a browser environment
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return;
+    }
 
     try {
       const storageKey = this.getStorageKey(key);
@@ -55,6 +63,11 @@ export class LocalStorageCache {
   }
 
   private deleteFromStorage(key: string): void {
+    // Check if we're in a browser environment
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return;
+    }
+
     try {
       const storageKey = this.getStorageKey(key);
       localStorage.removeItem(storageKey);
@@ -145,24 +158,32 @@ export class LocalStorageCache {
     this.setToStorage(key, value);
   }
 
-  getNip10Replies(eventId: string): NostrEvent[] | null {
-    return this.getCachedValue(`nip10-replies-${eventId}`);
+  getNip10Replies(eventId: string): Map<string, NostrEvent> | null {
+    const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
+      `nip10-replies-${eventId}`,
+    );
+
+    return new Map(parsedArray);
   }
 
-  setNip10Replies(eventId: string, replies: NostrEvent[]): void {
+  setNip10Replies(eventId: string, replies: Map<string, NostrEvent>): void {
     const key = `nip10-replies-${eventId}`;
     this.cache.set(key, replies);
-    this.setToStorage(key, replies);
+    this.setToStorage(key, Array.from(replies.entries()));
   }
 
-  getNip10Quotes(identifier: string): NostrEvent[] | null {
-    return this.getCachedValue(`nip10-quotes-${identifier}`);
+  getNip10Quotes(identifier: string): Map<string, NostrEvent> | null {
+    const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
+      `nip10-quotes-${identifier}`,
+    );
+
+    return new Map(parsedArray);
   }
 
-  setNip10Quotes(identifier: string, value: NostrEvent[]): void {
+  setNip10Quotes(identifier: string, value: Map<string, NostrEvent>): void {
     const key = `nip10-quotes-${identifier}`;
     this.cache.set(key, value);
-    this.setToStorage(key, value);
+    this.setToStorage(key, Array.from(value.entries()));
   }
 
   getNip22NewsReplies(eventId: string): NostrEvent[] | null {
@@ -195,14 +216,18 @@ export class LocalStorageCache {
     this.setToStorage(key, value);
   }
 
-  getNip25Reactions(eventId: string): NostrEvent[] | null {
-    return this.getCachedValue(`nip25-reactions-${eventId}`);
+  getNip25Reactions(eventId: string): Map<string, NostrEvent> | null {
+    const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
+      `nip25-reactions-${eventId}`,
+    );
+
+    return new Map(parsedArray);
   }
 
-  setNip25Reactions(eventId: string, value: NostrEvent[]): void {
+  setNip25Reactions(eventId: string, value: Map<string, NostrEvent>): void {
     const key = `nip25-reactions-${eventId}`;
     this.cache.set(key, value);
-    this.setToStorage(key, value);
+    this.setToStorage(key, Array.from(value.entries()));
   }
 
   getDraft(eventId: string): string | null {

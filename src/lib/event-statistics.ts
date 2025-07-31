@@ -3,16 +3,16 @@ import type { NostrEvent } from "nostr-tools";
 import { getKind1Quotes, getKind1Replies } from "./nip10";
 import { getReposts } from "./nip18";
 import { getArticleReplies } from "./nip22";
-import { type EmojiMap, getReactions } from "./nip25";
+import { type CustomEmoji, getReactions } from "./nip25";
 
 export type EventStatistics = {
-  replies: NostrEvent[];
-  quotes: NostrEvent[];
+  replies: Map<string, NostrEvent>;
+  quotes: Map<string, NostrEvent>;
   reposts: NostrEvent[];
   likes: NostrEvent[];
   dislikes: NostrEvent[];
   emojis: {
-    [emoji: string]: NostrEvent[];
+    [emoji: string]: CustomEmoji;
   };
 };
 
@@ -47,15 +47,64 @@ const STATISTICS_RELAYS = [
   "wss://relay.nos.social",
 ];
 
+// Helper function to extract emoji info from reaction event
+function extractEmojiInfo(reaction: NostrEvent): {
+  name: string;
+  url: string | null;
+} {
+  const content = reaction.content.trim();
+
+  // Check if it's a custom emoji (starts and ends with :)
+  if (content.startsWith(":") && content.endsWith(":") && content.length > 2) {
+    const emojiName = content.slice(1, -1); // Remove surrounding colons
+
+    // Look for emoji tag
+    const emojiTag = reaction.tags.find(
+      (tag) =>
+        tag[0] === "emoji" &&
+        tag[1] === emojiName &&
+        tag[2] &&
+        tag[2].startsWith("https://"),
+    );
+
+    return {
+      name: emojiName,
+      url: emojiTag ? emojiTag[2] : null,
+    };
+  }
+
+  // For unicode emojis or other content
+  return {
+    name: content,
+    url: null,
+  };
+}
+
+// Helper function to choose the best URL when there are conflicts
+function chooseBestUrl(urls: string[]): string {
+  // Simple strategy: choose the most frequent URL
+  // You could extend this with more sophisticated logic
+  const urlCounts = urls.reduce(
+    (acc, url) => {
+      acc[url] = (acc[url] || 0) + 1;
+
+      return acc;
+    },
+    {} as { [url: string]: number },
+  );
+
+  return Object.entries(urlCounts).sort(([, a], [, b]) => b - a)[0][0];
+}
+
+// Updated reaction processing
 export function getEventStatistics(
   event: NostrEvent,
-  relays: string[] = STATISTICS_RELAYS,
   onUpdate: (statistics: EventStatistics) => void,
 ) {
   // Initialize statistics object
   const stats: EventStatistics = {
-    replies: [],
-    quotes: [],
+    replies: new Map(),
+    quotes: new Map(),
     reposts: [],
     likes: [],
     dislikes: [],
@@ -63,31 +112,51 @@ export function getEventStatistics(
   };
 
   // Get reposts (NIP-18) - works for all event types
-  getReposts(event, relays, (reposts) => {
+  getReposts(event, STATISTICS_RELAYS, (reposts) => {
     stats.reposts = reposts || [];
 
     onUpdate({ ...stats });
   });
 
   // Get reactions (NIP-25) - works for all event types
-  getReactions(event, relays, (reactions) => {
+  getReactions(event, STATISTICS_RELAYS, (reactions) => {
     const likes: NostrEvent[] = [];
     const dislikes: NostrEvent[] = [];
-    const emojis: EmojiMap = {};
+    const emojiGroups: {
+      [key: string]: { events: NostrEvent[]; urls: string[] };
+    } = {};
 
-    for (const reaction of reactions) {
+    for (const [, reaction] of reactions) {
       if (reaction.content === "+" || reaction.content === "") {
         likes.push(reaction);
       } else if (reaction.content === "-") {
         dislikes.push(reaction);
       } else {
-        if (!emojis[reaction.content]) {
-          emojis[reaction.content] = [reaction];
-        } else {
-          emojis[reaction.content].push(reaction);
+        const { name, url } = extractEmojiInfo(reaction);
+
+        if (!emojiGroups[name]) {
+          emojiGroups[name] = { events: [], urls: [] };
+        }
+
+        emojiGroups[name].events.push(reaction);
+        if (url) {
+          emojiGroups[name].urls.push(url);
         }
       }
     }
+
+    // Convert grouped emojis to final format
+    const emojis: { [emoji: string]: CustomEmoji } = {};
+
+    Object.entries(emojiGroups).forEach(([name, group]) => {
+      const bestUrl = group.urls.length > 0 ? chooseBestUrl(group.urls) : null;
+
+      emojis[name] = {
+        name,
+        url: bestUrl,
+        events: group.events,
+      };
+    });
 
     stats.likes = likes;
     stats.dislikes = dislikes;
@@ -99,14 +168,14 @@ export function getEventStatistics(
   // Handle different event types
   if (event.kind === 1) {
     // Kind 1 (notes) - use NIP-10
-    getKind1Replies(event, relays, (replies) => {
-      stats.replies = replies || [];
+    getKind1Replies(event, STATISTICS_RELAYS, (replies) => {
+      stats.replies = replies || new Map();
 
       onUpdate({ ...stats });
     });
 
-    getKind1Quotes(event, relays, (quotes) => {
-      stats.quotes = quotes || [];
+    getKind1Quotes(event, STATISTICS_RELAYS, (quotes) => {
+      stats.quotes = quotes || new Map();
 
       onUpdate({ ...stats });
     });
@@ -114,14 +183,20 @@ export function getEventStatistics(
     return;
   } else if (event.kind === 30023) {
     // Kind 30023 (articles) - use NIP-22
-    getKind1Quotes(event, relays, (quotes) => {
-      stats.quotes = quotes || [];
+    getArticleReplies(event, STATISTICS_RELAYS, (replies) => {
+      // Convert array to Map for consistency
+      const repliesMap = new Map();
+      if (replies) {
+        replies.forEach((reply) => repliesMap.set(reply.id, reply));
+      }
+
+      stats.replies = repliesMap;
 
       onUpdate({ ...stats });
     });
 
-    getArticleReplies(event, relays, (replies) => {
-      stats.replies = replies || [];
+    getKind1Quotes(event, STATISTICS_RELAYS, (quotes) => {
+      stats.quotes = quotes || new Map();
 
       onUpdate({ ...stats });
     });

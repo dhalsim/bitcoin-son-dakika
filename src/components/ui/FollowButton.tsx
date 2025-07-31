@@ -29,7 +29,7 @@ export function FollowButton({
   useEffect(() => {
     const checkFollowStatus = async () => {
       try {
-        if (!window.nostr) {
+        if (typeof window === "undefined" || !window.nostr) {
           setIsFollowing(false);
           setIsLoading(false);
 
@@ -161,7 +161,7 @@ export function FollowButton({
   };
 
   // Don't show button if user is not logged in
-  if (!window.nostr) {
+  if (typeof window === "undefined" || !window.nostr) {
     return null;
   }
 

@@ -9,7 +9,7 @@ import { FollowButton } from "@/components/ui/FollowButton.js";
 import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
-import NewsCard, {
+import {
   convertNewsItemToNewsCardProps,
   convertArticleItemToNewsCardProps,
 } from "../components/NewsCard";
@@ -70,6 +70,14 @@ function NIP05Badge({ nip05, pubkey }: { nip05: string; pubkey: string }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Only run NIP-05 verification in browser environment
+    if (typeof window === "undefined") {
+      setIsLoading(false);
+      setIsVerified(false);
+
+      return;
+    }
+
     const verifyNIP05 = async () => {
       try {
         const [username, host] = nip05.split("@");
@@ -328,9 +336,9 @@ export default function ProfilePage() {
               </h2>
 
               <div className="grid gap-6">
-                {allContent.map((item, index) => (
+                {/* {allContent.map((item, index) => (
                   <NewsCard key={`${item.title}-${index}`} {...item} />
-                ))}
+                ))} */}
               </div>
             </div>
           )}

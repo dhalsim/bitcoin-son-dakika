@@ -1,7 +1,5 @@
 import type { NostrEvent } from "nostr-tools";
 
-import { getCache } from "./cache";
-
 type RelayEntry = {
   read: boolean;
   write: boolean;
@@ -31,43 +29,25 @@ export function toReadWriteRelays(relaysEntries: RelaysEntries): Nip07Relays {
   return { readRelays, writeRelays };
 }
 
-const cache = getCache();
-
-export async function getNip07Relays(
-  pubkey: string,
-  onUpdate: (relays: Nip07Relays) => void,
-) {
-  const cachedFromStorage = cache.getNip07(pubkey);
-
-  if (cachedFromStorage) {
-    onUpdate(cachedFromStorage);
+export async function getNip07Relays(): Promise<Nip07Relays | null> {
+  if (typeof window === "undefined" || !window.nostr) {
+    return null;
   }
 
-  const relays: RelaysEntries = await window.nostr.getRelays();
-  const result = toReadWriteRelays(relays);
+  try {
+    const relays: RelaysEntries = await window.nostr.getRelays();
+    const result = toReadWriteRelays(relays);
 
-  const sortedReadRelays = result.readRelays.sort();
-  const sortedWriteRelays = result.writeRelays.sort();
+    return result;
+  } catch (error) {
+    console.error("Error getting NIP-07 relays", error);
 
-  const sortedHash = `${sortedReadRelays.join(",")},${sortedWriteRelays.join(",")}`;
-
-  const sortedCacheReadRelays = cachedFromStorage?.readRelays.sort();
-  const sortedCacheWriteRelays = cachedFromStorage?.writeRelays.sort();
-
-  const sortedCacheHash = `${sortedCacheReadRelays.join(",")},${sortedCacheWriteRelays.join(",")}`;
-
-  if (sortedHash === sortedCacheHash) {
-    // nothing to update
-    return;
+    return null;
   }
-
-  cache.setNip07(pubkey, result);
-
-  onUpdate(result);
 }
 
 export async function getUserPubkey(): Promise<string | null> {
-  if (!window.nostr) {
+  if (typeof window === "undefined" || !window.nostr) {
     return null;
   }
 
@@ -77,7 +57,7 @@ export async function getUserPubkey(): Promise<string | null> {
 export async function signEventByNip07(
   event: Omit<NostrEvent, "id" | "sig" | "pubkey">,
 ): Promise<NostrEvent | null> {
-  if (!window.nostr) {
+  if (typeof window === "undefined" || !window.nostr) {
     return null;
   }
 

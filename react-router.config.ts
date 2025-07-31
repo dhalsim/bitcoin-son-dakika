@@ -91,6 +91,7 @@ export default {
       "/news", // Haberler sayfası - static
       "/admin-panel", // Admin panel - dynamic, but needs to be discovered
       "/ssg-debug", // SSG debug page - only available in development
+      "/enson", // Enson sayfası - static
       ...profileRoutes, // Profile pages - static
       ...tagRoutes, // Tag pages - static
     ];

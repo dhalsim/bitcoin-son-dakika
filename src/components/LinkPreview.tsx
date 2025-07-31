@@ -163,9 +163,9 @@ export function LinkPreview({
             </div>
 
             {description && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
+              <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
                 {description}
-              </p>
+              </div>
             )}
 
             <div className="flex items-center gap-1 mt-1">

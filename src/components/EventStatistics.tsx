@@ -49,12 +49,11 @@ import { ThreadView } from "./ThreadView";
 
 interface EventStatisticsProps {
   event: NostrEvent;
-  relays?: string[];
-  className?: string;
-  onReaction?: (event: NostrEvent, reaction: string) => void;
-  onRepost?: (event: NostrEvent) => void;
-  onQuote?: (event: NostrEvent) => void;
-  onReply?: (event: NostrEvent) => void;
+  className: string;
+  onReaction: (event: NostrEvent, reaction: string) => void;
+  onRepost: (event: NostrEvent) => void;
+  onQuote: (event: NostrEvent) => void;
+  onReply: (event: NostrEvent) => void;
 }
 
 interface ReactionGroup {
@@ -151,7 +150,6 @@ function RichTextPreview({ content }: { content: string }) {
 
 export function EventStatistics({
   event,
-  relays,
   className = "",
   onReaction,
   onRepost,
@@ -201,15 +199,15 @@ export function EventStatistics({
     setError(null);
 
     try {
-      getEventStatistics(event, relays, (stats) => {
+      getEventStatistics(event, (stats) => {
         const statPubkeys = [
-          ...stats.replies.map((reply) => reply.pubkey),
-          ...stats.quotes.map((quote) => quote.pubkey),
+          ...Object.values(stats.replies).map((reply) => reply.pubkey),
+          ...Object.values(stats.quotes).map((quote) => quote.pubkey),
           ...stats.reposts.map((repost) => repost.pubkey),
           ...stats.likes.map((like) => like.pubkey),
           ...stats.dislikes.map((dislike) => dislike.pubkey),
-          ...Object.entries(stats.emojis).flatMap(([_, events]) =>
-            events.map((event) => event.pubkey),
+          ...Object.entries(stats.emojis).flatMap(([_, customEmoji]) =>
+            customEmoji.events.map((event) => event.pubkey),
           ),
         ];
 
@@ -235,7 +233,7 @@ export function EventStatistics({
       );
       setLoading(false);
     }
-  }, [event, relays]);
+  }, [event]);
 
   // Handle mobile keyboard behavior
   const handleTextareaFocus = () => {
@@ -269,8 +267,8 @@ export function EventStatistics({
   }
 
   // Calculate counts from event arrays with null checks
-  const repliesCount = statistics?.replies?.length || 0;
-  const quotesCount = statistics?.quotes?.length || 0;
+  const repliesCount = statistics?.replies?.size || 0;
+  const quotesCount = statistics?.quotes?.size || 0;
   const repostsCount = statistics?.reposts?.length || 0;
   const likesCount = statistics?.likes?.length || 0;
   const dislikesCount = statistics?.dislikes?.length || 0;
@@ -278,8 +276,8 @@ export function EventStatistics({
   // Calculate emoji counts with null checks
   const emojiCounts: { [emoji: string]: number } = {};
   if (statistics?.emojis) {
-    Object.entries(statistics.emojis).forEach(([emoji, events]) => {
-      emojiCounts[emoji] = events?.length || 0;
+    Object.entries(statistics.emojis).forEach(([emoji, customEmoji]) => {
+      emojiCounts[emoji] = customEmoji?.events?.length || 0;
     });
   }
 
@@ -305,7 +303,7 @@ export function EventStatistics({
       key: "quote",
       icon: <Quote className="h-4 w-4" />,
       count: quotesCount,
-      events: statistics?.quotes || [],
+      events: Object.values(statistics?.quotes || {}),
       color: "text-gray-600",
     });
   }
@@ -336,14 +334,43 @@ export function EventStatistics({
 
   // Add emoji reactions
   if (statistics?.emojis) {
-    Object.entries(statistics.emojis).forEach(([emoji, events]) => {
-      if (events && events.length > 0 && emoji !== "+") {
+    Object.entries(statistics.emojis).forEach(([emojiName, customEmoji]) => {
+      if (customEmoji && customEmoji.events && customEmoji.events.length > 0) {
+        // Determine the icon to display
+        let icon: React.ReactNode;
+
+        if (customEmoji.url) {
+          // Custom emoji with URL
+          icon = (
+            <img
+              src={customEmoji.url}
+              alt={`:${customEmoji.name}:`}
+              className="h-4 w-4 object-contain"
+              onError={(e) => {
+                // Fallback to text if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                const parent = target.parentElement;
+                if (parent) {
+                  const fallback = document.createElement("span");
+                  fallback.className = "text-lg";
+                  fallback.textContent = `:${customEmoji.name}:`;
+                  parent.appendChild(fallback);
+                }
+              }}
+            />
+          );
+        } else {
+          // Unicode emoji or text fallback
+          icon = <span className="text-lg">{emojiName}</span>;
+        }
+
         reactionGroups.push({
           type: "emoji",
-          key: `emoji-${emoji}`,
-          icon: <span className="text-lg">{emoji}</span>,
-          count: events.length,
-          events: events,
+          key: `emoji-${customEmoji.name}`,
+          icon,
+          count: customEmoji.events.length,
+          events: customEmoji.events,
           color: "text-yellow-600",
         });
       }
@@ -469,7 +496,9 @@ export function EventStatistics({
               variant="ghost"
               size="sm"
               onClick={toggleExpanded}
-              className="h-6 w-6 p-0"
+              className={`h-6 w-6 p-0 hover:text-amber-800 ${
+                isExpanded ? "text-amber-700" : ""
+              }`}
               title={
                 isExpanded ? "Reaksiyonları daralt" : "Reaksiyonları genişlet"
               }
@@ -558,20 +587,19 @@ export function EventStatistics({
 
         {/* Expanded reactions panel */}
         {isExpanded && totalReactions > 0 && (
-          <div className="pt-3 space-y-3">
+          <div className="pt-3 space-y-3 border-l-2 border-amber-700 bg-amber-50/30 rounded-r-lg pl-4">
             {reactionGroups.map((group) => (
-              <div key={group.key} className="flex items-center">
-                <div className="flex items-right w-[14px]">
-                  <span className={`flex items-center ${group.color}`}>
-                    {group.icon}
-                  </span>
-                </div>
+              <div
+                key={group.key}
+                className="grid grid-cols-[auto_auto_1fr] gap-3 items-start"
+              >
+                <span className={`flex items-center ${group.color}`}>
+                  {group.icon}
+                </span>
 
-                <div className="flex w-[25px] mr-5 justify-end">
-                  <span className="ml-2 text-sm font-medium text-right w-full block">
-                    {group.count}
-                  </span>
-                </div>
+                <span className="text-sm font-medium text-right min-w-[1rem]">
+                  {group.count}
+                </span>
 
                 <div className="flex flex-wrap gap-1">
                   {group.events.slice(0, 10).map((reactionEvent) => {

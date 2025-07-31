@@ -24,48 +24,51 @@ export async function getFollowsEvent(
     onUpdate(cachedFollowsData);
   }
 
-  getNip07Relays(pubkey, (nip07Relays) => {
-    fetchNip65Relays(PROFILE_RELAYS, pubkey, async (nip65Relays) => {
-      let relays = PROFILE_RELAYS;
+  const nip07Relays = (await getNip07Relays()) || {
+    readRelays: [],
+    writeRelays: [],
+  };
 
-      if (nip65Relays) {
-        const userOutboxRelays = new Set([
-          ...nip07Relays.writeRelays,
-          ...nip65Relays.writeRelays,
-        ]);
+  fetchNip65Relays(PROFILE_RELAYS, pubkey, async (nip65Relays) => {
+    let relays = PROFILE_RELAYS;
 
-        relays = Array.from(userOutboxRelays);
-      }
+    if (nip65Relays) {
+      const userOutboxRelays = new Set([
+        ...nip07Relays.writeRelays,
+        ...nip65Relays.writeRelays,
+      ]);
 
-      const userFollowListEvent = await pool.get(relays, {
-        kinds: [3],
-        authors: [pubkey],
-        limit: 1,
-      });
+      relays = Array.from(userOutboxRelays);
+    }
 
-      if (!userFollowListEvent) {
-        onUpdate(null);
+    const userFollowListEvent = await pool.get(relays, {
+      kinds: [3],
+      authors: [pubkey],
+      limit: 1,
+    });
 
-        return;
-      }
+    if (!userFollowListEvent) {
+      onUpdate(null);
 
-      if (
-        cachedFollowsData &&
-        userFollowListEvent.id === cachedFollowsData.event.id
-      ) {
-        // nothing to update
-        return;
-      }
+      return;
+    }
 
-      cache.setNip02(pubkey, {
-        event: userFollowListEvent,
-        followRelays: relays,
-      });
+    if (
+      cachedFollowsData &&
+      userFollowListEvent.id === cachedFollowsData.event.id
+    ) {
+      // nothing to update
+      return;
+    }
 
-      onUpdate({
-        event: userFollowListEvent,
-        followRelays: relays,
-      });
+    cache.setNip02(pubkey, {
+      event: userFollowListEvent,
+      followRelays: relays,
+    });
+
+    onUpdate({
+      event: userFollowListEvent,
+      followRelays: relays,
     });
   });
 }

@@ -32,16 +32,16 @@ export function getEventIdentifier(event: NostrEvent) {
 export function getKind1Quotes(
   event: NostrEvent,
   relays: string[],
-  onUpdate: (quotes: NostrEvent[]) => void,
+  onUpdate: (quotes: Map<string, NostrEvent>) => void,
 ) {
   const identifier = getEventIdentifier(event);
-  const cachedQuotes = cache.getNip10Quotes(identifier);
+  const cachedQuotes = cache.getNip10Quotes(identifier) || new Map();
 
-  if (cachedQuotes) {
+  if (cachedQuotes && cachedQuotes.size) {
     onUpdate(cachedQuotes);
   }
 
-  const quotes = [];
+  let fetched = false;
 
   pool.subscribeEose(
     relays,
@@ -51,47 +51,38 @@ export function getKind1Quotes(
     },
     {
       onevent: (evt) => {
-        quotes.push(evt);
-      },
-      onclose: () => {
-        const sortedQuotes = quotes.sort((a, b) => a.created_at - b.created_at);
-
-        if (cachedQuotes && sortedQuotes.length) {
-          const sortedQuotesIds = sortedQuotes
-            .map((quote) => quote.id)
-            .join(",");
-          const cachedQuotesIds = cachedQuotes
-            .map((quote) => quote.id)
-            .join(",");
-
-          if (sortedQuotesIds === cachedQuotesIds) {
-            // nothing to update
-            return;
-          }
+        if (cachedQuotes.has(evt.id)) {
+          return;
         }
 
-        cache.setNip10Quotes(identifier, sortedQuotes);
+        cachedQuotes.set(evt.id, evt);
+        fetched = true;
+      },
+      onclose: () => {
+        if (fetched) {
+          cache.setNip10Quotes(identifier, cachedQuotes);
 
-        onUpdate(sortedQuotes);
+          onUpdate(cachedQuotes);
+        }
       },
     },
   );
 }
 
+// TODO: deletion of replies is not supported yet
 export function getKind1Replies(
   event: NostrEvent,
   relays: string[],
-  onUpdate: (replies: NostrEvent[]) => void,
+  onUpdate: (replies: Map<string, NostrEvent>) => void,
 ) {
-  const cachedReplies = cache.getNip10Replies(event.id);
+  const cachedReplies = cache.getNip10Replies(event.id) || new Map();
 
-  if (cachedReplies) {
+  if (cachedReplies.size) {
     onUpdate(cachedReplies);
   }
 
   const eventId = event.id;
-
-  const replies = [];
+  let fetched = false;
 
   pool.subscribeEose(
     relays,
@@ -106,30 +97,21 @@ export function getKind1Replies(
           return;
         }
 
-        replies.push(evt);
-      },
-      onclose: () => {
-        const sortedReplies = replies.sort(
-          (a, b) => a.created_at - b.created_at,
-        );
-
-        if (cachedReplies && sortedReplies.length) {
-          const sortedRepliesIds = sortedReplies
-            .map((reply) => reply.id)
-            .join(",");
-          const cachedRepliesIds = cachedReplies
-            .map((reply) => reply.id)
-            .join(",");
-
-          if (sortedRepliesIds === cachedRepliesIds) {
-            // nothing to update
-            return;
-          }
+        if (cachedReplies.has(evt.id)) {
+          return;
         }
 
-        cache.setNip10Replies(eventId, sortedReplies);
+        cachedReplies.set(evt.id, evt);
+        fetched = true;
+      },
+      onclose: () => {
+        if (fetched) {
+          console.log("onclose", eventId, cachedReplies.size);
 
-        onUpdate(sortedReplies);
+          cache.setNip10Replies(eventId, cachedReplies);
+
+          onUpdate(cachedReplies);
+        }
       },
     },
   );
@@ -142,18 +124,12 @@ export function getKind1Replies(
  * @returns A tree structure of ReplyNode objects
  */
 export function createNip10Thread(
-  events: NostrEvent[],
+  events: Map<string, NostrEvent>,
   rootEventId: string,
 ): ReplyNode[] {
-  if (!events || events.length === 0) {
+  if (!events || events.size === 0) {
     return [];
   }
-
-  // Create a map of event ID to event for quick lookup
-  const eventMap = new Map<string, NostrEvent>();
-  events.forEach((event) => {
-    eventMap.set(event.id, event);
-  });
 
   // Create a map of parent ID to children
   const childrenMap = new Map<string, NostrEvent[]>();
@@ -192,7 +168,7 @@ export function createNip10Thread(
 
   // Recursive function to build the tree
   function buildNode(eventId: string, depth: number): ReplyNode | null {
-    const event = eventMap.get(eventId);
+    const event = events.get(eventId);
     if (!event) {
       return null;
     }
@@ -210,7 +186,7 @@ export function createNip10Thread(
   }
 
   // Find root-level replies (direct replies to root event)
-  const rootLevelReplies = events.filter((event) => {
+  const rootLevelReplies = Array.from(events.values()).filter((event) => {
     const eTags = event.tags.filter((tag) => tag[0] === "e");
 
     // Check if this event has a "reply" marker

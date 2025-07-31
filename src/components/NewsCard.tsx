@@ -100,7 +100,7 @@ export function convertToNewsCardProps(
   };
 }
 
-const NewsCard: React.FC<NewsCardProps> = ({
+export const NewsCard: React.FC<NewsCardProps> = ({
   title,
   summary,
   category,
@@ -129,6 +129,13 @@ const NewsCard: React.FC<NewsCardProps> = ({
     // TODO: Implement reply functionality
     // - Open reply form/modal
     // - Create kind 1 note with e tags for thread
+    // - Publish to relays
+  };
+
+  const handleQuote = (event: NostrEvent) => {
+    console.log("Quote clicked for event:", event.id);
+    // TODO: Implement quote functionality
+    // - Create kind 1 quote event with e tag referencing original
     // - Publish to relays
   };
 
@@ -189,9 +196,9 @@ const NewsCard: React.FC<NewsCardProps> = ({
           {title}
         </h3>
 
-        <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm leading-relaxed">
+        <div className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm leading-relaxed">
           <RenderedText enableRichPreviews>{summary}</RenderedText>
-        </p>
+        </div>
 
         {/* Interactive Statistics */}
         {nostrEvent && (
@@ -201,6 +208,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
               onReaction={handleReaction}
               onRepost={handleRepost}
               onReply={handleReply}
+              onQuote={handleQuote}
               className="justify-start"
             />
           </div>

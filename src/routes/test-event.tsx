@@ -1,9 +1,8 @@
 import type { NostrEvent } from "nostr-tools";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router";
 
 import NewsCard from "@/components/NewsCard";
-import { TestEventHelper } from "@/components/TestEventHelper";
 import { pool } from "@/lib/utils";
 
 export default function TestEventPage() {
@@ -12,62 +11,58 @@ export default function TestEventPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!eventId) {
-      setError("No event ID provided");
-      setLoading(false);
-
-      return;
+  // Memoize the author object to prevent unnecessary re-renders
+  // Must be before any conditional returns to maintain hook order
+  const author = useMemo(() => {
+    if (!event) {
+      return undefined;
     }
 
-    setLoading(true);
-    setError(null);
-
-    // Query relays for the specific event
-    const relays = [
-      "wss://relay.nostr.band",
-      "wss://relay.damus.io",
-      "wss://nos.lol",
-      "wss://relay.primal.net",
-      "wss://relay.snort.social",
-    ];
-
-    let found = false;
-    const timeout: NodeJS.Timeout = setTimeout(() => {
-      if (!found) {
-        setError("Event not found (timeout)");
-        setLoading(false);
-        subscription.close();
-      }
-    }, 10000);
-
-    const subscription = pool.subscribeEose(
-      relays,
-      {
-        ids: [eventId],
-      },
-      {
-        onevent: (evt: NostrEvent) => {
-          if (evt.id === eventId) {
-            setEvent(evt);
-            found = true;
-            setLoading(false);
-            subscription.close();
-          }
-        },
-        onclose: () => {
-          if (!found) {
-            setError("Event not found");
-            setLoading(false);
-          }
-        },
-      },
-    );
-
-    return () => {
-      clearTimeout(timeout);
-      subscription.close();
+    return {
+      display_name: event.pubkey.slice(0, 16) + "...",
+      picture: `https://robohash.org/${event.pubkey}`,
     };
+  }, [event?.pubkey]);
+
+  // Memoize time calculation to prevent unnecessary re-renders
+  const time = useMemo(() => {
+    if (!event) {
+      return "";
+    }
+
+    return new Date(event.created_at * 1000).toLocaleString();
+  }, [event?.created_at]);
+
+  useEffect(() => {
+    const fetchEvent = async () => {
+      if (!eventId) {
+        setError("No event ID provided");
+        setLoading(false);
+
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      // Query relays for the specific event
+      const relays = [
+        "wss://relay.nostr.band",
+        "wss://relay.damus.io",
+        "wss://nos.lol",
+        "wss://relay.primal.net",
+        "wss://relay.snort.social",
+      ];
+
+      const event = await pool.get(relays, {
+        ids: [eventId],
+      });
+
+      setEvent(event);
+      setLoading(false);
+    };
+
+    fetchEvent();
   }, [eventId]);
 
   if (loading) {
@@ -123,7 +118,6 @@ export default function TestEventPage() {
   let title = "Event";
   let summary = event.content;
   let category = "Test";
-  const time = new Date(event.created_at * 1000).toLocaleString();
 
   if (event.kind === 1) {
     // Regular note
@@ -173,13 +167,8 @@ export default function TestEventPage() {
           category={category}
           time={time}
           nostrEvent={event}
-          author={{
-            display_name: event.pubkey.slice(0, 16) + "...",
-            picture: `https://robohash.org/${event.pubkey}`,
-          }}
+          author={author}
         />
-
-        <TestEventHelper />
       </div>
     </div>
   );

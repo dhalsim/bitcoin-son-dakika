@@ -288,7 +288,7 @@ export default function AdminPanel() {
 
   const checkUserInfo = async () => {
     try {
-      if (!window.nostr) {
+      if (typeof window === "undefined" || !window.nostr) {
         return;
       }
 

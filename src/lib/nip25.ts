@@ -5,28 +5,28 @@ import { pool } from "./utils";
 
 const cache = getCache();
 
-export type EmojiMap = {
-  [emoji: string]: NostrEvent[];
+export type CustomEmoji = {
+  name: string;
+  url: string | null;
+  events: NostrEvent[];
 };
 
-export type Reactions = {
-  likes: NostrEvent[];
-  dislikes: NostrEvent[];
-  emojis: EmojiMap;
+export type EmojiMap = {
+  [emoji: string]: NostrEvent[];
 };
 
 export function getReactions(
   event: NostrEvent,
   relays: string[],
-  onUpdate: (reactions: NostrEvent[]) => void,
+  onUpdate: (reactions: Map<string, NostrEvent>) => void,
 ) {
-  const cachedReactions = cache.getNip25Reactions(event.id);
+  const cachedReactions = cache.getNip25Reactions(event.id) || new Map();
 
-  if (cachedReactions) {
+  if (cachedReactions.size) {
     onUpdate(cachedReactions);
   }
 
-  const allReactions: NostrEvent[] = [];
+  let fetched = false;
 
   pool.subscribeEose(
     relays,
@@ -36,30 +36,19 @@ export function getReactions(
     },
     {
       onevent: (evt) => {
-        allReactions.push(evt);
-      },
-      onclose: () => {
-        const sortedReactions = allReactions.sort(
-          (a, b) => a.created_at - b.created_at,
-        );
-
-        if (cachedReactions && sortedReactions.length) {
-          const sortedReactionsIds = sortedReactions
-            .map((reaction) => reaction.id)
-            .join(",");
-          const cachedReactionsIds = cachedReactions
-            .map((reaction) => reaction.id)
-            .join(",");
-
-          if (sortedReactionsIds === cachedReactionsIds) {
-            // nothing to update
-            return;
-          }
+        if (cachedReactions.has(evt.id)) {
+          return;
         }
 
-        cache.setNip25Reactions(event.id, sortedReactions);
+        cachedReactions.set(evt.id, evt);
+        fetched = true;
+      },
+      onclose: () => {
+        if (fetched) {
+          cache.setNip25Reactions(event.id, cachedReactions);
 
-        onUpdate(sortedReactions);
+          onUpdate(cachedReactions);
+        }
       },
     },
   );
