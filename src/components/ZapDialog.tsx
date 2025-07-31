@@ -1,6 +1,6 @@
 import { Zap } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,12 +12,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { getNip07Relays, getUserPubkey } from "@/lib/nip07";
+import type { LnUrlpResponse } from "@/lib/nip57";
+import { getLnurlData } from "@/lib/nip57";
+import { fetchNip65Relays } from "@/lib/nip65";
+import type { ProfileItem } from "@/lib/ssg-data";
+import { createZap, DEFAULT_ZAP_RELAYS } from "@/lib/zap-utils";
+
+import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
+
+import { ZapInvoiceDialog } from "./ZapInvoiceDialog";
 
 interface ZapDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: NostrEvent;
-  onZap: (event: NostrEvent, amount: number, comment?: string) => void;
+  author: ProfileItem;
 }
 
 const PRESET_AMOUNTS = [21, 50, 100, 200];
@@ -26,11 +37,76 @@ export function ZapDialog({
   open,
   onOpenChange,
   event,
-  onZap,
+  author,
 }: ZapDialogProps) {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [comment, setComment] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [invoice, setInvoice] = useState("");
+  const [invoiceAmount, setInvoiceAmount] = useState(0);
+  const [invoiceComment, setInvoiceComment] = useState("");
+  const [lnurlData, setLnurlData] = useState<LnUrlpResponse | null>(null);
+  const [isLoadingLnurlData, setIsLoadingLnurlData] = useState(false);
+  const [relays, setRelays] = useState<string[]>(DEFAULT_ZAP_RELAYS);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const loadUserRelays = async () => {
+      if (!lnurlData) {
+        return;
+      }
+
+      const pubkey = await getUserPubkey();
+
+      if (!pubkey) {
+        return;
+      }
+
+      const nip07Relays = (await getNip07Relays()) || {
+        readRelays: [],
+        writeRelays: [],
+      };
+
+      fetchNip65Relays(PROFILE_RELAYS, pubkey, (nip65Relays) => {
+        const relays = new Set([
+          ...(nip65Relays?.readRelays || []),
+          ...(nip07Relays.readRelays || []),
+          ...DEFAULT_ZAP_RELAYS,
+        ]);
+
+        setRelays(Array.from(relays));
+      });
+    };
+
+    loadUserRelays();
+  }, [lnurlData]);
+
+  useEffect(() => {
+    setIsLoadingLnurlData(true);
+
+    const fetchLnurlData = async () => {
+      if (!author.lud16) {
+        setLnurlData(null);
+        setIsLoadingLnurlData(false);
+
+        return;
+      }
+
+      try {
+        const data = await getLnurlData(author.lud16);
+        setLnurlData(data);
+      } catch (error) {
+        console.error("Failed to fetch LNURL data:", error);
+        setLnurlData(null);
+      } finally {
+        setIsLoadingLnurlData(false);
+      }
+    };
+
+    fetchLnurlData();
+  }, [author]);
 
   const handlePresetClick = (amount: number) => {
     setSelectedAmount(amount);
@@ -42,20 +118,106 @@ export function ZapDialog({
     setSelectedAmount(null);
   };
 
-  const handleZap = () => {
-    const amount = selectedAmount || parseInt(customAmount);
-    if (amount > 0) {
-      onZap(event, amount, comment.trim() || undefined);
-      onOpenChange(false);
-      // Reset form
-      setSelectedAmount(null);
-      setCustomAmount("");
-      setComment("");
+  const handleZap = async () => {
+    const amountInSats = selectedAmount || parseInt(customAmount);
+
+    if (amountInSats > 0) {
+      setIsLoading(true);
+
+      try {
+        // Check if NIP-07 extension is available
+        if (typeof window === "undefined" || !window.nostr) {
+          toast({
+            title: "NIP-07 Gerekli",
+            description:
+              "Zap göndermek için bir NIP-07 cüzdan uzantısı gereklidir.",
+            variant: "destructive",
+          });
+
+          return;
+        }
+
+        const invoice = await createZap({
+          event,
+          amountInSats,
+          comment: comment.trim() || undefined,
+          lnurlData,
+          relays,
+        });
+
+        if (!invoice) {
+          toast({
+            title: "Hata",
+            description: "Zap oluşturulamadı. Lütfen tekrar deneyin.",
+            variant: "destructive",
+          });
+
+          return;
+        }
+
+        setInvoice(invoice);
+        setInvoiceAmount(amountInSats);
+        setInvoiceComment(comment.trim() || "");
+
+        // Show invoice dialog
+        setShowInvoice(true);
+        onOpenChange(false);
+
+        // Reset form
+        setSelectedAmount(null);
+        setCustomAmount("");
+        setComment("");
+
+        toast({
+          title: "Zap Hazır",
+          description:
+            "Fatura oluşturuldu. QR kodu tarayarak ödeme yapabilirsiniz.",
+        });
+      } catch (error) {
+        console.error("Failed to create zap:", error);
+        toast({
+          title: "Hata",
+          description: "Zap oluşturulamadı. Lütfen tekrar deneyin.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const finalAmount = selectedAmount || parseInt(customAmount) || 0;
   const isValidAmount = finalAmount > 0;
+
+  if (isLoadingLnurlData) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Zap className="h-5 w-5 text-orange-500" />
+              <span>Zap Modal Yükleniyor...</span>
+            </DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!lnurlData) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Zap className="h-5 w-5 text-orange-500" />
+              <span>Kullanıcının Nostr destekli bir Lightning Adresi Yok.</span>
+            </DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -149,14 +311,27 @@ export function ZapDialog({
             <Button
               className="flex-1 bg-orange-500 hover:bg-orange-600"
               onClick={handleZap}
-              disabled={!isValidAmount}
+              disabled={!isValidAmount || isLoading}
             >
-              <Zap className="h-4 w-4 mr-1" />
-              Zap Gönder
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+              ) : (
+                <Zap className="h-4 w-4 mr-1" />
+              )}
+              {isLoading ? "Hazırlanıyor..." : "Zap Gönder"}
             </Button>
           </div>
         </div>
       </DialogContent>
+
+      {/* Invoice Dialog */}
+      <ZapInvoiceDialog
+        open={showInvoice}
+        onOpenChange={setShowInvoice}
+        invoice={invoice}
+        amount={invoiceAmount}
+        comment={invoiceComment}
+      />
     </Dialog>
   );
 }

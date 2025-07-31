@@ -1,4 +1,5 @@
 import type { NostrEvent } from "nostr-tools";
+import { z } from "zod";
 
 import { getCache } from "./cache";
 import { pool } from "./utils";
@@ -134,4 +135,36 @@ export function getZaps(
       },
     },
   );
+}
+
+const LnUrlpResponse = z.object({
+  callback: z.string(),
+  nostrPubkey: z.string(),
+  allowsNostr: z.boolean(),
+  minSendable: z.number(),
+  maxSendable: z.number(),
+  tag: z.enum(["payRequest"]),
+});
+
+export type LnUrlpResponse = z.infer<typeof LnUrlpResponse>;
+
+export async function getLnurlData(
+  lud16: string,
+): Promise<LnUrlpResponse | null> {
+  const [username, domain] = lud16.split("@");
+
+  const lnurl = `https://${domain}/.well-known/lnurlp/${username}`;
+
+  try {
+    const lnurlPayRequest = await fetch(lnurl);
+    const lnurlPayRequestJson = await lnurlPayRequest.json();
+
+    const parsed = LnUrlpResponse.parse(lnurlPayRequestJson);
+
+    return parsed;
+  } catch (error) {
+    console.error("Failed to get LNURL data:", error);
+
+    return null;
+  }
 }

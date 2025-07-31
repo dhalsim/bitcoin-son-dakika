@@ -40,12 +40,14 @@ import { DEFAULT_EMOJI_USAGE } from "@/lib/constants";
 import type { EventStatistics } from "@/lib/event-statistics";
 import { getEventStatistics } from "@/lib/event-statistics";
 import { subscribeKind0Event } from "@/lib/nip01";
+import { getUserPubkey } from "@/lib/nip07";
 import { createNip10Thread } from "@/lib/nip10";
 import type { ReplyNode } from "@/lib/nip10";
 import { createNip22Thread } from "@/lib/nip22";
 import { extractAmountFromBolt11 } from "@/lib/nip57";
 import type { ProfileItem } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
+import { hasUserZapped } from "@/lib/zap-utils";
 
 import { EmojiBoard } from "./EmojiBoard";
 import { ThreadView } from "./ThreadView";
@@ -187,6 +189,8 @@ export function EventStatistics({
     {},
   );
   const [showZapDialog, setShowZapDialog] = useState(false);
+  const [userPubkey, setUserPubkey] = useState<string | null>(null);
+  const [hasZapped, setHasZapped] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load draft on mount
@@ -265,6 +269,30 @@ export function EventStatistics({
       setLoading(false);
     }
   }, [event]);
+
+  // Check if user has zapped this event
+  useEffect(() => {
+    const checkUserZap = async () => {
+      try {
+        const pubkey = await getUserPubkey();
+
+        if (!pubkey) {
+          return;
+        }
+
+        setUserPubkey(pubkey);
+
+        // TODO
+        const userHasZapped = hasUserZapped(event.id, userPubkey, new Map());
+
+        setHasZapped(userHasZapped);
+      } catch (error) {
+        console.error("Failed to check user zap status:", error);
+      }
+    };
+
+    checkUserZap();
+  }, [event.id]);
 
   // Memoize expensive calculations
   const {
@@ -550,19 +578,6 @@ export function EventStatistics({
     setShowEmojiModal(false);
   };
 
-  const handleZap = (event: NostrEvent, amount: number, comment?: string) => {
-    console.log(
-      "Zapping event:",
-      event.id,
-      "amount:",
-      amount,
-      "comment:",
-      comment,
-    );
-    // TODO: Implement actual zap functionality
-    // This will be implemented later as requested
-  };
-
   if (loading) {
     return <div>Yükleniyor...</div>;
   }
@@ -673,10 +688,12 @@ export function EventStatistics({
           {/* Zaps */}
           <button
             onClick={() => setShowZapDialog(true)}
-            className="flex items-center space-x-1 hover:text-orange-600 transition-colors cursor-pointer"
-            title="Zap Gönder"
+            className={`flex items-center space-x-1 transition-colors cursor-pointer ${
+              hasZapped ? "text-orange-600" : "hover:text-orange-600"
+            }`}
+            title={hasZapped ? "Zap Gönderildi" : "Zap Gönder"}
           >
-            <Zap className="h-4 w-4" />
+            <Zap className={`h-4 w-4 ${hasZapped ? "fill-current" : ""}`} />
             <span>{zapAmount}</span>
           </button>
         </div>
@@ -713,6 +730,22 @@ export function EventStatistics({
                         (tag) => tag[0] === "bolt11",
                       )?.[1];
 
+                      const zapRequestTag = reactionEvent.tags.find(
+                        (tag) => tag[0] === "description",
+                      )?.[1];
+
+                      let zapContent = "";
+
+                      if (zapRequestTag) {
+                        try {
+                          const parsedZapRequest = JSON.parse(zapRequestTag);
+
+                          zapContent = parsedZapRequest.content;
+                        } catch (error) {
+                          console.error("Error parsing zap request:", error);
+                        }
+                      }
+
                       if (Ptag && bolt11) {
                         pubkey = Ptag;
                         const amount = extractAmountFromBolt11(bolt11);
@@ -741,9 +774,7 @@ export function EventStatistics({
                           <span>
                             <strong>{zapperName}</strong> {zappedName}'ye{" "}
                             {amount} Sats ⚡️ Gönderdi
-                            {reactionEvent.content
-                              ? `, Mesaj: "${reactionEvent.content}"`
-                              : ""}
+                            {zapContent ? `, Mesaj: "${zapContent}"` : ""}
                           </span>
                         );
                       } else {
@@ -966,12 +997,14 @@ export function EventStatistics({
           </div>
         )}
       </div>
-      <ZapDialog
-        open={showZapDialog}
-        onOpenChange={setShowZapDialog}
-        event={event}
-        onZap={handleZap}
-      />
+      {showZapDialog && (
+        <ZapDialog
+          open={showZapDialog}
+          onOpenChange={setShowZapDialog}
+          event={event}
+          author={author}
+        />
+      )}
     </TooltipProvider>
   );
 }
