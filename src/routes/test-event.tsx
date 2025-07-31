@@ -3,6 +3,9 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router";
 
 import NewsCard from "@/components/NewsCard";
+import { parseProfileEvent } from "@/components/ui/ProfileAvatar";
+import { getKind0Event } from "@/lib/nip01";
+import type { ProfileItem } from "@/lib/ssg-data";
 import { pool } from "@/lib/utils";
 
 export default function TestEventPage() {
@@ -10,21 +13,22 @@ export default function TestEventPage() {
   const [event, setEvent] = useState<NostrEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [author, setAuthor] = useState<ProfileItem | null>(null);
 
-  // Memoize the author object to prevent unnecessary re-renders
-  // Must be before any conditional returns to maintain hook order
-  const author = useMemo(() => {
+  useEffect(() => {
     if (!event) {
       return undefined;
     }
 
-    return {
-      display_name: event.pubkey.slice(0, 16) + "...",
-      picture: `https://robohash.org/${event.pubkey}`,
-    };
+    getKind0Event(event.pubkey, (profileEvent) => {
+      const profile: ProfileItem | null = parseProfileEvent(profileEvent);
+
+      if (profile) {
+        setAuthor(profile);
+      }
+    });
   }, [event?.pubkey]);
 
-  // Memoize time calculation to prevent unnecessary re-renders
   const time = useMemo(() => {
     if (!event) {
       return "";

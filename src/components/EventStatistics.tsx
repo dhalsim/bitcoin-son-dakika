@@ -31,7 +31,6 @@ import {
 import {
   ProfileAvatar,
   parseProfileEvent,
-  type UserProfile,
 } from "@/components/ui/ProfileAvatar";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -185,7 +184,7 @@ export function EventStatistics({
   const [showQuotes, setShowQuotes] = useState(false);
   const [quoteContent, setQuoteContent] = useState("");
   const [showQuotePreview, setShowQuotePreview] = useState(false);
-  const [profiles, setProfiles] = useState<{ [pubkey: string]: UserProfile }>(
+  const [profiles, setProfiles] = useState<{ [pubkey: string]: ProfileItem }>(
     {},
   );
   const [showZapDialog, setShowZapDialog] = useState(false);

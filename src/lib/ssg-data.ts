@@ -1,4 +1,5 @@
 import type { NostrEvent } from "nostr-tools";
+import { z } from "zod";
 
 import { fetchNostrSets, pool, PROFILE_RELAYS } from "../../api-helpers/utils";
 
@@ -31,16 +32,19 @@ export interface ArticleItem {
   image?: string;
 }
 
-export interface ProfileItem {
-  pubkey: string;
-  display_name?: string;
-  picture?: string;
-  about?: string;
-  website?: string;
-  nip05?: string;
-  lud06?: string;
-  lud16?: string;
-}
+export const ProfileItemSchema = z.object({
+  pubkey: z.string(),
+  name: z.string().optional(),
+  display_name: z.string().optional(),
+  picture: z.string().optional(),
+  about: z.string().optional(),
+  website: z.string().optional(),
+  nip05: z.string().optional(),
+  lud06: z.string().optional(),
+  lud16: z.string().optional(),
+});
+
+export type ProfileItem = z.infer<typeof ProfileItemSchema>;
 
 export interface SSGData {
   news: NewsItem[];

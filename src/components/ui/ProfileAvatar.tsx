@@ -10,19 +10,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-export interface UserProfile {
-  pubkey: string;
-  display_name?: string;
-  name?: string;
-  picture?: string;
-  about?: string;
-  nip05?: string;
-}
+import { ProfileItemSchema, type ProfileItem } from "@/lib/ssg-data";
 
 interface ProfileAvatarProps {
   pubkey: string;
-  profile?: UserProfile;
+  profile?: ProfileItem;
   size?: "sm" | "md" | "lg";
   className?: string;
   fallbackSrc?: string;
@@ -31,17 +23,24 @@ interface ProfileAvatarProps {
 }
 
 // Helper function to parse kind 0 profile event
-export const parseProfileEvent = (event: NostrEvent): UserProfile | null => {
+export const parseProfileEvent = (event: NostrEvent): ProfileItem | null => {
   try {
     const content = JSON.parse(event.content);
 
-    return {
+    const profile = ProfileItemSchema.parse({
+      ...content,
       pubkey: event.pubkey,
-      display_name: content.display_name,
-      name: content.name,
-      picture: content.picture,
-      about: content.about,
-      nip05: content.nip05,
+    });
+
+    return {
+      pubkey: profile.pubkey,
+      display_name: profile.display_name || profile.name,
+      website: profile.website,
+      picture: profile.picture,
+      about: profile.about,
+      nip05: profile.nip05,
+      lud06: profile.lud06,
+      lud16: profile.lud16,
     };
   } catch {
     return null;
@@ -50,19 +49,19 @@ export const parseProfileEvent = (event: NostrEvent): UserProfile | null => {
 
 // Helper function to get display name from profile
 export const getDisplayName = (
-  profile: UserProfile | undefined,
+  profile: ProfileItem | undefined,
   pubkey: string,
 ): string => {
   if (!profile) {
     return `${pubkey.slice(0, 8)}...`;
   }
 
-  return profile.display_name || profile.name || `${pubkey.slice(0, 8)}...`;
+  return profile.display_name || `${pubkey.slice(0, 8)}...`;
 };
 
 // Helper function to get avatar URL from profile
 export const getAvatarUrl = (
-  profile: UserProfile | undefined,
+  profile: ProfileItem | undefined,
   pubkey: string,
   fallbackSrc?: string,
 ): string => {

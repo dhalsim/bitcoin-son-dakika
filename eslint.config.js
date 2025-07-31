@@ -1,8 +1,8 @@
 import eslint from "@eslint/js";
 import importPlugin from "eslint-plugin-import";
 import prettier from "eslint-plugin-prettier";
-import valtio from "eslint-plugin-valtio";
 import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
 
 export default [
   eslint.configs.recommended,
@@ -25,7 +25,7 @@ export default [
       "@typescript-eslint": tseslint.plugin,
       prettier: prettier,
       import: importPlugin,
-      valtio: valtio,
+      "react-hooks": reactHooks,
     },
     settings: {
       "import/resolver": {
@@ -35,6 +35,11 @@ export default [
       "import/external-regex": "^(?!@(lib|services|components|hooks|types|pages|contexts|data|routes)/)"
     },
     rules: {
+      // React Hooks
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+
+      // Import rules
       "import/order": [
         "error",
         {
@@ -46,6 +51,8 @@ export default [
           },
         }
       ],
+
+      // Prettier rules
       "padding-line-between-statements": [
         "error",
         {
@@ -83,8 +90,6 @@ export default [
         },
       ],
       "@typescript-eslint/no-explicit-any": "off",
-      "valtio/state-snapshot-rule": "warn",
-      "valtio/avoid-this-in-proxy": "warn",
     },
   },
 ];
