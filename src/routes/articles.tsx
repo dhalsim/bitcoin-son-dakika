@@ -1,8 +1,10 @@
 import type { MetaFunction } from "react-router";
 
+import type { ArticleItem } from "@/lib/ssg-data";
+
 import Footer from "../components/Footer";
 import Header from "../components/Header";
-import NewsCard from "../components/NewsCard";
+import NewsCard, { type NewsCardProps } from "../components/NewsCard";
 import PriceBar from "../components/PriceBar";
 import { useSSGData } from "../hooks/useSSGData";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
@@ -18,7 +20,7 @@ export const meta: MetaFunction = () => {
 };
 
 // Helper function to convert ArticleItem to NewsCard props
-function convertToNewsCardProps(item: any) {
+function convertToNewsCardProps(item: ArticleItem): NewsCardProps {
   const timeAgo = getTimeAgo(item.publishedAt);
   const title = `Makale: ${item.title}`;
 
@@ -29,6 +31,7 @@ function convertToNewsCardProps(item: any) {
     time: timeAgo,
     image: item.image,
     author: item.author,
+    nostrEvent: item.event,
   };
 }
 

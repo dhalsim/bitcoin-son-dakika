@@ -3,24 +3,21 @@ import React from "react";
 import { Link } from "react-router";
 
 import { createProfileSlug } from "@/lib/ssg-data";
-import type { NewsItem, ArticleItem } from "@/lib/ssg-data";
+import type { NewsItem, ArticleItem, ProfileItem } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
 
 import { EventStatistics } from "./EventStatistics";
 import { Card, CardHeader, CardContent } from "./ui/card";
 import { ProfileAvatar } from "./ui/ProfileAvatar";
 
-interface NewsCardProps {
+export interface NewsCardProps {
   title: string;
   summary: string;
   category: string;
   time: string;
   image?: string;
   featured?: boolean;
-  author?: {
-    display_name?: string;
-    picture?: string;
-  };
+  author?: ProfileItem;
   nostrEvent: NostrEvent;
 }
 
@@ -210,6 +207,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
               onReply={handleReply}
               onQuote={handleQuote}
               className="justify-start"
+              author={author}
             />
           </div>
         )}

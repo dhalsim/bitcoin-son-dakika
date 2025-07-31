@@ -44,6 +44,7 @@ import { createNip10Thread } from "@/lib/nip10";
 import type { ReplyNode } from "@/lib/nip10";
 import { createNip22Thread } from "@/lib/nip22";
 import { extractAmountFromBolt11 } from "@/lib/nip57";
+import type { ProfileItem } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
 
 import { EmojiBoard } from "./EmojiBoard";
@@ -58,6 +59,7 @@ function cleanQuoteContent(content: string): string {
 
 interface EventStatisticsProps {
   event: NostrEvent;
+  author: ProfileItem;
   className: string;
   onReaction: (event: NostrEvent, reaction: string) => void;
   onRepost: (event: NostrEvent) => void;
@@ -159,6 +161,7 @@ function RichTextPreview({ content }: { content: string }) {
 
 export function EventStatistics({
   event,
+  author,
   className = "",
   onReaction,
   onRepost,
@@ -698,6 +701,8 @@ export function EventStatistics({
                   {group.events.slice(0, 10).map((reactionEvent) => {
                     let pubkey = reactionEvent.pubkey;
                     let badge = null;
+                    let zapMessage = null;
+                    let profile = profiles[pubkey];
 
                     if (group.type === "zap") {
                       const Ptag = reactionEvent.tags.find(
@@ -720,13 +725,32 @@ export function EventStatistics({
                             {amount}
                           </Badge>
                         );
+
+                        // Create zap message for popup
+                        profile = profiles[pubkey];
+                        const zapperName =
+                          profile?.display_name ||
+                          profile?.name ||
+                          `${pubkey.slice(0, 8)}...`;
+
+                        const zappedName =
+                          author.display_name ||
+                          `${author.pubkey.slice(0, 8)}...`;
+
+                        zapMessage = (
+                          <span>
+                            <strong>{zapperName}</strong> {zappedName}'ye{" "}
+                            {amount} Sats ⚡️ Gönderdi
+                            {reactionEvent.content
+                              ? `, Mesaj: "${reactionEvent.content}"`
+                              : ""}
+                          </span>
+                        );
                       } else {
                         // Skip this zap if we don't have complete information
                         return null;
                       }
                     }
-
-                    const profile = profiles[pubkey];
 
                     return (
                       <ProfileAvatar
@@ -735,6 +759,7 @@ export function EventStatistics({
                         profile={profile}
                         size="sm"
                         badge={badge}
+                        popupContent={zapMessage}
                       />
                     );
                   })}

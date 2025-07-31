@@ -27,6 +27,7 @@ interface ProfileAvatarProps {
   className?: string;
   fallbackSrc?: string;
   badge?: React.ReactNode;
+  popupContent?: React.ReactNode;
 }
 
 // Helper function to parse kind 0 profile event
@@ -97,6 +98,7 @@ export function ProfileAvatar({
   className = "",
   fallbackSrc,
   badge,
+  popupContent,
 }: ProfileAvatarProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const displayName = getDisplayName(profile, pubkey);
@@ -163,6 +165,12 @@ export function ProfileAvatar({
             <p className="text-sm text-gray-600 dark:text-gray-300">
               {profile.about}
             </p>
+          )}
+
+          {popupContent && (
+            <div className="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-2 rounded-md">
+              {popupContent}
+            </div>
           )}
 
           <div className="flex space-x-2">
