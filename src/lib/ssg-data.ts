@@ -1,7 +1,9 @@
 import type { NostrEvent } from "nostr-tools";
-import { z } from "zod";
 
-import { fetchNostrSets, pool, PROFILE_RELAYS } from "../../api-helpers/utils";
+import { fetchNostrSets, pool } from "../../api-helpers/utils";
+
+import type { ProfileItem } from "./nip01";
+import { parseProfileEvent, getKind0Events } from "./nip01";
 
 export interface NewsItem {
   id: string;
@@ -31,20 +33,6 @@ export interface ArticleItem {
   identifier?: string;
   image?: string;
 }
-
-export const ProfileItemSchema = z.object({
-  pubkey: z.string(),
-  name: z.string().optional(),
-  display_name: z.string().optional(),
-  picture: z.string().optional(),
-  about: z.string().optional(),
-  website: z.string().optional(),
-  nip05: z.string().optional(),
-  lud06: z.string().optional(),
-  lud16: z.string().optional(),
-});
-
-export type ProfileItem = z.infer<typeof ProfileItemSchema>;
 
 export interface SSGData {
   news: NewsItem[];
@@ -140,54 +128,30 @@ export async function fetchSSGData(): Promise<SSGData> {
     [...newsEvents, ...articlesEvents].map((item) => item.pubkey),
   );
 
-  const profileProfiles: ProfileItem[] = await pool
-    .querySync(PROFILE_RELAYS, {
-      authors: Array.from(profilePubkeys),
-      kinds: [0],
-    })
-    .then((ex) => {
-      return ex
-        .map((e: NostrEvent): ProfileItem => {
-          let parsedProfile;
-
-          try {
-            parsedProfile = JSON.parse(e.content);
-          } catch {
-            throw new Error("Invalid profile JSON");
-          }
-
-          return {
-            pubkey: e.pubkey,
-            display_name: parsedProfile?.display_name || parsedProfile?.name,
-            picture: parsedProfile?.picture,
-            about: parsedProfile?.about,
-            website: parsedProfile?.website,
-            nip05: parsedProfile?.nip05,
-            lud06: parsedProfile?.lud06,
-            lud16: parsedProfile?.lud16,
-          };
-        })
-        .filter((p) => p !== null);
-    });
+  const profileEvents = await getProfileEvents(Array.from(profilePubkeys));
 
   const newsItems: NewsItem[] = newsEvents.map((ne) => {
-    const author = profileProfiles.find((p) => p.pubkey === ne.pubkey);
+    const author = profileEvents.get(ne.pubkey);
 
     if (!author) {
       throw new Error(`Author not found: ${ne.pubkey}`);
     }
 
-    return processNewsEvent(ne, author);
+    const profile = parseProfileEvent(author);
+
+    return processNewsEvent(ne, profile);
   });
 
   const articleItems: ArticleItem[] = articlesEvents.map((ae) => {
-    const author = profileProfiles.find((p) => p.pubkey === ae.pubkey);
+    const author = profileEvents.get(ae.pubkey);
 
     if (!author) {
       throw new Error(`Author not found: ${ae.pubkey}`);
     }
 
-    return processArticleEvent(ae, author);
+    const profile = parseProfileEvent(author);
+
+    return processArticleEvent(ae, profile);
   });
 
   // Sort by publication date (newest first)
@@ -203,6 +167,44 @@ export async function fetchSSGData(): Promise<SSGData> {
     articles: articleItems.slice(0, 50), // Limit to recent 50 articles
     lastUpdated: Date.now(), // Use actual build time for SSG
   };
+}
+
+export function getProfileEvents(
+  profilePubkeys: string[],
+): Promise<Map<string, NostrEvent>> {
+  return new Promise((resolve, reject) => {
+    const profileEvents = new Map<string, NostrEvent>();
+
+    getKind0Events(
+      profilePubkeys,
+      (p, kind0Event) => {
+        if (profileEvents.has(p)) {
+          const existingProfile = profileEvents.get(p);
+
+          if (
+            existingProfile &&
+            existingProfile.created_at < kind0Event.created_at
+          ) {
+            // update profile event with newer one
+            profileEvents.set(p, kind0Event);
+          }
+
+          return;
+        }
+
+        profileEvents.set(p, kind0Event);
+      },
+      (reasons) => {
+        if (profileEvents.size === profilePubkeys.length) {
+          return resolve(profileEvents);
+        }
+
+        console.log("Some profile events not found, reasons:", reasons);
+
+        reject(new Error("Some profile events not found"));
+      },
+    );
+  });
 }
 
 export function getUniqueTags(ssgData: SSGData): string[] {

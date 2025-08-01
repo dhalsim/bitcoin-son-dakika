@@ -3,9 +3,11 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router";
 
 import NewsCard from "@/components/NewsCard";
-import { parseProfileEvent } from "@/components/ui/ProfileAvatar";
-import { getKind0Event } from "@/lib/nip01";
-import type { ProfileItem } from "@/lib/ssg-data";
+import {
+  getKind0Events,
+  parseProfileEvent,
+  type ProfileItem,
+} from "@/lib/nip01";
 import { pool } from "@/lib/utils";
 
 export default function TestEventPage() {
@@ -20,14 +22,18 @@ export default function TestEventPage() {
       return undefined;
     }
 
-    getKind0Event(event.pubkey, (profileEvent) => {
-      const profile: ProfileItem | null = parseProfileEvent(profileEvent);
+    getKind0Events(
+      [event.pubkey],
+      (_pubkey, profileEvent) => {
+        const profile: ProfileItem | null = parseProfileEvent(profileEvent);
 
-      if (profile) {
-        setAuthor(profile);
-      }
-    });
-  }, [event?.pubkey]);
+        if (profile) {
+          setAuthor(profile);
+        }
+      },
+      () => {},
+    );
+  }, [event]);
 
   const time = useMemo(() => {
     if (!event) {
@@ -35,7 +41,7 @@ export default function TestEventPage() {
     }
 
     return new Date(event.created_at * 1000).toLocaleString();
-  }, [event?.created_at]);
+  }, [event]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -170,6 +176,7 @@ export default function TestEventPage() {
           summary={summary}
           category={category}
           time={time}
+          publishedAt={event.created_at}
           nostrEvent={event}
           author={author}
         />

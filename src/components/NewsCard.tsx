@@ -2,8 +2,9 @@ import type { NostrEvent } from "nostr-tools";
 import React from "react";
 import { Link } from "react-router";
 
+import type { ProfileItem } from "@/lib/nip01";
 import { createProfileSlug } from "@/lib/ssg-data";
-import type { NewsItem, ArticleItem, ProfileItem } from "@/lib/ssg-data";
+import type { NewsItem, ArticleItem } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
 
 import { EventStatistics } from "./EventStatistics";
@@ -15,6 +16,7 @@ export interface NewsCardProps {
   summary: string;
   category: string;
   time: string;
+  publishedAt: number;
   image?: string;
   featured?: boolean;
   author?: ProfileItem;
@@ -53,6 +55,7 @@ export function convertNewsItemToNewsCardProps(item: NewsItem): NewsCardProps {
     summary: item.summary || item.content.substring(0, 150) + "...",
     category: item.category || "Bitcoin",
     time: timeAgo,
+    publishedAt: item.publishedAt,
     image: item.image,
     author: item.author,
     nostrEvent: item.event,
@@ -71,6 +74,7 @@ export function convertArticleItemToNewsCardProps(
     summary: item.summary || item.content.substring(0, 150) + "...",
     category: item.category || "Bitcoin",
     time: timeAgo,
+    publishedAt: item.publishedAt,
     image: item.image,
     author: item.author,
     nostrEvent: item.event,
@@ -91,6 +95,7 @@ export function convertToNewsCardProps(
     summary: item.summary || item.content.substring(0, 150) + "...",
     category: item.category || "Bitcoin",
     time: timeAgo,
+    publishedAt: item.publishedAt,
     image: item.image,
     author: item.author,
     nostrEvent: item.event,

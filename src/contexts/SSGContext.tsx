@@ -168,14 +168,15 @@ export function useContentByAuthor(pubkey: string): (NewsItem | ArticleItem)[] {
 export function useContentStats() {
   const news = useNewsItems();
   const articles = useArticleItems();
+  const lastUpdated = useSSGContext().lastUpdated;
 
   return useMemo(
     () => ({
       totalNews: news.length,
       totalArticles: articles.length,
       totalContent: news.length + articles.length,
-      lastUpdated: useSSGContext().lastUpdated,
+      lastUpdated,
     }),
-    [news.length, articles.length],
+    [news.length, articles.length, lastUpdated],
   );
 }

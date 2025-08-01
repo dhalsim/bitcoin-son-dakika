@@ -1,5 +1,4 @@
 import { ExternalLink } from "lucide-react";
-import type { NostrEvent } from "nostr-tools";
 import { useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -10,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ProfileItemSchema, type ProfileItem } from "@/lib/ssg-data";
+import { type ProfileItem } from "@/lib/nip01";
 
 interface ProfileAvatarProps {
   pubkey: string;
@@ -21,31 +20,6 @@ interface ProfileAvatarProps {
   badge?: React.ReactNode;
   popupContent?: React.ReactNode;
 }
-
-// Helper function to parse kind 0 profile event
-export const parseProfileEvent = (event: NostrEvent): ProfileItem | null => {
-  try {
-    const content = JSON.parse(event.content);
-
-    const profile = ProfileItemSchema.parse({
-      ...content,
-      pubkey: event.pubkey,
-    });
-
-    return {
-      pubkey: profile.pubkey,
-      display_name: profile.display_name || profile.name,
-      website: profile.website,
-      picture: profile.picture,
-      about: profile.about,
-      nip05: profile.nip05,
-      lud06: profile.lud06,
-      lud16: profile.lud16,
-    };
-  } catch {
-    return null;
-  }
-};
 
 // Helper function to get display name from profile
 export const getDisplayName = (

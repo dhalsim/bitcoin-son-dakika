@@ -1,7 +1,9 @@
 import { type NostrEvent, nip57 } from "nostr-tools";
 
-import { signEventByNip07 } from "./nip07";
-import type { LnUrlpResponse } from "./nip57";
+import { getCache } from "./cache";
+import { getUserPubkey, signEventByNip07 } from "./nip07";
+import { validateZapReceipt, type LnUrlpResponse } from "./nip57";
+import { pool } from "./utils";
 
 export interface ZapRequest {
   event: NostrEvent;
@@ -23,7 +25,7 @@ export const DEFAULT_ZAP_RELAYS = [
 ];
 
 interface CreateZapParams {
-  event: NostrEvent;
+  zappedEvent: NostrEvent;
   amountInSats: number;
   lnurlData: LnUrlpResponse;
   relays: string[];
@@ -32,16 +34,16 @@ interface CreateZapParams {
 
 // Complete zap flow
 export async function createZap({
-  event,
+  zappedEvent,
   amountInSats,
   lnurlData,
   comment,
   relays,
 }: CreateZapParams): Promise<string> {
   try {
-    const zapRequestEvent = await nip57.makeZapRequest({
-      profile: event.pubkey,
-      event,
+    const zapRequestEvent = nip57.makeZapRequest({
+      profile: zappedEvent.pubkey,
+      event: zappedEvent,
       amount: amountInSats * 1000,
       comment,
       relays,
@@ -103,4 +105,88 @@ export function hasUserZapped(
   }
 
   return false;
+}
+
+const cache = getCache();
+
+// Listen for zap receipt for a specific invoice
+export async function listenForZapReceipt(
+  event: NostrEvent,
+  invoice: string,
+  lnurlData: LnUrlpResponse,
+  relays: string[],
+  onReceipt: (zapReceipt: any | null) => void,
+) {
+  const userPubkey = await getUserPubkey();
+
+  if (!userPubkey) {
+    onReceipt(null);
+
+    return;
+  }
+
+  let received = false;
+
+  pool.subscribeEose(
+    relays,
+    {
+      authors: [lnurlData.nostrPubkey],
+      kinds: [9735], // zap receipt
+      "#e": [event.id], // for this specific event
+      "#p": [event.pubkey], // for this specific author
+    },
+    {
+      onevent: (zapReceiptEvent: NostrEvent) => {
+        console.log("Zap receipt event", zapReceiptEvent);
+      },
+    },
+  );
+
+  pool.subscribeEose(
+    relays,
+    {
+      authors: [lnurlData.nostrPubkey],
+      kinds: [9735], // zap receipt
+      "#e": [event.id], // for this specific event
+      "#p": [event.pubkey], // for this specific author
+      "#P": [userPubkey], // by this specific user
+      since: Math.floor(Date.now() / 1000) - 30, // now - 30 seconds
+    },
+    {
+      onevent: (zapReceiptEvent: NostrEvent) => {
+        if (received) {
+          console.warn("Zap receipt already received");
+
+          return;
+        }
+
+        const zapReceipt = validateZapReceipt(zapReceiptEvent, invoice);
+
+        if (!zapReceipt) {
+          return;
+        }
+
+        // Validate the receipt author matches the LNURL provider
+        if (zapReceiptEvent.pubkey !== lnurlData.nostrPubkey) {
+          console.warn("Zap receipt author doesn't match LNURL provider");
+
+          return;
+        }
+
+        received = true;
+
+        onReceipt(zapReceiptEvent);
+
+        const cachedZaps = cache.getNip57Zaps(event.id) || new Map();
+
+        if (cachedZaps.has(zapReceiptEvent.id)) {
+          return;
+        }
+
+        // add to cache
+        cachedZaps.set(zapReceiptEvent.id, zapReceipt);
+        cache.setNip57Zaps(event.id, cachedZaps);
+      },
+    },
+  );
 }

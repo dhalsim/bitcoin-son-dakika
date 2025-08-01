@@ -6,18 +6,19 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
   const scriptRef = useRef<HTMLScriptElement | null>(null);
 
   useEffect(() => {
-    if (!container.current) {
+    const currentContainer = container.current;
+    if (!currentContainer) {
       return;
     }
 
     // Clean up any existing script
     if (scriptRef.current) {
-      container.current.removeChild(scriptRef.current);
+      currentContainer.removeChild(scriptRef.current);
       scriptRef.current = null;
     }
 
     // Clear the container
-    container.current.innerHTML = "";
+    currentContainer.innerHTML = "";
 
     const script = document.createElement("script");
     script.src =
@@ -51,13 +52,13 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
         }`;
 
     scriptRef.current = script;
-    container.current.appendChild(script);
+    currentContainer.appendChild(script);
 
     // Cleanup function
     return () => {
-      if (container.current && scriptRef.current) {
+      if (currentContainer && scriptRef.current) {
         try {
-          container.current.removeChild(scriptRef.current);
+          currentContainer.removeChild(scriptRef.current);
         } catch (_) {
           // Script might have been removed already
         }

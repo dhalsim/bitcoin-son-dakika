@@ -9,7 +9,7 @@ import { FollowButton } from "@/components/ui/FollowButton.js";
 import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
-import {
+import NewsCard, {
   convertNewsItemToNewsCardProps,
   convertArticleItemToNewsCardProps,
 } from "../components/NewsCard";
@@ -175,22 +175,7 @@ export default function ProfilePage() {
 
   // Combine all content and sort by date
   const allContent = [...newsItems, ...articleItems].sort((a, b) => {
-    const aTime = a.time.includes("saniye")
-      ? 0
-      : a.time.includes("dakika")
-        ? 1
-        : a.time.includes("saat")
-          ? 2
-          : 3;
-    const bTime = b.time.includes("saniye")
-      ? 0
-      : b.time.includes("dakika")
-        ? 1
-        : b.time.includes("saat")
-          ? 2
-          : 3;
-
-    return aTime - bTime;
+    return b.publishedAt - a.publishedAt;
   });
 
   return (
@@ -336,9 +321,18 @@ export default function ProfilePage() {
               </h2>
 
               <div className="grid gap-6">
-                {/* {allContent.map((item, index) => (
-                  <NewsCard key={`${item.title}-${index}`} {...item} />
-                ))} */}
+                {allContent.map((item, index) => (
+                  <NewsCard
+                    key={`${item.title}-${index}`}
+                    title={item.title}
+                    summary={item.summary}
+                    category={item.category}
+                    time={item.time}
+                    publishedAt={item.publishedAt}
+                    nostrEvent={item.nostrEvent}
+                    author={item.author}
+                  />
+                ))}
               </div>
             </div>
           )}

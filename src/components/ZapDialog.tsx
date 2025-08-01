@@ -1,6 +1,6 @@
 import { Zap } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,11 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import type { ProfileItem } from "@/lib/nip01";
 import { getNip07Relays, getUserPubkey } from "@/lib/nip07";
 import type { LnUrlpResponse } from "@/lib/nip57";
 import { getLnurlData } from "@/lib/nip57";
 import { fetchNip65Relays } from "@/lib/nip65";
-import type { ProfileItem } from "@/lib/ssg-data";
 import { createZap, DEFAULT_ZAP_RELAYS } from "@/lib/zap-utils";
 
 import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
@@ -27,16 +27,16 @@ import { ZapInvoiceDialog } from "./ZapInvoiceDialog";
 interface ZapDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  event: NostrEvent;
+  zappedEvent: NostrEvent;
   author: ProfileItem;
 }
 
 const PRESET_AMOUNTS = [21, 50, 100, 200];
 
-export function ZapDialog({
+export const ZapDialog = memo(function ZapDialog({
   open,
   onOpenChange,
-  event,
+  zappedEvent,
   author,
 }: ZapDialogProps) {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
@@ -138,7 +138,7 @@ export function ZapDialog({
         }
 
         const invoice = await createZap({
-          event,
+          zappedEvent,
           amountInSats,
           comment: comment.trim() || undefined,
           lnurlData,
@@ -161,7 +161,6 @@ export function ZapDialog({
 
         // Show invoice dialog
         setShowInvoice(true);
-        onOpenChange(false);
 
         // Reset form
         setSelectedAmount(null);
@@ -220,118 +219,125 @@ export function ZapDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Zap className="h-5 w-5 text-orange-500" />
-            <span>Zap Gönder</span>
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open && !showInvoice} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Zap className="h-5 w-5 text-orange-500" />
+              <span>Zap Gönder</span>
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-4 pt-4">
-          {/* Preset amounts */}
-          <div>
-            <Label className="text-sm font-medium">Hızlı Miktar Seçimi</Label>
-            <div className="grid grid-cols-4 gap-2 mt-2">
-              {PRESET_AMOUNTS.map((amount) => (
-                <Button
-                  key={amount}
-                  variant={selectedAmount === amount ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handlePresetClick(amount)}
-                  className="h-10"
-                >
-                  {amount} sats
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Custom amount */}
-          <div>
-            <Label htmlFor="customAmount" className="text-sm font-medium">
-              Özel Miktar (sats)
-            </Label>
-            <Input
-              id="customAmount"
-              type="number"
-              placeholder="Özel miktar girin..."
-              value={customAmount}
-              onChange={(e) => handleCustomAmountChange(e.target.value)}
-              className="mt-2"
-              min="1"
-            />
-          </div>
-
-          {/* Comment */}
-          <div>
-            <Label htmlFor="comment" className="text-sm font-medium">
-              Yorum (İsteğe bağlı)
-            </Label>
-            <Textarea
-              id="comment"
-              placeholder="Zap ile birlikte bir mesaj gönderin..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="mt-2 min-h-[80px] resize-none"
-              maxLength={200}
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              {comment.length}/200 karakter
-            </div>
-          </div>
-
-          {/* Summary */}
-          {isValidAmount && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Gönderilecek miktar:</span>
-                <span className="font-semibold text-orange-700">
-                  {finalAmount} sats
-                </span>
+          <div className="space-y-4 pt-4">
+            {/* Preset amounts */}
+            <div>
+              <Label className="text-sm font-medium">Hızlı Miktar Seçimi</Label>
+              <div className="grid grid-cols-4 gap-2 mt-2">
+                {PRESET_AMOUNTS.map((amount) => (
+                  <Button
+                    key={amount}
+                    variant={selectedAmount === amount ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePresetClick(amount)}
+                    className="h-10"
+                  >
+                    {amount} sats
+                  </Button>
+                ))}
               </div>
-              {comment && (
-                <div className="mt-2 text-xs text-gray-600">
-                  <span className="font-medium">Mesaj:</span> {comment}
-                </div>
-              )}
             </div>
-          )}
 
-          {/* Action buttons */}
-          <div className="flex space-x-2 pt-2">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
-              İptal
-            </Button>
-            <Button
-              className="flex-1 bg-orange-500 hover:bg-orange-600"
-              onClick={handleZap}
-              disabled={!isValidAmount || isLoading}
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
-              ) : (
-                <Zap className="h-4 w-4 mr-1" />
-              )}
-              {isLoading ? "Hazırlanıyor..." : "Zap Gönder"}
-            </Button>
+            {/* Custom amount */}
+            <div>
+              <Label htmlFor="customAmount" className="text-sm font-medium">
+                Özel Miktar (sats)
+              </Label>
+              <Input
+                id="customAmount"
+                type="number"
+                placeholder="Özel miktar girin..."
+                value={customAmount}
+                onChange={(e) => handleCustomAmountChange(e.target.value)}
+                className="mt-2"
+                min="1"
+              />
+            </div>
+
+            {/* Comment */}
+            <div>
+              <Label htmlFor="comment" className="text-sm font-medium">
+                Yorum (İsteğe bağlı)
+              </Label>
+              <Textarea
+                id="comment"
+                placeholder="Zap ile birlikte bir mesaj gönderin..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="mt-2 min-h-[80px] resize-none"
+                maxLength={200}
+              />
+              <div className="text-xs text-gray-500 mt-1">
+                {comment.length}/200 karakter
+              </div>
+            </div>
+
+            {/* Summary */}
+            {isValidAmount && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Gönderilecek miktar:</span>
+                  <span className="font-semibold text-orange-700">
+                    {finalAmount} sats
+                  </span>
+                </div>
+                {comment && (
+                  <div className="mt-2 text-xs text-gray-600">
+                    <span className="font-medium">Mesaj:</span> {comment}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex space-x-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => onOpenChange(false)}
+              >
+                İptal
+              </Button>
+              <Button
+                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                onClick={handleZap}
+                disabled={!isValidAmount || isLoading}
+              >
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                ) : (
+                  <Zap className="h-4 w-4 mr-1" />
+                )}
+                {isLoading ? "Hazırlanıyor..." : "Zap Gönder"}
+              </Button>
+            </div>
           </div>
-        </div>
-      </DialogContent>
+        </DialogContent>
+      </Dialog>
 
-      {/* Invoice Dialog */}
-      <ZapInvoiceDialog
-        open={showInvoice}
-        onOpenChange={setShowInvoice}
-        invoice={invoice}
-        amount={invoiceAmount}
-        comment={invoiceComment}
-      />
-    </Dialog>
+      {/* Invoice Dialog - Rendered outside the main dialog */}
+      {showInvoice && (
+        <ZapInvoiceDialog
+          open={showInvoice}
+          onOpenChange={setShowInvoice}
+          invoice={invoice}
+          amount={invoiceAmount}
+          comment={invoiceComment}
+          lnurlData={lnurlData}
+          zappedEvent={zappedEvent}
+          relays={relays}
+        />
+      )}
+    </>
   );
-}
+});

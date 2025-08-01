@@ -1,5 +1,5 @@
 import type { NostrEvent } from "nostr-tools";
-import type { SubCloser } from "nostr-tools/abstract-pool";
+import { z } from "zod";
 
 import { PROFILE_RELAYS } from "../../api-helpers/utils";
 
@@ -8,64 +8,11 @@ import { pool } from "./utils";
 
 const cache = getCache();
 
-export async function getKind0Event(
-  pubkey: string,
-  onUpdate: (event: NostrEvent) => void,
-) {
-  const cachedEvent = cache.getKind0Event(pubkey);
-
-  if (cachedEvent) {
-    onUpdate(cachedEvent);
-  }
-
-  let fetchedEvent = null;
-
-  pool.subscribeEose(
-    PROFILE_RELAYS,
-    {
-      authors: [pubkey],
-      kinds: [0],
-    },
-    {
-      onevent: (event) => {
-        if (fetchedEvent && event.created_at < fetchedEvent.created_at) {
-          return;
-        }
-
-        fetchedEvent = event;
-      },
-      onclose: () => {
-        onUpdate(fetchedEvent);
-      },
-    },
-  );
-
-  const event = await pool.get(PROFILE_RELAYS, {
-    authors: [pubkey],
-    kinds: [0],
-  });
-
-  if (event) {
-    if (cachedEvent && event.created_at < cachedEvent.created_at) {
-      // nothing to update
-      return;
-    }
-
-    if (cachedEvent && event.id === cachedEvent.id) {
-      // nothing to update
-      return;
-    }
-
-    cache.setKind0Event(pubkey, event);
-
-    onUpdate(event);
-  }
-}
-
-export function subscribeKind0Event(
+export async function getKind0Events(
   authors: string[],
   onUpdate: (pubkey: string, event: NostrEvent) => void,
-): SubCloser {
+  onclose: (reasons: string[]) => void,
+) {
   authors.forEach((author) => {
     const cachedEvent = cache.getKind0Event(author);
 
@@ -74,27 +21,23 @@ export function subscribeKind0Event(
     }
   });
 
-  return pool.subscribe(
+  pool.subscribeEose(
     PROFILE_RELAYS,
     {
-      authors,
+      authors: authors,
       kinds: [0],
     },
     {
       onevent: (event) => {
         const cachedEvent = cache.getKind0Event(event.pubkey);
 
-        if (cachedEvent && event.id === cachedEvent.id) {
+        if (cachedEvent && event.created_at < cachedEvent.created_at) {
           // nothing to update
-          onUpdate(event.pubkey, cachedEvent);
-
           return;
         }
 
-        if (cachedEvent && event.created_at < cachedEvent.created_at) {
+        if (cachedEvent && event.id === cachedEvent.id) {
           // nothing to update
-          onUpdate(event.pubkey, cachedEvent);
-
           return;
         }
 
@@ -102,6 +45,46 @@ export function subscribeKind0Event(
 
         onUpdate(event.pubkey, event);
       },
+      onclose,
     },
   );
 }
+
+// Helper function to parse kind 0 profile event
+export const parseProfileEvent = (event: NostrEvent): ProfileItem | null => {
+  try {
+    const content = JSON.parse(event.content);
+
+    const profile = ProfileItemSchema.parse({
+      ...content,
+      pubkey: event.pubkey,
+    });
+
+    return {
+      pubkey: profile.pubkey,
+      display_name: profile.display_name || profile.name,
+      website: profile.website,
+      picture: profile.picture,
+      about: profile.about,
+      nip05: profile.nip05,
+      lud06: profile.lud06,
+      lud16: profile.lud16,
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const ProfileItemSchema = z.object({
+  pubkey: z.string(),
+  name: z.string().optional(),
+  display_name: z.string().optional(),
+  picture: z.string().optional(),
+  about: z.string().optional(),
+  website: z.string().optional(),
+  nip05: z.string().optional(),
+  lud06: z.string().optional(),
+  lud16: z.string().optional(),
+});
+
+export type ProfileItem = z.infer<typeof ProfileItemSchema>;

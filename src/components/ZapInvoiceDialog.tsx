@@ -1,4 +1,5 @@
-import { Copy, X } from "lucide-react";
+import { Copy } from "lucide-react";
+import type { NostrEvent } from "nostr-tools";
 import { toString as toSvgString } from "qrcode/lib/browser.js";
 import { useEffect, useState } from "react";
 
@@ -10,55 +11,81 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import type { LnUrlpResponse } from "@/lib/nip57";
+import { listenForZapReceipt } from "@/lib/zap-utils";
 
 interface ZapInvoiceDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  relays: string[];
+  lnurlData: LnUrlpResponse;
+  zappedEvent: NostrEvent;
   invoice: string;
   amount: number;
   comment?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function ZapInvoiceDialog({
-  open,
-  onOpenChange,
+  relays,
+  lnurlData,
+  zappedEvent,
   invoice,
   amount,
   comment,
+  open,
+  onOpenChange,
 }: ZapInvoiceDialogProps) {
   const [qrSvg, setQrSvg] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
+    const generateQR = async () => {
+      try {
+        setIsLoading(true);
+        const svg = await toSvgString(invoice, {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: "#000000",
+            light: "#FFFFFF",
+          },
+        });
+        setQrSvg(svg);
+      } catch (error) {
+        console.error("Failed to generate QR code:", error);
+        toast({
+          title: "Hata",
+          description: "QR kod oluşturulamadı",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     if (open && invoice) {
       generateQR();
     }
-  }, [open, invoice]);
+  }, [open, invoice, toast]);
 
-  const generateQR = async () => {
-    try {
-      setIsLoading(true);
-      const svg = await toSvgString(invoice, {
-        width: 200,
-        margin: 2,
-        color: {
-          dark: "#000000",
-          light: "#FFFFFF",
-        },
-      });
-      setQrSvg(svg);
-    } catch (error) {
-      console.error("Failed to generate QR code:", error);
-      toast({
-        title: "Hata",
-        description: "QR kod oluşturulamadı",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (!qrSvg) {
+      return;
     }
-  };
+
+    listenForZapReceipt(
+      zappedEvent,
+      invoice,
+      lnurlData,
+      relays,
+      (zapReceipt) => {
+        if (zapReceipt) {
+          console.log("Zap receipt received", zapReceipt);
+        }
+      },
+    );
+  }, [qrSvg, zappedEvent, invoice, lnurlData, relays]);
 
   const copyInvoice = async () => {
     try {
@@ -81,16 +108,7 @@ export function ZapInvoiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Zap Faturası</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </DialogTitle>
+          <DialogTitle>Zap Faturası</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pt-4">

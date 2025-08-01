@@ -28,23 +28,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  ProfileAvatar,
-  parseProfileEvent,
-} from "@/components/ui/ProfileAvatar";
+import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getCache } from "@/lib/cache";
 import { DEFAULT_EMOJI_USAGE } from "@/lib/constants";
 import type { EventStatistics } from "@/lib/event-statistics";
 import { getEventStatistics } from "@/lib/event-statistics";
-import { subscribeKind0Event } from "@/lib/nip01";
+import type { ProfileItem } from "@/lib/nip01";
+import { parseProfileEvent, getKind0Events } from "@/lib/nip01";
 import { getUserPubkey } from "@/lib/nip07";
 import { createNip10Thread } from "@/lib/nip10";
 import type { ReplyNode } from "@/lib/nip10";
 import { createNip22Thread } from "@/lib/nip22";
 import { extractAmountFromBolt11 } from "@/lib/nip57";
-import type { ProfileItem } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
 import { hasUserZapped } from "@/lib/zap-utils";
 
@@ -247,16 +244,32 @@ export function EventStatistics({
 
         const uniquePubkeys = [...new Set(statPubkeys)];
 
-        subscribeKind0Event(uniquePubkeys, (pubkey, event) => {
-          const profile = parseProfileEvent(event);
+        getKind0Events(
+          uniquePubkeys,
+          (pubkey, event) => {
+            let profile: ProfileItem | null = null;
 
-          if (profile) {
+            try {
+              profile = parseProfileEvent(event);
+            } catch (err) {
+              console.error(`Failed to parse profile event: ${pubkey}`, err);
+            }
+
             setProfiles((prev) => ({
               ...prev,
               [pubkey]: profile,
             }));
-          }
-        });
+          },
+          (reasons) => {
+            const nonEoseReasons = reasons.filter(
+              (r) => r !== "closed automatically on eose",
+            );
+
+            if (nonEoseReasons.length > 0) {
+              console.error("Failed to fetch profile events", nonEoseReasons);
+            }
+          },
+        );
 
         setStatistics(stats);
         setLoading(false);
@@ -291,7 +304,7 @@ export function EventStatistics({
     };
 
     checkUserZap();
-  }, [event.id]);
+  }, [event.id, userPubkey]);
 
   // Memoize expensive calculations
   const {
@@ -1000,7 +1013,7 @@ export function EventStatistics({
         <ZapDialog
           open={showZapDialog}
           onOpenChange={setShowZapDialog}
-          event={event}
+          zappedEvent={event}
           author={author}
         />
       )}

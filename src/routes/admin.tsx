@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
 import { nip19 } from "nostr-tools";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -181,12 +181,7 @@ export default function AdminPanel() {
   const [newsCategory, setNewsCategory] = useState("");
   const [newsPublishLoading, setNewsPublishLoading] = useState(false);
 
-  useEffect(() => {
-    loadAdminData();
-    checkUserInfo();
-  }, []);
-
-  const loadAdminData = async () => {
+  const loadAdminData = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -284,9 +279,9 @@ export default function AdminPanel() {
       console.error("Error loading admin data from Nostr:", err);
       setError("Nostr verilerini yüklerken hata oluştu");
     }
-  };
+  }, []);
 
-  const checkUserInfo = async () => {
+  const checkUserInfo = useCallback(async () => {
     try {
       if (typeof window === "undefined" || !window.nostr) {
         return;
@@ -303,7 +298,12 @@ export default function AdminPanel() {
     } catch {
       console.log("Nostr extension not available or user declined");
     }
-  };
+  }, [adminData]);
+
+  useEffect(() => {
+    loadAdminData();
+    checkUserInfo();
+  }, [loadAdminData, checkUserInfo]);
 
   const createNIP98Auth = async (method: string, url: string) => {
     if (!window.nostr || !userInfo.pubkey) {

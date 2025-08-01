@@ -10,7 +10,7 @@ export type ZapReceipt = {
   event: NostrEvent;
   amount: number; // in satoshis
   comment?: string;
-  zapRequest?: NostrEvent;
+  zapRequest: NostrEvent;
 };
 
 // Helper function to extract amount from bolt11 invoice
@@ -45,7 +45,10 @@ export function extractAmountFromBolt11(bolt11: string): number {
 }
 
 // Helper function to validate zap receipt according to NIP-57
-function validateZapReceipt(zapReceipt: NostrEvent): ZapReceipt | null {
+export function validateZapReceipt(
+  zapReceipt: NostrEvent,
+  invoice?: string,
+): ZapReceipt | null {
   try {
     // Find bolt11 tag
     const bolt11Tag = zapReceipt.tags.find((tag) => tag[0] === "bolt11");
@@ -53,10 +56,15 @@ function validateZapReceipt(zapReceipt: NostrEvent): ZapReceipt | null {
       return null;
     }
 
+    if (invoice && bolt11Tag[1] !== invoice) {
+      return null;
+    }
+
     // Find description tag (contains the zap request)
     const descriptionTag = zapReceipt.tags.find(
       (tag) => tag[0] === "description",
     );
+
     if (!descriptionTag || !descriptionTag[1]) {
       return null;
     }
