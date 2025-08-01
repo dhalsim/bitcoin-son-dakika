@@ -47,7 +47,7 @@ export async function createZap({
     const zapRequestEvent: EventTemplate = {
       kind: 9734,
       created_at: Math.round(Date.now() / 1000),
-      content: comment,
+      content: comment || "",
       tags: [
         ["e", zappedEvent.id],
         ["p", zappedEvent.pubkey],
