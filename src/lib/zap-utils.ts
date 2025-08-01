@@ -13,15 +13,15 @@ export interface ZapRequest {
 
 // Default relays for zap receipts
 export const DEFAULT_ZAP_RELAYS = [
-  "wss://relay.nostr.band",
-  "wss://relay.damus.io",
-  "wss://nos.lol",
-  "wss://relay.primal.net",
-  "wss://relay.snort.social",
-  "wss://nostr.bitcoiner.social",
-  "wss://nostr.mom",
-  "wss://nostr-pub.wellorder.net",
-  "wss://relay.nos.social",
+  "wss://relay.nostr.band/",
+  "wss://relay.damus.io/",
+  "wss://nos.lol/",
+  "wss://relay.primal.net/",
+  "wss://relay.snort.social/",
+  "wss://nostr.bitcoiner.social/",
+  "wss://nostr.mom/",
+  "wss://nostr-pub.wellorder.net/",
+  "wss://relay.nos.social/",
 ];
 
 interface CreateZapParams {

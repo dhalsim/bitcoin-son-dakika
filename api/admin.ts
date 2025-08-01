@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       ["editor", "admin"],
     );
 
-    if (!authResult.success) {
+    if (authResult.success === false) {
       return ErrorResponse(undefined, authResult.error, authResult.status);
     }
 
@@ -638,7 +638,7 @@ async function handleTriggerDeploy(request: Request) {
       ["editor", "admin"],
     );
 
-    if (!authResult.success) {
+    if (authResult.success === false) {
       return ErrorResponse(undefined, authResult.error, authResult.status);
     }
 
