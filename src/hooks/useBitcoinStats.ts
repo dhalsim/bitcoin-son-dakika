@@ -5,17 +5,17 @@ import { WEBSITE_URL } from "@/lib/constants";
 import {
   BitcoinStatsDataSchema,
   type BitcoinStatsData,
-} from "../../api-helpers/bitcoin-stats/schemas.js";
+} from "../../api/bitcoin-stats/mempool";
 
 type BitcoinStatsResponse =
   | (BitcoinStatsData & { success: true })
   | { success: false; message: string; error: string };
 
 // Type guard to help TypeScript narrow the type
-function isSuccessResponse(
+function isErrorResponse(
   response: BitcoinStatsResponse,
-): response is BitcoinStatsData & { success: true } {
-  return response.success === true;
+): response is { success: false; message: string; error: string } {
+  return response.success === false;
 }
 
 export const useBitcoinStats = () => {
@@ -42,7 +42,7 @@ export const useBitcoinStats = () => {
         const rawBitcoinStats: BitcoinStatsResponse = await response.json();
         console.log("Bitcoin stats data:", rawBitcoinStats);
 
-        if (!isSuccessResponse(rawBitcoinStats)) {
+        if (isErrorResponse(rawBitcoinStats)) {
           throw new Error(
             rawBitcoinStats.error || "Failed to fetch Bitcoin stats",
           );

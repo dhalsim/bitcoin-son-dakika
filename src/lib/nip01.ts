@@ -1,12 +1,17 @@
 import type { NostrEvent } from "nostr-tools";
 import { z } from "zod";
 
-import { PROFILE_RELAYS } from "../../api-helpers/utils";
-
 import { getCache } from "./cache";
 import { pool } from "./utils";
 
 const cache = getCache();
+
+export const PROFILE_RELAYS = [
+  "wss://purplepag.es",
+  "wss://relay.nos.social",
+  "wss://user.kindpag.es",
+  "wss://relay.nostr.band",
+];
 
 export async function getKind0Events(
   authors: string[],

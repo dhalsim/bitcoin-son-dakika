@@ -6,7 +6,6 @@ import { useLoaderData } from "react-router";
 
 import { FollowButton } from "@/components/ui/FollowButton.js";
 
-import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import NewsCard, {
@@ -16,6 +15,7 @@ import NewsCard, {
 import PriceBar from "../components/PriceBar";
 import { useContentByAuthor } from "../hooks/useSSGData";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
+import { PROFILE_RELAYS } from "../lib/nip01";
 import { findProfileBySlug } from "../lib/ssg-data";
 import type { NewsItem, ArticleItem } from "../lib/ssg-data";
 

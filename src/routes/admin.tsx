@@ -37,13 +37,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PROFILE_RELAYS } from "@/lib/nip01";
 import { pool } from "@/lib/utils";
 
-import {
-  ADMIN_RELAYS,
-  PROFILE_RELAYS,
-  type PublishEventResponse,
-} from "../../api-helpers/utils";
+import { ADMIN_RELAYS, type PublishEventResponse } from "../../api/admin";
 
 type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }

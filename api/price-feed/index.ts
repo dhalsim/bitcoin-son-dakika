@@ -1,15 +1,33 @@
 import TradingView from "@mathieuc/tradingview";
 import { createClient } from "redis";
+import z from "zod";
 
 import {
   applyCacheHeaders,
   ErrorResponse,
   SuccessResponse,
-} from "../../api-helpers/utils.js";
-import {
-  type BaseEndpointResponse,
-  type PriceData,
-} from "../../src/types/api.js";
+} from "../bitcoin-stats/mempool";
+
+export const PriceDataSchema = z.object({
+  name: z.string(),
+  symbol: z.string(),
+  value: z.string(),
+  change: z.string(),
+  category: z.enum(["crypto", "currency", "commodity", "stock"]),
+});
+
+export const BaseEndpointResponseSchema = z.object({
+  success: z.boolean(),
+  prices: z.array(PriceDataSchema),
+  btcPrice: z.string(),
+  btcChange: z.string(),
+  lastUpdated: z.string(),
+  source: z.string(),
+  totalAssets: z.number(),
+});
+
+export type PriceData = z.infer<typeof PriceDataSchema>;
+export type BaseEndpointResponse = z.infer<typeof BaseEndpointResponseSchema>;
 
 const redis = await createClient({
   url: process.env.REDIS_URL,

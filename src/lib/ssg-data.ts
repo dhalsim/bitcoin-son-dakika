@@ -1,6 +1,6 @@
 import type { NostrEvent } from "nostr-tools";
 
-import { fetchNostrSets, pool } from "../../api-helpers/utils";
+import { fetchNostrSets, pool } from "../../api/admin";
 
 import type { ProfileItem } from "./nip01";
 import { parseProfileEvent, getKind0Events } from "./nip01";

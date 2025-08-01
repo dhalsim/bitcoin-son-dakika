@@ -1,15 +1,70 @@
-import type { BitcoinStatsData } from "../../api-helpers/bitcoin-stats/schemas.js";
-import {
-  MempoolFeesSchema,
-  MempoolDifficultySchema,
-  MempoolMempoolSchema,
-  MempoolHashrateSchema,
-} from "../../api-helpers/bitcoin-stats/schemas.js";
-import {
-  applyCacheHeaders,
-  ErrorResponse,
-  SuccessResponse,
-} from "../../api-helpers/utils.js";
+import { z } from "zod";
+
+const MempoolFeesSchema = z.object({
+  fastestFee: z.number(),
+  halfHourFee: z.number(),
+  hourFee: z.number(),
+  economyFee: z.number(),
+  minimumFee: z.number(),
+});
+
+const MempoolDifficultySchema = z.object({
+  progressPercent: z.number(),
+  difficultyChange: z.number(),
+  estimatedRetargetDate: z.number(),
+  remainingBlocks: z.number(),
+  remainingTime: z.number(),
+  previousRetarget: z.number(),
+  previousTime: z.number(),
+  nextRetargetHeight: z.number(),
+  timeAvg: z.number(),
+  adjustedTimeAvg: z.number(),
+  timeOffset: z.number(),
+  expectedBlocks: z.number(),
+});
+
+const MempoolMempoolSchema = z.object({
+  count: z.number(),
+  vsize: z.number(),
+  total_fee: z.number(),
+  fee_histogram: z.array(z.array(z.number())),
+});
+
+const MempoolHashrateSchema = z.object({
+  hashrates: z.array(
+    z.object({
+      avgHashrate: z.number(),
+      timestamp: z.number(),
+    }),
+  ),
+  currentHashrate: z.number(),
+  currentDifficulty: z.number(),
+});
+
+// Bitcoin stats response schema
+export const BitcoinStatsDataSchema = z.object({
+  hashrate: z.object({
+    value: z.string(),
+    unit: z.string(),
+    timestamp: z.number(),
+  }),
+  fees: MempoolFeesSchema,
+  difficulty: z.object({
+    value: z.string(),
+    change: z.string(),
+    height: z.number(),
+  }),
+  mempool: z.object({
+    count: z.number(),
+    size: z.string(),
+    totalFee: z.string(),
+    status: z.string(),
+  }),
+  lastUpdated: z.string(),
+  source: z.string(),
+});
+
+export type BitcoinStatsData = z.infer<typeof BitcoinStatsDataSchema>;
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {
@@ -182,4 +237,71 @@ export async function OPTIONS() {
       "Access-Control-Allow-Headers": "Content-Type",
     },
   });
+}
+
+export interface CacheConfig {
+  maxAge: number; // Primary cache duration in seconds
+  staleWhileRevalidate: number; // How long to serve stale content while revalidating
+  cdnMaxAge?: number; // CDN-specific cache duration
+}
+
+export function applyCacheHeaders(
+  response: Response,
+  strategy: CacheConfig,
+): Response {
+  const cacheControl = `s-maxage=${strategy.maxAge}, stale-while-revalidate=${strategy.staleWhileRevalidate}`;
+
+  response.headers.set("Cache-Control", cacheControl);
+  response.headers.set(
+    "CDN-Cache-Control",
+    `s-maxage=${strategy.cdnMaxAge || strategy.maxAge}`,
+  );
+
+  // Add ETag for better cache validation
+  const etag = `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`;
+  response.headers.set("ETag", etag);
+
+  return response;
+}
+
+export function ErrorResponse(
+  e?: Error,
+  message?: string,
+  status: number = 500,
+) {
+  return new Response(
+    JSON.stringify({
+      success: false,
+      message:
+        message ||
+        (e instanceof Error ? e.message : "Error processing request"),
+      error: e instanceof Error ? e.message : "Unknown error",
+    }),
+    {
+      status,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    },
+  );
+}
+
+export function SuccessResponse(
+  data: Record<string, unknown>,
+  status: number = 200,
+) {
+  return new Response(
+    JSON.stringify({
+      success: true,
+      ...data,
+    }),
+    {
+      status,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    },
+  );
 }

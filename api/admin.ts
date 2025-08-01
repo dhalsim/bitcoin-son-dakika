@@ -1,17 +1,127 @@
 import { hexToBytes } from "@noble/hashes/utils";
-import { finalizeEvent, nip19 } from "nostr-tools";
-
-import type { AuthResult } from "../api-helpers/types.js";
-import type { ArticleTag, NewsTag } from "../api-helpers/utils.js";
+import type { NostrEvent } from "nostr-tools";
 import {
-  ErrorResponse,
-  SuccessResponse,
-  ADMIN_RELAYS,
-  authenticateNIP98,
-  fetchNostrSets,
-  PublishEventResponse,
-} from "../api-helpers/utils.js";
-import { publishToRelays } from "../src/lib/utils.js";
+  finalizeEvent,
+  nip19,
+  Relay,
+  SimplePool,
+  verifyEvent,
+} from "nostr-tools";
+
+import { ErrorResponse, SuccessResponse } from "./bitcoin-stats/mempool";
+
+export type PublishEventResponse = {
+  message: string;
+  result: PublishToRelaysResult[];
+};
+
+function PublishEventResponse(
+  response: PublishEventResponse,
+  data: Record<string, unknown> = {},
+  status: number = 200,
+) {
+  return new Response(
+    JSON.stringify({
+      success: response.result.some((r) => r.success),
+      ...response,
+      ...data,
+    }),
+    {
+      status,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    },
+  );
+}
+
+export interface Context {
+  request: Request;
+  env: {
+    MASTER_ADMIN_PRIVATEKEY: string;
+  };
+}
+
+export type UserRole = "admin" | "editor";
+
+export interface AuthContext {
+  env: {
+    MASTER_ADMIN_PRIVATEKEY: string;
+  };
+}
+
+export type AuthResult =
+  | {
+      success: true;
+      pubkey: string;
+      roles: UserRole[];
+    }
+  | {
+      success: false;
+      error: string;
+      status: number;
+    };
+
+export type ArticleTag = {
+  aTag: string;
+  relay: string;
+};
+
+export type NewsTag = {
+  eTag: string;
+  relay: string;
+};
+
+export type FetchNostrSetsResult = {
+  adminUsers: string[];
+  editorUsers: string[];
+  articleTags: ArticleTag[];
+  newsTags: NewsTag[];
+};
+
+export type PublishToRelaysResult =
+  | { success: true; relay: string }
+  | { success: false; relay: string; error: string };
+
+export function publishToRelays(
+  event: NostrEvent,
+  relayStrings: string[],
+): Promise<PublishToRelaysResult[]> {
+  return Promise.all(
+    relayStrings.map(async (r) => {
+      try {
+        const relay = new Relay(r);
+
+        await relay.connect();
+        await relay.publish(event);
+
+        return { success: true, relay: r };
+      } catch (error) {
+        return { success: false, relay: r, error: error.message };
+      }
+    }),
+  );
+}
+
+export const ADMIN_RELAYS = [
+  "wss://relay.nostr.band",
+  "wss://relay.damus.io",
+  "wss://nos.lol",
+  "wss://relay.primal.net",
+  "wss://relay.snort.social",
+  "wss://nostr.bitcoiner.social",
+  "wss://nostr.mom",
+  "wss://nostr-pub.wellorder.net",
+  "wss://relay.nos.social",
+];
+
+// Master admin public key (derived from private key)
+export const MASTER_ADMIN_PUBKEY =
+  "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
+
+export const pool = new SimplePool();
+pool.trackRelays = true;
 
 // Vercel Edge Function handler for GET requests
 export async function GET(_request: Request) {
@@ -57,14 +167,14 @@ export async function POST(request: Request) {
     });
 
     // MANDATORY AUTHENTICATION for all POST actions
-    const authResult = await authenticateNIP98(
+    const authResult: AuthResult = await authenticateNIP98(
       request.headers.get("Authorization") || "",
       adminUsers,
       editorUsers,
       ["editor", "admin"],
     );
 
-    if (!authResult.success) {
+    if (authResult.success !== true) {
       return ErrorResponse(undefined, authResult.error, authResult.status);
     }
 
@@ -638,7 +748,7 @@ async function handleTriggerDeploy(request: Request) {
       ["editor", "admin"],
     );
 
-    if (!authResult.success) {
+    if (authResult.success !== true) {
       return ErrorResponse(undefined, authResult.error, authResult.status);
     }
 
@@ -848,3 +958,259 @@ async function updateNostrUserSet(
     return ErrorResponse(error);
   }
 }
+
+/**
+ * Authenticate using NIP-98 Nostr auth scheme and check roles from Nostr events
+ */
+export async function authenticateNIP98(
+  authHeader: string,
+  adminUsers: string[],
+  editorUsers: string[],
+  requiredRoles: UserRole[],
+): Promise<AuthResult> {
+  try {
+    // Get the Authorization header
+    if (!authHeader || !authHeader.startsWith("Nostr ")) {
+      return {
+        success: false,
+        error: "Missing or invalid Authorization header",
+        status: 401,
+      };
+    }
+
+    // Parse the Nostr event from the Authorization header
+    let nostrEvent: NostrEvent;
+    try {
+      const eventBase64 = authHeader.slice(6); // Remove 'Nostr ' prefix
+      const eventJson = atob(eventBase64);
+      nostrEvent = JSON.parse(eventJson);
+    } catch {
+      return {
+        success: false,
+        error: "Invalid Nostr event format",
+        status: 401,
+      };
+    }
+
+    // Verify the event signature
+    if (!verifyEvent(nostrEvent)) {
+      return {
+        success: false,
+        error: "Invalid event signature",
+        status: 401,
+      };
+    }
+
+    // Verify the event is for the correct method (NIP-98)
+    const urlTag = nostrEvent.tags.find((tag) => tag[0] === "u");
+    const methodTag = nostrEvent.tags.find((tag) => tag[0] === "method");
+
+    if (!urlTag || !methodTag) {
+      return {
+        success: false,
+        error: "Invalid NIP-98 auth event - missing required tags",
+        status: 401,
+      };
+    }
+
+    // Check if the event is not too old (within 10 minutes)
+    const eventTime = nostrEvent.created_at;
+    const currentTime = Math.floor(Date.now() / 1000);
+    const maxAge = 10 * 60; // 10 minutes
+
+    if (currentTime - eventTime > maxAge) {
+      return {
+        success: false,
+        error: "Auth event is too old",
+        status: 401,
+      };
+    }
+
+    // Get user roles from Nostr events
+    const userRoles = await getUserRolesFromNostr(
+      nostrEvent.pubkey,
+      adminUsers,
+      editorUsers,
+    );
+
+    const hasRequiredRole = requiredRoles.some((role) =>
+      userRoles.includes(role),
+    );
+
+    if (!hasRequiredRole) {
+      const requiredRolesString = requiredRoles.join(" or ");
+      const userRolesString = userRoles.join(", ");
+
+      return {
+        success: false,
+        error: `Insufficient permissions. Required: ${requiredRolesString}. Has: ${userRolesString}`,
+        status: 403,
+      };
+    }
+
+    return {
+      success: true,
+      pubkey: nostrEvent.pubkey,
+      roles: userRoles,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Authentication error",
+      status: 500,
+    };
+  }
+}
+
+/**
+ * Fetch Nostr sets for admin users, editor users, articles, and news
+ */
+export async function fetchNostrSets(
+  sets: EventSet[],
+): Promise<FetchNostrSetsResult> {
+  try {
+    let adminUsers: string[] = [];
+    let editorUsers: string[] = [];
+    let articleTags: ArticleTag[] = [];
+    let newsTags: NewsTag[] = [];
+
+    // Fetch admin users set
+    const eventResults: Map<EventSet, NostrEvent> = await fetchSets(sets);
+
+    for (const [set, event] of eventResults) {
+      if (set === "admin-users") {
+        adminUsers = event.tags
+          .filter((tag) => tag[0] === "p" && tag[1])
+          .map((tag) => tag[1]);
+      }
+
+      if (set === "editor-users") {
+        editorUsers = event.tags
+          .filter((tag) => tag[0] === "p" && tag[1])
+          .map((tag) => tag[1]);
+      }
+
+      if (set === "articles") {
+        articleTags = event.tags
+          .filter((tag) => tag[0] === "a" && tag[1] && tag[2])
+          .map((tag) => ({
+            aTag: tag[1],
+            relay: tag[2],
+          }));
+      }
+
+      if (set === "news") {
+        newsTags = event.tags
+          .filter((tag) => tag[0] === "e" && tag[1] && tag[2])
+          .map((tag) => ({
+            eTag: tag[1],
+            relay: tag[2],
+            pubkey: event.pubkey,
+          }));
+      }
+    }
+
+    return {
+      adminUsers,
+      editorUsers,
+      articleTags: articleTags,
+      newsTags: newsTags,
+    };
+  } catch (error) {
+    console.error("Error fetching Nostr sets:", error);
+
+    throw error;
+  }
+}
+
+/**
+ * Get user roles from Nostr events
+ */
+export async function getUserRolesFromNostr(
+  pubkey: string,
+  adminUsers: string[],
+  editorUsers: string[],
+): Promise<UserRole[]> {
+  const roles: UserRole[] = [];
+
+  try {
+    if (adminUsers.includes(pubkey)) {
+      roles.push("admin");
+    }
+
+    if (editorUsers.includes(pubkey)) {
+      roles.push("editor");
+    }
+  } catch (error) {
+    console.error("Error getting user roles from Nostr:", error);
+
+    throw error;
+  }
+
+  return roles;
+}
+
+function getEventSetType(set: EventSet, type: "follow" | "curation"): boolean {
+  return set === "admin-users" || set === "editor-users"
+    ? type === "follow"
+    : type === "curation";
+}
+
+export type EventSet = "admin-users" | "editor-users" | "articles" | "news";
+
+const fetchSets = async (
+  sets: EventSet[],
+): Promise<Map<EventSet, NostrEvent>> => {
+  const hasFollowSet = sets.some((set) => getEventSetType(set, "follow"));
+  const hasCurationSet = sets.some((set) => getEventSetType(set, "curation"));
+
+  const kinds: number[] = [
+    hasFollowSet ? 30000 : null,
+    hasCurationSet ? 30004 : null,
+  ].filter(Boolean) as number[];
+
+  return new Promise((resolve, reject) => {
+    const events = new Map<EventSet, NostrEvent>();
+
+    // Use the correct nostr-tools API for fetching events
+    pool.subscribeEose(
+      ADMIN_RELAYS,
+      {
+        kinds,
+        authors: [MASTER_ADMIN_PUBKEY],
+        "#d": sets,
+      },
+      {
+        onevent(evt) {
+          const dTag = evt.tags.find((tag) => tag[0] === "d")?.[1];
+
+          if (!dTag) {
+            return;
+          }
+
+          if (!sets.includes(dTag as EventSet)) {
+            return;
+          }
+
+          if (events.has(dTag as EventSet)) {
+            // check if the event in the map is newer
+            const existingEvent = events.get(dTag as EventSet);
+
+            if (existingEvent && existingEvent.created_at > evt.created_at) {
+              return;
+            }
+          }
+
+          events.set(dTag as EventSet, evt);
+        },
+        onclose() {
+          if (events.size === sets.length) {
+            resolve(events);
+          } else {
+            reject(new Error("Not all events received"));
+          }
+        },
+      },
+    );
+  });
+};

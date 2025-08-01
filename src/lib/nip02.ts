@@ -1,8 +1,7 @@
 import type { NostrEvent } from "nostr-tools";
 
-import { PROFILE_RELAYS } from "../../api-helpers/utils";
-
 import { getCache } from "./cache";
+import { PROFILE_RELAYS } from "./nip01";
 import { getNip07Relays } from "./nip07";
 import { fetchNip65Relays } from "./nip65";
 import { pool } from "./utils";
