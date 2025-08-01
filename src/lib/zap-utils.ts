@@ -1,4 +1,5 @@
-import { type NostrEvent, nip57 } from "nostr-tools";
+import type { EventTemplate } from "nostr-tools";
+import { type NostrEvent } from "nostr-tools";
 
 import { getCache } from "./cache";
 import { getUserPubkey, signEventByNip07 } from "./nip07";
@@ -41,20 +42,26 @@ export async function createZap({
   relays,
 }: CreateZapParams): Promise<string> {
   try {
-    const zapRequestEvent = nip57.makeZapRequest({
-      profile: zappedEvent.pubkey,
-      event: zappedEvent,
-      amount: amountInSats * 1000,
-      comment,
-      relays,
-    });
+    const amountInMilliSats = amountInSats * 1000;
+
+    const zapRequestEvent: EventTemplate = {
+      kind: 9734,
+      created_at: Math.round(Date.now() / 1000),
+      content: comment,
+      tags: [
+        ["e", zappedEvent.id],
+        ["p", zappedEvent.pubkey],
+        ["amount", amountInMilliSats.toString()],
+        ["relays", ...relays],
+      ],
+    };
 
     const signedZapRequestEvent = await signEventByNip07(zapRequestEvent);
 
     // GET request to zap endpoint
     const zapEndpoint = lnurlData.callback;
 
-    const url = `${zapEndpoint}?amount=${amountInSats * 1000}&nostr=${encodeURIComponent(
+    const url = `${zapEndpoint}?amount=${amountInMilliSats}&nostr=${encodeURIComponent(
       JSON.stringify(signedZapRequestEvent),
     )}&comment=${encodeURIComponent(comment)}`;
 
@@ -127,7 +134,7 @@ export async function listenForZapReceipt(
 
   let received = false;
 
-  pool.subscribeEose(
+  pool.subscribe(
     relays,
     {
       authors: [lnurlData.nostrPubkey],
@@ -142,7 +149,7 @@ export async function listenForZapReceipt(
     },
   );
 
-  pool.subscribeEose(
+  const subCloser = pool.subscribe(
     relays,
     {
       authors: [lnurlData.nostrPubkey],
@@ -186,6 +193,8 @@ export async function listenForZapReceipt(
         // add to cache
         cachedZaps.set(zapReceiptEvent.id, zapReceipt);
         cache.setNip57Zaps(event.id, cachedZaps);
+
+        subCloser.close();
       },
     },
   );

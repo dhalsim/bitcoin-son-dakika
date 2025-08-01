@@ -171,7 +171,9 @@ const PriceBar = () => {
 
     // Listen for user interactions
     container.addEventListener("mousedown", handleUserInteraction);
-    container.addEventListener("touchstart", handleUserInteraction);
+    container.addEventListener("touchstart", handleUserInteraction, {
+      passive: true,
+    });
     container.addEventListener("wheel", handleUserInteraction);
 
     return () => {
