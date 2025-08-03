@@ -10,51 +10,45 @@ const cache = getCache();
 export function getReposts(
   event: NostrEvent,
   relays: string[],
-  onUpdate: (reposts: NostrEvent[]) => void,
+  cachedReposts: Map<string, NostrEvent>,
+  onUpdate: (reposts: Map<string, NostrEvent>) => void,
 ) {
-  const cachedReposts = cache.getNip18Reposts(event.id);
+  const newReposts = new Map<string, NostrEvent>();
 
-  if (cachedReposts) {
-    onUpdate(cachedReposts);
-  }
-
-  const reposts = [];
-
-  pool.subscribeEose(
+  const sub = pool.subscribe(
     relays,
     {
       kinds: [6], // kind 6 (repost)
       "#e": [event.id],
     },
     {
-      onevent: (evt) => {
-        reposts.push(evt);
+      alreadyHaveEvent(id) {
+        return cachedReposts.has(id);
       },
-      onclose: () => {
-        const sortedReposts = reposts.sort(
-          (a, b) => a.created_at - b.created_at,
-        );
+      onevent: (evt) => {
+        newReposts.set(evt.id, evt);
+        cachedReposts.set(evt.id, evt);
+      },
+      oneose: () => {
+        // Got all stored events
+        // send the reposts that we didn't send yet
+        if (newReposts.size) {
+          onUpdate(newReposts);
+          newReposts.clear();
 
-        if (cachedReposts && sortedReposts.length) {
-          const sortedRepostsIds = sortedReposts
-            .map((repost) => repost.id)
-            .join(",");
-          const cachedRepostsIds = cachedReposts
-            .map((repost) => repost.id)
-            .join(",");
-
-          if (sortedRepostsIds === cachedRepostsIds) {
-            // nothing to update
-            return;
-          }
+          // now we need to update the cache with all the reposts
+          // Create a new Map to avoid mutation issues
+          const updatedReposts = new Map([...cachedReposts]);
+          cache.setNip18Reposts(event.id, updatedReposts);
         }
-
-        cache.setNip18Reposts(event.id, sortedReposts);
-
-        onUpdate(sortedReposts);
       },
     },
   );
+
+  // Return cleanup function
+  return () => {
+    sub.close();
+  };
 }
 
 export async function postRepost(
@@ -111,7 +105,7 @@ export function getKind1Quotes(
   onUpdate: (quotes: Map<string, NostrEvent>) => void,
 ) {
   const identifier = getEventIdentifier(event);
-  const cachedQuotes = cache.getNip10Quotes(identifier) || new Map();
+  const cachedQuotes = cache.getNip18Quotes(identifier);
 
   if (cachedQuotes && cachedQuotes.size) {
     onUpdate(cachedQuotes);
@@ -136,7 +130,7 @@ export function getKind1Quotes(
       },
       onclose: () => {
         if (fetched) {
-          cache.setNip10Quotes(identifier, cachedQuotes);
+          cache.setNip18Quotes(identifier, cachedQuotes);
 
           onUpdate(cachedQuotes);
         }

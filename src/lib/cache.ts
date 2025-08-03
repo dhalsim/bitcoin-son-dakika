@@ -159,7 +159,7 @@ export class LocalStorageCache {
     this.setToStorage(key, value);
   }
 
-  getNip10Replies(eventId: string): Map<string, NostrEvent> | null {
+  getNip10Replies(eventId: string): Map<string, NostrEvent> {
     const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
       `nip10-replies-${eventId}`,
     );
@@ -173,16 +173,30 @@ export class LocalStorageCache {
     this.setToStorage(key, Array.from(replies.entries()));
   }
 
-  getNip10Quotes(identifier: string): Map<string, NostrEvent> | null {
+  getNip18Quotes(identifier: string): Map<string, NostrEvent> {
     const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
-      `nip10-quotes-${identifier}`,
+      `nip18-quotes-${identifier}`,
     );
 
     return new Map(parsedArray);
   }
 
-  setNip10Quotes(identifier: string, value: Map<string, NostrEvent>): void {
-    const key = `nip10-quotes-${identifier}`;
+  getNip18Reposts(eventId: string): Map<string, NostrEvent> {
+    const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
+      `nip18-reposts-${eventId}`,
+    );
+
+    return new Map(parsedArray);
+  }
+
+  setNip18Reposts(eventId: string, value: Map<string, NostrEvent>): void {
+    const key = `nip18-reposts-${eventId}`;
+    this.cache.set(key, value);
+    this.setToStorage(key, Array.from(value.entries()));
+  }
+
+  setNip18Quotes(identifier: string, value: Map<string, NostrEvent>): void {
+    const key = `nip18-quotes-${identifier}`;
     this.cache.set(key, value);
     this.setToStorage(key, Array.from(value.entries()));
   }
@@ -207,17 +221,7 @@ export class LocalStorageCache {
     this.setToStorage(key, value);
   }
 
-  getNip18Reposts(eventId: string): NostrEvent[] | null {
-    return this.getCachedValue(`nip18-reposts-${eventId}`);
-  }
-
-  setNip18Reposts(eventId: string, value: NostrEvent[]): void {
-    const key = `nip18-reposts-${eventId}`;
-    this.cache.set(key, value);
-    this.setToStorage(key, value);
-  }
-
-  getNip25Reactions(eventId: string): Map<string, NostrEvent> | null {
+  getNip25Reactions(eventId: string): Map<string, NostrEvent> {
     const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
       `nip25-reactions-${eventId}`,
     );

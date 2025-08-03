@@ -35,7 +35,7 @@ export function getKind1Replies(
   relays: string[],
   onUpdate: (replies: Map<string, NostrEvent>) => void,
 ) {
-  const cachedReplies = cache.getNip10Replies(event.id) || new Map();
+  const cachedReplies = cache.getNip10Replies(event.id);
 
   if (cachedReplies.size) {
     onUpdate(cachedReplies);

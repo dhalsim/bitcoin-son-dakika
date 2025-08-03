@@ -1,5 +1,6 @@
 import type { NostrEvent } from "nostr-tools";
 
+import { getCache } from "./cache";
 import { getKind1Replies } from "./nip10";
 import { getReposts, getKind1Quotes } from "./nip18";
 import { getArticleReplies } from "./nip22";
@@ -10,7 +11,7 @@ export type EventStatistics = {
   zaps: Map<string, ZapReceipt>;
   replies: Map<string, NostrEvent>;
   quotes: Map<string, NostrEvent>;
-  reposts: NostrEvent[];
+  reposts: Map<string, NostrEvent>;
   likes: NostrEvent[];
   dislikes: NostrEvent[];
   emojis: {
@@ -101,29 +102,42 @@ function chooseBestUrl(urls: string[]): string {
   return Object.entries(urlCounts).sort(([, a], [, b]) => b - a)[0][0];
 }
 
+const cache = getCache();
+
 // Updated reaction processing
 export function getEventStatistics(
   event: NostrEvent,
   onUpdate: (statistics: EventStatistics) => void,
 ) {
-  // Initialize statistics object
+  // Initialize statistics object with the cache directly
   const stats: EventStatistics = {
-    zaps: new Map(),
-    replies: new Map(),
-    quotes: new Map(),
-    reposts: [],
+    zaps: cache.getNip57Zaps(event.id),
+    replies: cache.getNip10Replies(event.id),
+    quotes: cache.getNip18Quotes(event.id),
+    reposts: cache.getNip18Reposts(event.id),
     likes: [],
     dislikes: [],
     emojis: {},
   };
 
+  const cleanupFunctions: (() => void)[] = [];
+
   // Get reposts (NIP-18) - only for kind 1 events
   if (event.kind === 1) {
-    getReposts(event, STATISTICS_RELAYS, (reposts) => {
-      stats.reposts = reposts || [];
+    const repostCleanup = getReposts(
+      event,
+      STATISTICS_RELAYS,
+      stats.reposts,
+      (reposts) => {
+        // merge the reposts with the cache
+        stats.reposts = new Map([...stats.reposts, ...reposts]);
 
-      onUpdate({ ...stats });
-    });
+        onUpdate({ ...stats });
+      },
+    );
+    if (repostCleanup) {
+      cleanupFunctions.push(repostCleanup);
+    }
   }
 
   // Get reactions (NIP-25) - works for all event types
@@ -195,7 +209,9 @@ export function getEventStatistics(
       onUpdate({ ...stats });
     });
 
-    return;
+    return () => {
+      cleanupFunctions.forEach((cleanup) => cleanup());
+    };
   } else if (event.kind === 30023) {
     // Kind 30023 (articles) - use NIP-22
     getArticleReplies(event, STATISTICS_RELAYS, (replies) => {
@@ -216,7 +232,9 @@ export function getEventStatistics(
       onUpdate({ ...stats });
     });
 
-    return;
+    return () => {
+      cleanupFunctions.forEach((cleanup) => cleanup());
+    };
   }
 
   throw new Error("Event type not supported");

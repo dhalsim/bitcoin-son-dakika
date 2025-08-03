@@ -163,6 +163,9 @@ export function EventStatistics({
   author,
   className = "",
 }: EventStatisticsProps) {
+  const [currentUserPubkey, setCurrentUserPubkey] = useState<string | null>(
+    null,
+  );
   const [statistics, setStatistics] = useState<EventStatistics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,9 +181,9 @@ export function EventStatistics({
   const [showQuotes, setShowQuotes] = useState(false);
   const [quoteContent, setQuoteContent] = useState("");
   const [showQuotePreview, setShowQuotePreview] = useState(false);
-  const [profiles, setProfiles] = useState<{ [pubkey: string]: ProfileItem }>(
-    {},
-  );
+  const [profiles, setProfiles] = useState<{
+    [pubkey: string]: ProfileItem | null;
+  }>({});
   const [showZapDialog, setShowZapDialog] = useState(false);
   const [userPubkey, setUserPubkey] = useState<string | null>(null);
   const [hasZapped, setHasZapped] = useState(false);
@@ -190,41 +193,12 @@ export function EventStatistics({
   const threadContainerRef = useRef<HTMLDivElement>(null);
   const quotesContainerRef = useRef<HTMLDivElement>(null);
 
-  // Load draft on mount
-  useEffect(() => {
-    if (event?.id) {
-      const draft = loadDraft(event.id);
-      setReplyContent(draft);
-    }
-  }, [event?.id]);
-
-  // Save draft when content changes
-  useEffect(() => {
-    if (event?.id && replyContent !== loadDraft(event.id)) {
-      saveDraft(event.id, replyContent);
-    }
-  }, [replyContent, event?.id]);
-
-  // Load quote draft on mount
-  useEffect(() => {
-    if (event?.id) {
-      const quoteDraft = loadDraft(`quote-${event.id}`);
-      setQuoteContent(quoteDraft);
-    }
-  }, [event?.id]);
-
-  // Save quote draft when content changes
-  useEffect(() => {
-    if (event?.id && quoteContent !== loadDraft(`quote-${event.id}`)) {
-      saveDraft(`quote-${event.id}`, quoteContent);
-    }
-  }, [quoteContent, event?.id]);
-
   const updateStatistics = useCallback((stats: EventStatistics) => {
+    // Extract all pubkeys from the statistics
     const statPubkeys = [
-      ...Object.values(stats.replies).map((reply) => reply.pubkey),
-      ...Object.values(stats.quotes).map((quote) => quote.pubkey),
-      ...stats.reposts.map((repost) => repost.pubkey),
+      ...Array.from(stats.replies.values()).map((reply) => reply.pubkey),
+      ...Array.from(stats.quotes.values()).map((quote) => quote.pubkey),
+      ...Array.from(stats.reposts.values()).map((repost) => repost.pubkey),
       ...stats.likes.map((like) => like.pubkey),
       ...stats.dislikes.map((dislike) => dislike.pubkey),
       ...Object.entries(stats.emojis).flatMap(([_, customEmoji]) =>
@@ -234,6 +208,7 @@ export function EventStatistics({
 
     const uniquePubkeys = [...new Set(statPubkeys)];
 
+    // Fetch profile events for all unique pubkeys
     getKind0Events(
       uniquePubkeys,
       (pubkey, event) => {
@@ -265,25 +240,71 @@ export function EventStatistics({
     setLoading(false);
   }, []);
 
+  // Load event statistics
   useEffect(() => {
-    if (!event) {
-      setStatistics(null);
-
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
-    try {
-      getEventStatistics(event, updateStatistics);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch statistics",
-      );
-      setLoading(false);
-    }
+    const cleanup = getEventStatistics(event, updateStatistics);
+
+    // Return cleanup function
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
   }, [event, updateStatistics]);
+
+  // Get current user's pubkey
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const pubkey = await getUserPubkey();
+      setCurrentUserPubkey(pubkey);
+    };
+
+    getCurrentUser();
+  }, []);
+
+  // Load draft on mount
+  useEffect(() => {
+    if (event?.id) {
+      const draft = loadDraft(event.id);
+      setReplyContent(draft);
+    }
+  }, [event?.id]);
+
+  // Save draft when content changes
+  useEffect(() => {
+    if (event?.id && replyContent !== loadDraft(event.id)) {
+      saveDraft(event.id, replyContent);
+    }
+  }, [replyContent, event?.id]);
+
+  // Load quote draft on mount
+  useEffect(() => {
+    if (event?.id) {
+      const quoteDraft = loadDraft(`quote-${event.id}`);
+      setQuoteContent(quoteDraft);
+    }
+  }, [event?.id]);
+
+  // Save quote draft when content changes
+  useEffect(() => {
+    if (event?.id && quoteContent !== loadDraft(`quote-${event.id}`)) {
+      saveDraft(`quote-${event.id}`, quoteContent);
+    }
+  }, [quoteContent, event?.id]);
+
+  // Check if current user has reposted this event
+  const hasUserReposted = useMemo(() => {
+    if (!currentUserPubkey || !statistics?.reposts) {
+      return false;
+    }
+
+    return Array.from(statistics.reposts.values()).some(
+      (repost) => repost.pubkey === currentUserPubkey,
+    );
+  }, [currentUserPubkey, statistics?.reposts]);
 
   // Handle scroll detection for gradient overlay
   const handleThreadScroll = () => {
@@ -372,7 +393,7 @@ export function EventStatistics({
     // Calculate counts from event arrays with null checks
     const _repliesCount = statistics?.replies?.size || 0;
     const _quotesCount = statistics?.quotes?.size || 0;
-    const _repostsCount = statistics?.reposts?.length || 0;
+    const _repostsCount = statistics?.reposts?.size || 0;
     const _likesCount = statistics?.likes?.length || 0;
     const _dislikesCount = statistics?.dislikes?.length || 0;
     const _zapCount = zaps.length;
@@ -411,7 +432,9 @@ export function EventStatistics({
         key: "repost",
         icon: <Repeat2 className="h-4 w-4" />,
         count: _repostsCount,
-        events: statistics?.reposts || [],
+        events: statistics?.reposts
+          ? Array.from(statistics.reposts.values())
+          : [],
         color: "text-blue-600",
       });
     }
@@ -780,8 +803,10 @@ export function EventStatistics({
           {event.kind === 1 && (
             <button
               onClick={handleRepostClick}
-              className="flex items-center space-x-1 hover:text-blue-600 transition-colors cursor-pointer"
-              title="Yeniden paylaş"
+              className={`flex items-center space-x-1 transition-colors cursor-pointer ${
+                hasUserReposted ? "text-blue-600" : "hover:text-blue-600"
+              }`}
+              title={hasUserReposted ? "Reposted" : "Yeniden paylaş"}
             >
               <Repeat2 className="h-4 w-4" />
               <span>{repostsCount}</span>
