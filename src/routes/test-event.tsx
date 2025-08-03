@@ -3,11 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router";
 
 import NewsCard from "@/components/NewsCard";
-import {
-  getKind0Events,
-  parseProfileEvent,
-  type ProfileItem,
-} from "@/lib/nip01";
+import { getProfiles, type ProfileItem } from "@/lib/nip01";
 import { pool } from "@/lib/utils";
 
 export default function TestEventPage() {
@@ -22,17 +18,29 @@ export default function TestEventPage() {
       return undefined;
     }
 
-    getKind0Events(
-      [event.pubkey],
-      (_pubkey, profileEvent) => {
-        const profile: ProfileItem | null = parseProfileEvent(profileEvent);
+    const cleanup = getProfiles({
+      authors: [event.pubkey],
+      onUpdate: (_pubkey, profile) => {
+        setAuthor(profile);
+      },
+      oneose: () => {},
+      onclose: (reasons) => {
+        const nonEoseReasons = reasons.filter(
+          (r) =>
+            r !== "closed automatically on eose" && r !== "closed by client",
+        );
 
-        if (profile) {
-          setAuthor(profile);
+        if (nonEoseReasons.length > 0) {
+          console.log("Profile subscription closed:", reasons);
         }
       },
-      () => {},
-    );
+    });
+
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
   }, [event]);
 
   const time = useMemo(() => {
@@ -177,6 +185,7 @@ export default function TestEventPage() {
           category={category}
           time={time}
           publishedAt={event.created_at}
+          eventRelayHint={"wss://relay.nostr.band"}
           nostrEvent={event}
           author={author}
         />

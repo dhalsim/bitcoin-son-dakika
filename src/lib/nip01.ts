@@ -6,50 +6,6 @@ import { PROFILE_RELAYS } from "../../api-helpers/utils";
 import { getCache } from "./cache";
 import { pool } from "./utils";
 
-const cache = getCache();
-
-export async function getKind0Events(
-  authors: string[],
-  onUpdate: (pubkey: string, event: NostrEvent) => void,
-  onclose: (reasons: string[]) => void,
-) {
-  authors.forEach((author) => {
-    const cachedEvent = cache.getKind0Event(author);
-
-    if (cachedEvent) {
-      onUpdate(author, cachedEvent);
-    }
-  });
-
-  pool.subscribeEose(
-    PROFILE_RELAYS,
-    {
-      authors: authors,
-      kinds: [0],
-    },
-    {
-      onevent: (event) => {
-        const cachedEvent = cache.getKind0Event(event.pubkey);
-
-        if (cachedEvent && event.created_at < cachedEvent.created_at) {
-          // nothing to update
-          return;
-        }
-
-        if (cachedEvent && event.id === cachedEvent.id) {
-          // nothing to update
-          return;
-        }
-
-        cache.setKind0Event(event.pubkey, event);
-
-        onUpdate(event.pubkey, event);
-      },
-      onclose,
-    },
-  );
-}
-
 // Helper function to parse kind 0 profile event
 export const parseProfileEvent = (event: NostrEvent): ProfileItem | null => {
   try {
@@ -94,15 +50,26 @@ export const ProfileItemSchema = z.object({
 
 export type ProfileItem = z.infer<typeof ProfileItemSchema>;
 
+const cache = getCache();
+
+export type GetProfilesParams = {
+  authors: string[];
+  onUpdate: (pubkey: string, profile: ProfileItem) => void;
+  oneose: () => void;
+  onclose: (reasons: string[]) => void;
+};
+
 // New optimized function that works with ProfileItem cache
-export function getProfiles(
-  authors: string[],
-  onUpdate: (pubkey: string, profile: ProfileItem) => void,
-  onclose: (reasons: string[]) => void,
-) {
+export function getProfiles({
+  authors,
+  onUpdate,
+  oneose,
+  onclose,
+}: GetProfilesParams) {
   // First check cache and immediately return cached ProfileItem objects
   authors.forEach((author) => {
     const cachedProfile = cache.getProfileItem(author);
+
     if (cachedProfile) {
       onUpdate(author, cachedProfile);
     }
@@ -148,9 +115,7 @@ export function getProfiles(
 
         onUpdate(event.pubkey, newProfile);
       },
-      oneose: () => {
-        // Connection stays open for real-time updates
-      },
+      oneose,
       onclose,
     },
   );

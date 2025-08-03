@@ -3,7 +3,7 @@ import type { NostrEvent } from "nostr-tools";
 import { fetchNostrSets, pool } from "../../api-helpers/utils";
 
 import type { ProfileItem } from "./nip01";
-import { parseProfileEvent, getKind0Events } from "./nip01";
+import { getProfiles } from "./nip01";
 
 export interface NewsItem {
   id: string;
@@ -137,19 +137,13 @@ export async function fetchSSGData(): Promise<SSGData> {
 
   const profileEvents = await getProfileEvents(Array.from(profilePubkeys));
 
-  console.log("profileEvents", profileEvents);
-
   const newsItems: NewsItem[] = newsEvents.map((ne) => {
-    const author = profileEvents.get(ne.pubkey);
-
-    if (!author) {
-      throw new Error(`Author not found: ${ne.pubkey}`);
-    }
-
-    const profile = parseProfileEvent(author);
+    const profile = profileEvents.get(ne.pubkey);
 
     if (!profile) {
-      throw new Error(`Profile parse error: ${ne.pubkey}`);
+      throw new Error(
+        `Author not found or profile can't be parsed: ${ne.pubkey}`,
+      );
     }
 
     const relayHintTag = newsTags.find((tag) => tag.eTag === ne.id);
@@ -162,13 +156,13 @@ export async function fetchSSGData(): Promise<SSGData> {
   });
 
   const articleItems: ArticleItem[] = articlesEvents.map((ae) => {
-    const author = profileEvents.get(ae.pubkey);
+    const profile = profileEvents.get(ae.pubkey);
 
-    if (!author) {
-      throw new Error(`Author not found: ${ae.pubkey}`);
+    if (!profile) {
+      throw new Error(
+        `Author not found or profile can't be parsed: ${ae.pubkey}`,
+      );
     }
-
-    const profile = parseProfileEvent(author);
 
     const dTag = ae.tags.find((tag) => tag[0] === "d");
 
@@ -204,39 +198,43 @@ export async function fetchSSGData(): Promise<SSGData> {
 
 export function getProfileEvents(
   profilePubkeys: string[],
-): Promise<Map<string, NostrEvent>> {
+): Promise<Map<string, ProfileItem>> {
   return new Promise((resolve, reject) => {
-    const profileEvents = new Map<string, NostrEvent>();
+    const profileEvents = new Map<string, ProfileItem>();
 
-    getKind0Events(
-      profilePubkeys,
-      (p, kind0Event) => {
-        if (profileEvents.has(p)) {
-          const existingProfile = profileEvents.get(p);
-
-          if (
-            existingProfile &&
-            existingProfile.created_at < kind0Event.created_at
-          ) {
-            // update profile event with newer one
-            profileEvents.set(p, kind0Event);
-          }
-
-          return;
-        }
-
-        profileEvents.set(p, kind0Event);
+    const cleanup = getProfiles({
+      authors: profilePubkeys,
+      onUpdate: (p, profileEvent) => {
+        profileEvents.set(p, profileEvent);
       },
-      (reasons) => {
+      oneose: () => {
         if (profileEvents.size === profilePubkeys.length) {
+          cleanup();
+
           return resolve(profileEvents);
+        } else {
+          cleanup();
+
+          reject(new Error("Some profile events not found"));
         }
-
-        console.log("Some profile events not found, reasons:", reasons);
-
-        reject(new Error("Some profile events not found"));
       },
-    );
+      onclose: (reasons) => {
+        const nonEoseReasons = reasons.filter(
+          (r) =>
+            r !== "closed automatically on eose" && r !== "closed by client",
+        );
+
+        if (nonEoseReasons.length > 0) {
+          console.log("Profile subscription closed:", reasons);
+        }
+      },
+    });
+
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
   });
 }
 

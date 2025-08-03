@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Popover,
@@ -127,6 +128,9 @@ export function ActionButtons({
               <DialogContent className="max-w-[32rem]">
                 <DialogHeader>
                   <DialogTitle>Emoji seç</DialogTitle>
+                  <DialogDescription>
+                    Bir emoji seçerek tepki verin.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[400px] overflow-y-auto">
                   <EmojiBoard onEmojiSelected={handleEmojiModalSelect} />

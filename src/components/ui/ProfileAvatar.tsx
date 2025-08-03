@@ -110,7 +110,6 @@ export function ProfileAvatar({
     </div>
   );
 
-  // Mobile: Use Popover for better mobile UX
   return (
     <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
       <PopoverTrigger asChild>{avatarElement}</PopoverTrigger>

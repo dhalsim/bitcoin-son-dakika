@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { EventStatistics } from "@/lib/event-statistics";
@@ -135,6 +136,7 @@ export function ZapInvoiceDialog({
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Zap Gönderildi</DialogTitle>
+            <DialogDescription>Zap başarıyla gönderildi.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 pt-4">
@@ -163,6 +165,9 @@ export function ZapInvoiceDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Zap Faturası</DialogTitle>
+          <DialogDescription>
+            Lightning Network üzerinden ödeme yapmak için faturayı kullanın.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-4">

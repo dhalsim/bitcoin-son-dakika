@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -200,6 +201,9 @@ export const ZapDialog = memo(function ZapDialog({
               <Zap className="h-5 w-5 text-orange-500" />
               <span>Zap Modal Yükleniyor...</span>
             </DialogTitle>
+            <DialogDescription>
+              Zap modalı yüklenirken lütfen bekleyin.
+            </DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -215,6 +219,9 @@ export const ZapDialog = memo(function ZapDialog({
               <Zap className="h-5 w-5 text-orange-500" />
               <span>Kullanıcının Nostr destekli bir Lightning Adresi Yok.</span>
             </DialogTitle>
+            <DialogDescription>
+              Bu kullanıcıya zap göndermek için Lightning adresi gereklidir.
+            </DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -230,6 +237,9 @@ export const ZapDialog = memo(function ZapDialog({
               <Zap className="h-5 w-5 text-orange-500" />
               <span>Zap Gönder</span>
             </DialogTitle>
+            <DialogDescription>
+              Lightning Network üzerinden sats gönderin.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 pt-4">

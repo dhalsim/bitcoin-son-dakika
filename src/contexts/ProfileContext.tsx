@@ -81,10 +81,11 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       // Create new subscription with all requested pubkeys (including old ones)
       const allRequestedPubkeys = Array.from(requestedPubkeys.current);
 
-      const cleanup = getProfiles(
-        allRequestedPubkeys,
-        updateProfile,
-        (reasons) => {
+      const cleanup = getProfiles({
+        authors: allRequestedPubkeys,
+        onUpdate: updateProfile,
+        oneose: () => {},
+        onclose: (reasons) => {
           const nonEoseReasons = reasons.filter(
             (r) =>
               r !== "closed automatically on eose" && r !== "closed by client",
@@ -94,7 +95,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             console.log("Profile subscription closed:", reasons);
           }
         },
-      );
+      });
 
       subscriptionRef.current = cleanup;
     },
@@ -150,32 +151,27 @@ export function useProfileContext(): ProfileContextType {
 // Convenient hooks
 export function useProfile(pubkey: string): ProfileItem | null {
   const { getProfile, requestProfiles } = useProfileContext();
-  const requestedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (pubkey && !getProfile(pubkey) && !requestedRef.current.has(pubkey)) {
-      requestedRef.current.add(pubkey);
+    if (pubkey && !getProfile(pubkey)) {
       requestProfiles([pubkey]);
     }
-  }, [pubkey]); // Remove getProfile and requestProfiles from deps
+  }, [pubkey, getProfile, requestProfiles]);
 
   return getProfile(pubkey);
 }
 
 export function useProfiles(pubkeys: string[]): Map<string, ProfileItem> {
   const { profiles, requestProfiles } = useProfileContext();
-  const requestedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const missingPubkeys = pubkeys.filter(
-      (pubkey) => !profiles.has(pubkey) && !requestedRef.current.has(pubkey),
-    );
+    // Only request profiles that are not already in the global cache
+    const missingPubkeys = pubkeys.filter((pubkey) => !profiles.has(pubkey));
 
     if (missingPubkeys.length > 0) {
-      missingPubkeys.forEach((pubkey) => requestedRef.current.add(pubkey));
       requestProfiles(missingPubkeys);
     }
-  }, [pubkeys]); // Remove profiles and requestProfiles from deps
+  }, [pubkeys, profiles, requestProfiles]);
 
   const result = new Map<string, ProfileItem>();
   pubkeys.forEach((pubkey) => {

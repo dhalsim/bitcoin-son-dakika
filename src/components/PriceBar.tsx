@@ -3,7 +3,13 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import { usePriceData } from "../hooks/usePriceData";
 
 import Chart from "./Chart";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "./ui/dialog";
 
 const PriceBar = () => {
   const { prices, btcPrice, btcChange, loading, error } = usePriceData(300000); // 5 minutes refresh for BTC
@@ -291,6 +297,11 @@ const PriceBar = () => {
             <DialogTitle className="text-foreground">
               {selectedSymbol ? `${selectedSymbol} Grafiği` : "Fiyat Grafiği"}
             </DialogTitle>
+            <DialogDescription>
+              {selectedSymbol
+                ? `${selectedSymbol} fiyat grafiğini görüntüleyin`
+                : "Fiyat grafiğini görüntüleyin"}
+            </DialogDescription>
           </DialogHeader>
           <div className="flex-1 p-6 pt-0 min-h-0">
             {selectedSymbol && (
