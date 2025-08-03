@@ -21,6 +21,7 @@ export interface NewsCardProps {
   featured?: boolean;
   author?: ProfileItem;
   nostrEvent: NostrEvent;
+  eventRelayHint: string;
 }
 
 // Helper function to get time ago from timestamp
@@ -59,6 +60,7 @@ export function convertNewsItemToNewsCardProps(item: NewsItem): NewsCardProps {
     image: item.image,
     author: item.author,
     nostrEvent: item.event,
+    eventRelayHint: item.relayHint,
   };
 }
 
@@ -78,6 +80,7 @@ export function convertArticleItemToNewsCardProps(
     image: item.image,
     author: item.author,
     nostrEvent: item.event,
+    eventRelayHint: item.relayHint,
   };
 }
 
@@ -99,6 +102,7 @@ export function convertToNewsCardProps(
     image: item.image,
     author: item.author,
     nostrEvent: item.event,
+    eventRelayHint: item.relayHint,
   };
 }
 
@@ -111,6 +115,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   featured = false,
   author,
   nostrEvent,
+  eventRelayHint,
 }) => {
   return (
     <Card className="h-full">
@@ -178,6 +183,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
           <div className="mt-4 pt-4 border-t">
             <EventStatistics
               event={nostrEvent}
+              eventRelayHint={eventRelayHint}
               className="justify-start"
               author={author}
             />

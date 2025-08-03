@@ -10,12 +10,12 @@ export interface NewsItem {
   title: string;
   content: string;
   event: NostrEvent;
+  relayHint: string;
   summary?: string;
   publishedAt: number;
   author: ProfileItem;
   tags: string[];
   category?: string;
-  relay?: string;
   image?: string;
 }
 
@@ -24,12 +24,12 @@ export interface ArticleItem {
   title: string;
   content: string;
   event: NostrEvent;
+  relayHint: string;
   summary?: string;
   publishedAt: number;
   author: ProfileItem;
   tags: string[];
   category?: string;
-  relay?: string;
   identifier?: string;
   image?: string;
 }
@@ -40,7 +40,11 @@ export interface SSGData {
   lastUpdated: number;
 }
 
-function processNewsEvent(event: NostrEvent, author: ProfileItem): NewsItem {
+function processNewsEvent(
+  event: NostrEvent,
+  author: ProfileItem,
+  relayHint: string,
+): NewsItem {
   const titleTag = event.tags.find((tag) => tag[0] === "title");
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
   const categoryTag = event.tags.find((tag) => tag[0] === "t");
@@ -51,6 +55,7 @@ function processNewsEvent(event: NostrEvent, author: ProfileItem): NewsItem {
     title: titleTag?.[1] || "Untitled",
     content: event.content,
     event,
+    relayHint,
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
@@ -63,6 +68,7 @@ function processNewsEvent(event: NostrEvent, author: ProfileItem): NewsItem {
 function processArticleEvent(
   event: NostrEvent,
   author: ProfileItem,
+  relayHint: string,
 ): ArticleItem {
   const titleTag = event.tags.find((tag) => tag[0] === "title");
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
@@ -75,6 +81,7 @@ function processArticleEvent(
     title: titleTag?.[1] || "Untitled Article",
     content: event.content,
     event,
+    relayHint,
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
@@ -139,7 +146,13 @@ export async function fetchSSGData(): Promise<SSGData> {
 
     const profile = parseProfileEvent(author);
 
-    return processNewsEvent(ne, profile);
+    const relayHintTag = newsTags.find((tag) => tag.eTag === ne.id);
+
+    if (!relayHintTag) {
+      throw new Error(`Relay hint not found: ${ne.id}`);
+    }
+
+    return processNewsEvent(ne, profile, relayHintTag.relay);
   });
 
   const articleItems: ArticleItem[] = articlesEvents.map((ae) => {
@@ -151,7 +164,21 @@ export async function fetchSSGData(): Promise<SSGData> {
 
     const profile = parseProfileEvent(author);
 
-    return processArticleEvent(ae, profile);
+    const dTag = ae.tags.find((tag) => tag[0] === "d");
+
+    if (!dTag) {
+      throw new Error(`D tag not found: ${ae.id}`);
+    }
+
+    const aTag = `30023:${ae.pubkey}:${dTag[1]}`;
+
+    const relayHintTag = articleTags.find((tag) => tag.aTag === aTag);
+
+    if (!relayHintTag) {
+      throw new Error(`Relay hint not found: ${ae.id}`);
+    }
+
+    return processArticleEvent(ae, profile, relayHintTag.relay);
   });
 
   // Sort by publication date (newest first)

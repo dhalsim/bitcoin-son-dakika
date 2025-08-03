@@ -29,46 +29,6 @@ export function getEventIdentifier(event: NostrEvent) {
   throw new Error("Invalid event kind");
 }
 
-export function getKind1Quotes(
-  event: NostrEvent,
-  relays: string[],
-  onUpdate: (quotes: Map<string, NostrEvent>) => void,
-) {
-  const identifier = getEventIdentifier(event);
-  const cachedQuotes = cache.getNip10Quotes(identifier) || new Map();
-
-  if (cachedQuotes && cachedQuotes.size) {
-    onUpdate(cachedQuotes);
-  }
-
-  let fetched = false;
-
-  pool.subscribeEose(
-    relays,
-    {
-      kinds: [1],
-      "#q": identifier === event.id ? [identifier] : [event.id, identifier],
-    },
-    {
-      onevent: (evt) => {
-        if (cachedQuotes.has(evt.id)) {
-          return;
-        }
-
-        cachedQuotes.set(evt.id, evt);
-        fetched = true;
-      },
-      onclose: () => {
-        if (fetched) {
-          cache.setNip10Quotes(identifier, cachedQuotes);
-
-          onUpdate(cachedQuotes);
-        }
-      },
-    },
-  );
-}
-
 // TODO: deletion of replies is not supported yet
 export function getKind1Replies(
   event: NostrEvent,

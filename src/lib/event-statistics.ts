@@ -1,7 +1,7 @@
 import type { NostrEvent } from "nostr-tools";
 
-import { getKind1Quotes, getKind1Replies } from "./nip10";
-import { getReposts } from "./nip18";
+import { getKind1Replies } from "./nip10";
+import { getReposts, getKind1Quotes } from "./nip18";
 import { getArticleReplies } from "./nip22";
 import { type CustomEmoji, getReactions } from "./nip25";
 import { type ZapReceipt, getZaps } from "./nip57";
@@ -117,12 +117,14 @@ export function getEventStatistics(
     emojis: {},
   };
 
-  // Get reposts (NIP-18) - works for all event types
-  getReposts(event, STATISTICS_RELAYS, (reposts) => {
-    stats.reposts = reposts || [];
+  // Get reposts (NIP-18) - only for kind 1 events
+  if (event.kind === 1) {
+    getReposts(event, STATISTICS_RELAYS, (reposts) => {
+      stats.reposts = reposts || [];
 
-    onUpdate({ ...stats });
-  });
+      onUpdate({ ...stats });
+    });
+  }
 
   // Get reactions (NIP-25) - works for all event types
   getReactions(event, STATISTICS_RELAYS, (reactions) => {

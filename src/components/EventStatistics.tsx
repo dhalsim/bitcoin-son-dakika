@@ -31,6 +31,8 @@ import {
 import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useUserWriteRelays } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
 import { getCache } from "@/lib/cache";
 import { DEFAULT_EMOJI_USAGE } from "@/lib/constants";
 import type { EventStatistics } from "@/lib/event-statistics";
@@ -40,6 +42,7 @@ import { parseProfileEvent, getKind0Events } from "@/lib/nip01";
 import { getUserPubkey } from "@/lib/nip07";
 import { createNip10Thread } from "@/lib/nip10";
 import type { ReplyNode } from "@/lib/nip10";
+import { postQuoteRepost, postRepost } from "@/lib/nip18";
 import { createNip22Thread } from "@/lib/nip22";
 import { extractAmountFromBolt11 } from "@/lib/nip57";
 import { RenderedText } from "@/lib/text-renderer";
@@ -57,6 +60,7 @@ function cleanQuoteContent(content: string): string {
 
 interface EventStatisticsProps {
   event: NostrEvent;
+  eventRelayHint: string;
   author: ProfileItem;
   className: string;
 }
@@ -155,6 +159,7 @@ function RichTextPreview({ content }: { content: string }) {
 
 export function EventStatistics({
   event,
+  eventRelayHint,
   author,
   className = "",
 }: EventStatisticsProps) {
@@ -179,7 +184,11 @@ export function EventStatistics({
   const [showZapDialog, setShowZapDialog] = useState(false);
   const [userPubkey, setUserPubkey] = useState<string | null>(null);
   const [hasZapped, setHasZapped] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(false);
+  const [isQuotesAtBottom, setIsQuotesAtBottom] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const threadContainerRef = useRef<HTMLDivElement>(null);
+  const quotesContainerRef = useRef<HTMLDivElement>(null);
 
   // Load draft on mount
   useEffect(() => {
@@ -275,6 +284,54 @@ export function EventStatistics({
       setLoading(false);
     }
   }, [event, updateStatistics]);
+
+  // Handle scroll detection for gradient overlay
+  const handleThreadScroll = () => {
+    if (threadContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        threadContainerRef.current;
+      const isBottom = scrollTop + clientHeight >= scrollHeight - 1; // 1px tolerance
+      setIsAtBottom(isBottom);
+    }
+  };
+
+  const handleQuotesScroll = () => {
+    if (quotesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        quotesContainerRef.current;
+      const isBottom = scrollTop + clientHeight >= scrollHeight - 1; // 1px tolerance
+      setIsQuotesAtBottom(isBottom);
+    }
+  };
+
+  // Add scroll listeners when containers are available
+  useEffect(() => {
+    const threadContainer = threadContainerRef.current;
+
+    if (threadContainer) {
+      threadContainer.addEventListener("scroll", handleThreadScroll);
+      // Check initial state
+      handleThreadScroll();
+
+      return () => {
+        threadContainer.removeEventListener("scroll", handleThreadScroll);
+      };
+    }
+  }, [showReplies, thread]); // Re-run when replies are shown or thread changes
+
+  useEffect(() => {
+    const quotesContainer = quotesContainerRef.current;
+
+    if (quotesContainer) {
+      quotesContainer.addEventListener("scroll", handleQuotesScroll);
+      // Check initial state
+      handleQuotesScroll();
+
+      return () => {
+        quotesContainer.removeEventListener("scroll", handleQuotesScroll);
+      };
+    }
+  }, [showQuotes]); // Re-run when quotes are shown
 
   // Check if user has zapped this event
   useEffect(() => {
@@ -455,8 +512,38 @@ export function EventStatistics({
     };
   }, [statistics]);
 
+  const writeRelays = useUserWriteRelays();
+  const { toast } = useToast();
+
   const handleRepostClick = () => {
-    // TODO: repost
+    if (writeRelays.length === 0) {
+      toast({
+        title: "Hata",
+        description: "Yazma relayleri bulunamadı",
+        variant: "destructive",
+      });
+
+      return;
+    }
+
+    postRepost(
+      event,
+      eventRelayHint,
+      writeRelays,
+      () => {
+        toast({
+          title: "Başarılı",
+          description: "Repost başarıyla gönderildi",
+        });
+      },
+      (error) => {
+        toast({
+          title: "Hata",
+          description: error,
+          variant: "destructive",
+        });
+      },
+    );
   };
 
   const handleQuoteClick = () => {
@@ -536,18 +623,32 @@ export function EventStatistics({
 
   const handlePostQuote = () => {
     if (quoteContent.trim()) {
-      // TODO: Implement actual quote posting
-      console.log("Posting quote:", quoteContent);
-
-      // Clear draft after successful post
-      setQuoteContent("");
-      cache.deleteDraft(`quote-${event.id}`);
-
       // Optionally close quotes section
       setShowQuotes(false);
 
-      // TODO: Implement actual quote posting,
-      // publish and return the quote event
+      postQuoteRepost(
+        event,
+        quoteContent,
+        eventRelayHint,
+        writeRelays,
+        () => {
+          toast({
+            title: "Başarılı",
+            description: "Alıntı başarıyla gönderildi",
+          });
+
+          // Clear draft after successful post
+          setQuoteContent("");
+          cache.deleteDraft(`quote-${event.id}`);
+        },
+        (error) => {
+          toast({
+            title: "Hata",
+            description: error,
+            variant: "destructive",
+          });
+        },
+      );
     }
   };
 
@@ -675,14 +776,17 @@ export function EventStatistics({
             </PopoverContent>
           </Popover>
 
-          <button
-            onClick={handleRepostClick}
-            className="flex items-center space-x-1 hover:text-blue-600 transition-colors cursor-pointer"
-            title="Yeniden paylaş"
-          >
-            <Repeat2 className="h-4 w-4" />
-            <span>{repostsCount}</span>
-          </button>
+          {/* Only show repost button for kind 1 events (reposts are only for text notes) */}
+          {event.kind === 1 && (
+            <button
+              onClick={handleRepostClick}
+              className="flex items-center space-x-1 hover:text-blue-600 transition-colors cursor-pointer"
+              title="Yeniden paylaş"
+            >
+              <Repeat2 className="h-4 w-4" />
+              <span>{repostsCount}</span>
+            </button>
+          )}
 
           {/* Quotes */}
           <button
@@ -827,7 +931,10 @@ export function EventStatistics({
                 showOnlyCompose ? "hidden" : ""
               }`}
             >
-              <div className="max-h-[300px] overflow-y-auto overflow-x-hidden pr-2">
+              <div
+                ref={threadContainerRef}
+                className="max-h-[300px] overflow-y-auto overflow-x-hidden pr-2"
+              >
                 {loadingThread ? (
                   <div className="animate-pulse space-y-2">
                     <div className="h-12 bg-gray-200 rounded" />
@@ -843,8 +950,10 @@ export function EventStatistics({
                 )}
               </div>
 
-              {/* Fixed gradient overlay at bottom */}
-              <div className="absolute bottom-0 left-0 right-2 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+              {/* Fixed gradient overlay at bottom - only show when not at bottom */}
+              {!isAtBottom && (
+                <div className="absolute bottom-0 left-0 right-2 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+              )}
             </div>
 
             {/* Reply composer */}
@@ -904,8 +1013,11 @@ export function EventStatistics({
         {showQuotes && (
           <div className="mt-4 border-l-2 border-blue-600 pl-4 space-y-3">
             {/* Existing quotes display */}
-            <div className="space-y-2">
-              <div className="max-h-[200px] overflow-y-auto overflow-x-hidden pr-2">
+            <div className="space-y-2 relative">
+              <div
+                ref={quotesContainerRef}
+                className="max-h-[200px] overflow-y-auto overflow-x-hidden pr-2"
+              >
                 {quotesCount > 0 ? (
                   <div className="space-y-2">
                     {Array.from(statistics?.quotes?.values() || []).map(
@@ -952,6 +1064,11 @@ export function EventStatistics({
                   </div>
                 )}
               </div>
+
+              {/* Fixed gradient overlay at bottom - only show when not at bottom */}
+              {!isQuotesAtBottom && (
+                <div className="absolute bottom-0 left-0 right-2 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+              )}
             </div>
 
             {/* Quote composer */}
