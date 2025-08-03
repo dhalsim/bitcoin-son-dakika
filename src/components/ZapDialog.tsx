@@ -13,14 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import type { EventStatistics } from "@/lib/event-statistics.js";
 import type { ProfileItem } from "@/lib/nip01";
 import { getNip07Relays, getUserPubkey } from "@/lib/nip07";
 import type { LnUrlpResponse } from "@/lib/nip57";
 import { getLnurlData } from "@/lib/nip57";
 import { fetchNip65Relays } from "@/lib/nip65";
 import { createZap, DEFAULT_ZAP_RELAYS } from "@/lib/zap-utils";
-
-import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
 
 import { ZapInvoiceDialog } from "./ZapInvoiceDialog";
 
@@ -29,6 +28,8 @@ interface ZapDialogProps {
   onOpenChange: (open: boolean) => void;
   zappedEvent: NostrEvent;
   author: ProfileItem;
+  statistics: EventStatistics;
+  setStatistics: (statistics: EventStatistics) => void;
 }
 
 const PRESET_AMOUNTS = [21, 50, 100, 200];
@@ -38,6 +39,8 @@ export const ZapDialog = memo(function ZapDialog({
   onOpenChange,
   zappedEvent,
   author,
+  statistics,
+  setStatistics,
 }: ZapDialogProps) {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
@@ -69,7 +72,7 @@ export const ZapDialog = memo(function ZapDialog({
         writeRelays: [],
       };
 
-      fetchNip65Relays(PROFILE_RELAYS, pubkey, (nip65Relays) => {
+      fetchNip65Relays(pubkey, (nip65Relays) => {
         const relays = new Set([
           ...(nip65Relays?.readRelays || []),
           ...(nip07Relays.readRelays || []),
@@ -336,6 +339,8 @@ export const ZapDialog = memo(function ZapDialog({
           lnurlData={lnurlData}
           zappedEvent={zappedEvent}
           relays={relays}
+          statistics={statistics}
+          setStatistics={setStatistics}
         />
       )}
     </>

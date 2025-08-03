@@ -1,10 +1,11 @@
 import { X } from "lucide-react";
 import { nip19 } from "nostr-tools";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { MetaFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 
 import { FollowButton } from "@/components/ui/FollowButton.js";
+import { NIP05Badge } from "@/components/ui/NIP05Badge";
 
 import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
 import Footer from "../components/Footer";
@@ -62,92 +63,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   return { profile, slug };
-}
-
-// NIP-05 Verification Badge Component
-function NIP05Badge({ nip05, pubkey }: { nip05: string; pubkey: string }) {
-  const [isVerified, setIsVerified] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Only run NIP-05 verification in browser environment
-    if (typeof window === "undefined") {
-      setIsLoading(false);
-      setIsVerified(false);
-
-      return;
-    }
-
-    const verifyNIP05 = async () => {
-      try {
-        const [username, host] = nip05.split("@");
-        if (!username || !host) {
-          setIsVerified(false);
-          setIsLoading(false);
-
-          return;
-        }
-
-        const response = await fetch(
-          `https://${host}/.well-known/nostr.json?user=${username}`,
-        );
-        if (!response.ok) {
-          setIsVerified(false);
-          setIsLoading(false);
-
-          return;
-        }
-
-        const data = await response.json();
-        const verified = data.names && data.names[username] === pubkey;
-        setIsVerified(verified);
-      } catch (error) {
-        console.error("NIP-05 verification failed:", error);
-        setIsVerified(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    verifyNIP05();
-  }, [nip05, pubkey]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center space-x-1 text-gray-400">
-        <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-        <span className="text-xs">Verifying...</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center space-x-1">
-      {isVerified ? (
-        <div className="flex items-center space-x-1 text-green-600 dark:text-green-400">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span className="text-xs font-medium">{nip05}</span>
-        </div>
-      ) : (
-        <div className="flex items-center space-x-1 text-gray-500">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span className="text-xs">{nip05}</span>
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function ProfilePage() {

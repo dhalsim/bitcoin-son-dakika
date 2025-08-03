@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FollowButton } from "@/components/ui/FollowButton";
+import { NIP05Badge } from "@/components/ui/NIP05Badge";
 import {
   Popover,
   PopoverContent,
@@ -127,9 +128,7 @@ export function ProfileAvatar({
                 {displayName}
               </h4>
               {profile?.nip05 && (
-                <p className="text-sm text-blue-600 dark:text-blue-400">
-                  {profile.nip05}
-                </p>
+                <NIP05Badge nip05={profile.nip05} pubkey={pubkey} size="sm" />
               )}
             </div>
           </div>

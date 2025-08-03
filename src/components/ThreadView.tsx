@@ -2,11 +2,9 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
 import { useState } from "react";
 
-import {
-  ProfileAvatar,
-  getDisplayName,
-  type UserProfile,
-} from "@/components/ui/ProfileAvatar";
+import { NIP05Badge } from "@/components/ui/NIP05Badge";
+import { ProfileAvatar, getDisplayName } from "@/components/ui/ProfileAvatar";
+import type { ProfileItem } from "@/lib/nip01";
 import type { ReplyNode } from "@/lib/nip10";
 import { RenderedText } from "@/lib/text-renderer";
 
@@ -14,14 +12,14 @@ interface ThreadViewProps {
   thread: ReplyNode[];
   className?: string;
   onReply?: (event: NostrEvent) => void;
-  profiles?: { [pubkey: string]: UserProfile };
+  profiles?: { [pubkey: string]: ProfileItem };
 }
 
 interface ThreadNodeProps {
   node: ReplyNode;
   depth: number;
   onReply?: (event: NostrEvent) => void;
-  profiles?: { [pubkey: string]: UserProfile };
+  profiles?: { [pubkey: string]: ProfileItem };
 }
 
 function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
@@ -71,9 +69,11 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
               {displayName}
             </span>
             {profile?.nip05 && (
-              <span className="text-xs text-blue-600 dark:text-blue-400">
-                {profile.nip05}
-              </span>
+              <NIP05Badge
+                nip05={profile.nip05}
+                pubkey={node.event.pubkey}
+                size="sm"
+              />
             )}
             <span className="text-xs text-gray-500">
               {new Date(node.event.created_at * 1000).toLocaleDateString()}

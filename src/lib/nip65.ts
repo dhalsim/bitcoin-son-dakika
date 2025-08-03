@@ -1,3 +1,5 @@
+import { PROFILE_RELAYS } from "../../api-helpers/utils";
+
 import { getCache } from "./cache";
 import { pool } from "./utils";
 
@@ -30,7 +32,6 @@ function toReadWriteRelays(tags: string[][]): Nip65Relays {
 const cache = getCache();
 
 export async function fetchNip65Relays(
-  relays: string[],
   pubkey: string,
   onUpdate: (relays: Nip65Relays | null) => void,
 ) {
@@ -41,7 +42,7 @@ export async function fetchNip65Relays(
     onUpdate(toReadWriteRelays(cachedNip65Event.tags));
   }
 
-  const nip65Event = await pool.get(relays, {
+  const nip65Event = await pool.get(PROFILE_RELAYS, {
     kinds: [10002],
     authors: [pubkey],
     limit: 1,

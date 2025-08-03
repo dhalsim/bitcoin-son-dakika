@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import type { LnUrlpResponse } from "@/lib/nip57";
+import type { EventStatistics } from "@/lib/event-statistics";
+import type { LnUrlpResponse, ZapReceipt } from "@/lib/nip57";
 import { listenForZapReceipt } from "@/lib/zap-utils";
 
 interface ZapInvoiceDialogProps {
@@ -23,6 +24,8 @@ interface ZapInvoiceDialogProps {
   comment?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  statistics: EventStatistics;
+  setStatistics: (statistics: EventStatistics) => void;
 }
 
 export function ZapInvoiceDialog({
@@ -34,9 +37,13 @@ export function ZapInvoiceDialog({
   comment,
   open,
   onOpenChange,
+  statistics,
+  setStatistics,
 }: ZapInvoiceDialogProps) {
   const [qrSvg, setQrSvg] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [receivedZapReceipt, setReceivedZapReceipt] =
+    useState<ZapReceipt | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -80,12 +87,27 @@ export function ZapInvoiceDialog({
       lnurlData,
       relays,
       (zapReceipt) => {
+        console.log("Zap receipt received", zapReceipt);
+
         if (zapReceipt) {
-          console.log("Zap receipt received", zapReceipt);
+          setReceivedZapReceipt(zapReceipt);
+
+          setStatistics({
+            ...statistics,
+            zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
+          });
         }
       },
     );
-  }, [qrSvg, zappedEvent, invoice, lnurlData, relays]);
+  }, [
+    qrSvg,
+    zappedEvent,
+    invoice,
+    lnurlData,
+    relays,
+    statistics,
+    setStatistics,
+  ]);
 
   const copyInvoice = async () => {
     try {
@@ -103,6 +125,38 @@ export function ZapInvoiceDialog({
       });
     }
   };
+
+  if (receivedZapReceipt) {
+    const amount = receivedZapReceipt.amount;
+    const comment = receivedZapReceipt.comment;
+
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Zap Gönderildi</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Miktar:</span>
+                <span className="font-semibold text-orange-700">
+                  {amount}
+                  sats
+                </span>
+              </div>
+              {comment && (
+                <div className="mt-2 text-xs text-gray-600">
+                  <span className="font-medium">Mesaj:</span> {comment}
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

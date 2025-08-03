@@ -12,7 +12,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,10 +59,6 @@ interface EventStatisticsProps {
   event: NostrEvent;
   author: ProfileItem;
   className: string;
-  onReaction: (event: NostrEvent, reaction: string) => void;
-  onRepost: (event: NostrEvent) => void;
-  onQuote: (event: NostrEvent) => void;
-  onReply: (event: NostrEvent) => void;
 }
 
 interface ReactionGroup {
@@ -161,10 +157,6 @@ export function EventStatistics({
   event,
   author,
   className = "",
-  onReaction,
-  onRepost,
-  onQuote,
-  onReply,
 }: EventStatisticsProps) {
   const [statistics, setStatistics] = useState<EventStatistics | null>(null);
   const [loading, setLoading] = useState(false);
@@ -219,6 +211,51 @@ export function EventStatistics({
     }
   }, [quoteContent, event?.id]);
 
+  const updateStatistics = useCallback((stats: EventStatistics) => {
+    const statPubkeys = [
+      ...Object.values(stats.replies).map((reply) => reply.pubkey),
+      ...Object.values(stats.quotes).map((quote) => quote.pubkey),
+      ...stats.reposts.map((repost) => repost.pubkey),
+      ...stats.likes.map((like) => like.pubkey),
+      ...stats.dislikes.map((dislike) => dislike.pubkey),
+      ...Object.entries(stats.emojis).flatMap(([_, customEmoji]) =>
+        customEmoji.events.map((event) => event.pubkey),
+      ),
+    ];
+
+    const uniquePubkeys = [...new Set(statPubkeys)];
+
+    getKind0Events(
+      uniquePubkeys,
+      (pubkey, event) => {
+        let profile: ProfileItem | null = null;
+
+        try {
+          profile = parseProfileEvent(event);
+        } catch (err) {
+          console.error(`Failed to parse profile event: ${pubkey}`, err);
+        }
+
+        setProfiles((prev) => ({
+          ...prev,
+          [pubkey]: profile,
+        }));
+      },
+      (reasons) => {
+        const nonEoseReasons = reasons.filter(
+          (r) => r !== "closed automatically on eose",
+        );
+
+        if (nonEoseReasons.length > 0) {
+          console.error("Failed to fetch profile events", nonEoseReasons);
+        }
+      },
+    );
+
+    setStatistics(stats);
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
     if (!event) {
       setStatistics(null);
@@ -230,57 +267,14 @@ export function EventStatistics({
     setError(null);
 
     try {
-      getEventStatistics(event, (stats) => {
-        const statPubkeys = [
-          ...Object.values(stats.replies).map((reply) => reply.pubkey),
-          ...Object.values(stats.quotes).map((quote) => quote.pubkey),
-          ...stats.reposts.map((repost) => repost.pubkey),
-          ...stats.likes.map((like) => like.pubkey),
-          ...stats.dislikes.map((dislike) => dislike.pubkey),
-          ...Object.entries(stats.emojis).flatMap(([_, customEmoji]) =>
-            customEmoji.events.map((event) => event.pubkey),
-          ),
-        ];
-
-        const uniquePubkeys = [...new Set(statPubkeys)];
-
-        getKind0Events(
-          uniquePubkeys,
-          (pubkey, event) => {
-            let profile: ProfileItem | null = null;
-
-            try {
-              profile = parseProfileEvent(event);
-            } catch (err) {
-              console.error(`Failed to parse profile event: ${pubkey}`, err);
-            }
-
-            setProfiles((prev) => ({
-              ...prev,
-              [pubkey]: profile,
-            }));
-          },
-          (reasons) => {
-            const nonEoseReasons = reasons.filter(
-              (r) => r !== "closed automatically on eose",
-            );
-
-            if (nonEoseReasons.length > 0) {
-              console.error("Failed to fetch profile events", nonEoseReasons);
-            }
-          },
-        );
-
-        setStatistics(stats);
-        setLoading(false);
-      });
+      getEventStatistics(event, updateStatistics);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to fetch statistics",
       );
       setLoading(false);
     }
-  }, [event]);
+  }, [event, updateStatistics]);
 
   // Check if user has zapped this event
   useEffect(() => {
@@ -462,9 +456,7 @@ export function EventStatistics({
   }, [statistics]);
 
   const handleRepostClick = () => {
-    if (onRepost) {
-      onRepost(event);
-    }
+    // TODO: repost
   };
 
   const handleQuoteClick = () => {
@@ -484,6 +476,10 @@ export function EventStatistics({
 
     if (isExpanded) {
       setIsExpanded(false);
+    }
+
+    if (showQuotes) {
+      setShowQuotes(false);
     }
 
     if (!showReplies && statistics?.replies) {
@@ -508,6 +504,10 @@ export function EventStatistics({
     if (showReplies) {
       setShowReplies(false);
     }
+
+    if (showQuotes) {
+      setShowQuotes(false);
+    }
   };
 
   const handlePostReply = () => {
@@ -524,7 +524,6 @@ export function EventStatistics({
 
       // TODO: Implement actual reply posting,
       // publish and return the reply event
-      onReply?.(event);
     }
   };
 
@@ -549,7 +548,6 @@ export function EventStatistics({
 
       // TODO: Implement actual quote posting,
       // publish and return the quote event
-      onQuote?.(event);
     }
   };
 
@@ -570,9 +568,8 @@ export function EventStatistics({
 
   const handleReactionClick = (emoji: string) => {
     saveEmojiUsage(emoji);
-    if (onReaction) {
-      onReaction(event, emoji);
-    }
+
+    // TODO: send actual reaction
 
     setShowReactionPopup(false);
   };
@@ -604,7 +601,7 @@ export function EventStatistics({
         {/* Main action buttons and reaction counts */}
         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
           {/* Expand/Collapse button */}
-          {totalReactions > 0 && (
+          {totalReactions + _zapCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -1015,6 +1012,8 @@ export function EventStatistics({
           onOpenChange={setShowZapDialog}
           zappedEvent={event}
           author={author}
+          statistics={statistics}
+          setStatistics={setStatistics}
         />
       )}
     </TooltipProvider>

@@ -1,8 +1,12 @@
 import { UserCheck, UserPlus } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-import { getFollowsEvent } from "@/lib/nip02";
+import {
+  useUserWriteRelays,
+  useUserFollowings,
+  useRefreshFollowings,
+} from "@/contexts/UserContext";
 import { getUserPubkey, signEventByNip07 } from "@/lib/nip07";
 import { publishToRelays } from "@/lib/utils";
 
@@ -23,48 +27,13 @@ export function FollowButton({
   onError,
   onFollowChange,
 }: FollowButtonProps) {
-  const [isFollowing, setIsFollowing] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const userWriteRelays = useUserWriteRelays();
+  const userFollowings = useUserFollowings();
+  const refreshFollowings = useRefreshFollowings();
 
-  useEffect(() => {
-    const checkFollowStatus = async () => {
-      try {
-        if (typeof window === "undefined" || !window.nostr) {
-          setIsFollowing(false);
-          setIsLoading(false);
-
-          return;
-        }
-
-        const userPubkey = await getUserPubkey();
-
-        if (!userPubkey) {
-          setIsFollowing(false);
-          setIsLoading(false);
-
-          return;
-        }
-
-        setIsLoading(true);
-
-        getFollowsEvent(userPubkey, (followData) => {
-          const following = followData?.event.tags
-            .filter((tag) => tag[0] === "p")
-            .map((tag) => tag[1])
-            .includes(pubkey);
-
-          setIsLoading(false);
-          setIsFollowing(following);
-        });
-      } catch (error) {
-        console.error("Follow status check failed:", error);
-        setIsLoading(false);
-        setIsFollowing(false);
-      }
-    };
-
-    checkFollowStatus();
-  }, [pubkey]);
+  // Check if user is following this pubkey
+  const isFollowing = userFollowings.pubkeys.includes(pubkey);
 
   const publishEvent = async (event: NostrEvent, relays: string[]) => {
     const result = await publishToRelays(event, relays);
@@ -87,69 +56,43 @@ export function FollowButton({
 
         setIsLoading(true);
 
-        getFollowsEvent(userPubkey, async (followData) => {
-          if (!followData) {
-            onError?.("Takip listesi bulunamadı.");
-            setIsLoading(false);
+        // Get current followings from context
+        const currentFollowings = userFollowings.eventTags;
+        const following = userFollowings.pubkeys.includes(pubkey);
 
-            return;
-          }
+        const newFollowTags = following
+          ? currentFollowings.filter((t) => t[0] === "p" && t[1] !== pubkey)
+          : [...currentFollowings, ["p", pubkey]];
 
-          const following = followData.event.tags
-            .filter((tag) => tag[0] === "p")
-            .map((tag) => tag[1])
-            .includes(pubkey);
+        const event = {
+          kind: 3,
+          tags: newFollowTags,
+          content: "",
+          created_at: Math.floor(Date.now() / 1000),
+        };
 
-          const newFollowTags = following
-            ? followData.event.tags.filter(
-                (t) => t[0] === "p" && t[1] !== pubkey,
-              )
-            : [...(followData.event.tags || []), ["p", pubkey]];
+        const signedEvent = await signEventByNip07(event);
 
-          const event = {
-            kind: 3,
-            tags: newFollowTags,
-            content: "",
-            created_at: Math.floor(Date.now() / 1000),
-          };
+        if (!signedEvent) {
+          onError?.("Nostr uyumlu bir tarayıcı/eklenti kullanınız.");
+          setIsLoading(false);
 
-          const signedEvent = await signEventByNip07(event);
+          return;
+        }
 
-          if (!signedEvent) {
-            onError?.("Nostr uyumlu bir tarayıcı/eklenti kullanınız.");
-            setIsFollowing(false);
-            setIsLoading(false);
+        const published = await publishEvent(signedEvent, userWriteRelays);
 
-            return;
-          }
+        if (!published) {
+          onError?.("Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.");
+          setIsLoading(false);
 
-          const published = await publishEvent(
-            signedEvent,
-            followData.followRelays,
-          );
+          return;
+        }
 
-          if (!published) {
-            onError?.("Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.");
-            setIsFollowing(false);
-            setIsLoading(false);
-
-            return;
-          }
-
-          setIsLoading(true);
-
-          // Refresh follow status
-          getFollowsEvent(userPubkey, (followData) => {
-            const following = followData?.event.tags
-              .filter((tag) => tag[0] === "p")
-              .map((tag) => tag[1])
-              .includes(pubkey);
-
-            setIsFollowing(following);
-            onFollowChange?.(following);
-            setIsLoading(false);
-          });
-        });
+        // Refresh followings from context
+        refreshFollowings();
+        onFollowChange?.(!following);
+        setIsLoading(false);
       };
 
       toggleFollow();
@@ -159,11 +102,6 @@ export function FollowButton({
       onError?.("Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.");
     }
   };
-
-  // Don't show button if user is not logged in
-  if (typeof window === "undefined" || !window.nostr) {
-    return null;
-  }
 
   // Size classes
   const getSizeClasses = () => {
@@ -181,15 +119,46 @@ export function FollowButton({
 
   // Variant classes
   const getVariantClasses = () => {
-    switch (variant) {
-      case "outline":
-        return "border border-gray-300 dark:border-gray-600 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300";
-      case "ghost":
-        return "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300";
-      default:
-        return "bg-blue-600 hover:bg-blue-700 text-white";
+    if (isFollowing) {
+      // When following, use green styling for all variants
+      switch (variant) {
+        case "outline":
+          return "border border-green-600 dark:border-green-500 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 text-green-700 dark:text-green-300";
+        case "ghost":
+          return "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 text-green-700 dark:text-green-300";
+        default:
+          return "bg-green-600 hover:bg-green-700 text-white";
+      }
+    } else {
+      // When not following, use blue styling for all variants
+      switch (variant) {
+        case "outline":
+          return "border border-blue-600 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300";
+        case "ghost":
+          return "bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300";
+        default:
+          return "bg-blue-600 hover:bg-blue-700 text-white";
+      }
     }
   };
+
+  // Don't show button if user is not logged in
+  if (typeof window === "undefined" || !window.nostr) {
+    return null;
+  }
+
+  // Don't show button if followings are still loading
+  if (userFollowings.isLoading) {
+    return (
+      <button
+        disabled
+        className={`inline-flex items-center ${getSizeClasses()} font-medium rounded-lg cursor-not-allowed bg-gray-400 text-white ${className}`}
+      >
+        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+        Yükleniyor...
+      </button>
+    );
+  }
 
   if (isLoading) {
     return (

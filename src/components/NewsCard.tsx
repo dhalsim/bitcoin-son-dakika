@@ -112,35 +112,6 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   author,
   nostrEvent,
 }) => {
-  const handleReaction = (event: NostrEvent, reaction: string) => {
-    console.log("Reaction clicked for event:", event.id, reaction);
-    // TODO: Implement reaction functionality
-    // - Create kind 7 reaction event with content "+"
-    // - Publish to relays
-  };
-
-  const handleRepost = (event: NostrEvent) => {
-    console.log("Repost clicked for event:", event.id);
-    // TODO: Implement repost functionality
-    // - Create kind 6 repost event with e tag referencing original
-    // - Publish to relays
-  };
-
-  const handleReply = (event: NostrEvent) => {
-    console.log("Reply clicked for event:", event.id);
-    // TODO: Implement reply functionality
-    // - Open reply form/modal
-    // - Create kind 1 note with e tags for thread
-    // - Publish to relays
-  };
-
-  const handleQuote = (event: NostrEvent) => {
-    console.log("Quote clicked for event:", event.id);
-    // TODO: Implement quote functionality
-    // - Create kind 1 quote event with e tag referencing original
-    // - Publish to relays
-  };
-
   return (
     <Card className="h-full">
       <CardHeader>
@@ -207,10 +178,6 @@ export const NewsCard: React.FC<NewsCardProps> = ({
           <div className="mt-4 pt-4 border-t">
             <EventStatistics
               event={nostrEvent}
-              onReaction={handleReaction}
-              onRepost={handleRepost}
-              onReply={handleReply}
-              onQuote={handleQuote}
               className="justify-start"
               author={author}
             />

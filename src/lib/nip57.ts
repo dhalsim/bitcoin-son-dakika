@@ -1,4 +1,5 @@
-import type { NostrEvent } from "nostr-tools";
+import { type NostrEvent } from "nostr-tools";
+import { verifyEvent } from "nostr-tools/pure";
 import { z } from "zod";
 
 import { getCache } from "./cache";
@@ -79,6 +80,10 @@ export function validateZapReceipt(
 
     // Validate zap request kind
     if (!zapRequest || zapRequest.kind !== 9734) {
+      return null;
+    }
+
+    if (!verifyEvent(zapRequest)) {
       return null;
     }
 

@@ -3,7 +3,11 @@ import { type NostrEvent } from "nostr-tools";
 
 import { getCache } from "./cache";
 import { getUserPubkey, signEventByNip07 } from "./nip07";
-import { validateZapReceipt, type LnUrlpResponse } from "./nip57";
+import {
+  validateZapReceipt,
+  type LnUrlpResponse,
+  type ZapReceipt,
+} from "./nip57";
 import { pool } from "./utils";
 
 export interface ZapRequest {
@@ -122,7 +126,7 @@ export async function listenForZapReceipt(
   invoice: string,
   lnurlData: LnUrlpResponse,
   relays: string[],
-  onReceipt: (zapReceipt: any | null) => void,
+  onReceipt: (zapReceipt: ZapReceipt | null) => void,
 ) {
   const userPubkey = await getUserPubkey();
 
@@ -134,21 +138,6 @@ export async function listenForZapReceipt(
 
   let received = false;
 
-  pool.subscribe(
-    relays,
-    {
-      authors: [lnurlData.nostrPubkey],
-      kinds: [9735], // zap receipt
-      "#e": [event.id], // for this specific event
-      "#p": [event.pubkey], // for this specific author
-    },
-    {
-      onevent: (zapReceiptEvent: NostrEvent) => {
-        console.log("Zap receipt event", zapReceiptEvent);
-      },
-    },
-  );
-
   const subCloser = pool.subscribe(
     relays,
     {
@@ -156,7 +145,6 @@ export async function listenForZapReceipt(
       kinds: [9735], // zap receipt
       "#e": [event.id], // for this specific event
       "#p": [event.pubkey], // for this specific author
-      "#P": [userPubkey], // by this specific user
       since: Math.floor(Date.now() / 1000) - 30, // now - 30 seconds
     },
     {
@@ -173,6 +161,14 @@ export async function listenForZapReceipt(
           return;
         }
 
+        const zapRequest = zapReceipt.zapRequest;
+
+        if (zapRequest.pubkey !== userPubkey) {
+          console.warn("Zap request author should match with the user pubkey");
+
+          return;
+        }
+
         // Validate the receipt author matches the LNURL provider
         if (zapReceiptEvent.pubkey !== lnurlData.nostrPubkey) {
           console.warn("Zap receipt author doesn't match LNURL provider");
@@ -180,9 +176,25 @@ export async function listenForZapReceipt(
           return;
         }
 
+        const bolt11Tag = zapReceiptEvent.tags.find(
+          (tag: string[]) => tag[0] === "bolt11",
+        )?.[1];
+
+        if (!bolt11Tag) {
+          console.warn("Zap receipt bolt11 tag is missing");
+
+          return;
+        }
+
+        if (bolt11Tag !== invoice) {
+          console.warn("Zap receipt bolt11 tag doesn't match the invoice");
+
+          return;
+        }
+
         received = true;
 
-        onReceipt(zapReceiptEvent);
+        onReceipt(zapReceipt);
 
         const cachedZaps = cache.getNip57Zaps(event.id) || new Map();
 
