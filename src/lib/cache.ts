@@ -3,6 +3,7 @@ import type { NostrEvent } from "nostr-tools";
 
 import type { EmojiCategories, EmojiUsage } from "@/types/emoji";
 
+import type { ProfileItem } from "./nip01";
 import type { Nip07Relays } from "./nip07";
 import type { ZapReceipt } from "./nip57";
 
@@ -265,12 +266,23 @@ export class LocalStorageCache {
     this.deleteFromStorage(key);
   }
 
+  // TODO: May remove them if not used any more
   getKind0Event(pubkey: string): NostrEvent | null {
     return this.getCachedValue(`kind0-${pubkey}`);
   }
 
   setKind0Event(pubkey: string, value: NostrEvent): void {
     const key = `kind0-${pubkey}`;
+    this.cache.set(key, value);
+    this.setToStorage(key, value);
+  }
+
+  getProfileItem(pubkey: string): ProfileItem | null {
+    return this.getCachedValue(`profile-${pubkey}`);
+  }
+
+  setProfileItem(pubkey: string, value: ProfileItem): void {
+    const key = `profile-${pubkey}`;
     this.cache.set(key, value);
     this.setToStorage(key, value);
   }

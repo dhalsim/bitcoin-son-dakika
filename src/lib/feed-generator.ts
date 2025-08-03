@@ -94,6 +94,8 @@ export function generateAtomFeed(ssgData: SSGData): string {
 }
 
 export function generateFeeds(ssgData: SSGData) {
+  console.log(ssgData);
+
   return {
     rssFeed: generateRSSFeed(ssgData),
     atomFeed: generateAtomFeed(ssgData),

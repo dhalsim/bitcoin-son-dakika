@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
 import { extractAmountFromBolt11 } from "@/lib/nip57";
+
 import type { ExpandedReactionsProps } from "./types";
 
 export function ExpandedReactions({
@@ -79,13 +80,12 @@ export function ExpandedReactions({
                     `${pubkey.slice(0, 8)}...`;
 
                   const zappedName =
-                    author.display_name ||
-                    `${author.pubkey.slice(0, 8)}...`;
+                    author.display_name || `${author.pubkey.slice(0, 8)}...`;
 
                   zapMessage = (
                     <span>
-                      <strong>{zapperName}</strong> {zappedName}'ye{" "}
-                      {amount} Sats ⚡️ Gönderdi
+                      <strong>{zapperName}</strong> {zappedName}'ye {amount}{" "}
+                      Sats ⚡️ Gönderdi
                       {zapContent ? `, Mesaj: "${zapContent}"` : ""}
                     </span>
                   );
@@ -108,10 +108,7 @@ export function ExpandedReactions({
             })}
 
             {group.events.length > 10 && (
-              <Badge
-                variant="secondary"
-                className="text-xs flex items-center"
-              >
+              <Badge variant="secondary" className="text-xs flex items-center">
                 +{group.events.length - 10} daha
               </Badge>
             )}

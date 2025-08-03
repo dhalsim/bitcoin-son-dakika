@@ -3,13 +3,13 @@ import type { NostrEvent } from "nostr-tools";
 import { useState, useEffect, useMemo, useCallback } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useProfiles } from "@/contexts/ProfileContext";
 import { useUserWriteRelays } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { getCache } from "@/lib/cache";
 import type { EventStatistics } from "@/lib/event-statistics";
 import { getEventStatistics } from "@/lib/event-statistics";
 import type { ProfileItem } from "@/lib/nip01";
-import { parseProfileEvent, getKind0Events } from "@/lib/nip01";
 import { getUserPubkey } from "@/lib/nip07";
 import { createNip10Thread } from "@/lib/nip10";
 import type { ReplyNode } from "@/lib/nip10";
@@ -57,9 +57,6 @@ export function EventStatistics({
   const [showQuotes, setShowQuotes] = useState(false);
   const [quoteContent, setQuoteContent] = useState("");
   const [showQuotePreview, setShowQuotePreview] = useState(false);
-  const [profiles, setProfiles] = useState<{
-    [pubkey: string]: ProfileItem | null;
-  }>({});
   const [showZapDialog, setShowZapDialog] = useState(false);
   const [userPubkey, setUserPubkey] = useState<string | null>(null);
   const [hasZapped, setHasZapped] = useState(false);
@@ -67,51 +64,40 @@ export function EventStatistics({
   const [isQuotesAtBottom, setIsQuotesAtBottom] = useState(false);
 
   const updateStatistics = useCallback((stats: EventStatistics) => {
-    // Extract all pubkeys from the statistics
-    const statPubkeys = [
-      ...Array.from(stats.replies.values()).map((reply) => reply.pubkey),
-      ...Array.from(stats.quotes.values()).map((quote) => quote.pubkey),
-      ...Array.from(stats.reposts.values()).map((repost) => repost.pubkey),
-      ...stats.likes.map((like) => like.pubkey),
-      ...stats.dislikes.map((dislike) => dislike.pubkey),
-      ...Object.entries(stats.emojis).flatMap(([_, customEmoji]) =>
-        customEmoji.events.map((event) => event.pubkey),
-      ),
-    ];
-
-    const uniquePubkeys = [...new Set(statPubkeys)];
-
-    // Fetch profile events for all unique pubkeys
-    getKind0Events(
-      uniquePubkeys,
-      (pubkey, event) => {
-        let profile: ProfileItem | null = null;
-
-        try {
-          profile = parseProfileEvent(event);
-        } catch (err) {
-          console.error(`Failed to parse profile event: ${pubkey}`, err);
-        }
-
-        setProfiles((prev) => ({
-          ...prev,
-          [pubkey]: profile,
-        }));
-      },
-      (reasons) => {
-        const nonEoseReasons = reasons.filter(
-          (r) => r !== "closed automatically on eose",
-        );
-
-        if (nonEoseReasons.length > 0) {
-          console.error("Failed to fetch profile events", nonEoseReasons);
-        }
-      },
-    );
-
     setStatistics(stats);
     setLoading(false);
   }, []);
+
+  // Extract all pubkeys from statistics when they change
+  const allPubkeys = useMemo(() => {
+    if (!statistics) {
+      return [];
+    }
+
+    return [
+      ...Array.from(statistics.replies.values()).map((reply) => reply.pubkey),
+      ...Array.from(statistics.quotes.values()).map((quote) => quote.pubkey),
+      ...Array.from(statistics.reposts.values()).map((repost) => repost.pubkey),
+      ...statistics.likes.map((like) => like.pubkey),
+      ...statistics.dislikes.map((dislike) => dislike.pubkey),
+      ...Object.entries(statistics.emojis).flatMap(([_, customEmoji]) =>
+        customEmoji.events.map((event) => event.pubkey),
+      ),
+    ];
+  }, [statistics]);
+
+  // Use ProfileContext to get profiles
+  const profilesMap = useProfiles([...new Set(allPubkeys)]);
+
+  // Convert to the expected format for child components
+  const profiles = useMemo(() => {
+    const result: { [pubkey: string]: ProfileItem } = {};
+    profilesMap.forEach((profile, pubkey) => {
+      result[pubkey] = profile;
+    });
+
+    return result;
+  }, [profilesMap]);
 
   // Load event statistics
   useEffect(() => {

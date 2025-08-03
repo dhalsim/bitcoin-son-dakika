@@ -137,6 +137,8 @@ export async function fetchSSGData(): Promise<SSGData> {
 
   const profileEvents = await getProfileEvents(Array.from(profilePubkeys));
 
+  console.log("profileEvents", profileEvents);
+
   const newsItems: NewsItem[] = newsEvents.map((ne) => {
     const author = profileEvents.get(ne.pubkey);
 
@@ -145,6 +147,10 @@ export async function fetchSSGData(): Promise<SSGData> {
     }
 
     const profile = parseProfileEvent(author);
+
+    if (!profile) {
+      throw new Error(`Profile parse error: ${ne.pubkey}`);
+    }
 
     const relayHintTag = newsTags.find((tag) => tag.eTag === ne.id);
 
