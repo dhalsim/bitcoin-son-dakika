@@ -32,6 +32,28 @@ import {
 } from "./event-statistics";
 import { ZapDialog } from "./ZapDialog";
 
+// KeepMounted component to prevent re-fetching of avatar images
+function KeepMounted({
+  isOpen,
+  children,
+}: {
+  isOpen: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        visibility: isOpen ? "visible" : "hidden",
+        height: isOpen ? "auto" : 0,
+        overflow: "hidden",
+        transition: "visibility 0.3s ease-in-out, height 0.3s ease-in-out",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 const cache = getCache();
 
 export function EventStatistics({
@@ -508,13 +530,15 @@ export function EventStatistics({
         />
 
         {/* Expanded reactions panel */}
-        {isExpanded && totalReactions > 0 && (
-          <ExpandedReactions
-            reactionGroups={reactionGroups}
-            profiles={profiles}
-            author={author}
-          />
-        )}
+        <KeepMounted isOpen={isExpanded && totalReactions > 0}>
+          {totalReactions > 0 && (
+            <ExpandedReactions
+              reactionGroups={reactionGroups}
+              profiles={profiles}
+              author={author}
+            />
+          )}
+        </KeepMounted>
 
         {/* Expandable replies section */}
         {showReplies && (

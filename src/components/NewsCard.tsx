@@ -153,6 +153,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
                       pubkey: "",
                       display_name: author.display_name,
                       picture: author.picture,
+                      created_at: author.created_at,
                     }}
                     size="sm"
                     className="mr-2"

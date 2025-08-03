@@ -1,4 +1,5 @@
 import type { NostrEvent } from "nostr-tools";
+
 import type { EventStatistics } from "@/lib/event-statistics";
 import type { ProfileItem } from "@/lib/nip01";
 import type { ReplyNode } from "@/lib/nip10";
@@ -43,7 +44,7 @@ export interface ActionButtonsProps {
 export interface ExpandedReactionsProps {
   reactionGroups: ReactionGroup[];
   profiles: { [pubkey: string]: ProfileItem | null };
-  author: ProfileItem;
+  author?: ProfileItem;
 }
 
 export interface ReplyComposerProps {

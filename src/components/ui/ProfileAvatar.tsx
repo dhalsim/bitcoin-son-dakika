@@ -1,7 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { NIP05Badge } from "@/components/ui/NIP05Badge";
@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useProfileImage } from "@/contexts/ProfileContext";
 import { type ProfileItem } from "@/lib/nip01";
 
 interface ProfileAvatarProps {
@@ -34,23 +35,6 @@ export const getDisplayName = (
   return profile.display_name || `${pubkey.slice(0, 8)}...`;
 };
 
-// Helper function to get avatar URL from profile
-export const getAvatarUrl = (
-  profile: ProfileItem | undefined,
-  pubkey: string,
-  fallbackSrc?: string,
-): string => {
-  if (profile?.picture) {
-    return profile.picture;
-  }
-
-  if (fallbackSrc) {
-    return fallbackSrc;
-  }
-
-  return `https://robohash.org/${pubkey}`;
-};
-
 // Helper function to get size classes
 const getSizeClasses = (size: "sm" | "md" | "lg") => {
   switch (size) {
@@ -70,13 +54,11 @@ export function ProfileAvatar({
   profile,
   size = "md",
   className = "",
-  fallbackSrc,
   badge,
   popupContent,
 }: ProfileAvatarProps) {
+  const avatarImage = useProfileImage(pubkey);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const displayName = getDisplayName(profile, pubkey);
-  const avatarUrl = getAvatarUrl(profile, pubkey, fallbackSrc);
   const sizeClasses = getSizeClasses(size);
 
   const handleAvatarClick = (e: React.MouseEvent) => {
@@ -91,13 +73,27 @@ export function ProfileAvatar({
     setIsPopoverOpen(false);
   };
 
+  if (!profile) {
+    return (
+      <Avatar
+        className={`${sizeClasses} ${className} ${"cursor-pointer hover:opacity-80 transition-opacity"} overflow-hidden`}
+      >
+        <AvatarFallback className="text-xs">
+          {pubkey.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+    );
+  }
+
+  const displayName = profile.display_name || `${pubkey.slice(0, 8)}...`;
+
   const avatarElement = (
     <div className="relative inline-block">
       <Avatar
         className={`${sizeClasses} ${className} ${"cursor-pointer hover:opacity-80 transition-opacity"} overflow-hidden`}
         onClick={handleAvatarClick}
       >
-        <AvatarImage src={avatarUrl} alt={displayName} />
+        {avatarImage}
         <AvatarFallback className="text-xs">
           {displayName.slice(0, 2).toUpperCase()}
         </AvatarFallback>
@@ -117,7 +113,7 @@ export function ProfileAvatar({
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={avatarUrl} alt={displayName} />
+              {avatarImage}
               <AvatarFallback className="text-sm">
                 {displayName.slice(0, 2).toUpperCase()}
               </AvatarFallback>

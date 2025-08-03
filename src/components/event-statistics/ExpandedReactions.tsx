@@ -80,7 +80,7 @@ export function ExpandedReactions({
                     `${pubkey.slice(0, 8)}...`;
 
                   const zappedName =
-                    author.display_name || `${author.pubkey.slice(0, 8)}...`;
+                    author?.display_name || `${author?.pubkey.slice(0, 8)}...`;
 
                   zapMessage = (
                     <span>
