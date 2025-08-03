@@ -51,7 +51,13 @@ export async function getUserPubkey(): Promise<string | null> {
     return null;
   }
 
-  return window.nostr.getPublicKey();
+  try {
+    return await window.nostr.getPublicKey();
+  } catch (error) {
+    console.error("Error getting user pubkey", error);
+
+    return null;
+  }
 }
 
 export async function signEventByNip07(
@@ -61,5 +67,11 @@ export async function signEventByNip07(
     return null;
   }
 
-  return window.nostr.signEvent(event);
+  try {
+    return await window.nostr.signEvent(event);
+  } catch (error) {
+    console.error("Error signing event", error);
+
+    return null;
+  }
 }

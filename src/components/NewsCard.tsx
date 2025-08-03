@@ -184,8 +184,8 @@ export const NewsCard: React.FC<NewsCardProps> = ({
             <EventStatistics
               event={nostrEvent}
               eventRelayHint={eventRelayHint}
-              className="justify-start"
               author={author}
+              className="justify-start"
             />
           </div>
         )}

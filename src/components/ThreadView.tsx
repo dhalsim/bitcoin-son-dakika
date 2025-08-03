@@ -121,7 +121,7 @@ export function ThreadView({
   if (!thread || thread.length === 0) {
     return (
       <div className={`text-sm text-gray-500 dark:text-gray-400 ${className}`}>
-        Henüz yanıt yok.
+        Henüz yorum yok.
       </div>
     );
   }
