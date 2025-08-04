@@ -1,12 +1,9 @@
-import type { NostrEvent } from "nostr-tools";
-
 import type { EventStatistics } from "@/lib/event-statistics";
-import type { ProfileItem } from "@/lib/nip01";
+import type { EventItem, ProfileItem } from "@/lib/nip01";
 import type { ReplyNode } from "@/lib/nip10";
 
 export interface EventStatisticsProps {
-  event: NostrEvent;
-  eventRelayHint: string;
+  event: EventItem;
   author: ProfileItem;
   className: string;
 }
@@ -16,7 +13,7 @@ export interface ReactionGroup {
   key: string;
   icon: React.ReactNode;
   count: number;
-  events: NostrEvent[];
+  events: EventItem[];
   color: string;
 }
 
@@ -32,7 +29,7 @@ export interface ActionButtonsProps {
   isExpanded: boolean;
   showReplies: boolean;
   showQuotes: boolean;
-  event: NostrEvent;
+  event: EventItem;
   onToggleExpanded: () => void;
   onShowRepliesClick: () => void;
   onReactionClick: (emoji: string) => void;
@@ -43,7 +40,7 @@ export interface ActionButtonsProps {
 
 export interface ExpandedReactionsProps {
   reactionGroups: ReactionGroup[];
-  profiles: { [pubkey: string]: ProfileItem | null };
+  profiles: Map<string, ProfileItem>;
   author?: ProfileItem;
 }
 
@@ -65,7 +62,7 @@ export interface QuotesSectionProps {
   showQuotePreview: boolean;
   isQuotesAtBottom: boolean;
   statistics: EventStatistics | null;
-  profiles: { [pubkey: string]: ProfileItem | null };
+  profiles: Map<string, ProfileItem>;
   onQuoteContentChange: (content: string) => void;
   onShowQuotePreviewToggle: () => void;
   onPostQuote: () => void;
@@ -82,7 +79,7 @@ export interface ThreadViewProps {
   loadingThread: boolean;
   isAtBottom: boolean;
   showOnlyCompose: boolean;
-  profiles: { [pubkey: string]: ProfileItem | null };
-  onThreadReply: (replyEvent: NostrEvent) => void;
+  profiles: Map<string, ProfileItem>;
+  onThreadReply: (replyEvent: EventItem) => void;
   onThreadScroll: () => void;
 }

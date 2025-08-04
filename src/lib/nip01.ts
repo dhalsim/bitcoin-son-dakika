@@ -4,10 +4,14 @@ import { z } from "zod";
 import { PROFILE_RELAYS } from "../../api-helpers/utils";
 
 import { getCache } from "./cache";
-import { pool } from "./utils";
+import { logCloseReasons, pool } from "./utils";
 
-// Helper function to parse kind 0 profile event
-export const parseProfileEvent = (event: NostrEvent): ProfileItem | null => {
+const cache = getCache();
+
+export const parseProfileEvent = (
+  event: NostrEvent,
+  relay: string,
+): ProfileItem | null => {
   try {
     const content = JSON.parse(event.content);
 
@@ -15,21 +19,12 @@ export const parseProfileEvent = (event: NostrEvent): ProfileItem | null => {
       ...content,
       created_at: event.created_at,
       pubkey: event.pubkey,
+      relay,
     });
 
-    return {
-      pubkey: profile.pubkey,
-      created_at: event.created_at,
-      display_name: profile.display_name || profile.name,
-      website: profile.website,
-      picture: profile.picture,
-      about: profile.about,
-      nip05: profile.nip05,
-      lud06: profile.lud06,
-      lud16: profile.lud16,
-    };
-  } catch {
-    console.error("Profile parse error", event);
+    return profile;
+  } catch (error) {
+    console.error("Profile parse error", event, error);
 
     return null;
   }
@@ -37,43 +32,38 @@ export const parseProfileEvent = (event: NostrEvent): ProfileItem | null => {
 
 export const ProfileItemSchema = z.object({
   pubkey: z.string(),
+  relay: z.string(),
   created_at: z.number(),
-  name: z.string().optional(),
-  display_name: z.string().optional(),
-  picture: z.string().optional(),
-  about: z.string().optional(),
-  website: z.string().optional(),
-  nip05: z.string().optional(),
-  lud06: z.string().optional(),
-  lud16: z.string().optional(),
+  name: z.string().optional().nullable(),
+  display_name: z.string().optional().nullable(),
+  picture: z.string().optional().nullable(),
+  about: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  nip05: z.string().optional().nullable(),
+  lud06: z.string().optional().nullable(),
+  lud16: z.string().optional().nullable(),
 });
 
 export type ProfileItem = z.infer<typeof ProfileItemSchema>;
 
-const cache = getCache();
+export type EventItem = NostrEvent & {
+  relay: string;
+};
 
 export type GetProfilesParams = {
   authors: string[];
-  onUpdate: (pubkey: string, profile: ProfileItem) => void;
-  oneose: () => void;
-  onclose: (reasons: string[]) => void;
+  cachedProfiles: Map<string, ProfileItem>;
+  onUpdate: (profiles: Map<string, ProfileItem>) => void;
 };
 
 // New optimized function that works with ProfileItem cache
 export function getProfiles({
   authors,
+  cachedProfiles,
   onUpdate,
-  oneose,
-  onclose,
 }: GetProfilesParams) {
-  // First check cache and immediately return cached ProfileItem objects
-  authors.forEach((author) => {
-    const cachedProfile = cache.getProfileItem(author);
-
-    if (cachedProfile) {
-      onUpdate(author, cachedProfile);
-    }
-  });
+  const receivedEventRelayMap = new Map<string, string>();
+  const newProfiles = new Map<string, ProfileItem>();
 
   // Use subscribe instead of subscribeEose to keep connection open
   const sub = pool.subscribe(
@@ -83,40 +73,45 @@ export function getProfiles({
       kinds: [0],
     },
     {
-      alreadyHaveEvent(id) {
-        const cachedProfile = cache.getProfileItem(id);
-
-        if (cachedProfile) {
-          return true;
-        }
-
-        return false;
+      receivedEvent: (relay, id) => {
+        receivedEventRelayMap.set(id, relay.url);
       },
       onevent: (event) => {
-        const cachedProfile = cache.getProfileItem(event.pubkey);
+        const relay = receivedEventRelayMap.get(event.id);
+
+        if (!relay) {
+          console.error("Received event from unknown relay", event);
+
+          return;
+        }
+
+        const cachedProfile = cachedProfiles.get(event.pubkey);
+
+        if (cachedProfile && cachedProfile.created_at > event.created_at) {
+          // Skip older profiles
+          return;
+        }
 
         // Parse the new event
-        const newProfile = parseProfileEvent(event);
+        const newProfile = parseProfileEvent(event, relay);
 
+        // Skip invalid profiles
         if (!newProfile) {
-          return; // Skip invalid profiles
+          return;
         }
 
-        // Compare created_at timestamps if we have a cached profile
-        if (
-          cachedProfile &&
-          newProfile.created_at <= cachedProfile.created_at
-        ) {
-          return; // Skip older or same profile
-        }
-
-        // Cache the new ProfileItem and notify
-        cache.setProfileItem(event.pubkey, newProfile);
-
-        onUpdate(event.pubkey, newProfile);
+        newProfiles.set(event.pubkey, newProfile);
+        cachedProfiles.set(event.pubkey, newProfile);
       },
-      oneose,
-      onclose,
+      oneose: () => {
+        if (newProfiles.size) {
+          onUpdate(new Map(newProfiles));
+          newProfiles.clear();
+
+          cache.setProfileItems(cachedProfiles);
+        }
+      },
+      onclose: logCloseReasons,
     },
   );
 

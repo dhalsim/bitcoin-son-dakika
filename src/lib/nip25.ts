@@ -1,6 +1,5 @@
-import type { NostrEvent } from "nostr-tools";
-
 import { getCache } from "./cache";
+import type { EventItem } from "./nip01";
 import { pool } from "./utils";
 
 const cache = getCache();
@@ -8,48 +7,61 @@ const cache = getCache();
 export type CustomEmoji = {
   name: string;
   url: string | null;
-  events: NostrEvent[];
-};
-
-export type EmojiMap = {
-  [emoji: string]: NostrEvent[];
+  events: EventItem[];
 };
 
 export function getReactions(
-  event: NostrEvent,
+  event: EventItem,
   relays: string[],
-  onUpdate: (reactions: Map<string, NostrEvent>) => void,
+  cachedReactions: Map<string, EventItem>,
+  onUpdate: (reactions: Map<string, EventItem>) => void,
 ) {
-  const cachedReactions = cache.getNip25Reactions(event.id) || new Map();
+  const newReactions = new Map<string, EventItem>();
+  const receivedEventRelayMap = new Map<string, string>();
 
-  if (cachedReactions.size) {
-    onUpdate(cachedReactions);
-  }
-
-  let fetched = false;
-
-  pool.subscribeEose(
+  const sub = pool.subscribe(
     relays,
     {
       kinds: [7], // kind 7 (reaction)
       "#e": [event.id],
     },
     {
+      receivedEvent(relay, id) {
+        receivedEventRelayMap.set(id, relay.url);
+      },
+      alreadyHaveEvent(id) {
+        return cachedReactions.has(id);
+      },
       onevent: (evt) => {
+        const relay = receivedEventRelayMap.get(evt.id);
+
+        if (!relay) {
+          console.error("Received event from unknown relay", evt);
+
+          return;
+        }
+
         if (cachedReactions.has(evt.id)) {
           return;
         }
 
-        cachedReactions.set(evt.id, evt);
-        fetched = true;
+        newReactions.set(evt.id, { ...evt, relay });
+        cachedReactions.set(evt.id, { ...evt, relay });
       },
-      onclose: () => {
-        if (fetched) {
-          cache.setNip25Reactions(event.id, cachedReactions);
+      oneose: () => {
+        // Got all stored events
+        // send the reposts that we didn't send yet
+        if (newReactions.size) {
+          onUpdate(new Map(newReactions));
+          newReactions.clear();
 
-          onUpdate(cachedReactions);
+          cache.setNip25Reactions(event.id, cachedReactions);
         }
       },
     },
   );
+
+  return () => {
+    sub.close();
+  };
 }

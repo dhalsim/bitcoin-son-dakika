@@ -3,13 +3,13 @@ import type { NostrEvent } from "nostr-tools";
 import { useState, useEffect, useMemo, useCallback } from "react";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useProfiles } from "@/contexts/ProfileContext";
 import { useUserWriteRelays } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { getCache } from "@/lib/cache";
 import type { EventStatistics } from "@/lib/event-statistics";
 import { getEventStatistics } from "@/lib/event-statistics";
 import type { ProfileItem } from "@/lib/nip01";
+import { getProfiles } from "@/lib/nip01";
 import { getUserPubkey } from "@/lib/nip07";
 import { createNip10Thread } from "@/lib/nip10";
 import type { ReplyNode } from "@/lib/nip10";
@@ -58,7 +58,6 @@ const cache = getCache();
 
 export function EventStatistics({
   event,
-  eventRelayHint,
   author,
   className = "",
 }: EventStatisticsProps) {
@@ -84,8 +83,19 @@ export function EventStatistics({
   const [hasZapped, setHasZapped] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [isQuotesAtBottom, setIsQuotesAtBottom] = useState(false);
+  const [profiles, setProfiles] = useState<Map<string, ProfileItem>>(new Map());
 
   const updateStatistics = useCallback((stats: EventStatistics) => {
+    console.log("updateStatistics", event.id, {
+      emojis: stats.emojis.size,
+      zaps: stats.zaps.size,
+      replies: stats.replies.size,
+      nip22Replies: stats.nip22Replies.size,
+      quotes: stats.quotes.size,
+      reposts: stats.reposts.size,
+      reactions: stats.reactions.size,
+    });
+
     setStatistics(stats);
     setLoading(false);
   }, []);
@@ -100,26 +110,37 @@ export function EventStatistics({
       ...Array.from(statistics.replies.values()).map((reply) => reply.pubkey),
       ...Array.from(statistics.quotes.values()).map((quote) => quote.pubkey),
       ...Array.from(statistics.reposts.values()).map((repost) => repost.pubkey),
-      ...statistics.likes.map((like) => like.pubkey),
-      ...statistics.dislikes.map((dislike) => dislike.pubkey),
-      ...Object.entries(statistics.emojis).flatMap(([_, customEmoji]) =>
+      ...Array.from(statistics.likes.values()).map((like) => like.pubkey),
+      ...Array.from(statistics.dislikes.values()).map(
+        (dislike) => dislike.pubkey,
+      ),
+      ...Array.from(statistics.emojis.values()).flatMap((customEmoji) =>
         customEmoji.events.map((event) => event.pubkey),
       ),
     ];
   }, [statistics]);
 
   // Use ProfileContext to get profiles
-  const profilesMap = useProfiles([...new Set(allPubkeys)]);
+  useEffect(() => {
+    const cachedProfiles = cache.getProfileItems();
 
-  // Convert to the expected format for child components
-  const profiles = useMemo(() => {
-    const result: { [pubkey: string]: ProfileItem } = {};
-    profilesMap.forEach((profile, pubkey) => {
-      result[pubkey] = profile;
+    getProfiles({
+      authors: allPubkeys,
+      cachedProfiles,
+      onUpdate: (px) => {
+        // merge with existing profiles
+        setProfiles((prev) => {
+          const newProfiles = new Map(prev);
+
+          px.forEach((profile, pubkey) => {
+            newProfiles.set(pubkey, profile);
+          });
+
+          return newProfiles;
+        });
+      },
     });
-
-    return result;
-  }, [profilesMap]);
+  }, [allPubkeys]);
 
   // Load event statistics
   useEffect(() => {
@@ -226,8 +247,8 @@ export function EventStatistics({
     const _repliesCount = statistics?.replies?.size || 0;
     const _quotesCount = statistics?.quotes?.size || 0;
     const _repostsCount = statistics?.reposts?.size || 0;
-    const _likesCount = statistics?.likes?.length || 0;
-    const _dislikesCount = statistics?.dislikes?.length || 0;
+    const _likesCount = statistics?.likes?.size || 0;
+    const _dislikesCount = statistics?.dislikes?.size || 0;
     const _zapCount = zaps.length;
     const _zapAmount = zaps.reduce((sum, zap) => sum + zap.amount, 0);
 
@@ -269,7 +290,7 @@ export function EventStatistics({
         key: "like",
         icon: <Heart className="h-4 w-4" />,
         count: _likesCount,
-        events: statistics?.likes || [],
+        events: Array.from(statistics?.likes?.values() || []),
         color: "text-red-600",
       });
     }
@@ -281,18 +302,18 @@ export function EventStatistics({
         key: "dislike",
         icon: <Heart className="h-4 w-4" />, // Changed from ThumbsDown for consistency
         count: _dislikesCount,
-        events: statistics?.dislikes || [],
+        events: Array.from(statistics?.dislikes?.values() || []),
         color: "text-gray-600",
       });
     }
 
     // Add emoji reactions
     if (statistics?.emojis) {
-      const sortedEmojis = Object.entries(statistics.emojis).sort(
-        ([, a], [, b]) => b.events.length - a.events.length,
+      const sortedEmojis = Array.from(statistics.emojis.values()).sort(
+        (a, b) => b.events.length - a.events.length,
       );
 
-      sortedEmojis.forEach(([emojiName, customEmoji]) => {
+      sortedEmojis.forEach((customEmoji) => {
         if (
           customEmoji &&
           customEmoji.events &&
@@ -320,7 +341,7 @@ export function EventStatistics({
               />
             );
           } else {
-            icon = <span className="text-lg">{emojiName}</span>;
+            icon = <span className="text-lg">{customEmoji.name}</span>;
           }
 
           _reactionGroups.push({
@@ -370,7 +391,7 @@ export function EventStatistics({
 
     postRepost(
       event,
-      eventRelayHint,
+      author,
       writeRelays,
       () => {
         toast({
@@ -390,6 +411,7 @@ export function EventStatistics({
 
   const handleQuoteClick = () => {
     setShowQuotes(!showQuotes);
+
     if (isExpanded) {
       setIsExpanded(false);
     }
@@ -463,14 +485,15 @@ export function EventStatistics({
       postQuoteRepost(
         event,
         quoteContent,
-        eventRelayHint,
         writeRelays,
         () => {
           toast({
             title: "Başarılı",
             description: "Alıntı başarıyla gönderildi",
           });
+
           setQuoteContent("");
+
           cache.deleteDraft(`quote-${event.id}`);
         },
         (error) => {

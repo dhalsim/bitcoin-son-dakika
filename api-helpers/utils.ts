@@ -1,12 +1,11 @@
-import type { NostrEvent } from "nostr-tools";
 import { verifyEvent, SimplePool } from "nostr-tools";
 
+import type { EventItem } from "@/lib/nip01.js";
 import type { PublishToRelaysResult } from "@/lib/utils.js";
 
 import type { AuthResult, UserRole } from "./types.js";
 
 export const pool = new SimplePool();
-pool.trackRelays = true;
 
 // Nostr relays for admin operations
 export const ADMIN_RELAYS = [
@@ -120,7 +119,7 @@ export async function authenticateNIP98(
     }
 
     // Parse the Nostr event from the Authorization header
-    let nostrEvent: NostrEvent;
+    let nostrEvent: EventItem;
     try {
       const eventBase64 = authHeader.slice(6); // Remove 'Nostr ' prefix
       const eventJson = atob(eventBase64);
@@ -260,7 +259,7 @@ export async function fetchNostrSets(
     let newsTags: NewsTag[] = [];
 
     // Fetch admin users set
-    const eventResults: Map<EventSet, NostrEvent> = await fetchSets(sets);
+    const eventResults: Map<EventSet, EventItem> = await fetchSets(sets);
 
     for (const [set, event] of eventResults) {
       if (set === "admin-users") {
@@ -318,7 +317,7 @@ export type EventSet = "admin-users" | "editor-users" | "articles" | "news";
 
 const fetchSets = async (
   sets: EventSet[],
-): Promise<Map<EventSet, NostrEvent>> => {
+): Promise<Map<EventSet, EventItem>> => {
   const hasFollowSet = sets.some((set) => getEventSetType(set, "follow"));
   const hasCurationSet = sets.some((set) => getEventSetType(set, "curation"));
 
@@ -328,10 +327,11 @@ const fetchSets = async (
   ].filter(Boolean);
 
   return new Promise((resolve, reject) => {
-    const events = new Map<EventSet, NostrEvent>();
+    const events = new Map<EventSet, EventItem>();
+    const receivedEventRelayMap = new Map<string, string>();
 
     // Use the correct nostr-tools API for fetching events
-    pool.subscribeEose(
+    const sub = pool.subscribe(
       ADMIN_RELAYS,
       {
         kinds,
@@ -339,6 +339,9 @@ const fetchSets = async (
         "#d": sets,
       },
       {
+        receivedEvent(relay, id) {
+          receivedEventRelayMap.set(id, relay.url);
+        },
         onevent(evt) {
           const dTag = evt.tags.find((tag) => tag[0] === "d")?.[1];
 
@@ -359,14 +362,24 @@ const fetchSets = async (
             }
           }
 
-          events.set(dTag as EventSet, evt);
+          const relay = receivedEventRelayMap.get(evt.id);
+
+          if (!relay) {
+            console.error("Received event from unknown relay", evt);
+
+            return;
+          }
+
+          events.set(dTag as EventSet, { ...evt, relay });
         },
-        onclose() {
+        oneose() {
           if (events.size === sets.length) {
             resolve(events);
           } else {
             reject(new Error("Not all events received"));
           }
+
+          sub.close();
         },
       },
     );

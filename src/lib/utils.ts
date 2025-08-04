@@ -32,3 +32,17 @@ export function publishToRelays(
     }),
   );
 }
+
+export function logCloseReasons(reasons: string[]): void {
+  const normalReasons = [
+    "closed automatically on eose",
+    "closed by client",
+    "closed by caller",
+  ];
+
+  const nonNormalReasons = reasons.filter((r) => !normalReasons.includes(r));
+
+  if (nonNormalReasons.length > 0) {
+    console.log("Profile subscription closed:", nonNormalReasons);
+  }
+}

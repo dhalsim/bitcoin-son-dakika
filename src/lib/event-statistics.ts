@@ -1,6 +1,5 @@
-import type { NostrEvent } from "nostr-tools";
-
 import { getCache } from "./cache";
+import type { EventItem } from "./nip01";
 import { getKind1Replies } from "./nip10";
 import { getReposts, getKind1Quotes } from "./nip18";
 import { getArticleReplies } from "./nip22";
@@ -9,14 +8,14 @@ import { type ZapReceipt, getZaps } from "./nip57";
 
 export type EventStatistics = {
   zaps: Map<string, ZapReceipt>;
-  replies: Map<string, NostrEvent>;
-  quotes: Map<string, NostrEvent>;
-  reposts: Map<string, NostrEvent>;
-  likes: NostrEvent[];
-  dislikes: NostrEvent[];
-  emojis: {
-    [emoji: string]: CustomEmoji;
-  };
+  replies: Map<string, EventItem>;
+  nip22Replies: Map<string, EventItem>;
+  quotes: Map<string, EventItem>;
+  reposts: Map<string, EventItem>;
+  reactions: Map<string, EventItem>;
+  likes: Map<string, EventItem>;
+  dislikes: Map<string, EventItem>;
+  emojis: Map<string, CustomEmoji>;
 };
 
 /*
@@ -54,7 +53,7 @@ const STATISTICS_RELAYS = [
 ];
 
 // Helper function to extract emoji info from reaction event
-function extractEmojiInfo(reaction: NostrEvent): {
+function extractEmojiInfo(reaction: EventItem): {
   name: string;
   url: string | null;
 } {
@@ -102,23 +101,96 @@ function chooseBestUrl(urls: string[]): string {
   return Object.entries(urlCounts).sort(([, a], [, b]) => b - a)[0][0];
 }
 
+const likeFilter = (reaction: EventItem) =>
+  reaction.content === "+" || reaction.content === "";
+const dislikeFilter = (reaction: EventItem) => reaction.content === "-";
+
+type ReactionsTransformed = {
+  likes: Map<string, EventItem>;
+  dislikes: Map<string, EventItem>;
+  emojis: Map<string, CustomEmoji>;
+};
+
+function reactionsToMap(reactions: EventItem[]): ReactionsTransformed {
+  const likes = new Map<string, EventItem>();
+  const dislikes = new Map<string, EventItem>();
+  const emojis = new Map<string, { events: EventItem[]; urls: string[] }>();
+
+  for (const reaction of reactions) {
+    if (likeFilter(reaction)) {
+      likes.set(reaction.id, reaction);
+    } else if (dislikeFilter(reaction)) {
+      dislikes.set(reaction.id, reaction);
+    } else {
+      const { name, url } = extractEmojiInfo(reaction);
+
+      if (!emojis.has(name)) {
+        emojis.set(name, { events: [], urls: [] });
+      }
+
+      emojis.get(name).events.push(reaction);
+
+      if (url) {
+        emojis.get(name).urls.push(url);
+      }
+    }
+  }
+
+  const finalEmojis = new Map<string, CustomEmoji>();
+
+  for (const [name, group] of emojis) {
+    const bestUrl = group.urls.length > 0 ? chooseBestUrl(group.urls) : null;
+
+    finalEmojis.set(name, { name, url: bestUrl, events: group.events });
+  }
+
+  return {
+    likes,
+    dislikes,
+    emojis: finalEmojis,
+  };
+}
+
 const cache = getCache();
 
 // Updated reaction processing
 export function getEventStatistics(
-  event: NostrEvent,
+  event: EventItem,
   onUpdate: (statistics: EventStatistics) => void,
 ) {
   // Initialize statistics object with the cache directly
+  const cachedReactions = cache.getNip25Reactions(event.id);
+  const cachedReactionsArray = Array.from(cachedReactions.values());
+
+  const { likes, dislikes, emojis } = reactionsToMap(cachedReactionsArray);
+
+  let nip22Replies = new Map<string, EventItem>();
+
+  if (event.kind === 30023) {
+    const d = event.tags.find((tag) => tag[0] === "d")?.[1];
+
+    if (!d) {
+      throw new Error("Cannot find d tag in kind 30023 event");
+    }
+
+    const aTag = `30023:${event.pubkey}:${d}`;
+
+    nip22Replies = cache.getNip22ArticleReplies(aTag);
+  }
+
   const stats: EventStatistics = {
     zaps: cache.getNip57Zaps(event.id),
     replies: cache.getNip10Replies(event.id),
+    nip22Replies,
     quotes: cache.getNip18Quotes(event.id),
     reposts: cache.getNip18Reposts(event.id),
-    likes: [],
-    dislikes: [],
-    emojis: {},
+    reactions: cachedReactions,
+    likes,
+    dislikes,
+    emojis,
   };
+
+  onUpdate({ ...stats });
 
   const cleanupFunctions: (() => void)[] = [];
 
@@ -135,107 +207,120 @@ export function getEventStatistics(
         onUpdate({ ...stats });
       },
     );
+
     if (repostCleanup) {
       cleanupFunctions.push(repostCleanup);
     }
   }
 
   // Get reactions (NIP-25) - works for all event types
-  getReactions(event, STATISTICS_RELAYS, (reactions) => {
-    const likes: NostrEvent[] = [];
-    const dislikes: NostrEvent[] = [];
-    const emojiGroups: {
-      [key: string]: { events: NostrEvent[]; urls: string[] };
-    } = {};
+  const reactionCleanup = getReactions(
+    event,
+    STATISTICS_RELAYS,
+    stats.reactions,
+    (reactions) => {
+      // merge the reactions with the cache
+      stats.reactions = new Map([...stats.reactions, ...reactions]);
 
-    for (const [, reaction] of reactions) {
-      if (reaction.content === "+" || reaction.content === "") {
-        likes.push(reaction);
-      } else if (reaction.content === "-") {
-        dislikes.push(reaction);
-      } else {
-        const { name, url } = extractEmojiInfo(reaction);
+      const { likes, dislikes, emojis } = reactionsToMap(
+        Array.from(reactions.values()),
+      );
 
-        if (!emojiGroups[name]) {
-          emojiGroups[name] = { events: [], urls: [] };
-        }
+      stats.likes = likes;
+      stats.dislikes = dislikes;
+      stats.emojis = emojis;
 
-        emojiGroups[name].events.push(reaction);
-        if (url) {
-          emojiGroups[name].urls.push(url);
-        }
-      }
-    }
+      onUpdate({ ...stats });
+    },
+  );
 
-    // Convert grouped emojis to final format
-    const emojis: { [emoji: string]: CustomEmoji } = {};
-
-    Object.entries(emojiGroups).forEach(([name, group]) => {
-      const bestUrl = group.urls.length > 0 ? chooseBestUrl(group.urls) : null;
-
-      emojis[name] = {
-        name,
-        url: bestUrl,
-        events: group.events,
-      };
-    });
-
-    stats.likes = likes;
-    stats.dislikes = dislikes;
-    stats.emojis = emojis;
-
-    onUpdate({ ...stats });
-  });
+  if (reactionCleanup) {
+    cleanupFunctions.push(reactionCleanup);
+  }
 
   // Get zaps (NIP-57) - works for all event types
-  getZaps(event, STATISTICS_RELAYS, (zaps) => {
-    stats.zaps = zaps || new Map();
+  const zapsCleanup = getZaps(event, STATISTICS_RELAYS, stats.zaps, (zaps) => {
+    // merge the zaps with the cache
+    stats.zaps = new Map([...stats.zaps, ...zaps]);
 
     onUpdate({ ...stats });
   });
+
+  if (zapsCleanup) {
+    cleanupFunctions.push(zapsCleanup);
+  }
+
+  const quotesCleanup = getKind1Quotes(
+    event,
+    STATISTICS_RELAYS,
+    stats.quotes,
+    (quotes) => {
+      // merge the quotes with the cache
+      stats.quotes = new Map([...stats.quotes, ...quotes]);
+
+      onUpdate({ ...stats });
+    },
+  );
+
+  if (quotesCleanup) {
+    cleanupFunctions.push(quotesCleanup);
+  }
 
   // Handle different event types
   if (event.kind === 1) {
     // Kind 1 (notes) - use NIP-10
-    getKind1Replies(event, STATISTICS_RELAYS, (replies) => {
-      stats.replies = replies || new Map();
+    const repliesCleanup = getKind1Replies(
+      event,
+      STATISTICS_RELAYS,
+      stats.replies,
+      (replies) => {
+        // merge the replies with the cache
+        stats.replies = new Map([...stats.replies, ...replies]);
 
-      onUpdate({ ...stats });
-    });
+        onUpdate({ ...stats });
+      },
+    );
 
-    getKind1Quotes(event, STATISTICS_RELAYS, (quotes) => {
-      stats.quotes = quotes || new Map();
-
-      onUpdate({ ...stats });
-    });
-
-    return () => {
-      cleanupFunctions.forEach((cleanup) => cleanup());
-    };
+    if (repliesCleanup) {
+      cleanupFunctions.push(repliesCleanup);
+    }
   } else if (event.kind === 30023) {
     // Kind 30023 (articles) - use NIP-22
-    getArticleReplies(event, STATISTICS_RELAYS, (replies) => {
-      // Convert array to Map for consistency
-      const repliesMap = new Map();
-      if (replies) {
-        replies.forEach((reply) => repliesMap.set(reply.id, reply));
-      }
+    const d = event.tags.find((tag) => tag[0] === "d")?.[1];
 
-      stats.replies = repliesMap;
+    if (!d) {
+      throw new Error("Cannot find d tag in kind 30023 event");
+    }
 
-      onUpdate({ ...stats });
-    });
+    const aTag = `30023:${event.pubkey}:${d}`;
 
-    getKind1Quotes(event, STATISTICS_RELAYS, (quotes) => {
-      stats.quotes = quotes || new Map();
+    const cachedReplies = cache.getNip22ArticleReplies(aTag);
 
-      onUpdate({ ...stats });
-    });
+    if (cachedReplies) {
+      stats.replies = new Map([...stats.replies, ...cachedReplies]);
+    }
 
-    return () => {
-      cleanupFunctions.forEach((cleanup) => cleanup());
-    };
+    const repliesCleanup = getArticleReplies(
+      event,
+      aTag,
+      STATISTICS_RELAYS,
+      stats.nip22Replies,
+      (replies) => {
+        // merge the replies with the cache
+        stats.nip22Replies = new Map([...stats.nip22Replies, ...replies]);
+
+        onUpdate({ ...stats });
+      },
+    );
+
+    if (repliesCleanup) {
+      cleanupFunctions.push(repliesCleanup);
+    }
+  } else {
+    throw new Error("Event type not supported");
   }
 
-  throw new Error("Event type not supported");
+  return () => {
+    cleanupFunctions.forEach((cleanup) => cleanup());
+  };
 }

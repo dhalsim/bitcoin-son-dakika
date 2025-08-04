@@ -11,7 +11,6 @@ import turkishWindowNostrJs from "@/i18n/tr.json";
 
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
-import { ProfileProvider } from "./contexts/ProfileContext";
 import { SSGProvider } from "./contexts/SSGContext";
 import { UserProvider } from "./contexts/UserContext";
 
@@ -73,10 +72,8 @@ export default function Root() {
         <TooltipProvider>
           <SSGProvider>
             <UserProvider>
-              <ProfileProvider>
-                <Toaster />
-                <Outlet />
-              </ProfileProvider>
+              <Toaster />
+              <Outlet />
             </UserProvider>
           </SSGProvider>
         </TooltipProvider>

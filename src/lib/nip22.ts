@@ -1,38 +1,27 @@
-import type { NostrEvent } from "nostr-tools";
-
 import { getCache } from "./cache";
+import type { EventItem } from "./nip01";
 import { pool } from "./utils";
 
 const cache = getCache();
 
 export type ReplyNode = {
-  event: NostrEvent;
+  event: EventItem;
   children: ReplyNode[];
   depth: number;
   isRoot: boolean;
 };
 
 export function getArticleReplies(
-  rootEvent: NostrEvent,
+  rootEvent: EventItem,
+  aTag: string,
   relays: string[],
-  onUpdate: (replies: NostrEvent[]) => void,
+  cachedReplies: Map<string, EventItem>,
+  onUpdate: (replies: Map<string, EventItem>) => void,
 ) {
-  const d = rootEvent.tags.find((tag) => tag[0] === "d")?.[1];
+  const newReplies = new Map<string, EventItem>();
+  const receivedEventRelayMap = new Map<string, string>();
 
-  if (!d) {
-    throw new Error("Cannot find d tag in kind 30023 event");
-  }
-
-  const aTag = `30023:${rootEvent.pubkey}:${d}`;
-  const cachedReplies = cache.getNip22ArticleReplies(aTag);
-
-  if (cachedReplies) {
-    onUpdate(cachedReplies);
-  }
-
-  const replies = [];
-
-  pool.subscribe(
+  const sub = pool.subscribe(
     relays,
     {
       kinds: [1111],
@@ -41,34 +30,42 @@ export function getArticleReplies(
       "#P": [rootEvent.pubkey],
     },
     {
-      onevent: (evt) => {
-        replies.push(evt);
+      receivedEvent(relay, id) {
+        receivedEventRelayMap.set(id, relay.url);
       },
-      oneose: () => {
-        const sortedReplies = replies.sort(
-          (a, b) => a.created_at - b.created_at,
-        );
+      alreadyHaveEvent(id) {
+        return cachedReplies.has(id);
+      },
+      onevent: (evt) => {
+        const relay = receivedEventRelayMap.get(evt.id);
 
-        if (cachedReplies && sortedReplies.length) {
-          const sortedRepliesIds = sortedReplies
-            .map((reply) => reply.id)
-            .join(",");
-          const cachedRepliesIds = cachedReplies
-            .map((reply) => reply.id)
-            .join(",");
+        if (!relay) {
+          console.error("Received event from unknown relay", evt);
 
-          if (sortedRepliesIds === cachedRepliesIds) {
-            // nothing to update
-            return;
-          }
+          return;
         }
 
-        cache.setNip22ArticleReplies(aTag, sortedReplies);
+        if (cachedReplies.has(evt.id)) {
+          return;
+        }
 
-        onUpdate(sortedReplies);
+        newReplies.set(evt.id, { ...evt, relay });
+        cachedReplies.set(evt.id, { ...evt, relay });
+      },
+      oneose: () => {
+        if (newReplies.size) {
+          onUpdate(new Map(newReplies));
+          newReplies.clear();
+
+          cache.setNip22ArticleReplies(aTag, cachedReplies);
+        }
       },
     },
   );
+
+  return () => {
+    sub.close();
+  };
 }
 
 /**
@@ -78,7 +75,7 @@ export function getArticleReplies(
  * @returns A tree structure of ReplyNode objects
  */
 export function createNip22Thread(
-  events: Map<string, NostrEvent>,
+  events: Map<string, EventItem>,
   rootEventId: string,
 ): ReplyNode[] {
   if (!events || events.size === 0) {
@@ -86,7 +83,7 @@ export function createNip22Thread(
   }
 
   // Create a map of parent ID to children
-  const childrenMap = new Map<string, NostrEvent[]>();
+  const childrenMap = new Map<string, EventItem[]>();
 
   events.forEach((event) => {
     // Find the A tags (article references) - NIP-22 uses A tags instead of e tags

@@ -1,19 +1,16 @@
-import type { NostrEvent } from "nostr-tools";
-
 import { fetchNostrSets, pool } from "../../api-helpers/utils";
 
-import type { ProfileItem } from "./nip01";
+import type { EventItem, ProfileItem } from "./nip01";
 import { getProfiles } from "./nip01";
 
 export interface NewsItem {
   id: string;
   title: string;
   content: string;
-  event: NostrEvent;
-  relayHint: string;
-  summary?: string;
-  publishedAt: number;
+  event: EventItem;
   author: ProfileItem;
+  publishedAt: number;
+  summary?: string;
   tags: string[];
   category?: string;
   image?: string;
@@ -23,12 +20,11 @@ export interface ArticleItem {
   id: string;
   title: string;
   content: string;
-  event: NostrEvent;
-  relayHint: string;
-  summary?: string;
-  publishedAt: number;
-  author: ProfileItem;
   tags: string[];
+  event: EventItem;
+  author: ProfileItem;
+  publishedAt: number;
+  summary?: string;
   category?: string;
   identifier?: string;
   image?: string;
@@ -40,11 +36,7 @@ export interface SSGData {
   lastUpdated: number;
 }
 
-function processNewsEvent(
-  event: NostrEvent,
-  author: ProfileItem,
-  relayHint: string,
-): NewsItem {
+function processNewsEvent(event: EventItem, author: ProfileItem): NewsItem {
   const titleTag = event.tags.find((tag) => tag[0] === "title");
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
   const categoryTag = event.tags.find((tag) => tag[0] === "t");
@@ -55,7 +47,6 @@ function processNewsEvent(
     title: titleTag?.[1] || "Untitled",
     content: event.content,
     event,
-    relayHint,
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
@@ -66,9 +57,8 @@ function processNewsEvent(
 }
 
 function processArticleEvent(
-  event: NostrEvent,
+  event: EventItem,
   author: ProfileItem,
-  relayHint: string,
 ): ArticleItem {
   const titleTag = event.tags.find((tag) => tag[0] === "title");
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
@@ -81,7 +71,6 @@ function processArticleEvent(
     title: titleTag?.[1] || "Untitled Article",
     content: event.content,
     event,
-    relayHint,
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
@@ -152,7 +141,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${ne.id}`);
     }
 
-    return processNewsEvent(ne, profile, relayHintTag.relay);
+    return processNewsEvent({ ...ne, relay: relayHintTag.relay }, profile);
   });
 
   const articleItems: ArticleItem[] = articlesEvents.map((ae) => {
@@ -178,7 +167,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${ae.id}`);
     }
 
-    return processArticleEvent(ae, profile, relayHintTag.relay);
+    return processArticleEvent({ ...ae, relay: relayHintTag.relay }, profile);
   });
 
   // Sort by publication date (newest first)
@@ -199,42 +188,12 @@ export async function fetchSSGData(): Promise<SSGData> {
 export function getProfileEvents(
   profilePubkeys: string[],
 ): Promise<Map<string, ProfileItem>> {
-  return new Promise((resolve, reject) => {
-    const profileEvents = new Map<string, ProfileItem>();
-
-    const cleanup = getProfiles({
+  return new Promise((resolve) => {
+    getProfiles({
       authors: profilePubkeys,
-      onUpdate: (p, profileEvent) => {
-        profileEvents.set(p, profileEvent);
-      },
-      oneose: () => {
-        if (profileEvents.size === profilePubkeys.length) {
-          cleanup();
-
-          return resolve(profileEvents);
-        } else {
-          cleanup();
-
-          reject(new Error("Some profile events not found"));
-        }
-      },
-      onclose: (reasons) => {
-        const nonEoseReasons = reasons.filter(
-          (r) =>
-            r !== "closed automatically on eose" && r !== "closed by client",
-        );
-
-        if (nonEoseReasons.length > 0) {
-          console.log("Profile subscription closed:", reasons);
-        }
-      },
+      cachedProfiles: new Map(),
+      onUpdate: resolve,
     });
-
-    return () => {
-      if (cleanup) {
-        cleanup();
-      }
-    };
   });
 }
 

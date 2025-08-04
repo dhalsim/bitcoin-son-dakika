@@ -1,6 +1,7 @@
-import { nip19, type EventTemplate, type NostrEvent } from "nostr-tools";
+import { nip19, type EventTemplate } from "nostr-tools";
 
 import { getCache } from "./cache";
+import type { EventItem, ProfileItem } from "./nip01";
 import { getUserPubkey, signEventByNip07 } from "./nip07";
 import { getEventIdentifier } from "./nip10";
 import { pool, publishToRelays } from "./utils";
@@ -8,12 +9,13 @@ import { pool, publishToRelays } from "./utils";
 const cache = getCache();
 
 export function getReposts(
-  event: NostrEvent,
+  event: EventItem,
   relays: string[],
-  cachedReposts: Map<string, NostrEvent>,
-  onUpdate: (reposts: Map<string, NostrEvent>) => void,
+  cachedReposts: Map<string, EventItem>,
+  onUpdate: (reposts: Map<string, EventItem>) => void,
 ) {
-  const newReposts = new Map<string, NostrEvent>();
+  const newReposts = new Map<string, EventItem>();
+  const receivedEventRelayMap = new Map<string, string>();
 
   const sub = pool.subscribe(
     relays,
@@ -22,24 +24,30 @@ export function getReposts(
       "#e": [event.id],
     },
     {
+      receivedEvent(relay, id) {
+        receivedEventRelayMap.set(id, relay.url);
+      },
       alreadyHaveEvent(id) {
         return cachedReposts.has(id);
       },
       onevent: (evt) => {
-        newReposts.set(evt.id, evt);
-        cachedReposts.set(evt.id, evt);
+        const relay = receivedEventRelayMap.get(evt.id);
+
+        if (!relay) {
+          console.error("Received event from unknown relay", evt);
+
+          return;
+        }
+
+        newReposts.set(evt.id, { ...evt, relay });
+        cachedReposts.set(evt.id, { ...evt, relay });
       },
       oneose: () => {
-        // Got all stored events
-        // send the reposts that we didn't send yet
         if (newReposts.size) {
-          onUpdate(newReposts);
+          onUpdate(new Map(newReposts));
           newReposts.clear();
 
-          // now we need to update the cache with all the reposts
-          // Create a new Map to avoid mutation issues
-          const updatedReposts = new Map([...cachedReposts]);
-          cache.setNip18Reposts(event.id, updatedReposts);
+          cache.setNip18Reposts(event.id, cachedReposts);
         }
       },
     },
@@ -52,8 +60,8 @@ export function getReposts(
 }
 
 export async function postRepost(
-  event: NostrEvent,
-  relayHint: string,
+  event: EventItem,
+  author: ProfileItem,
   publishRelays: string[],
   onSuccess: () => void,
   onError: (reason: string) => void,
@@ -78,8 +86,8 @@ export async function postRepost(
     content,
     created_at: Math.floor(Date.now() / 1000),
     tags: [
-      ["e", event.id, relayHint], // e tag with event id and relay URL
-      ["p", event.pubkey], // p tag with the pubkey of the event being reposted
+      ["e", event.id, event.relay], // e tag with event id and relay URL
+      ["p", event.pubkey, author.relay], // p tag with the pubkey of the event being reposted
     ],
   };
 
@@ -100,49 +108,64 @@ export async function postRepost(
 
 // Quote reposts (kind 1 events with q tags)
 export function getKind1Quotes(
-  event: NostrEvent,
+  event: EventItem,
   relays: string[],
-  onUpdate: (quotes: Map<string, NostrEvent>) => void,
+  cachedQuotes: Map<string, EventItem>,
+  onUpdate: (quote: Map<string, EventItem>) => void,
 ) {
   const identifier = getEventIdentifier(event);
-  const cachedQuotes = cache.getNip18Quotes(identifier);
 
-  if (cachedQuotes && cachedQuotes.size) {
-    onUpdate(cachedQuotes);
-  }
+  const newQuotes = new Map<string, EventItem>();
+  const receivedEventRelayMap = new Map<string, string>();
 
-  let fetched = false;
-
-  pool.subscribeEose(
+  const sub = pool.subscribe(
     relays,
     {
       kinds: [1],
       "#q": identifier === event.id ? [identifier] : [event.id, identifier],
     },
     {
+      receivedEvent(relay, id) {
+        receivedEventRelayMap.set(id, relay.url);
+      },
+      alreadyHaveEvent(id) {
+        return cachedQuotes.has(id);
+      },
       onevent: (evt) => {
+        const relay = receivedEventRelayMap.get(evt.id);
+
+        if (!relay) {
+          console.error("Received event from unknown relay", evt);
+
+          return;
+        }
+
         if (cachedQuotes.has(evt.id)) {
           return;
         }
 
-        cachedQuotes.set(evt.id, evt);
-        fetched = true;
+        newQuotes.set(evt.id, { ...evt, relay });
+        cachedQuotes.set(evt.id, { ...evt, relay });
       },
-      onclose: () => {
-        if (fetched) {
-          cache.setNip18Quotes(identifier, cachedQuotes);
+      oneose: () => {
+        if (newQuotes.size) {
+          onUpdate(new Map(newQuotes));
+          newQuotes.clear();
 
-          onUpdate(cachedQuotes);
+          cache.setNip18Quotes(identifier, cachedQuotes);
         }
       },
     },
   );
+
+  return () => {
+    sub.close();
+  };
 }
 
 export async function postQuoteRepost(
-  event: NostrEvent,
+  event: EventItem,
   content: string,
-  relayHint: string,
   publishRelays: string[],
   onSuccess: () => void,
   onError: (reason: string) => void,
@@ -164,7 +187,7 @@ export async function postQuoteRepost(
     id: event.id,
     author: event.pubkey,
     kind: event.kind,
-    relays: [relayHint],
+    relays: [event.relay],
   });
 
   // Combine user content with the nevent
@@ -175,7 +198,7 @@ export async function postQuoteRepost(
     content: fullContent,
     created_at: Math.floor(Date.now() / 1000),
     tags: [
-      ["q", event.id, relayHint, event.pubkey], // q tag for quote repost
+      ["q", event.id, event.relay, event.pubkey], // q tag for quote repost
     ],
   };
 

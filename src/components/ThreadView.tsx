@@ -10,16 +10,16 @@ import { RenderedText } from "@/lib/text-renderer";
 
 interface ThreadViewProps {
   thread: ReplyNode[];
+  profiles: Map<string, ProfileItem>;
   className?: string;
   onReply?: (event: NostrEvent) => void;
-  profiles?: { [pubkey: string]: ProfileItem };
 }
 
 interface ThreadNodeProps {
   node: ReplyNode;
   depth: number;
+  profiles: Map<string, ProfileItem>;
   onReply?: (event: NostrEvent) => void;
-  profiles?: { [pubkey: string]: ProfileItem };
 }
 
 function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {

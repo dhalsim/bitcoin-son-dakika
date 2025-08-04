@@ -1,11 +1,12 @@
-// Cache utility for localStorage persistence
-import type { NostrEvent } from "nostr-tools";
-
 import type { EmojiCategories, EmojiUsage } from "@/types/emoji";
 
-import type { ProfileItem } from "./nip01";
+import type { EventItem, ProfileItem } from "./nip01";
 import type { Nip07Relays } from "./nip07";
 import type { ZapReceipt } from "./nip57";
+
+// Cache version - increment this when you need to invalidate all cached data
+const CACHE_VERSION = "0.1";
+const CACHE_VERSION_KEY = "bsd-cache-version";
 
 export class LocalStorageCache {
   private static instance: LocalStorageCache;
@@ -13,7 +14,7 @@ export class LocalStorageCache {
   private readonly CACHE_PREFIX = "bsd-cache-";
 
   private constructor() {
-    // No longer loading everything at startup
+    this.validateCacheVersion();
   }
 
   static getInstance(): LocalStorageCache {
@@ -22,6 +23,105 @@ export class LocalStorageCache {
     }
 
     return LocalStorageCache.instance;
+  }
+
+  /**
+   * Validates the cache version and clears all cache if version has changed
+   */
+  private validateCacheVersion(): void {
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return;
+    }
+
+    try {
+      const storedVersion = localStorage.getItem(CACHE_VERSION_KEY);
+
+      // If no version is stored, this is a fresh install or cache was cleared
+
+      if (!storedVersion) {
+        this.setCacheVersion();
+
+        return;
+      }
+
+      // If version has changed, clear all cache
+      if (storedVersion !== CACHE_VERSION) {
+        console.log(
+          `Cache version changed from ${storedVersion} to ${CACHE_VERSION}. Clearing cache...`,
+        );
+        this.clearAllCache();
+        this.setCacheVersion();
+      }
+    } catch (error) {
+      console.warn("Failed to validate cache version:", error);
+      // If there's an error, clear cache to be safe
+      this.clearAllCache();
+      this.setCacheVersion();
+    }
+  }
+
+  /**
+   * Sets the current cache version in localStorage
+   */
+  private setCacheVersion(): void {
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return;
+    }
+
+    try {
+      localStorage.setItem(CACHE_VERSION_KEY, CACHE_VERSION);
+    } catch (error) {
+      console.warn("Failed to set cache version:", error);
+    }
+  }
+
+  /**
+   * Clears all cached data from both memory and localStorage
+   */
+  private clearAllCache(): void {
+    // Clear memory cache
+    this.cache.clear();
+
+    // Clear localStorage cache
+    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+      return;
+    }
+
+    try {
+      const keysToRemove: string[] = [];
+
+      // Find all cache keys
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(this.CACHE_PREFIX)) {
+          keysToRemove.push(key);
+        }
+      }
+
+      // Remove all cache keys
+      keysToRemove.forEach((key) => {
+        localStorage.removeItem(key);
+      });
+
+      console.log("Cache cleared successfully");
+    } catch (error) {
+      console.warn("Failed to clear cache:", error);
+    }
+  }
+
+  /**
+   * Manually clear the cache (useful for debugging or user-initiated cache clearing)
+   */
+  public clearCache(): void {
+    this.clearAllCache();
+    this.setCacheVersion();
+  }
+
+  /**
+   * Get the current cache version
+   */
+  public getCacheVersion(): string {
+    return CACHE_VERSION;
   }
 
   private getStorageKey(key: string): string {
@@ -92,6 +192,8 @@ export class LocalStorageCache {
 
     if (value !== undefined) {
       this.cache.set(key, value);
+
+      return value;
     } else {
       return null;
     }
@@ -125,11 +227,11 @@ export class LocalStorageCache {
     this.setToStorage("emoji-usage", value);
   }
 
-  getNip65Event(pubkey: string): NostrEvent | null {
+  getNip65Event(pubkey: string): EventItem | null {
     return this.getCachedValue(`nip65-${pubkey}`);
   }
 
-  setNip65Event(pubkey: string, value: NostrEvent | null): void {
+  setNip65Event(pubkey: string, value: EventItem | null): void {
     const key = `nip65-${pubkey}`;
     this.cache.set(key, value);
     this.setToStorage(key, value);
@@ -137,13 +239,13 @@ export class LocalStorageCache {
 
   getNip02(
     pubkey: string,
-  ): { event: NostrEvent; followRelays: string[] } | null {
+  ): { event: EventItem; followRelays: string[] } | null {
     return this.getCachedValue(`nip02-${pubkey}`);
   }
 
   setNip02(
     pubkey: string,
-    value: { event: NostrEvent; followRelays: string[] },
+    value: { event: EventItem; followRelays: string[] },
   ): void {
     const key = `nip02-${pubkey}`;
     this.cache.set(key, value);
@@ -160,77 +262,81 @@ export class LocalStorageCache {
     this.setToStorage(key, value);
   }
 
-  getNip10Replies(eventId: string): Map<string, NostrEvent> {
-    const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
+  getNip10Replies(eventId: string): Map<string, EventItem> {
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(
       `nip10-replies-${eventId}`,
     );
 
     return new Map(parsedArray);
   }
 
-  setNip10Replies(eventId: string, replies: Map<string, NostrEvent>): void {
+  setNip10Replies(eventId: string, replies: Map<string, EventItem>): void {
     const key = `nip10-replies-${eventId}`;
     this.cache.set(key, replies);
     this.setToStorage(key, Array.from(replies.entries()));
   }
 
-  getNip18Quotes(identifier: string): Map<string, NostrEvent> {
-    const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
+  getNip18Quotes(identifier: string): Map<string, EventItem> {
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(
       `nip18-quotes-${identifier}`,
     );
 
     return new Map(parsedArray);
   }
 
-  getNip18Reposts(eventId: string): Map<string, NostrEvent> {
-    const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
+  getNip18Reposts(eventId: string): Map<string, EventItem> {
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(
       `nip18-reposts-${eventId}`,
     );
 
     return new Map(parsedArray);
   }
 
-  setNip18Reposts(eventId: string, value: Map<string, NostrEvent>): void {
+  setNip18Reposts(eventId: string, value: Map<string, EventItem>): void {
     const key = `nip18-reposts-${eventId}`;
     this.cache.set(key, value);
     this.setToStorage(key, Array.from(value.entries()));
   }
 
-  setNip18Quotes(identifier: string, value: Map<string, NostrEvent>): void {
+  setNip18Quotes(identifier: string, value: Map<string, EventItem>): void {
     const key = `nip18-quotes-${identifier}`;
     this.cache.set(key, value);
     this.setToStorage(key, Array.from(value.entries()));
   }
 
-  getNip22NewsReplies(eventId: string): NostrEvent[] | null {
+  getNip22NewsReplies(eventId: string): EventItem[] | null {
     return this.getCachedValue(`nip22-news-replies-${eventId}`);
   }
 
-  setNip22NewsReplies(eventId: string, value: NostrEvent[]): void {
+  setNip22NewsReplies(eventId: string, value: EventItem[]): void {
     const key = `nip22-news-replies-${eventId}`;
     this.cache.set(key, value);
     this.setToStorage(key, value);
   }
 
-  getNip22ArticleReplies(aTag: string): NostrEvent[] | null {
-    return this.getCachedValue(`nip22-article-replies-${aTag}`);
+  getNip22ArticleReplies(aTag: string): Map<string, EventItem> {
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(
+      `nip22-article-replies-${aTag}`,
+    );
+
+    return new Map(parsedArray);
   }
 
-  setNip22ArticleReplies(aTag: string, value: NostrEvent[]): void {
+  setNip22ArticleReplies(aTag: string, value: Map<string, EventItem>): void {
     const key = `nip22-article-replies-${aTag}`;
     this.cache.set(key, value);
-    this.setToStorage(key, value);
+    this.setToStorage(key, Array.from(value.entries()));
   }
 
-  getNip25Reactions(eventId: string): Map<string, NostrEvent> {
-    const parsedArray = this.getCachedValue<[string, NostrEvent][]>(
+  getNip25Reactions(eventId: string): Map<string, EventItem> {
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(
       `nip25-reactions-${eventId}`,
     );
 
     return new Map(parsedArray);
   }
 
-  setNip25Reactions(eventId: string, value: Map<string, NostrEvent>): void {
+  setNip25Reactions(eventId: string, value: Map<string, EventItem>): void {
     const key = `nip25-reactions-${eventId}`;
     this.cache.set(key, value);
     this.setToStorage(key, Array.from(value.entries()));
@@ -267,24 +373,26 @@ export class LocalStorageCache {
   }
 
   // TODO: May remove them if not used any more
-  getKind0Event(pubkey: string): NostrEvent | null {
+  getKind0Event(pubkey: string): EventItem | null {
     return this.getCachedValue(`kind0-${pubkey}`);
   }
 
-  setKind0Event(pubkey: string, value: NostrEvent): void {
+  setKind0Event(pubkey: string, value: EventItem): void {
     const key = `kind0-${pubkey}`;
     this.cache.set(key, value);
     this.setToStorage(key, value);
   }
 
-  getProfileItem(pubkey: string): ProfileItem | null {
-    return this.getCachedValue(`profile-${pubkey}`);
+  getProfileItems(): Map<string, ProfileItem> {
+    const parsedArray =
+      this.getCachedValue<[string, ProfileItem][]>(`profile-items`);
+
+    return new Map(parsedArray);
   }
 
-  setProfileItem(pubkey: string, value: ProfileItem): void {
-    const key = `profile-${pubkey}`;
-    this.cache.set(key, value);
-    this.setToStorage(key, value);
+  setProfileItems(value: Map<string, ProfileItem>): void {
+    this.cache.set("profile-items", value);
+    this.setToStorage("profile-items", Array.from(value.entries()));
   }
 
   has(key: string): boolean {

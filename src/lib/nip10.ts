@@ -1,17 +1,15 @@
-import { type NostrEvent } from "nostr-tools";
-
 import { getCache } from "./cache";
+import type { EventItem } from "./nip01";
 import { pool } from "./utils";
-
 const cache = getCache();
 
 export type ReplyNode = {
-  event: NostrEvent;
+  event: EventItem;
   children: ReplyNode[];
   depth: number;
 };
 
-export function getEventIdentifier(event: NostrEvent) {
+export function getEventIdentifier(event: EventItem) {
   if (event.kind === 1) {
     return event.id;
   }
@@ -31,27 +29,38 @@ export function getEventIdentifier(event: NostrEvent) {
 
 // TODO: deletion of replies is not supported yet
 export function getKind1Replies(
-  event: NostrEvent,
+  event: EventItem,
   relays: string[],
-  onUpdate: (replies: Map<string, NostrEvent>) => void,
+  cachedReplies: Map<string, EventItem>,
+  onUpdate: (replies: Map<string, EventItem>) => void,
 ) {
-  const cachedReplies = cache.getNip10Replies(event.id);
-
-  if (cachedReplies.size) {
-    onUpdate(cachedReplies);
-  }
-
   const eventId = event.id;
-  let fetched = false;
 
-  pool.subscribeEose(
+  const newReplies = new Map<string, EventItem>();
+  const receivedEventRelayMap = new Map<string, string>();
+
+  const sub = pool.subscribe(
     relays,
     {
       kinds: [1],
       "#e": [eventId],
     },
     {
+      receivedEvent(relay, id) {
+        receivedEventRelayMap.set(id, relay.url);
+      },
+      alreadyHaveEvent(id) {
+        return cachedReplies.has(id);
+      },
       onevent: (evt) => {
+        const relay = receivedEventRelayMap.get(evt.id);
+
+        if (!relay) {
+          console.error("Received event from unknown relay", evt);
+
+          return;
+        }
+
         // validate event tags that it has to have an e tag with marker root
         if (!evt.tags.some((tag) => tag[0] === "e" && tag[3] === "root")) {
           return;
@@ -61,20 +70,23 @@ export function getKind1Replies(
           return;
         }
 
-        cachedReplies.set(evt.id, evt);
-        fetched = true;
+        newReplies.set(evt.id, { ...evt, relay });
+        cachedReplies.set(evt.id, { ...evt, relay });
       },
-      onclose: () => {
-        if (fetched) {
-          console.log("onclose", eventId, cachedReplies.size);
+      oneose: () => {
+        if (newReplies.size) {
+          onUpdate(new Map(newReplies));
+          newReplies.clear();
 
-          cache.setNip10Replies(eventId, cachedReplies);
-
-          onUpdate(cachedReplies);
+          cache.setNip10Replies(event.id, cachedReplies);
         }
       },
     },
   );
+
+  return () => {
+    sub.close();
+  };
 }
 
 /**
@@ -84,7 +96,7 @@ export function getKind1Replies(
  * @returns A tree structure of ReplyNode objects
  */
 export function createNip10Thread(
-  events: Map<string, NostrEvent>,
+  events: Map<string, EventItem>,
   rootEventId: string,
 ): ReplyNode[] {
   if (!events || events.size === 0) {
@@ -92,7 +104,7 @@ export function createNip10Thread(
   }
 
   // Create a map of parent ID to children
-  const childrenMap = new Map<string, NostrEvent[]>();
+  const childrenMap = new Map<string, EventItem[]>();
 
   events.forEach((event) => {
     // Find the e tags (event references)

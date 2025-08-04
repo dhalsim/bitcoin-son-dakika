@@ -1,7 +1,8 @@
 import { ExternalLink } from "lucide-react";
+import { nip19 } from "nostr-tools";
 import { useState } from "react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { NIP05Badge } from "@/components/ui/NIP05Badge";
@@ -10,8 +11,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useProfileImage } from "@/contexts/ProfileContext";
 import { type ProfileItem } from "@/lib/nip01";
+
+import { PROFILE_RELAYS } from "../../../api-helpers/utils";
 
 interface ProfileAvatarProps {
   pubkey: string;
@@ -57,7 +59,6 @@ export function ProfileAvatar({
   badge,
   popupContent,
 }: ProfileAvatarProps) {
-  const avatarImage = useProfileImage(pubkey);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const sizeClasses = getSizeClasses(size);
 
@@ -68,8 +69,14 @@ export function ProfileAvatar({
   };
 
   const handleProfileClick = () => {
+    const nprofile = nip19.nprofileEncode({
+      pubkey,
+      relays: [profile.relay || PROFILE_RELAYS[0]],
+    });
+
     // Open user profile in njump.me
-    window.open(`https://njump.me/${pubkey}`, "_blank");
+    window.open(`https://njump.me/${nprofile}`, "_blank");
+
     setIsPopoverOpen(false);
   };
 
@@ -93,7 +100,9 @@ export function ProfileAvatar({
         className={`${sizeClasses} ${className} ${"cursor-pointer hover:opacity-80 transition-opacity"} overflow-hidden`}
         onClick={handleAvatarClick}
       >
-        {avatarImage}
+        {profile.picture && (
+          <AvatarImage src={profile.picture} alt={displayName} />
+        )}
         <AvatarFallback className="text-xs">
           {displayName.slice(0, 2).toUpperCase()}
         </AvatarFallback>
@@ -113,7 +122,9 @@ export function ProfileAvatar({
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
-              {avatarImage}
+              {profile.picture && (
+                <AvatarImage src={profile.picture} alt={displayName} />
+              )}
               <AvatarFallback className="text-sm">
                 {displayName.slice(0, 2).toUpperCase()}
               </AvatarFallback>
@@ -122,13 +133,13 @@ export function ProfileAvatar({
               <h4 className="font-semibold text-gray-900 dark:text-gray-100">
                 {displayName}
               </h4>
-              {profile?.nip05 && (
+              {profile.nip05 && (
                 <NIP05Badge nip05={profile.nip05} pubkey={pubkey} size="sm" />
               )}
             </div>
           </div>
 
-          {profile?.about && (
+          {profile.about && (
             <p className="text-sm text-gray-600 dark:text-gray-300">
               {profile.about}
             </p>

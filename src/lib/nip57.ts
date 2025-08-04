@@ -3,16 +3,33 @@ import { verifyEvent } from "nostr-tools/pure";
 import { z } from "zod";
 
 import { getCache } from "./cache";
+import type { EventItem } from "./nip01";
 import { pool } from "./utils";
 
 const cache = getCache();
 
+export type ZapRequest = Omit<NostrEvent, "relays"> & {
+  relays: string[];
+};
+
 export type ZapReceipt = {
-  event: NostrEvent;
+  event: EventItem;
   amount: number; // in satoshis
   comment?: string;
-  zapRequest: NostrEvent;
+  zapRequest: ZapRequest;
 };
+
+export function extractZapRequestRelays(zapRequestEvent: NostrEvent): string[] {
+  const relaysTag = zapRequestEvent.tags.find((tag) => tag[0] === "relays");
+
+  if (!relaysTag) {
+    return [];
+  }
+
+  const [, ...relays] = relaysTag;
+
+  return Array.from(new Set(relays));
+}
 
 // Helper function to extract amount from bolt11 invoice
 export function extractAmountFromBolt11(bolt11: string): number {
@@ -47,7 +64,7 @@ export function extractAmountFromBolt11(bolt11: string): number {
 
 // Helper function to validate zap receipt according to NIP-57
 export function validateZapReceipt(
-  zapReceipt: NostrEvent,
+  zapReceipt: EventItem,
   invoice?: string,
 ): ZapReceipt | null {
   try {
@@ -83,6 +100,12 @@ export function validateZapReceipt(
       return null;
     }
 
+    const relays = extractZapRequestRelays(zapRequest);
+
+    if (relays.length === 0) {
+      return null;
+    }
+
     if (!verifyEvent(zapRequest)) {
       return null;
     }
@@ -97,7 +120,10 @@ export function validateZapReceipt(
       event: zapReceipt,
       amount,
       comment,
-      zapRequest,
+      zapRequest: {
+        ...zapRequest,
+        relays,
+      },
     };
   } catch (error) {
     console.warn("Failed to validate zap receipt:", error);
@@ -109,45 +135,59 @@ export function validateZapReceipt(
 export function getZaps(
   event: NostrEvent,
   relays: string[],
+  cachedZaps: Map<string, ZapReceipt>,
   onUpdate: (zaps: Map<string, ZapReceipt>) => void,
 ) {
-  const cachedZaps = cache.getNip57Zaps(event.id) || new Map();
+  const newZaps = new Map<string, ZapReceipt>();
+  const receivedEventRelayMap = new Map<string, string>();
 
-  if (cachedZaps && cachedZaps.size > 0) {
-    onUpdate(cachedZaps);
-  }
-
-  let fetched = false;
-
-  pool.subscribeEose(
+  const sub = pool.subscribe(
     relays,
     {
       kinds: [9735], // kind 9735 (zap receipt)
       "#e": [event.id],
     },
     {
+      receivedEvent(relay, id) {
+        receivedEventRelayMap.set(id, relay.url);
+      },
+      alreadyHaveEvent(id) {
+        return cachedZaps.has(id);
+      },
       onevent: (evt) => {
-        if (cachedZaps.has(evt.id)) {
+        const relay = receivedEventRelayMap.get(evt.id);
+
+        if (!relay) {
+          console.error("Received event from unknown relay", evt);
+
           return;
         }
 
-        const validZap = validateZapReceipt(evt);
+        const validZap = validateZapReceipt({ ...evt, relay });
 
-        if (validZap) {
-          cachedZaps.set(evt.id, validZap);
-          fetched = true;
-        } else {
+        if (!validZap) {
           console.warn("Invalid zap receipt:", evt.id);
+
+          return;
         }
+
+        newZaps.set(evt.id, validZap);
+        cachedZaps.set(evt.id, validZap);
       },
-      onclose: () => {
-        if (fetched) {
+      oneose: () => {
+        if (newZaps.size) {
+          onUpdate(new Map(newZaps));
+          newZaps.clear();
+
           cache.setNip57Zaps(event.id, cachedZaps);
-          onUpdate(cachedZaps);
         }
       },
     },
   );
+
+  return () => {
+    sub.close();
+  };
 }
 
 const LnUrlpResponse = z.object({

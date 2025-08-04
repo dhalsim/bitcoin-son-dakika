@@ -1,14 +1,14 @@
-import type { NostrEvent } from "nostr-tools";
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router";
 
 import NewsCard from "@/components/NewsCard";
+import type { EventItem } from "@/lib/nip01";
 import { getProfiles, type ProfileItem } from "@/lib/nip01";
 import { pool } from "@/lib/utils";
 
 export default function TestEventPage() {
   const { eventId } = useParams();
-  const [event, setEvent] = useState<NostrEvent | null>(null);
+  const [event, setEvent] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [author, setAuthor] = useState<ProfileItem | null>(null);
@@ -20,19 +20,9 @@ export default function TestEventPage() {
 
     const cleanup = getProfiles({
       authors: [event.pubkey],
-      onUpdate: (_pubkey, profile) => {
-        setAuthor(profile);
-      },
-      oneose: () => {},
-      onclose: (reasons) => {
-        const nonEoseReasons = reasons.filter(
-          (r) =>
-            r !== "closed automatically on eose" && r !== "closed by client",
-        );
-
-        if (nonEoseReasons.length > 0) {
-          console.log("Profile subscription closed:", reasons);
-        }
+      cachedProfiles: new Map(),
+      onUpdate: (profiles) => {
+        setAuthor(profiles.get(event.pubkey));
       },
     });
 
@@ -76,7 +66,7 @@ export default function TestEventPage() {
         ids: [eventId],
       });
 
-      setEvent(event);
+      setEvent({ ...event, relay: relays[0] });
       setLoading(false);
     };
 
@@ -185,8 +175,7 @@ export default function TestEventPage() {
           category={category}
           time={time}
           publishedAt={event.created_at}
-          eventRelayHint={"wss://relay.nostr.band"}
-          nostrEvent={event}
+          event={event}
           author={author}
         />
       </div>

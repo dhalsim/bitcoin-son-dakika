@@ -1,8 +1,7 @@
-import type { NostrEvent } from "nostr-tools";
 import React from "react";
 import { Link } from "react-router";
 
-import type { ProfileItem } from "@/lib/nip01";
+import type { EventItem, ProfileItem } from "@/lib/nip01";
 import { createProfileSlug } from "@/lib/ssg-data";
 import type { NewsItem, ArticleItem } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
@@ -20,8 +19,7 @@ export interface NewsCardProps {
   image?: string;
   featured?: boolean;
   author?: ProfileItem;
-  nostrEvent: NostrEvent;
-  eventRelayHint: string;
+  event: EventItem;
 }
 
 // Helper function to get time ago from timestamp
@@ -59,8 +57,7 @@ export function convertNewsItemToNewsCardProps(item: NewsItem): NewsCardProps {
     publishedAt: item.publishedAt,
     image: item.image,
     author: item.author,
-    nostrEvent: item.event,
-    eventRelayHint: item.relayHint,
+    event: item.event,
   };
 }
 
@@ -79,8 +76,7 @@ export function convertArticleItemToNewsCardProps(
     publishedAt: item.publishedAt,
     image: item.image,
     author: item.author,
-    nostrEvent: item.event,
-    eventRelayHint: item.relayHint,
+    event: item.event,
   };
 }
 
@@ -101,8 +97,7 @@ export function convertToNewsCardProps(
     publishedAt: item.publishedAt,
     image: item.image,
     author: item.author,
-    nostrEvent: item.event,
-    eventRelayHint: item.relayHint,
+    event: item.event,
   };
 }
 
@@ -114,8 +109,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   image,
   featured = false,
   author,
-  nostrEvent,
-  eventRelayHint,
+  event,
 }) => {
   return (
     <Card className="h-full">
@@ -148,13 +142,8 @@ export const NewsCard: React.FC<NewsCardProps> = ({
               >
                 <div className="flex items-center space-x-2">
                   <ProfileAvatar
-                    pubkey="" // NewsCard doesn't have pubkey, so we use empty string
-                    profile={{
-                      pubkey: "",
-                      display_name: author.display_name,
-                      picture: author.picture,
-                      created_at: author.created_at,
-                    }}
+                    pubkey={author.pubkey}
+                    profile={author}
                     size="sm"
                     className="mr-2"
                   />
@@ -180,11 +169,10 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         </div>
 
         {/* Interactive Statistics */}
-        {nostrEvent && (
+        {event && (
           <div className="mt-4 pt-4 border-t">
             <EventStatistics
-              event={nostrEvent}
-              eventRelayHint={eventRelayHint}
+              event={event}
               author={author}
               className="justify-start"
             />
