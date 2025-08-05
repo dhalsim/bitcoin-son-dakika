@@ -32,7 +32,8 @@ import {
 } from "./event-statistics";
 import { ZapDialog } from "./ZapDialog";
 
-// KeepMounted component to prevent re-fetching of avatar images
+// KeepMounted should mount the children for the first time and keep them mounted
+// even when the isOpen is false with the CSS visibility: hidden
 function KeepMounted({
   isOpen,
   children,
@@ -40,17 +41,27 @@ function KeepMounted({
   isOpen: boolean;
   children: React.ReactNode;
 }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsMounted(true);
+    }
+  }, [isOpen]);
+
   return (
-    <div
-      style={{
-        visibility: isOpen ? "visible" : "hidden",
-        height: isOpen ? "auto" : 0,
-        overflow: "hidden",
-        transition: "visibility 0.3s ease-in-out, height 0.3s ease-in-out",
-      }}
-    >
-      {children}
-    </div>
+    isMounted && (
+      <div
+        style={{
+          visibility: isOpen ? "visible" : "hidden",
+          height: isOpen ? "auto" : 0,
+          overflow: "hidden",
+          transition: "visibility 0.3s ease-in-out, height 0.3s ease-in-out",
+        }}
+      >
+        {children}
+      </div>
+    )
   );
 }
 
@@ -122,12 +133,35 @@ export function EventStatistics({
 
   // Use ProfileContext to get profiles
   useEffect(() => {
+    if (allPubkeys.length === 0) {
+      return;
+    }
+
     const cachedProfiles = cache.getProfileItems();
 
-    getProfiles({
+    // filter cached profiles with allPubkeys
+    setProfiles((prev) => {
+      const newProfiles = new Map(prev);
+
+      allPubkeys.forEach((p) => {
+        const profile = cachedProfiles.get(p);
+
+        if (profile) {
+          newProfiles.set(p, profile);
+        }
+      });
+
+      return newProfiles;
+    });
+
+    const subCloser = getProfiles({
       authors: allPubkeys,
       cachedProfiles,
       onUpdate: (px) => {
+        if (!px) {
+          return;
+        }
+
         // merge with existing profiles
         setProfiles((prev) => {
           const newProfiles = new Map(prev);
@@ -138,12 +172,23 @@ export function EventStatistics({
 
           return newProfiles;
         });
+
+        // update the cache
+        cache.setProfileItems(cachedProfiles);
       },
     });
+
+    return () => {
+      subCloser();
+    };
   }, [allPubkeys]);
 
   // Load event statistics
   useEffect(() => {
+    if (!event) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 

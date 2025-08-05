@@ -8,14 +8,9 @@ import { FollowButton } from "@/components/ui/FollowButton.js";
 import { NIP05Badge } from "@/components/ui/NIP05Badge";
 
 import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
-import Footer from "../components/Footer";
-import Header from "../components/Header";
-import NewsCard, {
-  convertNewsItemToNewsCardProps,
-  convertArticleItemToNewsCardProps,
-} from "../components/NewsCard";
-import PriceBar from "../components/PriceBar";
-import { useContentByAuthor } from "../hooks/useSSGData";
+import MainContent from "../components/MainContent";
+import NewsCard from "../components/NewsCard";
+import { useContentByAuthor } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 import { findProfileBySlug } from "../lib/ssg-data";
 import type { NewsItem, ArticleItem } from "../lib/ssg-data";
@@ -77,27 +72,21 @@ export default function ProfilePage() {
   // Get all content by this author
   const authorContent = useContentByAuthor(profile.pubkey);
 
-  // Separate news and articles
-  const newsItems = authorContent
-    .filter((item): item is NewsItem => "identifier" in item === false)
-    .sort((a, b) => b.publishedAt - a.publishedAt)
-    .map(convertNewsItemToNewsCardProps);
-
-  const articleItems = authorContent
-    .filter((item): item is ArticleItem => "identifier" in item === true)
-    .sort((a, b) => b.publishedAt - a.publishedAt)
-    .map(convertArticleItemToNewsCardProps);
-
   // Combine all content and sort by date
-  const allContent = [...newsItems, ...articleItems].sort((a, b) => {
+  const authorContentSorted = authorContent.sort((a, b) => {
     return b.publishedAt - a.publishedAt;
   });
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
-      <Header />
-      <PriceBar />
+  const newsItems = authorContentSorted.filter(
+    (item): item is NewsItem => "identifier" in item === false,
+  );
 
+  const articleItems = authorContentSorted.filter(
+    (item): item is ArticleItem => "identifier" in item === true,
+  );
+
+  return (
+    <MainContent>
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {error && (
@@ -215,12 +204,12 @@ export default function ProfilePage() {
             <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
               <span>{newsItems.length} haber</span>
               <span>{articleItems.length} makale</span>
-              <span>Toplam {allContent.length} içerik</span>
+              <span>Toplam {authorContentSorted.length} içerik</span>
             </div>
           </div>
 
           {/* Content List */}
-          {allContent.length === 0 ? (
+          {authorContentSorted.length === 0 ? (
             <div className="text-center py-12">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 Henüz içerik yok
@@ -236,15 +225,13 @@ export default function ProfilePage() {
               </h2>
 
               <div className="grid gap-6">
-                {allContent.map((item, index) => (
+                {authorContentSorted.map((item, index) => (
                   <NewsCard
                     key={`${item.title}-${index}`}
                     title={item.title}
                     summary={item.summary}
-                    category={item.category}
-                    time={item.time}
                     publishedAt={item.publishedAt}
-                    nostrEvent={item.nostrEvent}
+                    event={item.event}
                     author={item.author}
                   />
                 ))}
@@ -253,8 +240,6 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </MainContent>
   );
 }

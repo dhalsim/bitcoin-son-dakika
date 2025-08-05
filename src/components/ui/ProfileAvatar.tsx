@@ -17,6 +17,7 @@ import { PROFILE_RELAYS } from "../../../api-helpers/utils";
 
 interface ProfileAvatarProps {
   pubkey: string;
+  disablePopup?: boolean;
   profile?: ProfileItem;
   size?: "sm" | "md" | "lg";
   className?: string;
@@ -30,11 +31,7 @@ export const getDisplayName = (
   profile: ProfileItem | undefined,
   pubkey: string,
 ): string => {
-  if (!profile) {
-    return `${pubkey.slice(0, 8)}...`;
-  }
-
-  return profile.display_name || `${pubkey.slice(0, 8)}...`;
+  return profile?.display_name || profile?.name || `${pubkey.slice(0, 8)}...`;
 };
 
 // Helper function to get size classes
@@ -54,6 +51,7 @@ const getSizeClasses = (size: "sm" | "md" | "lg") => {
 export function ProfileAvatar({
   pubkey,
   profile,
+  disablePopup = false,
   size = "md",
   className = "",
   badge,
@@ -62,10 +60,10 @@ export function ProfileAvatar({
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const sizeClasses = getSizeClasses(size);
 
-  const handleAvatarClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsPopoverOpen(true);
+  const handleAvatarClick = () => {
+    if (!disablePopup) {
+      setIsPopoverOpen(true);
+    }
   };
 
   const handleProfileClick = () => {
@@ -92,7 +90,7 @@ export function ProfileAvatar({
     );
   }
 
-  const displayName = profile.display_name || `${pubkey.slice(0, 8)}...`;
+  const displayName = getDisplayName(profile, pubkey);
 
   const avatarElement = (
     <div className="relative inline-block">

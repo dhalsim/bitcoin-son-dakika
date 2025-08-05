@@ -292,7 +292,7 @@ const PriceBar = () => {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="max-w-screen-xl h-[90vh] p-0 bg-background flex flex-col">
+        <DialogContent className="max-w-screen-xl h-[90vh] p-0 flex flex-col">
           <DialogHeader className="p-6 pb-2 flex-shrink-0">
             <DialogTitle className="text-foreground">
               {selectedSymbol ? `${selectedSymbol} Grafiği` : "Fiyat Grafiği"}

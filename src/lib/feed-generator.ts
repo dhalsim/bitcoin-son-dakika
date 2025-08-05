@@ -41,7 +41,7 @@ export function generateRSSFeed(ssgData: SSGData): string {
       <pubDate>${new Date(item.publishedAt * 1000).toUTCString()}</pubDate>
       <description><![CDATA[${item.summary || item.content.substring(0, 300) + "..."}]]></description>
       <author>${item.author.display_name || item.author.pubkey}</author>
-      <category>${item.category || "Bitcoin"}</category>
+      <category>${item.tags && item.tags.length > 0 ? item.tags[0] : "Bitcoin"}</category>
       ${item.image ? `<enclosure url="${item.image}" type="image/jpeg" />` : ""}
     </item>`;
       })
@@ -85,7 +85,7 @@ export function generateAtomFeed(ssgData: SSGData): string {
       <name>${item.author.display_name || item.author.pubkey}</name>
       ${item.author.picture ? `<uri>${item.author.picture}</uri>` : ""}
     </author>
-    <category term="${item.category || "Bitcoin"}" />
+    <category term="${item.tags && item.tags.length > 0 ? item.tags[0] : "Bitcoin"}" />
     ${item.image ? `<link rel="enclosure" href="${item.image}" type="image/jpeg" />` : ""}
   </entry>`;
     })

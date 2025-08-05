@@ -1,10 +1,8 @@
 import type { MetaFunction } from "react-router";
 
-import Footer from "../components/Footer";
-import Header from "../components/Header";
-import NewsCard, { convertToNewsCardProps } from "../components/NewsCard";
-import PriceBar from "../components/PriceBar";
-import { useSSGData } from "../hooks/useSSGData";
+import MainContent from "../components/MainContent";
+import NewsCard from "../components/NewsCard";
+import { useSSGData } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 
 export const meta: MetaFunction = () => {
@@ -23,16 +21,14 @@ export default function LatestPage() {
   const ssgData = useSSGData();
 
   // Combine news and articles, sort by publish date
-  const allItems = [...ssgData.news, ...ssgData.articles]
-    .sort((a, b) => b.publishedAt - a.publishedAt)
-    .map(convertToNewsCardProps);
+  const allItems = [...ssgData.news, ...ssgData.articles].sort(
+    (a, b) => b.publishedAt - a.publishedAt,
+  );
 
   // If no content is available, show empty state
   if (allItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-background">
-        <Header />
-        <PriceBar />
+      <MainContent>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
@@ -43,16 +39,12 @@ export default function LatestPage() {
             </p>
           </div>
         </div>
-        <Footer />
-      </div>
+      </MainContent>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
-      <Header />
-      <PriceBar />
-
+    <MainContent>
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
@@ -70,8 +62,6 @@ export default function LatestPage() {
           ))}
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </MainContent>
   );
 }

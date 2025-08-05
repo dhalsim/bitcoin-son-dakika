@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 
+import { getProfiles, type ProfileItem } from "@/lib/nip01";
 import { getFollowsEvent } from "@/lib/nip02";
 import { getNip07Relays, getUserPubkey } from "@/lib/nip07";
 import { fetchNip65Relays } from "@/lib/nip65";
@@ -39,10 +40,19 @@ type UserFollowings = {
   error: string | null;
 };
 
+type UserProfile = {
+  pubkey: string | null;
+  profile: ProfileItem | null;
+  isLoading: boolean;
+  error: string | null;
+};
+
 interface UserContextType {
   userRelays: UserRelays;
   userFollowings: UserFollowings;
+  userProfile: UserProfile;
   refreshFollowings: () => void;
+  refreshProfile: () => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -65,6 +75,66 @@ export function UserProvider({ children }: UserProviderProps) {
     isLoading: false,
     error: null,
   });
+
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    pubkey: null,
+    profile: null,
+    isLoading: false,
+    error: null,
+  });
+
+  // Load user profile
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      setUserProfile((prev) => ({ ...prev, isLoading: true, error: null }));
+
+      try {
+        const pubkey = await getUserPubkey();
+
+        if (!pubkey) {
+          setUserProfile({
+            pubkey: null,
+            profile: null,
+            isLoading: false,
+            error: null,
+          });
+
+          return;
+        }
+
+        // Fetch user profile
+        const subCloser = getProfiles({
+          authors: [pubkey],
+          cachedProfiles: new Map(),
+          onUpdate: (profiles) => {
+            if (!profiles) {
+              return;
+            }
+
+            setUserProfile({
+              pubkey,
+              profile: profiles.get(pubkey) || null,
+              isLoading: false,
+              error: null,
+            });
+
+            subCloser();
+          },
+        });
+      } catch (err) {
+        console.error("Error loading user profile:", err);
+
+        setUserProfile((prev) => ({
+          ...prev,
+          isLoading: false,
+          error:
+            err instanceof Error ? err.message : "Failed to load user profile",
+        }));
+      }
+    };
+
+    loadUserProfile();
+  }, []);
 
   // Load user relays
   useEffect(() => {
@@ -202,10 +272,17 @@ export function UserProvider({ children }: UserProviderProps) {
     setUserFollowings((prev) => ({ ...prev, isLoading: true }));
   };
 
+  const refreshProfile = () => {
+    // Trigger a refresh by setting loading state
+    setUserProfile((prev) => ({ ...prev, isLoading: true }));
+  };
+
   const contextValue: UserContextType = {
     userRelays,
     userFollowings,
+    userProfile,
     refreshFollowings,
+    refreshProfile,
   };
 
   return (
@@ -249,4 +326,14 @@ export function useUserFollowings(): UserFollowings {
 // Hook for refreshing followings
 export function useRefreshFollowings(): () => void {
   return useUserContext().refreshFollowings;
+}
+
+// Hook for user profile
+export function useUserProfile(): UserProfile {
+  return useUserContext().userProfile;
+}
+
+// Hook for refreshing profile
+export function useRefreshProfile(): () => void {
+  return useUserContext().refreshProfile;
 }

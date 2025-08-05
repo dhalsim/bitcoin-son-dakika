@@ -3,10 +3,7 @@ import { z } from "zod";
 
 import { PROFILE_RELAYS } from "../../api-helpers/utils";
 
-import { getCache } from "./cache";
 import { logCloseReasons, pool } from "./utils";
-
-const cache = getCache();
 
 export const parseProfileEvent = (
   event: NostrEvent,
@@ -53,7 +50,7 @@ export type EventItem = NostrEvent & {
 export type GetProfilesParams = {
   authors: string[];
   cachedProfiles: Map<string, ProfileItem>;
-  onUpdate: (profiles: Map<string, ProfileItem>) => void;
+  onUpdate: (profiles: Map<string, ProfileItem> | null) => void;
 };
 
 // New optimized function that works with ProfileItem cache
@@ -107,9 +104,9 @@ export function getProfiles({
         if (newProfiles.size) {
           onUpdate(new Map(newProfiles));
           newProfiles.clear();
-
-          cache.setProfileItems(cachedProfiles);
         }
+
+        onUpdate(null);
       },
       onclose: logCloseReasons,
     },

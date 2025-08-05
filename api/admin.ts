@@ -200,7 +200,6 @@ type PublishNewsPayload = {
   action: "publish-news";
   content: string;
   title: string;
-  category: string;
   summary?: string;
   image?: string;
   tags: string[];
@@ -367,13 +366,9 @@ async function handlePublishNews(
     return ErrorResponse(undefined, "Only editors can publish news", 403);
   }
 
-  const { content, title, category } = data;
-  if (!content || !title || !category) {
-    return ErrorResponse(
-      undefined,
-      "Content, title, and category are required",
-      400,
-    );
+  const { content, title } = data;
+  if (!content || !title) {
+    return ErrorResponse(undefined, "Content and title are required", 400);
   }
 
   return await publishNews(
@@ -568,7 +563,6 @@ async function publishNews(
     // Prepare tags for the kind 1 event
     const eventTags = [
       ["title", data.title],
-      ["category", data.category],
       ["editor", userPubkey],
       ...data.tags.map((tag) => ["t", tag]),
     ];

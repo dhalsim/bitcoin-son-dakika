@@ -33,7 +33,7 @@ export function ExpandedReactions({
               let pubkey = reactionEvent.pubkey;
               let badge = null;
               let zapMessage = null;
-              let profile = profiles[pubkey];
+              let profile = profiles.get(pubkey);
 
               if (group.type === "zap") {
                 const Ptag = reactionEvent.tags.find(

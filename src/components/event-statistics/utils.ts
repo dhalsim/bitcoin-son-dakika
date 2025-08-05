@@ -37,10 +37,10 @@ export const getMostUsedEmojis = (): string[] => {
 export const saveEmojiUsage = (emoji: string) => {
   try {
     const usage = cache.getEmojiUsage(DEFAULT_EMOJI_USAGE);
-    
+
     // increase usage count
     usage[emoji] = (usage[emoji] || 0) + 1;
-    
+
     cache.setEmojiUsage(usage);
   } catch {
     // Ignore errors
@@ -50,7 +50,7 @@ export const saveEmojiUsage = (emoji: string) => {
 // Scroll detection helper
 export const handleScrollDetection = (
   containerRef: React.RefObject<HTMLDivElement>,
-  setIsAtBottom: (isAtBottom: boolean) => void
+  setIsAtBottom: (isAtBottom: boolean) => void,
 ) => {
   if (containerRef.current) {
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;

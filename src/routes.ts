@@ -6,9 +6,11 @@ export default [
   // can't use "admin" because it's reserved for admin worker function at /functions/admin.ts
   route("admin-panel", "routes/admin.tsx"),
   route("news", "routes/news.tsx"),
+  route("news/:slug", "routes/news-detail.tsx"),
+  route("article/:slug", "routes/article-detail.tsx"),
   route("articles", "routes/articles.tsx"),
   route("enson", "routes/latest.tsx"),
-  route("tag/:tagStr", "routes/tags.tsx"),
+  route("tag/:slug", "routes/tags.tsx"),
   route("profile/:slug", "routes/profile.tsx"),
   route("test/:eventId", "routes/test-event.tsx"),
   route("*", "routes/$.tsx"),

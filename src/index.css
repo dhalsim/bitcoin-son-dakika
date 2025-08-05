@@ -45,9 +45,11 @@
     --sidebar-ring: hsl(217.2, 91.2%, 59.8%);
 
     /* Custom colors */
-    --main-accent: #f18a00;
-    --contrasting-1: #1a2de2;
-    --contrasting-2: #3de8f4;
+    --main-accent: hsl(35, 100%, 47%);
+    --main-accent-dark: hsl(35, 100%, 41%);
+    --contrasting-1: hsl(230, 79%, 52%);
+    --contrasting-2: hsl(185, 89%, 60%);
+    --dialog-bg-color: hsl(0, 0%, 100%);
   }
 
   .dark {
@@ -86,6 +88,7 @@
     --sidebar-accent-foreground: hsl(240, 4.8%, 95.9%);
     --sidebar-border: hsl(0, 0%, 20%);
     --sidebar-ring: hsl(217.2, 91.2%, 59.8%);
+    --dialog-bg-color: hsl(0, 0%, 15%);
   }
 }
 
@@ -98,6 +101,8 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+  
+
 }
 
 .satoshi-symbol::before {
@@ -132,6 +137,10 @@
   background-color: var(--main-accent);
 }
 
+.bg-main-accent-dark {
+  background-color: var(--main-accent-dark);
+}
+
 .text-contrasting-1 {
   color: var(--contrasting-1);
 }
@@ -148,6 +157,10 @@
   background-color: var(--contrasting-2);
 }
 
+.bg-dialog {
+  background-color: var(--dialog-bg-color);
+}
+
 /* Hide scrollbars for drag scrolling */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
@@ -156,4 +169,201 @@
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
+}
+
+/* Ensure dialog background is solid */
+/* Radix UI Dialog Styling */
+[data-radix-dialog-content] {
+  background-color: var(--background) !important;
+}
+
+/* Alternative: Target by role and state */
+[role="dialog"][data-state="open"] {
+  background-color: var(--background) !important;
+}
+
+/* Ensure dialog content is properly styled */
+[data-radix-dialog-content] {
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Radix UI Component Styling System */
+
+/* Dialog Components */
+[data-radix-dialog-content] {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+[data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Accordion Components */
+[data-radix-accordion-item] {
+  border-bottom: 1px solid var(--border) !important;
+}
+
+[data-radix-accordion-item][data-state="open"] {
+  border-bottom-width: 2px !important;
+}
+
+[data-radix-accordion-trigger] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+[data-radix-accordion-trigger]:hover {
+  background-color: var(--accent) !important;
+}
+
+[data-radix-accordion-content] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Popover Components */
+[data-radix-popover-content] {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Select Components */
+[data-radix-select-content] {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+[data-radix-select-item] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+[data-radix-select-item]:hover {
+  background-color: var(--accent) !important;
+}
+
+/* Dropdown Menu Components */
+[data-radix-dropdown-menu-content] {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+[data-radix-dropdown-menu-item] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+[data-radix-dropdown-menu-item]:hover {
+  background-color: var(--accent) !important;
+}
+
+/* Tooltip Components */
+[data-radix-tooltip-content] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Toast Components */
+[data-radix-toast-viewport] {
+  background-color: var(--background) !important;
+}
+
+[data-radix-toast-root] {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Hover Card Components */
+[data-radix-hover-card-content] {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Context Menu Components */
+[data-radix-context-menu-content] {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+[data-radix-context-menu-item] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+[data-radix-context-menu-item]:hover {
+  background-color: var(--accent) !important;
+}
+
+/* Navigation Menu Components */
+[data-radix-navigation-menu-content] {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+[data-radix-navigation-menu-item] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+[data-radix-navigation-menu-item]:hover {
+  background-color: var(--accent) !important;
+}
+
+/* Form Components */
+input, textarea, select {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Switch Components */
+[data-radix-switch-thumb] {
+  background-color: var(--background) !important;
+}
+
+/* Slider Components */
+[data-radix-slider-thumb] {
+  background-color: var(--background) !important;
+}
+
+/* Tabs Components */
+[data-radix-tabs-trigger][data-state="active"] {
+  background-color: var(--background) !important;
+}
+
+/* Alert Components */
+[data-radix-alert] {
+  background-color: var(--background) !important;
+}
+
+/* Sidebar Components */
+[data-sidebar] {
+  background-color: var(--background) !important;
+}
+
+/* Chart Components */
+[data-radix-chart-tooltip] {
+  background-color: var(--background) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Sheet Components */
+[data-radix-sheet-content] {
+  background-color: var(--background) !important;
+}
+
+/* Drawer Components */
+[data-radix-drawer-content] {
+  background-color: var(--background) !important;
 }

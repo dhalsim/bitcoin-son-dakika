@@ -11,6 +11,7 @@ import {
   getUniqueProfiles,
   createProfileSlug,
   getUniqueTags,
+  createTitleSlug,
 } from "./src/lib/ssg-data";
 
 // Type declaration for global SSG data
@@ -86,6 +87,25 @@ export default {
     const tags = getUniqueTags(ssgData);
     const tagRoutes = tags.map((tag) => `/tag/${tag}`);
 
+    console.log(`Generated ${tagRoutes.length} tag routes`);
+
+    // Generate news routes for all unique news
+    const articlesRoutes = ssgData.articles
+      .filter(
+        (n): n is typeof n & { title: string } => !!n.title && !!n.summary,
+      )
+      .map((n) => `/article/${createTitleSlug(n.title)}`);
+
+    console.log(`Generated ${articlesRoutes.length} article routes`);
+
+    const newsRoutes = ssgData.news
+      .filter(
+        (n): n is typeof n & { title: string } => !!n.title && !!n.summary,
+      )
+      .map((n) => `/news/${createTitleSlug(n.title)}`);
+
+    console.log(`Generated ${newsRoutes.length} news routes`);
+
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
       "/news", // Haberler sayfası - static
@@ -94,6 +114,8 @@ export default {
       "/enson", // Enson sayfası - static
       ...profileRoutes, // Profile pages - static
       ...tagRoutes, // Tag pages - static
+      ...articlesRoutes, // Article detail pages - static
+      ...newsRoutes, // News detail pages - static
     ];
   },
 } satisfies Config;

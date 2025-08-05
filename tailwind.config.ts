@@ -63,6 +63,10 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        "main-accent": "var(--main-accent)",
+        "main-accent-dark": "var(--main-accent-dark)",
+        "contrasting-1": "var(--contrasting-1)",
+        "contrasting-2": "var(--contrasting-2)",
       },
       borderRadius: {
         lg: "var(--radius)",

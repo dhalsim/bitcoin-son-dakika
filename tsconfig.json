@@ -12,11 +12,6 @@
     },
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
-    "skipLibCheck": true,
-    "allowJs": true,
-    "noUnusedLocals": false,
-    "strictNullChecks": false
+    "strict": true,
   }
 }

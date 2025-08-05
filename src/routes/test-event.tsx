@@ -1,10 +1,12 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams } from "react-router";
 
 import NewsCard from "@/components/NewsCard";
 import type { EventItem } from "@/lib/nip01";
-import { getProfiles, type ProfileItem } from "@/lib/nip01";
+import { parseProfileEvent, type ProfileItem } from "@/lib/nip01";
 import { pool } from "@/lib/utils";
+
+import { PROFILE_RELAYS } from "../../api-helpers/utils";
 
 export default function TestEventPage() {
   const { eventId } = useParams();
@@ -13,24 +15,34 @@ export default function TestEventPage() {
   const [error, setError] = useState<string | null>(null);
   const [author, setAuthor] = useState<ProfileItem | null>(null);
 
+  const isFirstRender = useRef(false);
+
   useEffect(() => {
     if (!event) {
       return undefined;
     }
 
-    const cleanup = getProfiles({
-      authors: [event.pubkey],
-      cachedProfiles: new Map(),
-      onUpdate: (profiles) => {
-        setAuthor(profiles.get(event.pubkey));
-      },
-    });
+    if (isFirstRender.current) {
+      return;
+    }
 
-    return () => {
-      if (cleanup) {
-        cleanup();
-      }
-    };
+    isFirstRender.current = true;
+
+    pool
+      .get(PROFILE_RELAYS, {
+        authors: [event.pubkey],
+        kinds: [0],
+        limit: 1,
+      })
+      .then((profile) => {
+        if (!profile) {
+          throw new Error("No profile found");
+        }
+
+        const profileItem = parseProfileEvent(profile, PROFILE_RELAYS[0]);
+
+        setAuthor(profileItem);
+      });
   }, [event]);
 
   const time = useMemo(() => {
@@ -125,24 +137,20 @@ export default function TestEventPage() {
   // Parse event content based on kind
   let title = "Event";
   let summary = event.content;
-  let category = "Test";
 
   if (event.kind === 1) {
     // Regular note
     title = "Note";
     summary = event.content;
-    category = "Note";
   } else if (event.kind === 30023) {
     // Article
     try {
       const parsed = JSON.parse(event.content);
       title = parsed.title || "Article";
       summary = parsed.summary || parsed.content || event.content;
-      category = "Article";
     } catch {
       title = "Article";
       summary = event.content;
-      category = "Article";
     }
   }
 
@@ -172,8 +180,6 @@ export default function TestEventPage() {
         <NewsCard
           title={title}
           summary={summary}
-          category={category}
-          time={time}
           publishedAt={event.created_at}
           event={event}
           author={author}

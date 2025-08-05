@@ -118,21 +118,21 @@ export function useArticleItem(id: string): ArticleItem | undefined {
   return useMemo(() => articles.find((item) => item.id === id), [articles, id]);
 }
 
-export function useNewsByCategory(category: string): NewsItem[] {
+export function useNewsByTag(tag: string): NewsItem[] {
   const news = useNewsItems();
 
   return useMemo(
-    () => news.filter((item) => item.category === category),
-    [news, category],
+    () => news.filter((item) => item.tags.includes(tag)),
+    [news, tag],
   );
 }
 
-export function useArticlesByCategory(category: string): ArticleItem[] {
+export function useArticlesByTag(tag: string): ArticleItem[] {
   const articles = useArticleItems();
 
   return useMemo(
-    () => articles.filter((item) => item.category === category),
-    [articles, category],
+    () => articles.filter((item) => item.tags.includes(tag)),
+    [articles, tag],
   );
 }
 

@@ -5,14 +5,13 @@ import { getProfiles } from "./nip01";
 
 export interface NewsItem {
   id: string;
-  title: string;
   content: string;
   event: EventItem;
   author: ProfileItem;
   publishedAt: number;
-  summary?: string;
   tags: string[];
-  category?: string;
+  title?: string;
+  summary?: string;
   image?: string;
 }
 
@@ -25,7 +24,6 @@ export interface ArticleItem {
   author: ProfileItem;
   publishedAt: number;
   summary?: string;
-  category?: string;
   identifier?: string;
   image?: string;
 }
@@ -39,20 +37,18 @@ export interface SSGData {
 function processNewsEvent(event: EventItem, author: ProfileItem): NewsItem {
   const titleTag = event.tags.find((tag) => tag[0] === "title");
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
-  const categoryTag = event.tags.find((tag) => tag[0] === "t");
   const imageTag = event.tags.find((tag) => tag[0] === "image");
 
   return {
     id: event.id,
-    title: titleTag?.[1] || "Untitled",
+    title: titleTag?.[1],
     content: event.content,
     event,
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
     tags: event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1]),
-    category: categoryTag?.[1],
-    image: imageTag?.[1] || "",
+    image: imageTag?.[1],
   };
 }
 
@@ -62,22 +58,20 @@ function processArticleEvent(
 ): ArticleItem {
   const titleTag = event.tags.find((tag) => tag[0] === "title");
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
-  const categoryTag = event.tags.find((tag) => tag[0] === "t");
   const dTag = event.tags.find((tag) => tag[0] === "d");
   const imageTag = event.tags.find((tag) => tag[0] === "image");
 
   return {
     id: event.id,
-    title: titleTag?.[1] || "Untitled Article",
+    title: titleTag?.[1],
     content: event.content,
     event,
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
     tags: event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1]),
-    category: categoryTag?.[1],
     identifier: dTag?.[1],
-    image: imageTag?.[1] || "",
+    image: imageTag?.[1],
   };
 }
 
@@ -179,8 +173,8 @@ export async function fetchSSGData(): Promise<SSGData> {
   );
 
   return {
-    news: newsItems.slice(0, 50), // Limit to recent 50 news
-    articles: articleItems.slice(0, 50), // Limit to recent 50 articles
+    news: newsItems,
+    articles: articleItems,
     lastUpdated: Date.now(), // Use actual build time for SSG
   };
 }
@@ -217,14 +211,14 @@ export function getUniqueProfiles(ssgData: SSGData): ProfileItem[] {
 
   // Collect profiles from news
   ssgData.news.forEach((item) => {
-    if (item.author.display_name) {
+    if (getDisplayName(item.author, item.author.pubkey)) {
       profileMap.set(item.author.pubkey, item.author);
     }
   });
 
   // Collect profiles from articles
   ssgData.articles.forEach((item) => {
-    if (item.author.display_name) {
+    if (getDisplayName(item.author, item.author.pubkey)) {
       profileMap.set(item.author.pubkey, item.author);
     }
   });
@@ -242,6 +236,35 @@ export function createProfileSlug(displayName: string): string {
     .trim();
 }
 
+export function createTitleSlug(title: string): string {
+  return (
+    title
+      .toLowerCase()
+      // replace turkish characters with english characters
+      .replace(/ğ/g, "g")
+      .replace(/Ğ/g, "G")
+      .replace(/ı/g, "i")
+      .replace(/İ/g, "I")
+      .replace(/ş/g, "s")
+      .replace(/Ş/g, "S")
+      .replace(/ü/g, "u")
+      .replace(/Ü/g, "U")
+      .replace(/ö/g, "o")
+      .replace(/Ö/g, "O")
+      .replace(/ç/g, "c")
+      .replace(/Ç/g, "C")
+      .replace(/[^a-z0-9\s-]/g, "") // Remove special characters except spaces and hyphens
+      .trim()
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+      .trim()
+  );
+}
+
+export function getDisplayName(profile: ProfileItem, pubkey: string) {
+  return profile.display_name || profile.name || `${pubkey.slice(0, 8)}...`;
+}
+
 // Helper function to find profile by slug
 export function findProfileBySlug(
   ssgData: SSGData,
@@ -251,6 +274,6 @@ export function findProfileBySlug(
 
   return profiles.find(
     (profile) =>
-      profile.display_name && createProfileSlug(profile.display_name) === slug,
+      createProfileSlug(getDisplayName(profile, profile.pubkey)) === slug,
   );
 }

@@ -1,15 +1,13 @@
 import type { MetaFunction } from "react-router";
 
-import Footer from "../components/Footer";
-import Header from "../components/Header";
-import NewsCard, { convertToNewsCardProps } from "../components/NewsCard";
-import PriceBar from "../components/PriceBar";
+import MainContent from "../components/MainContent";
+import NewsCard from "../components/NewsCard";
 import Sidebar from "../components/Sidebar";
 import {
   useLatestNews,
   useLatestArticles,
   useSSGData,
-} from "../hooks/useSSGData";
+} from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 
 export const meta: MetaFunction = () => {
@@ -37,17 +35,10 @@ export default function Index() {
     (a, b) => b.publishedAt - a.publishedAt,
   );
 
-  // Get featured content (latest item) and main content
-  const featuredContent = allContent[0];
-  const mainContent = allContent.slice(1, 5); // Next 4 items
-  const sideContent = allContent.slice(5, 7); // Next 2 items
-
   // If no content is available, show empty state
   if (allContent.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-background">
-        <Header />
-        <PriceBar />
+      <MainContent>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
@@ -58,46 +49,33 @@ export default function Index() {
             </p>
           </div>
         </div>
-        <Footer />
-      </div>
+      </MainContent>
     );
   }
 
+  // Get featured content (latest item) and main content
+  const featuredContent = allContent[0];
+  const mainContent = allContent.slice(1, 5); // Next 4 items
+  const sideContent = allContent.slice(5, 7); // Next 2 items
+
   // Convert content to NewsCard props
-  const featuredNews = convertToNewsCardProps(featuredContent!);
-  const mainNews = mainContent.map(convertToNewsCardProps);
-  const sideNews = sideContent.map(convertToNewsCardProps);
+  const mainNews = mainContent;
+  const sideNews = sideContent;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
-      <Header />
-      <PriceBar />
-
-      {/* Breaking News Banner */}
-      <div className="bg-main-accent text-white py-2">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center">
-            <span className="bg-white text-main-accent px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold mr-2 sm:mr-4 whitespace-nowrap">
-              SON DAKİKA
-            </span>
-            <div className="flex-1 overflow-hidden">
-              <div className="animate-pulse">
-                <span className="text-xs sm:text-sm font-medium">
-                  {`${featuredContent.title} - ${featuredContent.summary?.substring(0, 100)}...`}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <MainContent
+      breakingNews={{
+        title: featuredContent.title,
+        summary: featuredContent.summary,
+      }}
+    >
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3">
             {/* Featured News */}
             <div className="mb-6 sm:mb-8">
-              <NewsCard {...featuredNews} featured={true} />
+              <NewsCard {...featuredContent} featured={true} />
             </div>
 
             {/* Category Tabs */}
@@ -156,8 +134,6 @@ export default function Index() {
           </div>
         </div>
       </div>
-
-      <Footer />
-    </div>
+    </MainContent>
   );
 }

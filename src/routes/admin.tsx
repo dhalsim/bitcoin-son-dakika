@@ -91,7 +91,6 @@ type PublishNewsPayload = {
   action: "publish-news";
   content: string;
   title: string;
-  category: string;
   summary?: string;
   image?: string;
   tags: string[];
@@ -178,7 +177,6 @@ export default function AdminPanel() {
   const [newsImageUrl, setNewsImageUrl] = useState("");
   const [_newsImageFile, setNewsImageFile] = useState<File | null>(null);
   const [newsTags, setNewsTags] = useState<string[]>([]);
-  const [newsCategory, setNewsCategory] = useState("");
   const [newsPublishLoading, setNewsPublishLoading] = useState(false);
 
   const loadAdminData = useCallback(async () => {
@@ -303,7 +301,7 @@ export default function AdminPanel() {
   useEffect(() => {
     loadAdminData();
     checkUserInfo();
-  }, [loadAdminData, checkUserInfo]);
+  }, []);
 
   const createNIP98Auth = async (method: string, url: string) => {
     if (!window.nostr || !userInfo.pubkey) {
@@ -495,8 +493,8 @@ export default function AdminPanel() {
   };
 
   const publishNews = async () => {
-    if (!newsContent.trim() || !newsTitle.trim() || !newsCategory) {
-      setError("İçerik, başlık ve kategori alanları zorunludur");
+    if (!newsContent.trim() || !newsTitle.trim()) {
+      setError("İçerik ve başlık alanları zorunludur");
 
       return;
     }
@@ -509,7 +507,6 @@ export default function AdminPanel() {
         action: "publish-news",
         content: newsContent.trim(),
         title: newsTitle.trim(),
-        category: newsCategory,
         tags: newsTags,
       };
 
@@ -531,7 +528,6 @@ export default function AdminPanel() {
       setNewsImageUrl("");
       setNewsImageFile(null);
       setNewsTags([]);
-      setNewsCategory("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Haber yayınlama hatası");
     } finally {
@@ -741,32 +737,6 @@ export default function AdminPanel() {
                     />
                   </div>
 
-                  {/* Category */}
-                  <div>
-                    <Label
-                      htmlFor="newsCategory"
-                      className="text-base font-medium"
-                    >
-                      Kategori *
-                    </Label>
-                    <Select
-                      value={newsCategory}
-                      onValueChange={setNewsCategory}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Kategori seçin" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORY_OPTIONS.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category.charAt(0).toUpperCase() +
-                              category.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   {/* Summary */}
                   <div>
                     <Label
@@ -859,8 +829,7 @@ export default function AdminPanel() {
                       disabled={
                         newsPublishLoading ||
                         !newsContent.trim() ||
-                        !newsTitle.trim() ||
-                        !newsCategory
+                        !newsTitle.trim()
                       }
                       className="w-full"
                       size="lg"
