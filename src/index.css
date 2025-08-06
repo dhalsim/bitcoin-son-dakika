@@ -30,6 +30,7 @@
     --destructive-foreground: hsl(210, 40%, 98%);
 
     --border: hsl(214.3, 31.8%, 91.4%);
+    --popover-border: hsl(214.3, 31.8%, 85%);
     --input: hsl(214.3, 31.8%, 91.4%);
     --ring: hsl(222.2, 84%, 4.9%);
 
@@ -78,6 +79,7 @@
     --destructive-foreground: hsl(210, 40%, 98%);
 
     --border: hsl(0, 0%, 20%);
+    --popover-border: hsl(0, 0%, 25%);
     --input: hsl(0, 0%, 20%);
     --ring: hsl(212.7, 26.8%, 83.9%);
     --sidebar-background: hsl(0, 0%, 15%);
@@ -157,10 +159,6 @@
   background-color: var(--contrasting-2);
 }
 
-.bg-dialog {
-  background-color: var(--dialog-bg-color);
-}
-
 /* Hide scrollbars for drag scrolling */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
@@ -171,199 +169,21 @@
   display: none;  /* Safari and Chrome */
 }
 
-/* Ensure dialog background is solid */
-/* Radix UI Dialog Styling */
-[data-radix-dialog-content] {
+/* Popover and dropdown styling classes */
+.bg-popover {
   background-color: var(--background) !important;
 }
 
-/* Alternative: Target by role and state */
-[role="dialog"][data-state="open"] {
-  background-color: var(--background) !important;
-}
-
-/* Ensure dialog content is properly styled */
-[data-radix-dialog-content] {
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-/* Radix UI Component Styling System */
-
-/* Dialog Components */
-[data-radix-dialog-content] {
-  background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-[data-radix-dialog-overlay] {
-  background-color: rgba(0, 0, 0, 0.5) !important;
-}
-
-/* Accordion Components */
-[data-radix-accordion-item] {
-  border-bottom: 1px solid var(--border) !important;
-}
-
-[data-radix-accordion-item][data-state="open"] {
-  border-bottom-width: 2px !important;
-}
-
-[data-radix-accordion-trigger] {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
-}
-
-[data-radix-accordion-trigger]:hover {
+.hover-item:hover {
   background-color: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+  transition: all 0.1s ease-in !important;
 }
 
-[data-radix-accordion-content] {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
+.border-popover {
+  border: 2px solid var(--popover-border) !important;
 }
 
-/* Popover Components */
-[data-radix-popover-content] {
-  background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-/* Select Components */
-[data-radix-select-content] {
-  background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-[data-radix-select-item] {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
-}
-
-[data-radix-select-item]:hover {
-  background-color: var(--accent) !important;
-}
-
-/* Dropdown Menu Components */
-[data-radix-dropdown-menu-content] {
-  background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-[data-radix-dropdown-menu-item] {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
-}
-
-[data-radix-dropdown-menu-item]:hover {
-  background-color: var(--accent) !important;
-}
-
-/* Tooltip Components */
-[data-radix-tooltip-content] {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-/* Toast Components */
-[data-radix-toast-viewport] {
-  background-color: var(--background) !important;
-}
-
-[data-radix-toast-root] {
-  background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-/* Hover Card Components */
-[data-radix-hover-card-content] {
-  background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-/* Context Menu Components */
-[data-radix-context-menu-content] {
-  background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-[data-radix-context-menu-item] {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
-}
-
-[data-radix-context-menu-item]:hover {
-  background-color: var(--accent) !important;
-}
-
-/* Navigation Menu Components */
-[data-radix-navigation-menu-content] {
-  background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-[data-radix-navigation-menu-item] {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
-}
-
-[data-radix-navigation-menu-item]:hover {
-  background-color: var(--accent) !important;
-}
-
-/* Form Components */
-input, textarea, select {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
-}
-
-/* Switch Components */
-[data-radix-switch-thumb] {
-  background-color: var(--background) !important;
-}
-
-/* Slider Components */
-[data-radix-slider-thumb] {
-  background-color: var(--background) !important;
-}
-
-/* Tabs Components */
-[data-radix-tabs-trigger][data-state="active"] {
-  background-color: var(--background) !important;
-}
-
-/* Alert Components */
-[data-radix-alert] {
-  background-color: var(--background) !important;
-}
-
-/* Sidebar Components */
-[data-sidebar] {
-  background-color: var(--background) !important;
-}
-
-/* Chart Components */
-[data-radix-chart-tooltip] {
-  background-color: var(--background) !important;
-  border: 1px solid var(--border) !important;
-}
-
-/* Sheet Components */
-[data-radix-sheet-content] {
-  background-color: var(--background) !important;
-}
-
-/* Drawer Components */
-[data-radix-drawer-content] {
-  background-color: var(--background) !important;
+.bg-dialog {
+  background-color: var(--dialog-bg-color) !important;
 }
