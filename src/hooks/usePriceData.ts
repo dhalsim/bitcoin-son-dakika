@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 
+import { getCache } from "@/lib/cache.js";
 import { WEBSITE_URL } from "@/lib/constants.js";
 
 import type { BaseEndpointResponse, PriceData } from "../types/api.js";
@@ -11,11 +12,12 @@ interface UsePriceDataReturn {
   loading: boolean;
   error: string | null;
   lastUpdated: string | null;
-  refresh: () => void;
 }
 
+const cache = getCache();
+
 export function usePriceData(
-  refreshInterval: number = 600000,
+  refreshInterval: number = 10 * 60 * 1000,
 ): UsePriceDataReturn {
   // 10 minutes default
   const [prices, setPrices] = useState<PriceData[]>([]);
@@ -26,8 +28,20 @@ export function usePriceData(
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const fetchPrices = useCallback(async () => {
+    setLoading(true);
+
+    const cachedData = cache.getPriceData();
+
+    if (cachedData) {
+      setPrices(cachedData.prices);
+      setBtcPrice(cachedData.btcPrice);
+      setBtcChange(cachedData.btcChange);
+      setLastUpdated(cachedData.lastUpdated);
+
+      setLoading(false);
+    }
+
     try {
-      setLoading(true);
       setError(null);
 
       // Use the main gateway API endpoint
@@ -44,6 +58,8 @@ export function usePriceData(
         setBtcPrice(result.btcPrice);
         setBtcChange(result.btcChange);
         setLastUpdated(result.lastUpdated);
+
+        cache.setPriceData(result);
       } else {
         throw new Error("Invalid response format");
       }
@@ -57,10 +73,6 @@ export function usePriceData(
     }
   }, []);
 
-  const refresh = useCallback(() => {
-    fetchPrices();
-  }, [fetchPrices]);
-
   useEffect(() => {
     // Initial fetch
     fetchPrices();
@@ -70,7 +82,7 @@ export function usePriceData(
 
     // Cleanup interval on unmount
     return () => clearInterval(interval);
-  }, [fetchPrices, refreshInterval]);
+  }, []);
 
   return {
     prices,
@@ -79,6 +91,5 @@ export function usePriceData(
     loading,
     error,
     lastUpdated,
-    refresh,
   };
 }

@@ -1,3 +1,4 @@
+import type { BaseEndpointResponse } from "@/types/api";
 import type { EmojiCategories, EmojiUsage } from "@/types/emoji";
 
 import type { EventItem, ProfileItem } from "./nip01";
@@ -393,6 +394,15 @@ export class LocalStorageCache {
   setProfileItems(value: Map<string, ProfileItem>): void {
     this.cache.set("profile-items", value);
     this.setToStorage("profile-items", Array.from(value.entries()));
+  }
+
+  getPriceData(): BaseEndpointResponse | null {
+    return this.getCachedValue<BaseEndpointResponse>("price-data");
+  }
+
+  setPriceData(value: BaseEndpointResponse): void {
+    this.cache.set("price-data", value);
+    this.setToStorage("price-data", value);
   }
 
   has(key: string): boolean {

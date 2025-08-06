@@ -6,7 +6,7 @@ import Chart from "./Chart";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 const PriceBar = () => {
-  const { prices, btcPrice, btcChange, loading, error } = usePriceData(300000); // 5 minutes refresh for BTC
+  const { prices, btcPrice, btcChange, loading, error } = usePriceData();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
