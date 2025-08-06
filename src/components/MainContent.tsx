@@ -17,7 +17,7 @@ export default function MainContent({
   breakingNews,
 }: MainContentProps) {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
+    <div className="min-h-screen bg-background">
       <Header />
       <PriceBar />
 

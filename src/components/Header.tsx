@@ -39,7 +39,7 @@ const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <header className="bg-white dark:bg-black shadow-md relative">
+    <header className="bg-background shadow-md relative">
       {/* Background image */}
       <div
         className="absolute inset-0 opacity-20"
@@ -53,12 +53,12 @@ const Header = () => {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Top bar */}
-        <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800">
-          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+        <div className="flex items-center justify-between py-2 border-b border-border">
+          <div className="text-xs sm:text-sm text-muted-foreground truncate">
             Bitcoinci Perspektiften Dünyanın Nabzı
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm">
-            <span className="hidden sm:block text-gray-600 dark:text-gray-400">
+            <span className="hidden sm:block text-muted-foreground">
               {getCurrentDateInTurkish()}
             </span>
 
@@ -68,23 +68,23 @@ const Header = () => {
                 href="/feed/rss.xml"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
               >
-                <Rss className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
+                <Rss className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </a>
               <a
                 href="/feed/atom.xml"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
               >
-                <Atom className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
+                <Atom className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </a>
               <a
                 href="https://njump.me/_@bitcoinsondakika.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
+                className="p-1 hover:bg-accent hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
               >
                 <img
                   src="/nostr-icon.png"
@@ -94,20 +94,20 @@ const Header = () => {
               </a>
               <a
                 href="#"
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300"
+                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300"
               >
-                <X className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
+                <X className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </a>
             </div>
 
             <button
               onClick={toggleTheme}
-              className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-lg hover:shadow-yellow-500/20 transition-all duration-300"
+              className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-yellow-500/20 transition-all duration-300"
             >
               {theme === "dark" ? (
-                <Sun className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
+                <Sun className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               ) : (
-                <Moon className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600 dark:text-gray-400" />
+                <Moon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               )}
             </button>
           </div>
@@ -117,37 +117,39 @@ const Header = () => {
         <div className="flex items-center justify-between py-4">
           <div className="flex items-center space-x-4 sm:space-x-8">
             <a href="/" className="flex items-center">
-              {/* Light mode logo */}
-              <img
-                src="/siyah-logo-yazisi.png"
-                alt="Bitcoin News"
-                className="h-8 sm:h-12 block dark:hidden"
-                style={{ width: "auto" }}
-              />
-              {/* Dark mode logo */}
-              <img
-                src="/beyaz-logo-yazisi.png"
-                alt="Bitcoin News"
-                className="h-8 sm:h-12 hidden dark:block"
-                style={{ width: "auto" }}
-              />
+              {/* Light mode logo (black) */}
+              {theme === "light" ? (
+                <img
+                  src="/siyah-logo-yazisi.png"
+                  alt="Bitcoin News"
+                  className="h-8 sm:h-12"
+                  style={{ width: "auto" }}
+                />
+              ) : (
+                <img
+                  src="/beyaz-logo-yazisi.png"
+                  alt="Bitcoin News"
+                  className="h-8 sm:h-12"
+                  style={{ width: "auto" }}
+                />
+              )}
             </a>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-6">
               <a
                 href="/"
-                className="text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded"
+                className="text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded"
               >
                 Ana Sayfa
               </a>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
+                <DropdownMenuTrigger className="flex items-center text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
                   <a href="/news">Haberler</a>
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+                <DropdownMenuContent className="bg-popover border border-border">
                   <DropdownMenuItem>
                     <a href="/enson">Son Dakika</a>
                   </DropdownMenuItem>
@@ -164,11 +166,11 @@ const Header = () => {
               </DropdownMenu>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
+                <DropdownMenuTrigger className="flex items-center text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
                   <a href="/articles">Köşe Yazıları</a>
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+                <DropdownMenuContent className="bg-popover border border-border">
                   <DropdownMenuItem>
                     <a href="/tag/yorum?type=article">Güncel Yorumlar</a>
                   </DropdownMenuItem>
@@ -185,11 +187,11 @@ const Header = () => {
               </DropdownMenu>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
+                <DropdownMenuTrigger className="flex items-center text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
                   Eğitim
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800">
+                <DropdownMenuContent className="bg-popover border border-border">
                   <DropdownMenuItem>Bitcoin Temelleri</DropdownMenuItem>
                   <DropdownMenuItem>Cüzdan Kullanımı</DropdownMenuItem>
                   <DropdownMenuItem>Güvenlik</DropdownMenuItem>
@@ -199,7 +201,7 @@ const Header = () => {
 
               <a
                 href="#"
-                className="text-gray-700 dark:text-gray-300 font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded"
+                className="text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded"
               >
                 Podcast
               </a>
@@ -209,11 +211,11 @@ const Header = () => {
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Desktop Search */}
             <div className="relative hidden md:block">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <input
                 type="text"
                 placeholder="Haber ara..."
-                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-64 bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-all duration-300"
+                className="pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-64 bg-background text-foreground transition-all duration-300"
               />
             </div>
 
@@ -225,7 +227,7 @@ const Header = () => {
               onClick={() => setIsSearchOpen(!isSearchOpen)}
               className="md:hidden hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded"
             >
-              <Search className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              <Search className="h-5 w-5 text-muted-foreground" />
             </button>
 
             {/* Mobile Menu */}

@@ -108,12 +108,12 @@ export default function NewsDetailPage() {
             <CategoryTags tags={newsItem.tags} className="mb-4" />
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4 leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
               {newsItem.title}
             </h1>
 
             {/* Author and Time */}
-            <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
               <div className="flex items-center space-x-3">
                 <ProfileAvatar
                   pubkey={newsItem.author.pubkey}
@@ -122,7 +122,7 @@ export default function NewsDetailPage() {
                   size="md"
                 />
                 <div>
-                  <div className="font-medium text-gray-700 dark:text-gray-300">
+                  <div className="font-medium text-foreground">
                     {displayName}
                   </div>
                   <div className="text-xs">{time}</div>
@@ -144,7 +144,7 @@ export default function NewsDetailPage() {
 
           {/* Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
-            <div className="text-gray-700 dark:text-gray-300 leading-relaxed">
+            <div className="text-foreground leading-relaxed">
               {newsItem.content.split("\n").map((line, index) => (
                 <React.Fragment key={index}>
                   <RenderedText enableRichPreviews>{line}</RenderedText>
@@ -155,7 +155,7 @@ export default function NewsDetailPage() {
           </div>
 
           {/* Event Statistics */}
-          <div className="border-t pt-6">
+          <div className="border-t border-border pt-6">
             <EventStatistics
               event={newsItem.event}
               author={newsItem.author}

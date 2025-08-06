@@ -105,13 +105,13 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         )}
       </CardHeader>
       <CardContent className="flex-1">
-        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-2">
+        <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground mb-2">
           <span>{time}</span>
           {author && displayName && (
             <div className="flex items-center space-x-2">
               <Link
                 to={`/profile/${createProfileSlug(displayName)}`}
-                className="text-gray-600 dark:text-gray-400 font-medium hover:text-main-accent transition-colors"
+                className="text-muted-foreground font-medium hover:text-main-accent transition-colors"
               >
                 <div className="flex items-center space-x-2">
                   <ProfileAvatar
@@ -130,7 +130,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
 
         {titleElement && (
           <h3
-            className={`font-bold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3 hover:text-main-accent transition-colors cursor-pointer ${
+            className={`font-bold text-foreground mb-2 sm:mb-3 hover:text-main-accent transition-colors cursor-pointer ${
               featured
                 ? "text-lg sm:text-xl leading-tight"
                 : "text-base sm:text-lg leading-tight"
@@ -152,7 +152,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
           </div>
         )}
 
-        <div className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm leading-relaxed">
+        <div className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
           <RenderedText enableRichPreviews>
             {summary || event.content}
           </RenderedText>
@@ -160,7 +160,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
 
         {/* Interactive Statistics */}
         {event && (
-          <div className="mt-4 pt-4 border-t">
+          <div className="mt-4 pt-4 border-t border-border">
             <EventStatistics
               event={event}
               author={author}

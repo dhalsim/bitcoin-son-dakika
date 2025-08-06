@@ -4,7 +4,7 @@ import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 dark:bg-black text-white mt-12 dark:border-t dark:border-gray-800 relative">
+    <footer className="bg-card text-card-foreground mt-12 border-t border-border relative">
       {/* Background image */}
       <div
         className="absolute inset-0 opacity-20"
@@ -27,7 +27,7 @@ const Footer = () => {
                 style={{ width: "64px", height: "24px" }}
               />
             </div>
-            <p className="text-gray-400 text-sm">{WEBSITE_DESCRIPTION}</p>
+            <p className="text-muted-foreground text-sm">{WEBSITE_DESCRIPTION}</p>
           </div>
 
           <div>
@@ -36,7 +36,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Haberler
                 </a>
@@ -44,7 +44,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Köşe Yazıları
                 </a>
@@ -52,7 +52,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Eğitim
                 </a>
@@ -60,7 +60,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Podcast
                 </a>
@@ -74,7 +74,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Biz Kimiz
                 </a>
@@ -82,7 +82,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   İletişim
                 </a>
@@ -90,7 +90,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Gizlilik Politikası
                 </a>
@@ -98,7 +98,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Kullanım Şartları
                 </a>
@@ -114,7 +114,7 @@ const Footer = () => {
                   href="/feed/rss.xml"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   RSS Feed
                 </a>
@@ -124,7 +124,7 @@ const Footer = () => {
                   href="/feed/atom.xml"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Atom Feed
                 </a>
@@ -132,7 +132,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Nostr
                 </a>
@@ -140,7 +140,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   X (Twitter)
                 </a>
@@ -148,7 +148,7 @@ const Footer = () => {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-[#F7931A] transition-colors"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Newsletter
                 </a>
@@ -157,7 +157,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
+        <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground text-sm">
           <p>&copy; 2025 {WEBSITE_NAME}. Tüm hakları saklıdır.</p>
         </div>
       </div>

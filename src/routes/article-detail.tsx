@@ -110,17 +110,17 @@ export default function ArticleDetailPage() {
             <CategoryTags tags={articleItem.tags} className="mb-4" />
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4 leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
               {articleItem.title}
             </h1>
 
             {/* Author and Time */}
-            <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-6">
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
               <div className="flex flex-col">{time}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-muted-foreground">
                 <Link
                   to={`/profile/${createProfileSlug(displayName)}`}
-                  className="text-gray-600 dark:text-gray-400 font-medium hover:text-main-accent transition-colors"
+                  className="text-foreground font-medium hover:text-main-accent transition-colors"
                 >
                   <div className="flex items-center">
                     <ProfileAvatar
@@ -129,7 +129,7 @@ export default function ArticleDetailPage() {
                       disablePopup={true}
                       size="md"
                     />
-                    <div className="font-medium text-gray-700 dark:text-gray-300">
+                    <div className="font-medium text-foreground">
                       {displayName}
                     </div>
                   </div>
@@ -140,7 +140,7 @@ export default function ArticleDetailPage() {
             {/* Summary */}
             {articleItem.summary && (
               <div className="mb-6">
-                <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
+                <p className="text-lg text-muted-foreground leading-relaxed">
                   {articleItem.summary}
                 </p>
               </div>
@@ -149,54 +149,54 @@ export default function ArticleDetailPage() {
 
           {/* Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
-            <div className="text-gray-700 dark:text-gray-300 leading-relaxed">
+            <div className="text-foreground leading-relaxed">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                   // Custom styling for markdown elements
                   h1: ({ children }) => (
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                    <h1 className="text-3xl font-bold text-foreground mb-4">
                       {children}
                     </h1>
                   ),
                   h2: ({ children }) => (
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3 mt-6">
+                    <h2 className="text-2xl font-bold text-foreground mb-3 mt-6">
                       {children}
                     </h2>
                   ),
                   h3: ({ children }) => (
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 mt-5">
+                    <h3 className="text-xl font-bold text-foreground mb-2 mt-5">
                       {children}
                     </h3>
                   ),
                   h4: ({ children }) => (
-                    <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 mt-4">
+                    <h4 className="text-lg font-bold text-foreground mb-2 mt-4">
                       {children}
                     </h4>
                   ),
                   p: ({ children }) => (
-                    <p className="mb-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+                    <p className="mb-4 text-foreground leading-relaxed">
                       {children}
                     </p>
                   ),
                   ul: ({ children }) => (
-                    <ul className="list-disc list-inside mb-4 space-y-1 text-gray-700 dark:text-gray-300">
+                    <ul className="list-disc list-inside mb-4 space-y-1 text-foreground">
                       {children}
                     </ul>
                   ),
                   ol: ({ children }) => (
-                    <ol className="list-decimal list-inside mb-4 space-y-1 text-gray-700 dark:text-gray-300">
+                    <ol className="list-decimal list-inside mb-4 space-y-1 text-foreground">
                       {children}
                     </ol>
                   ),
                   li: ({ children }) => (
-                    <li className="text-gray-700 dark:text-gray-300">
+                    <li className="text-foreground">
                       {children}
                     </li>
                   ),
                   blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-main-accent pl-4 py-2 mb-4 bg-gray-50 dark:bg-gray-800 rounded-r">
-                      <p className="text-gray-600 dark:text-gray-400 italic">
+                    <blockquote className="border-l-4 border-main-accent pl-4 py-2 mb-4 bg-muted rounded-r">
+                      <p className="text-muted-foreground italic">
                         {children}
                       </p>
                     </blockquote>
@@ -205,15 +205,15 @@ export default function ArticleDetailPage() {
                     const isInline = !className;
                     if (isInline) {
                       return (
-                        <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm font-mono text-gray-800 dark:text-gray-200">
+                        <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono text-foreground">
                           {children}
                         </code>
                       );
                     }
 
                     return (
-                      <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto mb-4">
-                        <code className="text-sm font-mono text-gray-800 dark:text-gray-200">
+                      <pre className="bg-muted p-4 rounded-lg overflow-x-auto mb-4">
+                        <code className="text-sm font-mono text-foreground">
                           {children}
                         </code>
                       </pre>
@@ -238,18 +238,18 @@ export default function ArticleDetailPage() {
                   ),
                   table: ({ children }) => (
                     <div className="overflow-x-auto mb-4">
-                      <table className="min-w-full border border-gray-300 dark:border-gray-600">
+                      <table className="min-w-full border border-border">
                         {children}
                       </table>
                     </div>
                   ),
                   th: ({ children }) => (
-                    <th className="border border-gray-300 dark:border-gray-600 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-left font-bold">
+                    <th className="border border-border px-4 py-2 bg-muted text-left font-bold">
                       {children}
                     </th>
                   ),
                   td: ({ children }) => (
-                    <td className="border border-gray-300 dark:border-gray-600 px-4 py-2">
+                    <td className="border border-border px-4 py-2">
                       {children}
                     </td>
                   ),
@@ -261,7 +261,7 @@ export default function ArticleDetailPage() {
           </div>
 
           {/* Event Statistics */}
-          <div className="border-t pt-6">
+          <div className="border-t border-border pt-6">
             <EventStatistics
               event={articleItem.event}
               author={articleItem.author}
