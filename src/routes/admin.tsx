@@ -141,6 +141,32 @@ const CATEGORY_OPTIONS = [
   "geliştirme",
 ];
 
+type NpubValidationResult =
+  | {
+      valid: true;
+      pubkey: string;
+    }
+  | {
+      valid: false;
+      error: string;
+    };
+
+const validateNpub = (npub: string): NpubValidationResult => {
+  const decoded = nip19.decode(npub);
+
+  if (decoded.type !== "npub") {
+    return {
+      valid: false,
+      error: "Adres npub formatında olmalıdır",
+    };
+  }
+
+  return {
+    valid: true,
+    pubkey: decoded.data,
+  };
+};
+
 export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [adminData, setAdminData] = useState<AdminData | null>(null);
@@ -151,8 +177,8 @@ export default function AdminPanel() {
   const [deploySuccess, setDeploySuccess] = useState(false);
 
   // Form states
-  const [newAdminPubkey, setNewAdminPubkey] = useState("");
-  const [newEditorPubkey, setNewEditorPubkey] = useState("");
+  const [newAdminNpub, setNewAdminNpub] = useState("");
+  const [newEditorNpub, setNewEditorNpub] = useState("");
 
   // News form states
   const [newsEventId, setNewsEventId] = useState("");
@@ -163,7 +189,7 @@ export default function AdminPanel() {
     "naddr" | "fields"
   >("naddr");
   const [articleNaddr, setArticleNaddr] = useState("");
-  const [articlePubkey, setArticlePubkey] = useState("");
+  const [articleNpub, setArticleNpub] = useState("");
   const [articleDTag, setArticleDTag] = useState("");
   const [articleRelay, setArticleRelay] = useState("");
 
@@ -358,14 +384,25 @@ export default function AdminPanel() {
   };
 
   const addAdmin = () => {
-    if (!newAdminPubkey.trim()) {
+    if (!newAdminNpub.trim()) {
+      return;
+    }
+
+    const validation = validateNpub(newAdminNpub.trim());
+
+    if (validation.valid === false) {
+      setError(validation.error);
+
       return;
     }
 
     performAction({
       action: "add-admin-pubkey",
-      pubkey: newAdminPubkey.trim(),
+      pubkey: validation.pubkey,
     });
+
+    // Clear the input on success
+    setNewAdminNpub("");
   };
 
   const removeAdmin = (pubkey: string) => {
@@ -373,14 +410,25 @@ export default function AdminPanel() {
   };
 
   const addEditor = () => {
-    if (!newEditorPubkey.trim()) {
+    if (!newEditorNpub.trim()) {
+      return;
+    }
+
+    const validation = validateNpub(newEditorNpub.trim());
+
+    if (validation.valid === false) {
+      setError(validation.error);
+
       return;
     }
 
     performAction({
       action: "add-editor-pubkey",
-      pubkey: newEditorPubkey.trim(),
+      pubkey: validation.pubkey,
     });
+
+    // Clear the input on success
+    setNewEditorNpub("");
   };
 
   const removeEditor = (pubkey: string) => {
@@ -413,17 +461,20 @@ export default function AdminPanel() {
         naddr: articleNaddr.trim(),
       });
     } else {
-      if (
-        !articlePubkey.trim() ||
-        !articleDTag.trim() ||
-        !articleRelay.trim()
-      ) {
-        setError("Yazar Pubkey, D Tag ve Relay gerekli");
+      if (!articleNpub.trim() || !articleDTag.trim() || !articleRelay.trim()) {
+        setError("Yazar Npub, D Tag ve Relay gerekli");
 
         return;
       }
 
-      const aTag = `30023:${articlePubkey.trim()}:${articleDTag.trim()}`;
+      const validation = validateNpub(articleNpub.trim());
+      if (validation.valid === false) {
+        setError(validation.error);
+
+        return;
+      }
+
+      const aTag = `30023:${validation.pubkey}:${articleDTag.trim()}`;
       await performAction({
         action: "add-article",
         type: "a",
@@ -434,7 +485,7 @@ export default function AdminPanel() {
 
     // Clear form
     setArticleNaddr("");
-    setArticlePubkey("");
+    setArticleNpub("");
     setArticleDTag("");
     setArticleRelay("");
   };
@@ -1060,20 +1111,28 @@ export default function AdminPanel() {
                       <div className="space-y-3">
                         <div>
                           <Input
-                            placeholder={userInfo.pubkey || "Yazar Pubkey"}
-                            value={articlePubkey}
-                            onChange={(e) => setArticlePubkey(e.target.value)}
+                            placeholder="npub1..."
+                            value={articleNpub}
+                            onChange={(e) => setArticleNpub(e.target.value)}
                           />
+                          <p className="text-sm text-gray-500">
+                            Npub formatında yazar adresini girin (örn: npub1...)
+                          </p>
                           {userInfo.pubkey && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() =>
-                                setArticlePubkey(userInfo.pubkey || "")
-                              }
+                              onClick={() => {
+                                // Convert user's pubkey to npub format
+                                const userNpub = nip19.npubEncode(
+                                  userInfo.pubkey,
+                                );
+
+                                setArticleNpub(userNpub);
+                              }}
                               className="mt-1"
                             >
-                              Kendi pubkey'imi kullan
+                              Kendi npub'imi kullan
                             </Button>
                           )}
                         </div>
@@ -1093,9 +1152,17 @@ export default function AdminPanel() {
                         <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
                           <p className="text-sm text-blue-700 dark:text-blue-300">
                             <strong>A Tag Preview:</strong>{" "}
-                            {articlePubkey && articleDTag
-                              ? `30023:${articlePubkey}:${articleDTag}`
-                              : "Pubkey ve D Tag gerekli"}
+                            {articleNpub && articleDTag
+                              ? (() => {
+                                  const validation = validateNpub(articleNpub);
+
+                                  if (validation.valid) {
+                                    return `30023:${validation.pubkey}:${articleDTag}`;
+                                  } else {
+                                    return "Geçersiz npub formatı";
+                                  }
+                                })()
+                              : "Npub ve D Tag gerekli"}
                           </p>
                         </div>
                       </div>
@@ -1107,7 +1174,7 @@ export default function AdminPanel() {
                         actionLoading === "add-article" ||
                         (articleInputMethod === "naddr"
                           ? !articleNaddr.trim()
-                          : !articlePubkey.trim() || !articleDTag.trim())
+                          : !articleNpub.trim() || !articleDTag.trim())
                       }
                       onClick={addArticle}
                     >
@@ -1226,17 +1293,22 @@ export default function AdminPanel() {
                   </div>
 
                   <div className="space-y-3 pt-4 border-t">
-                    <Label htmlFor="newAdminPubkey">Yeni Yönetici Ekle</Label>
+                    <Label htmlFor="newAdminNpub">
+                      Yeni Yönetici Ekle (npub)
+                    </Label>
                     <Input
-                      id="newAdminPubkey"
-                      placeholder="Pubkey'i girin"
-                      value={newAdminPubkey}
-                      onChange={(e) => setNewAdminPubkey(e.target.value)}
+                      id="newAdminNpub"
+                      placeholder="npub1..."
+                      value={newAdminNpub}
+                      onChange={(e) => setNewAdminNpub(e.target.value)}
                     />
+                    <p className="text-sm text-gray-500">
+                      Npub formatında kullanıcı adresini girin (örn: npub1...)
+                    </p>
                     <Button
                       className="w-full"
                       disabled={
-                        !newAdminPubkey.trim() ||
+                        !newAdminNpub.trim() ||
                         actionLoading === "add-admin-pubkey"
                       }
                       onClick={addAdmin}
@@ -1299,18 +1371,23 @@ export default function AdminPanel() {
                   </div>
 
                   <div className="space-y-3 pt-4 border-t">
-                    <Label htmlFor="newEditorPubkey">Yeni Editör Ekle</Label>
+                    <Label htmlFor="newEditorNpub">
+                      Yeni Editör Ekle (npub)
+                    </Label>
                     <Input
-                      id="newEditorPubkey"
-                      placeholder="Pubkey'i girin"
-                      value={newEditorPubkey}
-                      onChange={(e) => setNewEditorPubkey(e.target.value)}
+                      id="newEditorNpub"
+                      placeholder="npub1..."
+                      value={newEditorNpub}
+                      onChange={(e) => setNewEditorNpub(e.target.value)}
                     />
+                    <p className="text-sm text-gray-500">
+                      Npub formatında kullanıcı adresini girin (örn: npub1...)
+                    </p>
                     <Button
                       className="w-full"
                       variant="secondary"
                       disabled={
-                        !newEditorPubkey.trim() ||
+                        !newEditorNpub.trim() ||
                         actionLoading === "add-editor-pubkey"
                       }
                       onClick={addEditor}
