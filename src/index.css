@@ -108,7 +108,7 @@
 }
 
 .satoshi-symbol::before {
-  content: "≐";
+  content: "₿";
 }
 
 /* Enhanced sliding animation for price bar */

@@ -197,8 +197,8 @@ const PriceBar = () => {
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <h3 className="text-sm sm:text-base font-bold text-white flex items-center">
-                <span className="mr-2">Anlık Fiyatlar</span>
-                <span className="text-white satoshi-symbol text-lg"></span>
+                <span className="text-white satoshi-symbol text-lg ml-2"></span>
+                <span className="ml-2">Cinsinden Anlık Fiyatlar</span>
               </h3>
               <p className="text-xs text-white/80 italic font-medium">
                 her şey bitcoin karşısında sıfıra gidiyor
