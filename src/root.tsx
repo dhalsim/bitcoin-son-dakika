@@ -12,6 +12,7 @@ import turkishWindowNostrJs from "@/i18n/tr.json";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { SSGProvider } from "./contexts/SSGContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { UserProvider } from "./contexts/UserContext";
 
 import "./index.css";
@@ -65,6 +66,24 @@ export default function Root() {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  var shouldBeDark = theme === 'dark' || (!theme && prefersDark);
+                  if (shouldBeDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <Meta />
         <Links />
       </head>
@@ -72,8 +91,10 @@ export default function Root() {
         <TooltipProvider>
           <SSGProvider>
             <UserProvider>
-              <Toaster />
-              <Outlet />
+              <ThemeProvider>
+                <Toaster />
+                <Outlet />
+              </ThemeProvider>
             </UserProvider>
           </SSGProvider>
         </TooltipProvider>

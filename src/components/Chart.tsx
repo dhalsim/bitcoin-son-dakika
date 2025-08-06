@@ -1,7 +1,7 @@
 // TradingViewWidget.jsx
 import React, { useEffect, useRef, memo } from "react";
 
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/contexts/ThemeContext";
 
 function TradingViewWidget({ symbol }: { symbol: string }) {
   const container = useRef<HTMLDivElement>(null);
