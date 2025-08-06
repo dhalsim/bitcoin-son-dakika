@@ -47,7 +47,6 @@
 
     /* Custom colors */
     --main-accent: hsl(35, 100%, 47%);
-    --main-accent-dark: hsl(35, 100%, 41%);
     --contrasting-1: hsl(230, 79%, 52%);
     --contrasting-2: hsl(185, 89%, 60%);
     --dialog-bg-color: hsl(0, 0%, 100%);
@@ -90,6 +89,12 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 0 0% 20%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --dialog-bg-color: hsl(0, 0%, 15%);
+
+    /* Custom colors (dark equivalents) */
+    --main-accent: hsl(35, 100%, 40%);
+    --contrasting-1: hsl(230, 79%, 40%);
+    --contrasting-2: hsl(185, 89%, 45%);
     --dialog-bg-color: hsl(0, 0%, 15%);
   }
 }
