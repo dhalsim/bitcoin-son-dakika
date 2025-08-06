@@ -112,9 +112,13 @@ const MASTER_ADMIN_PUBKEY =
 
 interface AdminData {
   adminUsers: string[];
+  adminsLastTimeUpdated: number;
   editorUsers: string[];
+  editorsLastTimeUpdated: number;
   news: { eTag: string; relay: string }[];
+  newsLastTimeUpdated: number;
   articles: { aTag: string; relay: string }[];
+  articlesLastTimeUpdated: number;
 }
 
 interface UserInfo {
@@ -209,9 +213,9 @@ export default function AdminPanel() {
     setLoading(true);
 
     try {
-      const events: NostrEvent[] = [];
+      const events: Map<string, NostrEvent> = new Map();
 
-      pool.subscribeManyEose(
+      pool.subscribeMany(
         ADMIN_RELAYS,
         [
           {
@@ -241,58 +245,110 @@ export default function AdminPanel() {
         ],
         {
           onevent(evt) {
-            console.log(evt);
+            const dTag = evt.tags.find((tag) => tag[0] === "d")?.[1];
 
-            events.push(evt);
+            if (!dTag) {
+              throw new Error("d tag bulunamadı");
+            }
+
+            const existingEvent = events.get(dTag);
+
+            if (existingEvent && existingEvent.created_at > evt.created_at) {
+              return;
+            }
+
+            events.set(dTag, evt);
           },
-          onclose() {
-            let adminUsers: string[] = [];
-            let editorUsers: string[] = [];
-            let news: { eTag: string; relay: string }[] = [];
-            let articles: { aTag: string; relay: string }[] = [];
+          oneose() {
+            console.log(events);
 
-            // Parse the events to extract pubkeys from sets
-            events.forEach((event) => {
-              const dTag = event.tags.find((tag) => tag[0] === "d")?.[1];
+            const adminUsersEvent = events.get("admin-users");
 
-              if (dTag === "admin-users") {
-                // Extract pubkeys from 'p' tags
-                adminUsers = event.tags
-                  .filter((tag) => tag[0] === "p")
-                  .map((tag) => tag[1])
-                  .filter(Boolean);
-              } else if (dTag === "editor-users") {
-                // Extract pubkeys from 'p' tags
-                editorUsers = event.tags
-                  .filter((tag) => tag[0] === "p")
-                  .map((tag) => tag[1])
-                  .filter(Boolean);
-              } else if (dTag === "news") {
-                // News uses 'e' tags for event IDs with relay
-                news = event.tags
-                  .filter((tag) => tag[0] === "e")
-                  .map((tag) => ({
-                    eTag: tag[1],
-                    relay: tag[2],
-                  }))
-                  .filter((item) => item.eTag);
-              } else if (dTag === "articles") {
-                // Articles use 'a' tags for addressable events with relay
-                articles = event.tags
-                  .filter((tag) => tag[0] === "a")
-                  .map((tag) => ({
-                    aTag: tag[1],
-                    relay: tag[2] || "wss://relay.damus.io",
-                  }))
-                  .filter((item) => item.aTag);
-              }
-            });
+            if (!adminUsersEvent) {
+              setError(
+                "Admin kullanıcılarını yüklerken hata oluştu, logları kontrol ediniz",
+              );
+              setLoading(false);
+
+              return;
+            }
+
+            const editorUsersEvent = events.get("editor-users");
+
+            if (!editorUsersEvent) {
+              setError(
+                "Editör kullanıcılarını yüklerken hata oluştu, logları kontrol ediniz",
+              );
+              setLoading(false);
+
+              return;
+            }
+
+            const newsEvent = events.get("news");
+
+            if (!newsEvent) {
+              setError(
+                "Haberleri yüklerken hata oluştu, logları kontrol ediniz",
+              );
+              setLoading(false);
+
+              return;
+            }
+
+            const articlesEvent = events.get("articles");
+
+            if (!articlesEvent) {
+              setError(
+                "Makaleleri yüklerken hata oluştu, logları kontrol ediniz",
+              );
+              setLoading(false);
+
+              return;
+            }
+
+            const adminUsers = adminUsersEvent.tags
+              .filter((tag) => tag[0] === "p")
+              .map((tag) => tag[1])
+              .filter(Boolean);
+
+            const adminsLastTimeUpdated = adminUsersEvent.created_at * 1000;
+
+            const editorUsers = editorUsersEvent.tags
+              .filter((tag) => tag[0] === "p")
+              .map((tag) => tag[1])
+              .filter(Boolean);
+
+            const editorsLastTimeUpdated = editorUsersEvent.created_at * 1000;
+
+            const news = newsEvent.tags
+              .filter((tag) => tag[0] === "e")
+              .map((tag) => ({
+                eTag: tag[1],
+                relay: tag[2],
+              }))
+              .filter((item) => item.eTag);
+
+            const newsLastTimeUpdated = newsEvent.created_at * 1000;
+
+            const articles = articlesEvent.tags
+              .filter((tag) => tag[0] === "a")
+              .map((tag) => ({
+                aTag: tag[1],
+                relay: tag[2],
+              }))
+              .filter((item) => item.aTag);
+
+            const articlesLastTimeUpdated = articlesEvent.created_at * 1000;
 
             setAdminData({
               adminUsers,
+              adminsLastTimeUpdated,
               editorUsers,
+              editorsLastTimeUpdated,
               news,
+              newsLastTimeUpdated,
               articles,
+              articlesLastTimeUpdated,
             });
 
             setLoading(false);
@@ -301,7 +357,8 @@ export default function AdminPanel() {
       );
     } catch (err) {
       console.error("Error loading admin data from Nostr:", err);
-      setError("Nostr verilerini yüklerken hata oluştu");
+
+      setError(`Nostr verilerini yüklerken hata oluştu: ${err}`);
     }
   }, []);
 
@@ -916,7 +973,10 @@ export default function AdminPanel() {
                     Haber Küratörlüğü ({adminData?.news.length || 0})
                   </CardTitle>
                   <CardDescription>
-                    Küratörlenen haber içerikleri
+                    Küratörlenen haber içerikleri, Son güncelleme:{" "}
+                    {new Date(
+                      adminData?.newsLastTimeUpdated || 0,
+                    ).toLocaleString()}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1009,7 +1069,10 @@ export default function AdminPanel() {
                     Makale Küratörlüğü ({adminData?.articles.length || 0})
                   </CardTitle>
                   <CardDescription>
-                    Küratörlenen makale içerikleri
+                    Küratörlenen makale içerikleri, Son güncelleme:{" "}
+                    {new Date(
+                      adminData?.articlesLastTimeUpdated || 0,
+                    ).toLocaleString()}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1251,7 +1314,10 @@ export default function AdminPanel() {
                     Yöneticiler ({adminData?.adminUsers.length || 0})
                   </CardTitle>
                   <CardDescription>
-                    Kullanıcı ekleyip çıkarabilir
+                    Kullanıcı ekleyip çıkarabilir, Son güncelleme:{" "}
+                    {new Date(
+                      adminData?.adminsLastTimeUpdated || 0,
+                    ).toLocaleString()}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1332,7 +1398,11 @@ export default function AdminPanel() {
                     Editörler ({adminData?.editorUsers.length || 0})
                   </CardTitle>
                   <CardDescription>
-                    İçerik yayınlayabilir ve deploy tetikleyebilir
+                    İçerik yayınlayabilir ve deploy tetikleyebilir, Son
+                    güncelleme:{" "}
+                    {new Date(
+                      adminData?.editorsLastTimeUpdated || 0,
+                    ).toLocaleString()}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
