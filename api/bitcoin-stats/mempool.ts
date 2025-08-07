@@ -91,7 +91,6 @@ export async function GET() {
     // The 3d hashrate endpoint returns an object with hashrates array and currentHashrate
     const currentHashrate = hashrateData.currentHashrate;
     const hashrateInEH = currentHashrate / 1e18; // Convert to exahash
-    const currentDifficulty = hashrateData.currentDifficulty;
 
     const hashrate = {
       value: hashrateInEH.toFixed(2),
@@ -103,16 +102,15 @@ export async function GET() {
     const rawFeesData = await feesResponse.value.json();
     const feesData = MempoolFeesSchema.parse(rawFeesData);
 
+    // Process difficulty data
     const rawDifficultyData = await difficultyResponse.value.json();
     const difficultyData = MempoolDifficultySchema.parse(rawDifficultyData);
-
+    const previousChange = (difficultyData.previousRetarget - 1) * 100;
+    const estimatedChange = (difficultyData.difficultyChange - 1) * 100;
     const difficulty = {
-      value:
-        currentDifficulty > 0
-          ? (currentDifficulty / 1e12).toFixed(2) + "T"
-          : "Current",
-      change: `${difficultyData.difficultyChange > 0 ? "+" : ""}${(difficultyData.difficultyChange * 100).toFixed(2)}%`,
-      height: difficultyData.nextRetargetHeight,
+      previousChange,
+      estimatedChange,
+      estimatedRetargetDate: difficultyData.estimatedRetargetDate,
     };
 
     // Process mempool data

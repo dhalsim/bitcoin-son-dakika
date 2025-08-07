@@ -51,9 +51,9 @@ export const BitcoinStatsDataSchema = z.object({
   }),
   fees: MempoolFeesSchema,
   difficulty: z.object({
-    value: z.string(),
-    change: z.string(),
-    height: z.number(),
+    previousChange: z.number(),
+    estimatedChange: z.number(),
+    estimatedRetargetDate: z.number(),
   }),
   mempool: z.object({
     count: z.number(),
