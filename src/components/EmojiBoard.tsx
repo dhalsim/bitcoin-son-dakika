@@ -154,12 +154,13 @@ export function EmojiBoard({
   }
 
   return (
-    <div className="w-full mx-auto bg-white">
+    <div className="w-full mx-auto">
       {/* Search Bar */}
       <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" />
         <Input
           type="text"
+          name="search"
           placeholder="Emoji ara..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -176,7 +177,7 @@ export function EmojiBoard({
             <Button
               key={category.key}
               variant={
-                selectedCategory === category.key ? "default" : "outline"
+                selectedCategory === category.key ? "outline" : "default"
               }
               size="sm"
               onClick={() => handleCategoryClick(category.key)}
@@ -194,9 +195,7 @@ export function EmojiBoard({
         <div className="space-y-4">
           {Object.entries(filteredEmojis).map(([categoryName, emojis]) => (
             <div key={categoryName}>
-              <h3 className="text-sm font-medium text-gray-700 mb-2 sticky top-0 bg-white">
-                {categoryName}
-              </h3>
+              <h3 className="text-sm font-medium mb-2">{categoryName}</h3>
               <div className="grid grid-cols-8 gap-1">
                 {emojis.map((emojiItem, index) => {
                   const emoji = hexToEmoji(emojiItem.emoji);

@@ -116,7 +116,7 @@ export function ProfileAvatar({
   return (
     <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
       <PopoverTrigger asChild>{avatarElement}</PopoverTrigger>
-      <PopoverContent className="w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
+      <PopoverContent className="w-80 shadow-lg">
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
