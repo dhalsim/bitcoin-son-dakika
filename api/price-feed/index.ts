@@ -37,17 +37,14 @@ export async function GET() {
       signature: signature,
     });
 
-    const [btcPrice, crypto] = await getCrypto(client);
-    const commodities = await getCommodities(client);
-    const currency = await getCurrency(client);
-    const stocks = await getStocks(client);
+    const [currency, btcPrice, commodities, stocks] = await Promise.all([
+      getCurrency(client),
+      getCrypto(client),
+      getCommodities(client),
+      getStocks(client),
+    ]);
 
-    const prices: PriceData[] = [
-      ...crypto,
-      ...commodities,
-      ...currency,
-      ...stocks,
-    ];
+    const prices: PriceData[] = [...currency, ...commodities, ...stocks];
 
     const data: BaseEndpointResponse = {
       success: true,
@@ -99,8 +96,6 @@ export async function OPTIONS() {
 async function getCommodities(
   client: TradingView.Client,
 ): Promise<PriceData[]> {
-  const prices: PriceData[] = [];
-
   const commodities: Ticker[] = [
     {
       symbol: "XAU",
@@ -116,93 +111,68 @@ async function getCommodities(
       emoji: "🥈",
       category: "commodity",
     },
-    {
-      symbol: "XCU",
-      description: "Bakır",
-      currency: "USD",
-      emoji: "🥉",
-      category: "commodity",
-    },
-    {
-      symbol: "XPD",
-      description: "Palladyum",
-      currency: "USD",
-      emoji: "🥈",
-      category: "commodity",
-    },
-    {
-      symbol: "XPT",
-      description: "Platin",
-      currency: "USD",
-      emoji: "🥉",
-      category: "commodity",
-    },
   ];
 
-  for (const ticker of commodities) {
-    const priceData = await getPriceData(client, ticker);
+  return Promise.all(
+    commodities.map(async (ticker) => {
+      const priceData = await getPriceData(client, ticker);
 
-    prices.push({
-      name: ticker.description,
-      symbol: priceData.symbol,
-      value: priceData.current.toString(),
-      change: priceData.change.toString(),
-      category: "commodity",
-    });
-  }
-
-  return prices;
+      return {
+        name: ticker.description,
+        symbol: priceData.symbol,
+        value: priceData.current.toString(),
+        change: priceData.change.toString(),
+        category: "commodity",
+      };
+    }),
+  );
 }
 
-async function getCrypto(
-  client: TradingView.Client,
-): Promise<[PriceData, PriceData[]]> {
-  const prices: PriceData[] = [];
-
-  const crypto: Ticker[] = [
-    {
-      symbol: "ETH",
-      description: "Ethereum",
-      currency: "BTC",
-      emoji: "Ξ",
-      category: "crypto",
-    },
-    {
-      symbol: "SOL",
-      description: "Solana",
-      currency: "BTC",
-      emoji: "◎",
-      category: "crypto",
-    },
-    {
-      symbol: "XRP",
-      description: "XRP",
-      currency: "BTC",
-      emoji: "Ⓧ",
-      category: "crypto",
-    },
-    {
-      symbol: "DOGE",
-      description: "Dogecoin",
-      currency: "BTC",
-      emoji: "🐶",
-      category: "crypto",
-    },
-    {
-      symbol: "ADA",
-      description: "Cardano",
-      currency: "BTC",
-      emoji: "🌐",
-      category: "crypto",
-    },
-    {
-      symbol: "XMR",
-      description: "Monero",
-      currency: "BTC",
-      emoji: "🔒",
-      category: "crypto",
-    },
-  ];
+async function getCrypto(client: TradingView.Client): Promise<PriceData> {
+  // const crypto: Ticker[] = [
+  //   {
+  //     symbol: "ETH",
+  //     description: "Ethereum",
+  //     currency: "BTC",
+  //     emoji: "Ξ",
+  //     category: "crypto",
+  //   },
+  //   {
+  //     symbol: "SOL",
+  //     description: "Solana",
+  //     currency: "BTC",
+  //     emoji: "◎",
+  //     category: "crypto",
+  //   },
+  //   {
+  //     symbol: "XRP",
+  //     description: "XRP",
+  //     currency: "BTC",
+  //     emoji: "Ⓧ",
+  //     category: "crypto",
+  //   },
+  //   {
+  //     symbol: "DOGE",
+  //     description: "Dogecoin",
+  //     currency: "BTC",
+  //     emoji: "🐶",
+  //     category: "crypto",
+  //   },
+  //   {
+  //     symbol: "ADA",
+  //     description: "Cardano",
+  //     currency: "BTC",
+  //     emoji: "🌐",
+  //     category: "crypto",
+  //   },
+  //   {
+  //     symbol: "XMR",
+  //     description: "Monero",
+  //     currency: "BTC",
+  //     emoji: "🔒",
+  //     category: "crypto",
+  //   },
+  // ];
 
   const btcPriceData = await getPriceData(client, {
     symbol: "BTC",
@@ -220,25 +190,37 @@ async function getCrypto(
     category: "crypto",
   };
 
-  for (const ticker of crypto) {
-    const priceData = await getPriceData(client, ticker);
+  // for (const ticker of crypto) {
+  //   const priceData = await getPriceData(client, ticker);
 
-    prices.push({
-      name: ticker.description,
-      symbol: priceData.symbol,
-      value: priceData.current.toString(),
-      change: priceData.change.toString(),
-      category: "crypto",
-    });
-  }
+  //   prices.push({
+  //     name: ticker.description,
+  //     symbol: priceData.symbol,
+  //     value: priceData.current.toString(),
+  //     change: priceData.change.toString(),
+  //     category: "crypto",
+  //   });
+  // }
 
-  return [btcPrice, prices];
+  return btcPrice;
 }
 
 async function getCurrency(client: TradingView.Client): Promise<PriceData[]> {
-  const prices: PriceData[] = [];
-
   const forex: Ticker[] = [
+    {
+      symbol: "TRY",
+      description: "Türk Lirası",
+      currency: "USD",
+      emoji: "🇹🇷",
+      category: "currency",
+    },
+    {
+      symbol: "USD",
+      description: "Amerikan Doları",
+      currency: "USD",
+      emoji: "💵",
+      category: "currency",
+    },
     {
       symbol: "EUR",
       description: "Avro",
@@ -253,55 +235,41 @@ async function getCurrency(client: TradingView.Client): Promise<PriceData[]> {
       emoji: "🇬🇧",
       category: "currency",
     },
-    {
-      symbol: "JPY",
-      description: "Japon Yeni",
-      currency: "USD",
-      emoji: "🇯🇵",
-      category: "currency",
-    },
-    {
-      symbol: "CHF",
-      description: "İsviçre Frangı",
-      currency: "USD",
-      emoji: "🇨🇭",
-      category: "currency",
-    },
-    {
-      symbol: "CNY",
-      description: "Çin Yuanı",
-      currency: "USD",
-      emoji: "🇨🇳",
-      category: "currency",
-    },
-    {
-      symbol: "TRY",
-      description: "Türk Lirası",
-      currency: "USD",
-      emoji: "🇹🇷",
-      category: "currency",
-    },
   ];
 
-  for (const ticker of forex) {
-    const priceData = await getPriceData(client, ticker);
+  return Promise.all(
+    forex.map(async (ticker) => {
+      const priceData = await getPriceData(client, ticker);
 
-    prices.push({
-      name: ticker.description,
-      symbol: priceData.symbol,
-      value: priceData.current.toString(),
-      change: priceData.change.toString(),
-      category: "currency",
-    });
-  }
-
-  return prices;
+      return {
+        name: ticker.description,
+        symbol: priceData.symbol,
+        value: priceData.current.toString(),
+        change: priceData.change.toString(),
+        category: "currency",
+      };
+    }),
+  );
 }
 
 async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
   const prices: PriceData[] = [];
 
   const stocks: Ticker[] = [
+    {
+      symbol: "NVDA",
+      description: "NVIDIA",
+      currency: "USD",
+      emoji: "🎮",
+      category: "stock",
+    },
+    {
+      symbol: "MSFT",
+      description: "Microsoft",
+      currency: "USD",
+      emoji: "💻",
+      category: "stock",
+    },
     {
       symbol: "AAPL",
       description: "Apple",
@@ -317,13 +285,6 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
       category: "stock",
     },
     {
-      symbol: "MSFT",
-      description: "Microsoft",
-      currency: "USD",
-      emoji: "💻",
-      category: "stock",
-    },
-    {
       symbol: "AMZN",
       description: "Amazon",
       currency: "USD",
@@ -331,31 +292,10 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
       category: "stock",
     },
     {
-      symbol: "TSLA",
-      description: "Tesla",
-      currency: "USD",
-      emoji: "🚗",
-      category: "stock",
-    },
-    {
-      symbol: "NVDA",
-      description: "NVIDIA",
-      currency: "USD",
-      emoji: "🎮",
-      category: "stock",
-    },
-    {
       symbol: "META",
       description: "Meta",
       currency: "USD",
       emoji: "🤖",
-      category: "stock",
-    },
-    {
-      symbol: "NFLX",
-      description: "Netflix",
-      currency: "USD",
-      emoji: "🎥",
       category: "stock",
     },
   ];
