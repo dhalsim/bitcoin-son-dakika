@@ -61,6 +61,12 @@ export const BitcoinStatsDataSchema = z.object({
     totalFee: z.string(),
     status: z.string(),
   }),
+  halving: z.object({
+    nextHalvingDate: z.number(),
+    remainingBlocks: z.number(),
+    remainingDays: z.number(),
+    progressPercent: z.number(),
+  }),
   lastUpdated: z.string(),
   source: z.string(),
 });

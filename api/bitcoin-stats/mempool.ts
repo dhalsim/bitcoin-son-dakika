@@ -20,11 +20,13 @@ export async function GET() {
       feesResponse,
       difficultyResponse,
       mempoolResponse,
+      heightResponse,
     ] = await Promise.allSettled([
       fetch("https://mempool.space/api/v1/mining/hashrate/3d"),
       fetch("https://mempool.space/api/v1/fees/recommended"),
       fetch("https://mempool.space/api/v1/difficulty-adjustment"),
       fetch("https://mempool.space/api/mempool"),
+      fetch("https://mempool.space/api/blocks/tip/height"),
     ]);
 
     // Check if any endpoint failed
@@ -46,6 +48,10 @@ export async function GET() {
 
     if (mempoolResponse.status === "rejected") {
       failedEndpoints.push("Mempool API failed: " + mempoolResponse.reason);
+    }
+
+    if (heightResponse.status === "rejected") {
+      failedEndpoints.push("Height API failed: " + heightResponse.reason);
     }
 
     if (failedEndpoints.length > 0) {
@@ -82,6 +88,10 @@ export async function GET() {
 
     if (mempoolResponse.status !== "fulfilled" || !mempoolResponse.value.ok) {
       throw new Error("Failed to fetch mempool data");
+    }
+
+    if (heightResponse.status !== "fulfilled" || !heightResponse.value.ok) {
+      throw new Error("Failed to fetch height data");
     }
 
     // Process hashrate data
@@ -134,12 +144,32 @@ export async function GET() {
       status,
     };
 
+    // Halving calculations
+    const heightData = await heightResponse.value.json();
+    const currentHeight = heightData.height; // 909031
+
+    const HALVING_INTERVAL = 210_000;
+    const LAST_HALVING_HEIGHT = 840_000;
+    const NEXT_HALVING_HEIGHT = LAST_HALVING_HEIGHT + HALVING_INTERVAL; // 1_050_000
+
+    const blocksSinceHalving = currentHeight - LAST_HALVING_HEIGHT; // 69,031
+    const blocksUntilNextHalving = NEXT_HALVING_HEIGHT - currentHeight; // 140,969
+    const progressPercent = (blocksSinceHalving / HALVING_INTERVAL) * 100; // ~32.87%
+
+    const halving = {
+      nextHalvingDate: NEXT_HALVING_HEIGHT,
+      remainingBlocks: blocksUntilNextHalving,
+      remainingDays: Math.round(blocksUntilNextHalving / (6 * 24)), // ~10 minutes per block
+      progressPercent,
+    };
+
     // Prepare response data
     const responseData: BitcoinStatsData = {
       hashrate,
       fees: feesData,
       difficulty,
       mempool,
+      halving,
       lastUpdated: new Date().toISOString(),
       source: "Mempool.space",
     };

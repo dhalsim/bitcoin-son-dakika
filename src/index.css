@@ -233,6 +233,10 @@
 }
 
 @layer utilities {
+  .text-muted-foreground {
+    color: hsl(var(--muted-foreground));
+  }
+
   /* Gray text utilities */
   .text-gray-50 { color: hsl(var(--gray-50)); }
   .text-gray-100 { color: hsl(var(--gray-100)); }

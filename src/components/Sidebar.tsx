@@ -85,7 +85,12 @@ const Sidebar = ({
       {/* Bitcoin Stats */}
       <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <h3 className="text-lg font-bold text-foreground mb-4">
-          Bitcoin İstatistikleri
+          Bitcoin İstatistikleri:{" "}
+          <span className="text-xs text-muted-foreground font-normal">
+            {stats?.lastUpdated
+              ? new Date(stats.lastUpdated).toLocaleString()
+              : "Yükleniyor..."}
+          </span>
         </h3>
 
         {loading ? (
@@ -98,22 +103,76 @@ const Sidebar = ({
                 </div>
                 <div className="animate-pulse">
                   <div className="h-4 bg-muted rounded w-16 mb-1"></div>
-                  <div className="h-3 bg-muted rounded w-12"></div>
+                  <div className="h-3 bg-muted rounded w-8"></div>
                 </div>
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="text-destructive text-sm">
-            Veri yüklenirken hata oluştu
+          <div className="text-red-600 text-sm">
+            Bitcoin istatistikleri yüklenirken hata oluştu.
           </div>
         ) : stats ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium text-foreground">Hash Oranı</div>
-                <div className="text-xs text-muted-foreground">
-                  {stats.hashrate.unit}
+              <div className="flex items-center gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-foreground">
+                      Hash Oranı
+                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80" align="start">
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-foreground">
+                            ⚡ Hashrate (Ağ İşlem Gücü)
+                          </h4>
+                          <div className="text-sm text-muted-foreground space-y-2">
+                            <p>
+                              Hashrate, Bitcoin madencilik ağının saniyede
+                              gerçekleştirdiği toplam işlem (hash) sayısını
+                              gösterir.
+                            </p>
+                            <p>
+                              Ne kadar yüksekse, ağ o kadar güvenli ve rekabet
+                              yoğundur.
+                            </p>
+                            <div className="space-y-1">
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>
+                                  Genellikle EH/s (saniyede exahash) ile ölçülür
+                                  — yani saniyede trilyonlarca işlem yapılır.
+                                </span>
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>
+                                  Hashrate yükselirse, blok bulmak zorlaşır ve
+                                  zorluk (difficulty) artar.
+                                </span>
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>
+                                  Düşerse, bloklar daha yavaş bulunur ve zorluk
+                                  azalır.
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {stats.hashrate.unit}
+                  </div>
                 </div>
               </div>
               <div className="text-right">
@@ -126,55 +185,119 @@ const Sidebar = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div>
-                  <div className="font-medium text-foreground">Zorluk</div>
-                  <div className="text-xs text-muted-foreground">Trilyon</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-foreground">Zorluk</div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80" align="start">
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-foreground">
+                            ⚒️ Bitcoin Zorluk Ayarı
+                          </h4>
+                          <div className="text-sm text-muted-foreground space-y-2">
+                            <p>
+                              Bitcoin, her 2.016 blokta bir (~2 hafta), ortalama
+                              blok süresini 10 dakika civarında tutmak için
+                              madencilik zorluğunu otomatik olarak ayarlar.
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span>🔹</span>
+                              <span>
+                                Bloklar çok hızlı kazılıyorsa, zorluk artar.
+                              </span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span>🔹</span>
+                              <span>
+                                Bloklar çok yavaş kazılıyorsa, zorluk azalır.
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="text-muted-foreground hover:text-foreground transition-colors">
-                      <Info className="h-4 w-4" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80" align="start">
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-foreground">
-                        Bitcoin Zorluk Ayarı
-                      </h4>
-                      <div className="text-sm text-muted-foreground space-y-2">
-                        <p>
-                          Her 2,016 blok (~2 hafta) sonrasında Bitcoin, ortalama
-                          blok süresini 10 dakika civarında tutmak için
-                          madencilik zorluğunu ayarlar.
-                        </p>
-                        <p>Eğer bloklar çok hızlı kazılırsa, zorluk artar.</p>
-                        <p>Eğer bloklar çok yavaş kazılırsa, zorluk azalır.</p>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
               </div>
-              <div className="text-right">
-                <div
-                  className={`font-medium text-foreground ${stats.difficulty.previousChange > 0 ? "text-green-600" : "text-red-600"}`}
-                >
-                  Önceki Ayar: %{stats.difficulty.previousChange.toFixed(2)}
-                </div>
-                <div
-                  className={`text-xs ${stats.difficulty.estimatedChange > 0 ? "text-green-600" : "text-red-600"}`}
-                >
-                  Beklenen Ayar: %{stats.difficulty.estimatedChange.toFixed(2)},{" "}
-                  {new Date(
-                    stats.difficulty.estimatedRetargetDate * 1000,
-                  ).toLocaleDateString()}
+              <div className="text-right space-y-1">
+                <div>
+                  <div className="font-medium text-foreground">
+                    Beklenen Ayar
+                  </div>
+                  <span className="text-base font-medium text-foreground">
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(
+                        stats.difficulty.estimatedRetargetDate,
+                      ).toLocaleDateString("tr-TR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}{" "}
+                      tarihinde{" "}
+                    </span>
+                    <span
+                      className={`${stats.difficulty.estimatedChange >= 0 ? "text-green-600" : "text-red-600"} font-semibold`}
+                    >
+                      {stats.difficulty.estimatedChange >= 0 ? "+" : "-"}
+                      {Math.abs(stats.difficulty.estimatedChange).toFixed(2)}%
+                    </span>
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium text-foreground">Mempool</div>
-                <div className="text-xs text-muted-foreground">
-                  {stats.mempool.status}
+              <div className="flex items-center gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-foreground">
+                      🚰 Mempool
+                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80" align="start">
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-foreground">
+                            🚰 Mempool Durumu
+                          </h4>
+                          <div className="text-sm text-muted-foreground space-y-2">
+                            <p>
+                              <span>🔹</span>
+                              Şu anda mempool'da onay bekleyen{" "}
+                              <strong>
+                                {stats.mempool.count.toLocaleString()}
+                              </strong>{" "}
+                              işlem var.
+                            </p>
+                            <p>
+                              <span>🔹</span>
+                              Bu işlemler toplam{" "}
+                              <strong>{stats.mempool.size} vB</strong> yer
+                              kaplıyor ve madencilere ödenecek toplam ücret{" "}
+                              <strong>{stats.mempool.totalFee}</strong>.
+                            </p>
+                            <p>
+                              <span>🔹</span>
+                              Mempool durumu:{" "}
+                              <strong>{stats.mempool.status}</strong>. Ücretler
+                              yüksek olabilir.
+                            </p>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {stats.mempool.status}
+                  </div>
                 </div>
               </div>
               <div className="text-right">
@@ -188,17 +311,231 @@ const Sidebar = ({
             </div>
 
             <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium text-foreground">
-                  Önerilen Ücret
+              <div className="flex items-center gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-foreground">
+                      Önerilen Ücret
+                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground transition-colors">
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80" align="start">
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-foreground">
+                            İşlem Ücreti Tahminleri
+                          </h4>
+                          <div className="text-sm text-muted-foreground space-y-2">
+                            <p>
+                              Bu tahminler, işleminizin ne kadar sürede
+                              onaylanmasını istediğinize göre önerilen işlem
+                              ücretleridir (satoshi/vB cinsinden).
+                            </p>
+                            <ul className="list-none list-inside">
+                              <li>
+                                <strong>{stats.fees.fastestFee} sat/vB</strong>{" "}
+                                — En hızlı onay (bir sonraki blokta).
+                              </li>
+                              <li>
+                                <strong>{stats.fees.halfHourFee} sat/vB</strong>{" "}
+                                — Yaklaşık 30 dakika içinde onay.
+                              </li>
+                              <li>
+                                <strong>{stats.fees.hourFee} sat/vB</strong> —
+                                Yaklaşık 1 saat içinde onay.
+                              </li>
+                              <li>
+                                <strong>{stats.fees.economyFee} sat/vB</strong>{" "}
+                                — Ekonomik seviye, uzun bekleme süresi olabilir.
+                              </li>
+                            </ul>
+                            <p>
+                              Uygun ücreti seçerken mempool yoğunluğunu ve
+                              işleminizin ne kadar acil olduğunu göz önünde
+                              bulundurun.
+                            </p>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="text-xs text-muted-foreground">sat/vB</div>
                 </div>
-                <div className="text-xs text-muted-foreground">sat/vB</div>
               </div>
               <div className="text-right">
                 <div className="font-medium text-foreground">
                   {stats.fees.halfHourFee}
                 </div>
                 <div className="text-xs text-muted-foreground">30 dk</div>
+              </div>
+            </div>
+
+            {/* Enhanced Fee Estimation */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <div>
+                    <div className="font-medium text-foreground text-sm">
+                      Hızlı Onay
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      ~10 dakika
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-foreground text-sm">
+                    {stats.fees.fastestFee} sat/vB
+                  </div>
+                  <div className="text-xs text-muted-foreground">En yüksek</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <div>
+                    <div className="font-medium text-foreground text-sm">
+                      30 Dakika
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Önerilen
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-foreground text-sm">
+                    {stats.fees.halfHourFee} sat/vB
+                  </div>
+                  <div className="text-xs text-muted-foreground">Dengeli</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <div>
+                    <div className="font-medium text-foreground text-sm">
+                      1 Saat
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      ~60 dakika
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-foreground text-sm">
+                    {stats.fees.hourFee} sat/vB
+                  </div>
+                  <div className="text-xs text-muted-foreground">Düşük</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                  <div>
+                    <div className="font-medium text-foreground text-sm">
+                      Ekonomi
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      ~24 saat
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-foreground text-sm">
+                    {stats.fees.economyFee} sat/vB
+                  </div>
+                  <div className="text-xs text-muted-foreground">En düşük</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bitcoin Halving Panel */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-foreground">
+                        🪙 Bitcoin Halving
+                      </div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="text-muted-foreground hover:text-foreground transition-colors">
+                            <Info className="h-4 w-4" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80" align="start">
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-foreground">
+                              🪙 Bitcoin Halving
+                            </h4>
+                            <div className="text-sm text-muted-foreground space-y-2">
+                              <p>
+                                Bitcoin halving, her 210,000 blokta bir
+                                gerçekleşen ve madencilere ödenen Bitcoin
+                                miktarını yarıya indiren bir olaydır.
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>
+                                  Son halving: 2024 Nisan (blok 840,000)
+                                </span>
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>
+                                  Sonraki halving: 2028 Nisan (blok 1,050,000)
+                                </span>
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>
+                                  Halving sonrası madencilere ödenen miktar
+                                  3.125 BTC'ye düşecek.
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Sonraki halving'e kalan
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-foreground">
+                    {stats.halving.remainingDays}
+                  </div>
+                  <div className="text-xs text-muted-foreground">gün</div>
+                </div>
+              </div>
+
+              {/* Halving Progress Bar */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Halving'e Kalan</span>
+                  <span>
+                    {stats.halving.remainingBlocks.toLocaleString()} blok
+                  </span>
+                </div>
+                <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-green-600 h-full transition-all duration-300"
+                    style={{ width: `${stats.halving.progressPercent}%` }}
+                  />
+                </div>
+                <div className="text-right text-xs text-muted-foreground">
+                  % {stats.halving.progressPercent.toFixed(2)}
+                </div>
               </div>
             </div>
           </div>
