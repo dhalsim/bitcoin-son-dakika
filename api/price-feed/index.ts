@@ -217,7 +217,7 @@ async function getCurrency(client: TradingView.Client): Promise<PriceData[]> {
     {
       symbol: "USD",
       description: "Amerikan Doları",
-      currency: "USD",
+      currency: "sats",
       emoji: "💵",
       category: "currency",
     },
@@ -320,6 +320,10 @@ function assertNever(value: never): never {
 }
 
 function getSymbol(ticker: Ticker) {
+  if (ticker.symbol === "USD") {
+    return `(1 / BTCUSD) * 100000000`;
+  }
+
   if (ticker.symbol === "BTC" && ticker.currency === "USD") {
     return `${ticker.symbol}USD`;
   }
@@ -333,6 +337,8 @@ function getSymbol(ticker: Ticker) {
       return `${ticker.symbol}BTC`;
     case "USD":
       return `${ticker.symbol}USD/BTCUSD`;
+    case "sats":
+      throw new Error("Sats is only supported for USD");
     default:
       return assertNever(ticker.currency);
   }
@@ -390,7 +396,7 @@ function getPriceData(
 type Ticker = {
   symbol: string;
   description: string;
-  currency: "BTC" | "USD";
+  currency: "BTC" | "USD" | "sats";
   category: "crypto" | "currency" | "commodity" | "stock";
   emoji: string;
 };
