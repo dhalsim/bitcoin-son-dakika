@@ -253,7 +253,7 @@ const PriceBar = () => {
                     onClick={() => handlePriceClick(price.symbol)}
                   >
                     <span className="text-white/90 font-medium">
-                      {price.name}:
+                      {price.emoji} {price.name}:
                     </span>
                     <span className="font-bold text-white">{price.value}</span>
                     {price.currency === "sats" && (
