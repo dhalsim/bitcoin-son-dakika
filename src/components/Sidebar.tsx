@@ -84,11 +84,17 @@ const Sidebar = ({
 
       {/* Bitcoin Stats */}
       <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
-        <h3 className="text-lg font-bold text-foreground mb-4">
-          Bitcoin İstatistikleri:{" "}
+        <h3 className="text-lg font-bold text-foreground mb-4 flex items-center justify-between">
+          Bitcoin İstatistikleri
           <span className="text-xs text-muted-foreground font-normal">
             {stats?.lastUpdated
-              ? new Date(stats.lastUpdated).toLocaleString()
+              ? (() => {
+                  const secondsAgo = Math.floor(
+                    (Date.now() - new Date(stats.lastUpdated).getTime()) / 1000,
+                  );
+
+                  return `${secondsAgo} saniye önce`;
+                })()
               : "Yükleniyor..."}
           </span>
         </h3>
@@ -114,6 +120,89 @@ const Sidebar = ({
           </div>
         ) : stats ? (
           <div className="space-y-4">
+            {/* Bitcoin Halving Panel */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-foreground">
+                        Bitcoin Yarılanması
+                      </div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="text-muted-foreground hover:text-foreground transition-colors">
+                            <Info className="h-4 w-4" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80" align="start">
+                          <div className="space-y-2">
+                            <h4 className="font-medium text-foreground">
+                              🌓 Bitcoin Yarılanması (Halving)
+                            </h4>
+                            <div className="text-sm text-muted-foreground space-y-2">
+                              <p>
+                                Bitcoin halving, her 210,000 blokta bir
+                                gerçekleşen ve madencilere ödenen Bitcoin
+                                miktarını yarıya indiren bir olaydır.
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>
+                                  Son halving: 2024 Nisan (blok 840,000)
+                                </span>
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>
+                                  Sonraki halving: 2028 Nisan (blok 1,050,000)
+                                </span>
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>
+                                  Halving sonrası madencilere ödenen miktar
+                                  1.5625 BTC'ye düşecek.
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Sonraki halving'e kalan
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium text-foreground">
+                    {stats.halving.remainingDays}
+                  </div>
+                  <div className="text-xs text-muted-foreground">gün</div>
+                </div>
+              </div>
+
+              {/* Halving Progress Bar */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Halving'e Kalan</span>
+                  <span>
+                    {stats.halving.remainingBlocks.toLocaleString()} blok
+                  </span>
+                </div>
+                <div className="w-full bg-muted h-2 rounded-full overflow-hidden border-1">
+                  <div
+                    className="bg-green-600 h-full transition-all duration-300"
+                    style={{ width: `${stats.halving.progressPercent}%` }}
+                  />
+                </div>
+                <div className="text-right text-xs text-muted-foreground">
+                  % {stats.halving.progressPercent.toFixed(2)}
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div>
@@ -254,9 +343,7 @@ const Sidebar = ({
               <div className="flex items-center gap-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="font-medium text-foreground">
-                      🚰 Mempool
-                    </div>
+                    <div className="font-medium text-foreground">Mempool</div>
                     <Popover>
                       <PopoverTrigger asChild>
                         <button className="text-muted-foreground hover:text-foreground transition-colors">
@@ -270,25 +357,36 @@ const Sidebar = ({
                           </h4>
                           <div className="text-sm text-muted-foreground space-y-2">
                             <p>
-                              <span>🔹</span>
-                              Şu anda mempool'da onay bekleyen{" "}
-                              <strong>
-                                {stats.mempool.count.toLocaleString()}
-                              </strong>{" "}
-                              işlem var.
+                              Mempool, henüz bloklara eklenmemiş ve onay
+                              bekleyen Bitcoin işlemlerinin geçici olarak
+                              tutulduğu yerdir.
                             </p>
-                            <p>
+                            <p className="flex items-start gap-2">
                               <span>🔹</span>
-                              Bu işlemler toplam{" "}
-                              <strong>{stats.mempool.size} vB</strong> yer
-                              kaplıyor ve madencilere ödenecek toplam ücret{" "}
-                              <strong>{stats.mempool.totalFee}</strong>.
+                              <span>
+                                Şu anda mempool'da onay bekleyen{" "}
+                                <strong>
+                                  {stats.mempool.count.toLocaleString()}
+                                </strong>{" "}
+                                işlem var.
+                              </span>
                             </p>
-                            <p>
+                            <p className="flex items-start gap-2">
                               <span>🔹</span>
-                              Mempool durumu:{" "}
-                              <strong>{stats.mempool.status}</strong>. Ücretler
-                              yüksek olabilir.
+                              <span>
+                                Bu işlemler toplam{" "}
+                                <strong>{stats.mempool.size} vB</strong> yer
+                                kaplıyor ve madencilere ödenecek toplam ücret{" "}
+                                <strong>{stats.mempool.totalFee}</strong>.
+                              </span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span>🔹</span>
+                              <span>
+                                Mempool durumu:{" "}
+                                <strong>{stats.mempool.status}</strong>.
+                                Ücretler yüksek olabilir.
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -334,24 +432,34 @@ const Sidebar = ({
                               onaylanmasını istediğinize göre önerilen işlem
                               ücretleridir (satoshi/vB cinsinden).
                             </p>
-                            <ul className="list-none list-inside">
-                              <li>
-                                <strong>{stats.fees.fastestFee} sat/vB</strong>{" "}
-                                — En hızlı onay (bir sonraki blokta).
-                              </li>
-                              <li>
-                                <strong>{stats.fees.halfHourFee} sat/vB</strong>{" "}
-                                — Yaklaşık 30 dakika içinde onay.
-                              </li>
-                              <li>
-                                <strong>{stats.fees.hourFee} sat/vB</strong> —
-                                Yaklaşık 1 saat içinde onay.
-                              </li>
-                              <li>
-                                <strong>{stats.fees.economyFee} sat/vB</strong>{" "}
-                                — Ekonomik seviye, uzun bekleme süresi olabilir.
-                              </li>
-                            </ul>
+                            <p className="flex items-start gap-2">
+                              <span>🔹</span>
+                              <span>
+                                En hızlı onay (bir sonraki blokta):{" "}
+                                <strong>{stats.fees.fastestFee} sat/vB</strong>
+                              </span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span>🔹</span>
+                              <span>
+                                Yaklaşık 30 dakika içinde onay:{" "}
+                                <strong>{stats.fees.halfHourFee} sat/vB</strong>
+                              </span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span>🔹</span>
+                              <span>
+                                Yaklaşık 1 saat içinde onay:{" "}
+                                <strong>{stats.fees.hourFee} sat/vB</strong>
+                              </span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                              <span>🔹</span>
+                              <span>
+                                Ekonomik seviye (uzun bekleme süresi):{" "}
+                                <strong>{stats.fees.economyFee} sat/vB</strong>
+                              </span>
+                            </p>
                             <p>
                               Uygun ücreti seçerken mempool yoğunluğunu ve
                               işleminizin ne kadar acil olduğunu göz önünde
@@ -452,89 +560,6 @@ const Sidebar = ({
                     {stats.fees.economyFee} sat/vB
                   </div>
                   <div className="text-xs text-muted-foreground">En düşük</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bitcoin Halving Panel */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <div className="font-medium text-foreground">
-                        🪙 Bitcoin Halving
-                      </div>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="text-muted-foreground hover:text-foreground transition-colors">
-                            <Info className="h-4 w-4" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80" align="start">
-                          <div className="space-y-2">
-                            <h4 className="font-medium text-foreground">
-                              🪙 Bitcoin Halving
-                            </h4>
-                            <div className="text-sm text-muted-foreground space-y-2">
-                              <p>
-                                Bitcoin halving, her 210,000 blokta bir
-                                gerçekleşen ve madencilere ödenen Bitcoin
-                                miktarını yarıya indiren bir olaydır.
-                              </p>
-                              <p className="flex items-start gap-2">
-                                <span>🔹</span>
-                                <span>
-                                  Son halving: 2024 Nisan (blok 840,000)
-                                </span>
-                              </p>
-                              <p className="flex items-start gap-2">
-                                <span>🔹</span>
-                                <span>
-                                  Sonraki halving: 2028 Nisan (blok 1,050,000)
-                                </span>
-                              </p>
-                              <p className="flex items-start gap-2">
-                                <span>🔹</span>
-                                <span>
-                                  Halving sonrası madencilere ödenen miktar
-                                  3.125 BTC'ye düşecek.
-                                </span>
-                              </p>
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Sonraki halving'e kalan
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium text-foreground">
-                    {stats.halving.remainingDays}
-                  </div>
-                  <div className="text-xs text-muted-foreground">gün</div>
-                </div>
-              </div>
-
-              {/* Halving Progress Bar */}
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Halving'e Kalan</span>
-                  <span>
-                    {stats.halving.remainingBlocks.toLocaleString()} blok
-                  </span>
-                </div>
-                <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-green-600 h-full transition-all duration-300"
-                    style={{ width: `${stats.halving.progressPercent}%` }}
-                  />
-                </div>
-                <div className="text-right text-xs text-muted-foreground">
-                  % {stats.halving.progressPercent.toFixed(2)}
                 </div>
               </div>
             </div>
