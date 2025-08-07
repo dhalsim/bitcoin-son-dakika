@@ -120,6 +120,7 @@ async function getCommodities(
       return {
         name: ticker.description,
         symbol: priceData.symbol,
+        currency: ticker.currency,
         value: priceData.current.toString(),
         change: priceData.change.toString(),
         category: "commodity",
@@ -185,6 +186,7 @@ async function getCrypto(client: TradingView.Client): Promise<PriceData> {
   const btcPrice: PriceData = {
     name: "Bitcoin",
     symbol: btcPriceData.symbol,
+    currency: "USD",
     value: btcPriceData.current.toString(),
     change: btcPriceData.change.toString(),
     category: "crypto",
@@ -244,6 +246,7 @@ async function getCurrency(client: TradingView.Client): Promise<PriceData[]> {
       return {
         name: ticker.description,
         symbol: priceData.symbol,
+        currency: ticker.currency,
         value: priceData.current.toString(),
         change: priceData.change.toString(),
         category: "currency",
@@ -306,6 +309,7 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
     prices.push({
       name: ticker.description,
       symbol: priceData.symbol,
+      currency: ticker.currency,
       value: priceData.current.toString(),
       change: priceData.change.toString(),
       category: "stock",
@@ -320,7 +324,8 @@ function assertNever(value: never): never {
 }
 
 function getSymbol(ticker: Ticker) {
-  if (ticker.symbol === "USD") {
+  // Special case for USD ticker with sats currency
+  if (ticker.symbol === "USD" && ticker.currency === "sats") {
     return `(1 / BTCUSD) * 100000000`;
   }
 
@@ -372,7 +377,10 @@ function getPriceData(
 
       const data: GetPriceDataResponse = {
         symbol,
-        current: Number(current.toFixed(8)),
+        current:
+          ticker.currency === "sats"
+            ? Number(current.toFixed(0))
+            : Number(current.toFixed(8)),
         change: Number(percentageChange.toFixed(2)),
       };
 

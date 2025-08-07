@@ -134,24 +134,27 @@ const Header = () => {
                 />
               )}
             </a>
+          </div>
 
+          {/* Desktop View */}
+          <div className="hidden lg:flex items-center space-x-6">
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-6">
+            <nav className="flex items-center space-x-6">
               <a
                 href="/"
-                className="text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded"
+                className="text-foreground font-medium px-2 py-1 rounded"
               >
                 Ana Sayfa
               </a>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
+                <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
                   <a href="/news">Haberler</a>
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-popover border border-border">
                   <DropdownMenuItem>
-                    <a href="/enson">Son Dakika</a>
+                    <a href="/news">Son Dakika</a>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <a href="/tag/analiz?type=news">Piyasa Analizi</a>
@@ -166,7 +169,7 @@ const Header = () => {
               </DropdownMenu>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
+                <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
                   <a href="/articles">Köşe Yazıları</a>
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>
@@ -187,30 +190,36 @@ const Header = () => {
               </DropdownMenu>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded">
-                  Eğitim
+                <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
+                  <a href="/egitim">Eğitim</a>
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-popover border border-border">
-                  <DropdownMenuItem>Bitcoin Temelleri</DropdownMenuItem>
-                  <DropdownMenuItem>Cüzdan Kullanımı</DropdownMenuItem>
-                  <DropdownMenuItem>Güvenlik</DropdownMenuItem>
-                  <DropdownMenuItem>Lightning Network</DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/egitim/bitcoin-temelleri">Bitcoin Temelleri</a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/egitim/cuzdan-kullanimi">Cüzdan Kullanımı</a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/egitim/guvenlik">Güvenlik</a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <a href="/egitim/lightning-network">Lightning Network</a>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
               <a
-                href="#"
-                className="text-foreground font-medium transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/20 px-2 py-1 rounded"
+                href="/podcast"
+                className="text-foreground font-medium px-2 py-1 rounded"
               >
                 Podcast
               </a>
             </nav>
-          </div>
 
-          <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Desktop Search */}
-            <div className="relative hidden md:block">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <input
                 type="text"
@@ -221,7 +230,10 @@ const Header = () => {
 
             {/* User Menu */}
             <UserMenu />
+          </div>
 
+          {/* Mobile View */}
+          <div className="lg:hidden flex items-center space-x-2 sm:space-x-4">
             {/* Mobile Search Toggle */}
             <button
               onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -239,42 +251,36 @@ const Header = () => {
               </SheetTrigger>
               <SheetContent
                 side="right"
-                className="w-80 bg-white dark:bg-black"
+                className="w-80 text-left-menu bg-left-menu border-left-menu"
               >
                 <div className="flex flex-col space-y-6 mt-6">
-                  <a
-                    href="/"
-                    className="text-gray-700 dark:text-gray-300 font-medium text-lg border-b border-gray-200 dark:border-gray-700 pb-2"
-                  >
+                  <a href="/" className="font-medium text-lg pb-2">
                     Ana Sayfa
                   </a>
 
                   <div className="space-y-4">
-                    <h3 className="text-gray-700 dark:text-gray-300 font-semibold">
-                      Haberler
+                    <h3 className="text-left-menu-primary font-semibold">
+                      <a href="/news">Haberler</a>
                     </h3>
                     <div className="pl-4 space-y-2">
-                      <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
-                      >
+                      <a href="/news" className="block text-left-menu-accent">
                         Son Dakika
                       </a>
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/tag/analiz?type=news"
+                        className="block text-left-menu-accent"
                       >
                         Piyasa Analizi
                       </a>
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/tag/teknoloji?type=news"
+                        className="block text-left-menu-accent"
                       >
                         Teknoloji
                       </a>
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/tag/duzenlemeler?type=news"
+                        className="block text-left-menu-accent"
                       >
                         Düzenlemeler
                       </a>
@@ -282,31 +288,31 @@ const Header = () => {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-gray-700 dark:text-gray-300 font-semibold">
-                      Köşe Yazıları
+                    <h3 className="text-left-menu-primary font-semibold">
+                      <a href="/articles">Köşe Yazıları</a>
                     </h3>
                     <div className="pl-4 space-y-2">
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/articles"
+                        className="block text-left-menu-accent"
                       >
                         Güncel Yorumlar
                       </a>
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/tag/analiz?type=article"
+                        className="block text-left-menu-accent"
                       >
                         Teknik Analiz
                       </a>
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/tag/ekonomi?type=article"
+                        className="block text-left-menu-accent"
                       >
                         Ekonomi
                       </a>
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/tag/teknoloji?type=article"
+                        className="block text-left-menu-accent"
                       >
                         Teknoloji
                       </a>
@@ -314,62 +320,59 @@ const Header = () => {
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-gray-700 dark:text-gray-300 font-semibold">
-                      Eğitim
+                    <h3 className="text-left-menu-primary font-semibold">
+                      <a href="/egitim">Eğitim</a>
                     </h3>
                     <div className="pl-4 space-y-2">
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/egitim/bitcoin-temelleri"
+                        className="block text-left-menu-accent"
                       >
                         Bitcoin Temelleri
                       </a>
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/egitim/cuzdan-kullanimi"
+                        className="block text-left-menu-accent"
                       >
                         Cüzdan Kullanımı
                       </a>
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/egitim/guvenlik"
+                        className="block text-left-menu-accent"
                       >
                         Güvenlik
                       </a>
                       <a
-                        href="#"
-                        className="block text-gray-600 dark:text-gray-400"
+                        href="/egitim/lightning-network"
+                        className="block text-left-menu-accent"
                       >
                         Lightning Network
                       </a>
                     </div>
                   </div>
 
-                  <a
-                    href="#"
-                    className="text-gray-700 dark:text-gray-300 font-medium text-lg border-b border-gray-200 dark:border-gray-700 pb-2"
-                  >
+                  <a href="/podcast" className="text-left-menu-accent">
                     Podcast
                   </a>
                 </div>
               </SheetContent>
             </Sheet>
+
+            {/* Mobile Search Bar */}
+            {isSearchOpen && (
+              <div className="md:hidden pb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <input
+                    type="text"
+                    placeholder="Haber ara..."
+                    className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-full bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-all duration-300"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Mobile Search Bar */}
-        {isSearchOpen && (
-          <div className="md:hidden pb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Haber ara..."
-                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-full bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-all duration-300"
-              />
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );

@@ -9,7 +9,7 @@ export default [
   route("news/:slug", "routes/news-detail.tsx"),
   route("article/:slug", "routes/article-detail.tsx"),
   route("articles", "routes/articles.tsx"),
-  route("enson", "routes/latest.tsx"),
+  route("enson", "routes/latest.tsx"), // both news and articles
   route("tag/:slug", "routes/tags.tsx"),
   route("profile/:slug", "routes/profile.tsx"),
   route("test/:eventId", "routes/test-event.tsx"),

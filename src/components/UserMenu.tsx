@@ -65,7 +65,7 @@ export function UserMenu() {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 rounded-full p-0 hidden sm:flex"
+          className="h-8 w-8 rounded-full p-0 sm:flex"
         >
           <ProfileAvatar
             pubkey={userProfile.pubkey}
@@ -75,10 +75,7 @@ export function UserMenu() {
           />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-56 bg-white dark:bg-black border border-gray-200 dark:border-gray-800"
-      >
+      <DropdownMenuContent align="end" className="w-56">
         <div className="flex items-center space-x-2 p-2">
           <ProfileAvatar
             pubkey={userProfile.pubkey}
@@ -87,7 +84,7 @@ export function UserMenu() {
             disablePopup={true}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+            <p className="text-sm font-medium truncate">
               {userProfile.profile?.display_name ||
                 userProfile.profile?.name ||
                 `${userProfile.pubkey.slice(0, 8)}...`}

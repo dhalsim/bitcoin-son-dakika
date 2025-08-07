@@ -256,7 +256,12 @@ const PriceBar = () => {
                       {price.name}:
                     </span>
                     <span className="font-bold text-white">{price.value}</span>
-                    <span className="text-white satoshi-symbol"></span>
+                    {price.currency === "sats" && (
+                      <span className="text-white satoshi-symbol"></span>
+                    )}
+                    {price.currency === "BTC" && (
+                      <span className="text-white bitcoin-symbol"></span>
+                    )}
                     <span
                       className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                         parseFloat(price.change) >= 0

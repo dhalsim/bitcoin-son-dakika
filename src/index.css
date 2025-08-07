@@ -33,8 +33,15 @@
     --popover-border: 214.3 31.8% 85%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-
     --radius: 0.5rem;
+
+    --left-menu-background: 0 0% 100%;
+    --left-menu-foreground: 222.2 84% 4.9%;
+    --left-menu-primary: 222.2 47.4% 11.2%;
+    --left-menu-primary-foreground: 210 40% 98%;
+    --left-menu-accent: 35 100% 47%;
+    --left-menu-accent-foreground: 0 0% 100%;
+    --left-menu-border: 0 0% 100%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -142,6 +149,15 @@
     --popover-border: 0 0% 25%;
     --input: 0 0% 20%;
     --ring: 212.7 26.8% 83.9%;
+
+    --left-menu-background: 220 8% 13%;
+    --left-menu-foreground: 240 6% 92%;
+    --left-menu-primary: 225 80% 52%;
+    --left-menu-primary-foreground: 0 0% 98%;
+    --left-menu-accent: 30 10% 22%;
+    --left-menu-accent-foreground: 240 6% 92%;
+    --left-menu-border: 220 8% 22%;
+
     --sidebar-background: 0 0% 15%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -363,16 +379,25 @@
   /* Opacity utilities */
   .bg-black\/20 { background-color: hsl(var(--black) / 0.2); }
   .bg-black\/30 { background-color: hsl(var(--black) / 0.3); }
-  
   .bg-blue-900\/20 { background-color: hsl(var(--blue-900) / 0.2); }
   .bg-blue-900\/30 { background-color: hsl(var(--blue-900) / 0.3); }
-  
   .bg-green-900\/20 { background-color: hsl(var(--green-900) / 0.2); }
   .bg-green-900\/30 { background-color: hsl(var(--green-900) / 0.3); }
+
+  /* Left menu utilities */
+  .bg-left-menu { background-color: hsl(var(--left-menu-background)); }
+  .text-left-menu { color: hsl(var(--left-menu-foreground)); }
+  .text-left-menu .primary { color: hsl(var(--left-menu-primary)); }
+  .text-left-menu .accent { color: hsl(var(--left-menu-accent)); }
+  .border-left-menu { border-color: hsl(var(--left-menu-border)); }
+}
+
+.bitcoin-symbol::before {
+  content: "₿";
 }
 
 .satoshi-symbol::before {
-  content: "₿";
+  content: "satoshi";
 }
 
 /* Enhanced sliding animation for price bar */

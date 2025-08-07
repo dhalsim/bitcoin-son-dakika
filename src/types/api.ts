@@ -4,6 +4,7 @@ import { z } from "zod";
 export const PriceDataSchema = z.object({
   name: z.string(),
   symbol: z.string(),
+  currency: z.enum(["BTC", "USD", "sats"]),
   value: z.string(),
   change: z.string(),
   category: z.enum(["crypto", "currency", "commodity", "stock"]),
