@@ -39,7 +39,7 @@ export async function GET() {
 
     const [currency, btcPrice, commodities, stocks] = await Promise.all([
       getCurrency(client),
-      getCrypto(client),
+      getBitcoin(client),
       getCommodities(client),
       getStocks(client),
     ]);
@@ -99,6 +99,7 @@ async function getCommodities(
   const commodities: Ticker[] = [
     {
       symbol: "XAU",
+      priceSymbol: "XAUBTC",
       description: "Altın",
       currency: "BTC",
       emoji: "🥇",
@@ -106,6 +107,7 @@ async function getCommodities(
     },
     {
       symbol: "XAG",
+      priceSymbol: "XAGBTC",
       description: "Gümüş",
       currency: "BTC",
       emoji: "🥈",
@@ -119,7 +121,9 @@ async function getCommodities(
 
       return {
         name: ticker.description,
-        symbol: priceData.symbol,
+        symbol: ticker.symbol,
+        priceSymbol: ticker.priceSymbol,
+        emoji: ticker.emoji,
         currency: ticker.currency,
         value: priceData.current.toString(),
         change: priceData.change.toString(),
@@ -129,54 +133,10 @@ async function getCommodities(
   );
 }
 
-async function getCrypto(client: TradingView.Client): Promise<PriceData> {
-  // const crypto: Ticker[] = [
-  //   {
-  //     symbol: "ETH",
-  //     description: "Ethereum",
-  //     currency: "BTC",
-  //     emoji: "Ξ",
-  //     category: "crypto",
-  //   },
-  //   {
-  //     symbol: "SOL",
-  //     description: "Solana",
-  //     currency: "BTC",
-  //     emoji: "◎",
-  //     category: "crypto",
-  //   },
-  //   {
-  //     symbol: "XRP",
-  //     description: "XRP",
-  //     currency: "BTC",
-  //     emoji: "Ⓧ",
-  //     category: "crypto",
-  //   },
-  //   {
-  //     symbol: "DOGE",
-  //     description: "Dogecoin",
-  //     currency: "BTC",
-  //     emoji: "🐶",
-  //     category: "crypto",
-  //   },
-  //   {
-  //     symbol: "ADA",
-  //     description: "Cardano",
-  //     currency: "BTC",
-  //     emoji: "🌐",
-  //     category: "crypto",
-  //   },
-  //   {
-  //     symbol: "XMR",
-  //     description: "Monero",
-  //     currency: "BTC",
-  //     emoji: "🔒",
-  //     category: "crypto",
-  //   },
-  // ];
-
+async function getBitcoin(client: TradingView.Client): Promise<PriceData> {
   const btcPriceData = await getPriceData(client, {
     symbol: "BTC",
+    priceSymbol: "BTCUSD",
     description: "Bitcoin",
     currency: "USD",
     emoji: "₿",
@@ -185,24 +145,14 @@ async function getCrypto(client: TradingView.Client): Promise<PriceData> {
 
   const btcPrice: PriceData = {
     name: "Bitcoin",
-    symbol: btcPriceData.symbol,
+    symbol: "BTC",
+    priceSymbol: "BTCUSD",
+    emoji: "₿",
     currency: "USD",
     value: btcPriceData.current.toString(),
     change: btcPriceData.change.toString(),
     category: "crypto",
   };
-
-  // for (const ticker of crypto) {
-  //   const priceData = await getPriceData(client, ticker);
-
-  //   prices.push({
-  //     name: ticker.description,
-  //     symbol: priceData.symbol,
-  //     value: priceData.current.toString(),
-  //     change: priceData.change.toString(),
-  //     category: "crypto",
-  //   });
-  // }
 
   return btcPrice;
 }
@@ -211,13 +161,15 @@ async function getCurrency(client: TradingView.Client): Promise<PriceData[]> {
   const forex: Ticker[] = [
     {
       symbol: "TRY",
+      priceSymbol: "TRYUSD/BTCUSD * 100000000",
       description: "Türk Lirası",
-      currency: "USD",
+      currency: "sats",
       emoji: "🇹🇷",
       category: "currency",
     },
     {
       symbol: "USD",
+      priceSymbol: "1/BTCUSD * 100000000",
       description: "Amerikan Doları",
       currency: "sats",
       emoji: "💵",
@@ -225,15 +177,17 @@ async function getCurrency(client: TradingView.Client): Promise<PriceData[]> {
     },
     {
       symbol: "EUR",
+      priceSymbol: "EURUSD/BTCUSD * 100000000",
       description: "Avro",
-      currency: "USD",
+      currency: "sats",
       emoji: "🇪🇺",
       category: "currency",
     },
     {
       symbol: "GBP",
+      priceSymbol: "GBPUSD/BTCUSD * 100000000",
       description: "İngiliz Sterlini",
-      currency: "USD",
+      currency: "sats",
       emoji: "🇬🇧",
       category: "currency",
     },
@@ -245,7 +199,9 @@ async function getCurrency(client: TradingView.Client): Promise<PriceData[]> {
 
       return {
         name: ticker.description,
-        symbol: priceData.symbol,
+        symbol: ticker.symbol,
+        priceSymbol: ticker.priceSymbol,
+        emoji: ticker.emoji,
         currency: ticker.currency,
         value: priceData.current.toString(),
         change: priceData.change.toString(),
@@ -256,11 +212,10 @@ async function getCurrency(client: TradingView.Client): Promise<PriceData[]> {
 }
 
 async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
-  const prices: PriceData[] = [];
-
   const stocks: Ticker[] = [
     {
       symbol: "NVDA",
+      priceSymbol: "NVDA/BTCUSD",
       description: "NVIDIA",
       currency: "USD",
       emoji: "🎮",
@@ -268,6 +223,7 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
     },
     {
       symbol: "MSFT",
+      priceSymbol: "MSFT/BTCUSD",
       description: "Microsoft",
       currency: "USD",
       emoji: "💻",
@@ -275,6 +231,7 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
     },
     {
       symbol: "AAPL",
+      priceSymbol: "AAPL/BTCUSD",
       description: "Apple",
       currency: "USD",
       emoji: "🍎",
@@ -282,6 +239,7 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
     },
     {
       symbol: "GOOG",
+      priceSymbol: "GOOG/BTCUSD",
       description: "Google",
       currency: "USD",
       emoji: "🔍",
@@ -289,6 +247,7 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
     },
     {
       symbol: "AMZN",
+      priceSymbol: "AMZN/BTCUSD",
       description: "Amazon",
       currency: "USD",
       emoji: "🛒",
@@ -296,6 +255,7 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
     },
     {
       symbol: "META",
+      priceSymbol: "META/BTCUSD",
       description: "Meta",
       currency: "USD",
       emoji: "🤖",
@@ -303,54 +263,25 @@ async function getStocks(client: TradingView.Client): Promise<PriceData[]> {
     },
   ];
 
-  for (const ticker of stocks) {
-    const priceData = await getPriceData(client, ticker);
+  return Promise.all(
+    stocks.map(async (ticker) => {
+      const priceData = await getPriceData(client, ticker);
 
-    prices.push({
-      name: ticker.description,
-      symbol: priceData.symbol,
-      currency: ticker.currency,
-      value: priceData.current.toString(),
-      change: priceData.change.toString(),
-      category: "stock",
-    });
-  }
-
-  return prices;
-}
-
-function assertNever(value: never): never {
-  throw new Error(`Unexpected value: ${value}`);
-}
-
-function getSymbol(ticker: Ticker) {
-  // Special case for USD ticker with sats currency
-  if (ticker.symbol === "USD" && ticker.currency === "sats") {
-    return `(1 / BTCUSD) * 100000000`;
-  }
-
-  if (ticker.symbol === "BTC" && ticker.currency === "USD") {
-    return `${ticker.symbol}USD`;
-  }
-
-  if (ticker.category === "stock") {
-    return `${ticker.symbol}/BTCUSD`;
-  }
-
-  switch (ticker.currency) {
-    case "BTC":
-      return `${ticker.symbol}BTC`;
-    case "USD":
-      return `${ticker.symbol}USD/BTCUSD`;
-    case "sats":
-      throw new Error("Sats is only supported for USD");
-    default:
-      return assertNever(ticker.currency);
-  }
+      return {
+        name: ticker.description,
+        symbol: ticker.symbol,
+        priceSymbol: ticker.priceSymbol,
+        emoji: ticker.emoji,
+        currency: ticker.currency,
+        value: priceData.current.toString(),
+        change: priceData.change.toString(),
+        category: "stock",
+      };
+    }),
+  );
 }
 
 type GetPriceDataResponse = {
-  symbol: string;
   current: number;
   change: number;
 };
@@ -362,9 +293,7 @@ function getPriceData(
   return new Promise((resolve, reject) => {
     const chart = new client.Session.Chart();
 
-    const symbol = getSymbol(ticker);
-
-    chart.setMarket(symbol, {
+    chart.setMarket(ticker.priceSymbol, {
       timeframe: "D",
       range: 2,
     });
@@ -376,7 +305,6 @@ function getPriceData(
       const percentageChange = ((current - previous) / previous) * 100;
 
       const data: GetPriceDataResponse = {
-        symbol,
         current:
           ticker.currency === "sats"
             ? Number(current.toFixed(0))
@@ -390,7 +318,13 @@ function getPriceData(
     });
 
     chart.onError((...error) => {
-      reject(new Error(`Chart error for ${symbol}: ${error.join(" ")}`));
+      reject(
+        new Error(
+          `Chart error for ${ticker.symbol}, ${ticker.priceSymbol}: ${error.join(
+            " ",
+          )}`,
+        ),
+      );
 
       cleanup();
     });
@@ -403,6 +337,7 @@ function getPriceData(
 
 type Ticker = {
   symbol: string;
+  priceSymbol: string;
   description: string;
   currency: "BTC" | "USD" | "sats";
   category: "crypto" | "currency" | "commodity" | "stock";
