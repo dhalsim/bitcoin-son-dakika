@@ -145,8 +145,7 @@ export async function GET() {
     };
 
     // Halving calculations
-    const heightData = await heightResponse.value.json();
-    const currentHeight = heightData.height; // 909031
+    const currentHeight = Number(await heightResponse.value.text());
 
     const HALVING_INTERVAL = 210_000;
     const LAST_HALVING_HEIGHT = 840_000;
