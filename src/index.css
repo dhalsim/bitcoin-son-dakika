@@ -394,10 +394,25 @@
 
 .bitcoin-symbol::before {
   content: "₿";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: top;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .satoshi-symbol::before {
-  content: "satoshi";
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  background-image: url('/Satoshi-symbol.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 /* Enhanced sliding animation for price bar */

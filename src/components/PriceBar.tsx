@@ -1,9 +1,16 @@
-import React, { useRef, useState, useCallback, useEffect } from "react";
+import React, {
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 
 import { usePriceData } from "../hooks/usePriceData";
 
 import Chart from "./Chart";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const PriceBar = () => {
   const { prices, btcPrice, btcChange, loading, error } = usePriceData();
@@ -16,6 +23,22 @@ const PriceBar = () => {
 
   // Create a simple duplicated array for continuous scrolling
   const displayPrices = [...prices, ...prices, ...prices];
+
+  const oneUsdInSatoshi = useMemo(() => {
+    if (prices.length === 0) {
+      return;
+    }
+
+    return prices.find((p) => p.symbol === "USD")?.value;
+  }, [prices]);
+
+  const oneTryInSatoshi = useMemo(() => {
+    if (prices.length === 0) {
+      return;
+    }
+
+    return prices.find((p) => p.symbol === "TRY")?.value;
+  }, [prices]);
 
   const handlePriceClick = useCallback(
     (symbol: string) => {
@@ -189,22 +212,111 @@ const PriceBar = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex flex-col">
+            <div className="flex flex-row items-center">
               <h3 className="text-sm sm:text-base font-bold text-white flex items-center">
-                <span className="text-white satoshi-symbol text-lg ml-2"></span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-black bitcoin-symbol hover:opacity-80 transition-opacity mr-2 cursor-pointer"></button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="start">
+                    <div className="space-y-2 text-sm">
+                      <h4 className="font-medium text-foreground">
+                        ₿ Bitcoin (BTC)
+                      </h4>
+                      <div className="text-muted-foreground">
+                        Bitcoin, merkezi olmayan dijital para birimidir. Satoshi
+                        Nakamoto tarafından 2009 yılında oluşturulmuştur.
+                      </div>
+                      <div className="text-muted-foreground">
+                        <p>Bitcoin'in en önemli özellikleri</p>
+                      </div>
+                      <div className="text-muted-foreground">
+                        <p className="flex items-start gap-2">
+                          <span>🔹</span>
+                          <span>Merkezi olmayan yapı</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span>🔹</span>
+                          <span>Sınırlı arz (21 milyon BTC)</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span>🔹</span>
+                          <span>Şeffaf ve güvenli</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span>🔹</span>
+                          <span>Dünya çapında kullanım</span>
+                        </p>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>{" "}
+                veya{" "}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-white satoshi-symbol text-lg ml-2 hover:opacity-80 transition-opacity cursor-pointer"></button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80" align="start">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex flex-col text-muted-foreground">
+                        <p className="flex items-start gap-2">
+                          <span>🔹</span>
+                          <span>
+                            1 Bitcoin kaç <strong>satoshi</strong> eder?
+                          </span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span>🔹</span>
+                          <span>
+                            1 BTC = 100.000.000 <strong>sat</strong>
+                          </span>
+                        </p>
+                      </div>
+                      <div className="text-muted-foreground">
+                        Bitcoin, 100 milyon <strong>satoshi</strong> adlı daha
+                        küçük birimlere bölünebilir. Satoshi veya kısaca{" "}
+                        <strong>sat</strong>, Bitcoin'in en küçük birimidir. 1
+                        sat = 0.00000001 BTC (yani bir Bitcoin'in yüz milyonda
+                        biri).
+                      </div>
+                      <div className="text-muted-foreground">
+                        Bitcoin almak için 1 BTC'nin tamamını almanız gerekmez.
+                        İstediğiniz kadar küçük miktarda satın alabilir veya
+                        gönderebilirsiniz. Bu, Bitcoin'i herkes için
+                        erişilebilir kılar.
+                      </div>
+                      <div className="text-muted-foreground">
+                        <p>Örneğin:</p>
+                        <p className="flex items-start gap-2">
+                          <span>🔹</span>
+                          <span>1 USD ile yaklaşık {oneUsdInSatoshi}</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span>🔹</span>
+                          <span>1 TRY ile yaklaşık {oneTryInSatoshi}</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span>
+                            <strong>sat</strong> satın alınabilir
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <span className="ml-2">Cinsinden Anlık Fiyatlar</span>
               </h3>
-              <p className="text-xs text-white/80 italic font-medium">
-                her şey bitcoin karşısında sıfıra gidiyor
+
+              <p className="text-xs text-black/80 font-medium ml-2">
                 {btcPrice && (
-                  <span className="ml-2">
-                    ₿ {btcPrice}
+                  <span className="ml-2 text-md font-bold">
+                    ₿ {btcPrice} <span className="">$</span>
                     {btcChange && (
                       <span
-                        className={`ml-1 ${
+                        className={`text-xs font-semibold px-2 py-0.5 ml-2 rounded-full ${
                           parseFloat(btcChange) >= 0
-                            ? "text-green-300"
-                            : "text-red-300"
+                            ? "text-green-100 bg-green-600/80"
+                            : "text-red-100 bg-red-600/80"
                         }`}
                       >
                         {parseFloat(btcChange) >= 0 ? "+" : ""}
@@ -214,6 +326,12 @@ const PriceBar = () => {
                   </span>
                 )}
               </p>
+            </div>
+            <div className="flex flex-row text-xs font-normal">
+              <span className="italic ">
+                "Her şey bitcoin karşısında sıfıra gidiyor"
+              </span>
+              <span className="ml-2">- Max Keiser</span>
             </div>
           </div>
 
@@ -250,14 +368,14 @@ const PriceBar = () => {
                   <div
                     key={`${price.symbol}-${index}`}
                     className="flex items-center space-x-2 text-sm whitespace-nowrap flex-shrink-0 cursor-pointer hover:bg-white/10 rounded-lg px-3 py-1.5 transition-colors duration-200"
-                    onClick={() => handlePriceClick(price.symbol)}
+                    onClick={() => handlePriceClick(price.priceSymbol)}
                   >
                     <span className="text-white/90 font-medium">
                       {price.emoji} {price.name}:
                     </span>
                     <span className="font-bold text-white">{price.value}</span>
                     {price.currency === "sats" && (
-                      <span className="text-white satoshi-symbol"></span>
+                      <span className="text-white satoshi-symbol mb-1"></span>
                     )}
                     {price.currency === "BTC" && (
                       <span className="text-white bitcoin-symbol"></span>
