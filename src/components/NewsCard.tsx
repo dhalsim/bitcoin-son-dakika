@@ -81,10 +81,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   };
 
   const titleElement = wrapInLink(
-    <>
-      {titleText}
-      {title}
-    </>,
+    <>{titleText}</>,
     "hover:text-main-accent decoration-main-accent",
   );
 
