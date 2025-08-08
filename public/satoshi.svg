@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Satoshi symbol made of five horizontal bars: short, long, long, long, short -->
+  <rect x="45" y="6" width="10" height="14" rx="1" ry="1" fill="black"/>
+  <rect x="15" y="28" width="70" height="14" rx="2" ry="2" fill="black"/>
+  <rect x="15" y="46" width="70" height="14" rx="2" ry="2" fill="black"/>
+  <rect x="15" y="64" width="70" height="14" rx="2" ry="2" fill="black"/>
+  <rect x="45" y="86" width="10" height="14" rx="1" ry="1" fill="black"/>
+</svg>
+
