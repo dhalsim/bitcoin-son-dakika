@@ -463,14 +463,6 @@
   background-color: var(--contrasting-2);
 }
 
-.hidden {
-  display: none;
-}
-
-.block {
-  display: block;
-}
-
 /* Hide scrollbars for drag scrolling */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */

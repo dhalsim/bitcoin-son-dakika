@@ -86,11 +86,7 @@ const Header = () => {
                 rel="noopener noreferrer"
                 className="p-1 hover:bg-accent hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
               >
-                <img
-                  src="/nostr-icon.png"
-                  alt="Nostr"
-                  className="h-3 w-3 sm:h-4 sm:w-4"
-                />
+                <img src="/nostr-icon.png" alt="Nostr" className="h-6 w-6" />
               </a>
               <a
                 href="#"
