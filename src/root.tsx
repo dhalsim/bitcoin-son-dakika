@@ -18,13 +18,27 @@ import { UserProvider } from "./contexts/UserContext";
 import "./index.css";
 
 export const meta: MetaFunction = () => {
+  const title = "Bitcoin Son Dakika - Güncel Bitcoin Haberleri";
+  const description =
+    "Bitcoin dünyasından son dakika haberleri, güncel gelişmeler, analizler ve uzman yorumları";
+  const siteName = "Bitcoin Son Dakika";
+  const siteUrl = "https://www.bitcoinsondakika.com";
+  const imageUrl = `${siteUrl}/bitcoin-son-dakika-logo.png`;
+
   return [
-    { title: "Bitcoin Son Dakika - Güncel Bitcoin Haberleri" },
-    {
-      name: "description",
-      content:
-        "Bitcoin ve kripto para dünyasından son dakika haberler, güncel gelişmeler ve analizler.",
-    },
+    { title },
+    { name: "description", content: description },
+    // Open Graph
+    { property: "og:site_name", content: siteName },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+    { property: "og:image", content: imageUrl },
+    { property: "og:url", content: siteUrl },
+    // Twitter Card
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: imageUrl },
   ];
 };
 

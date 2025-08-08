@@ -10,7 +10,12 @@ import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";
 import MainContent from "../components/MainContent";
 import { getDisplayName, ProfileAvatar } from "../components/ui/ProfileAvatar";
-import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
+import {
+  WEBSITE_NAME,
+  WEBSITE_DESCRIPTION,
+  WEBSITE_URL,
+  LOGO_URL,
+} from "../lib/constants";
 
 import NotFound from "./$";
 
@@ -79,12 +84,29 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     ];
   }
 
+  const title = `${articleItem.title} - ${WEBSITE_NAME}`;
+  const description = articleItem.summary || WEBSITE_DESCRIPTION;
+  const canonicalUrl = `${WEBSITE_URL}/article/${createTitleSlug(articleItem.title!)}`;
+  const imageUrl = articleItem.image
+    ? articleItem.image.startsWith("http")
+      ? articleItem.image
+      : `${WEBSITE_URL}${articleItem.image}`
+    : `${WEBSITE_URL}${LOGO_URL}`;
+
   return [
-    { title: `${articleItem.title} - ${WEBSITE_NAME}` },
-    {
-      name: "description",
-      content: `${WEBSITE_DESCRIPTION} - ${articleItem.summary}`,
-    },
+    { title },
+    { name: "description", content: description },
+    // Open Graph
+    { property: "og:site_name", content: WEBSITE_NAME },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+    { property: "og:image", content: imageUrl },
+    { property: "og:url", content: canonicalUrl },
+    // Twitter
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: imageUrl },
   ];
 };
 
@@ -190,15 +212,11 @@ export default function ArticleDetailPage() {
                     </ol>
                   ),
                   li: ({ children }) => (
-                    <li className="text-foreground">
-                      {children}
-                    </li>
+                    <li className="text-foreground">{children}</li>
                   ),
                   blockquote: ({ children }) => (
                     <blockquote className="border-l-4 border-main-accent pl-4 py-2 mb-4 bg-muted rounded-r">
-                      <p className="text-muted-foreground italic">
-                        {children}
-                      </p>
+                      <p className="text-muted-foreground italic">{children}</p>
                     </blockquote>
                   ),
                   code: ({ children, className }) => {

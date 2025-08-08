@@ -10,7 +10,12 @@ import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";
 import MainContent from "../components/MainContent";
 import { getDisplayName, ProfileAvatar } from "../components/ui/ProfileAvatar";
-import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
+import {
+  WEBSITE_NAME,
+  WEBSITE_DESCRIPTION,
+  WEBSITE_URL,
+  LOGO_URL,
+} from "../lib/constants";
 
 import NotFound from "./$";
 
@@ -79,12 +84,29 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     ];
   }
 
+  const title = `${newsItem.title} - ${WEBSITE_NAME}`;
+  const description = newsItem.summary || WEBSITE_DESCRIPTION;
+  const canonicalUrl = `${WEBSITE_URL}/news/${createTitleSlug(newsItem.title!)}`;
+  const imageUrl = newsItem.image
+    ? newsItem.image.startsWith("http")
+      ? newsItem.image
+      : `${WEBSITE_URL}${newsItem.image}`
+    : `${WEBSITE_URL}${LOGO_URL}`;
+
   return [
-    { title: `${newsItem.title} - ${WEBSITE_NAME}` },
-    {
-      name: "description",
-      content: `${WEBSITE_DESCRIPTION} - ${newsItem.summary}`,
-    },
+    { title },
+    { name: "description", content: description },
+    // Open Graph
+    { property: "og:site_name", content: WEBSITE_NAME },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+    { property: "og:image", content: imageUrl },
+    { property: "og:url", content: canonicalUrl },
+    // Twitter
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: imageUrl },
   ];
 };
 

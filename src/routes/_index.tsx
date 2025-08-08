@@ -8,20 +8,38 @@ import {
   useLatestArticles,
   useSSGData,
 } from "../contexts/SSGContext";
-import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
+import {
+  WEBSITE_NAME,
+  WEBSITE_DESCRIPTION,
+  WEBSITE_URL,
+  LOGO_URL,
+} from "../lib/constants";
 
 export const meta: MetaFunction = () => {
+  const title = `${WEBSITE_NAME} - Güncel Bitcoin Haberleri ve Analizler`;
+  const description = WEBSITE_DESCRIPTION;
+  const siteUrl = `${WEBSITE_URL}`;
+  const imageUrl = `${WEBSITE_URL}${LOGO_URL}`;
+
   return [
-    { title: `${WEBSITE_NAME} - Güncel Bitcoin Haberleri ve Analizler` },
-    {
-      name: "description",
-      content: WEBSITE_DESCRIPTION,
-    },
+    { title },
+    { name: "description", content: description },
     {
       name: "keywords",
       content:
         "bitcoin, kripto para, lightning network, madencilik, bitcoin haberleri",
     },
+    // Open Graph
+    { property: "og:site_name", content: WEBSITE_NAME },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+    { property: "og:image", content: imageUrl },
+    { property: "og:url", content: siteUrl },
+    // Twitter
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: imageUrl },
   ];
 };
 
