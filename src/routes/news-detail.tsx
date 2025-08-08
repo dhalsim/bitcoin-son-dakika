@@ -145,12 +145,9 @@ export default function NewsDetailPage() {
           {/* Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
             <div className="text-foreground leading-relaxed">
-              {newsItem.content.split("\n").map((line, index) => (
-                <React.Fragment key={index}>
-                  <RenderedText enableRichPreviews>{line}</RenderedText>
-                  {index < newsItem.content.split("\n").length - 1 && <br />}
-                </React.Fragment>
-              ))}
+              <RenderedText enableRichPreviews preserveNewlines>
+                {newsItem.content}
+              </RenderedText>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router";
 
 import type { EventItem, ProfileItem } from "@/lib/nip01";
@@ -51,6 +51,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   author,
   event,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const time = getTimeAgo(publishedAt);
   const displayName = getDisplayName(author, event.pubkey);
   const slug: string | null = title ? createTitleSlug(title) : null;
@@ -69,30 +70,54 @@ export const NewsCard: React.FC<NewsCardProps> = ({
 
   const hasLink = titleText !== "" && link && summary;
 
-  const titleElement = hasLink ? (
-    <Link to={link}>
-      {titleText}
-      {title}
-    </Link>
-  ) : titleText ? (
+  const wrapInLink = (element: React.ReactNode, className?: string) => {
+    return hasLink ? (
+      <Link to={link} className={className}>
+        {element}
+      </Link>
+    ) : (
+      element
+    );
+  };
+
+  const titleElement = wrapInLink(
     <>
       {titleText}
       {title}
-    </>
-  ) : null;
+    </>,
+    "hover:text-main-accent decoration-main-accent",
+  );
+
+  const imageElement = image
+    ? wrapInLink(
+        <img src={image} alt={title} className="w-full h-full object-cover" />,
+        "hover:opacity-80 transition-opacity cursor-pointer",
+      )
+    : null;
+
+  const CONTENT_PREVIEW_LENGTH = 200;
+  const hasSummary = Boolean(summary && summary.trim().length > 0);
+  const isContentLong =
+    Boolean(event.content) && event.content.length > CONTENT_PREVIEW_LENGTH;
+  const fullText = hasSummary
+    ? `${summary}\n\n${event.content}`
+    : event.content;
+  const previewText = hasSummary
+    ? summary
+    : isContentLong
+      ? `${event.content.slice(0, CONTENT_PREVIEW_LENGTH)}…`
+      : event.content;
+  const textToRender = isExpanded ? fullText : previewText;
+  const showContinueLink = !isExpanded && (hasSummary || isContentLong);
 
   return (
     <Card className="h-full">
-      <CardHeader>
-        {image && (
+      {imageElement && (
+        <CardHeader>
           <div
             className={`relative ${featured ? "h-48 sm:h-64" : "h-40 sm:h-48"}`}
           >
-            <img
-              src={image}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
+            {imageElement}
             <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
               <CategoryTags
                 tags={event.tags
@@ -102,8 +127,8 @@ export const NewsCard: React.FC<NewsCardProps> = ({
               />
             </div>
           </div>
-        )}
-      </CardHeader>
+        </CardHeader>
+      )}
       <CardContent className="flex-1">
         <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground mb-2">
           <span>{time}</span>
@@ -153,9 +178,21 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         )}
 
         <div className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
-          <RenderedText enableRichPreviews>
-            {summary || event.content}
+          <RenderedText enableRichPreviews preserveNewlines className="inline">
+            {textToRender}
           </RenderedText>
+          {(showContinueLink || isExpanded) && (
+            <>
+              {" "}
+              <button
+                type="button"
+                onClick={() => setIsExpanded((v) => !v)}
+                className="align-baseline text-main-accent decoration-main-accent font-medium cursor-pointer hover:underline underline-offset-4"
+              >
+                {isExpanded ? "Daha az göster" : "Devamını oku"}
+              </button>
+            </>
+          )}
         </div>
 
         {/* Interactive Statistics */}

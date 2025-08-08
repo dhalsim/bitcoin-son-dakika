@@ -1,3 +1,5 @@
+import type React from "react";
+
 import type { EventStatistics } from "@/lib/event-statistics";
 import type { EventItem, ProfileItem } from "@/lib/nip01";
 import type { ReplyNode } from "@/lib/nip10";
@@ -18,24 +20,11 @@ export interface ReactionGroup {
 }
 
 export interface ActionButtonsProps {
-  repliesCount: number;
-  quotesCount: number;
-  repostsCount: number;
-  totalReactions: number;
-  zapCount: number;
-  zapAmount: number;
-  hasUserReposted: boolean;
-  hasZapped: boolean;
-  isExpanded: boolean;
-  showReplies: boolean;
-  showQuotes: boolean;
   event: EventItem;
-  onToggleExpanded: () => void;
-  onShowRepliesClick: () => void;
-  onReactionClick: (emoji: string) => void;
-  onRepostClick: () => void;
-  onQuoteClick: () => void;
-  onZapClick: () => void;
+  author: ProfileItem;
+  statistics: EventStatistics | null;
+  setStatistics: React.Dispatch<React.SetStateAction<EventStatistics | null>>;
+  profiles: Map<string, ProfileItem>;
 }
 
 export interface ExpandedReactionsProps {

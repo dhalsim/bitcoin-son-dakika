@@ -16,6 +16,7 @@ interface RenderedTextProps {
   linkClassName?: string;
   enableRichPreviews?: boolean;
   richPreviewClassName?: string;
+  preserveNewlines?: boolean;
 }
 
 interface TextSegment {
@@ -142,65 +143,78 @@ export function RenderedText({
   linkClassName = "text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline",
   enableRichPreviews = false,
   richPreviewClassName = "my-2",
+  preserveNewlines = false,
 }: RenderedTextProps) {
-  const segments = parseText(children);
-
-  return (
-    <div className={className}>
-      {segments.map((segment, index) => {
-        switch (segment.type) {
-          case "image":
+  const renderSegments = (segmentsToRender: TextSegment[], keyPrefix = "") =>
+    segmentsToRender.map((segment, index) => {
+      const key = `${keyPrefix}${index}`;
+      switch (segment.type) {
+        case "image":
+          return (
+            <img
+              key={key}
+              src={segment.url}
+              alt={segment.alt}
+              className={imageClassName}
+              loading="lazy"
+            />
+          );
+        case "link":
+          if (enableRichPreviews) {
             return (
-              <img
-                key={index}
-                src={segment.url}
-                alt={segment.alt}
-                className={imageClassName}
-                loading="lazy"
+              <LinkPreview
+                key={key}
+                url={segment.url!}
+                className={richPreviewClassName}
               />
             );
-          case "link":
-            if (enableRichPreviews) {
-              return (
-                <LinkPreview
-                  key={index}
-                  url={segment.url!}
-                  className={richPreviewClassName}
-                />
-              );
-            }
+          }
 
-            return (
-              <a
-                key={index}
-                href={segment.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={linkClassName}
-              >
-                {segment.content}
-              </a>
-            );
-          case "nostr":
-            return (
-              <a
-                key={index}
-                href={`https://njump.me/${segment.content}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={linkClassName}
-                title="View on Nostr"
-              >
-                {segment.content}
-              </a>
-            );
-          case "text":
-          default:
-            return segment.content;
-        }
-      })}
-    </div>
-  );
+          return (
+            <a
+              key={key}
+              href={segment.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={linkClassName}
+            >
+              {segment.content}
+            </a>
+          );
+        case "nostr":
+          return (
+            <a
+              key={key}
+              href={`https://njump.me/${segment.content}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={linkClassName}
+              title="View on Nostr"
+            >
+              {segment.content}
+            </a>
+          );
+        case "text":
+        default:
+          return <React.Fragment key={key}>{segment.content}</React.Fragment>;
+      }
+    });
+
+  let content: React.ReactNode;
+
+  if (preserveNewlines) {
+    const lines = children.split(/\r?\n/);
+    content = lines.map((line, lineIndex) => (
+      <React.Fragment key={`line-${lineIndex}`}>
+        {renderSegments(parseText(line), `l${lineIndex}-`)}
+        {lineIndex < lines.length - 1 && <br />}
+      </React.Fragment>
+    ));
+  } else {
+    content = renderSegments(parseText(children));
+  }
+
+  return <div className={className}>{content}</div>;
 }
 
 // Utility function for cases where you just need the parsing logic

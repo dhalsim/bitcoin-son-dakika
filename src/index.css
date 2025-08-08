@@ -1,6 +1,31 @@
 
 @import "tailwindcss";
 
+/* Tailwind v4 token definitions using @theme.
+   Map design-system CSS variables to Tailwind color tokens
+   so utilities like bg-background, text-foreground, bg-destructive, etc. are generated. */
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
 @layer base {
@@ -375,6 +400,16 @@
   .hover\:bg-gray-800:hover { background-color: hsl(var(--gray-800)); }
   .hover\:bg-blue-900\/30:hover { background-color: hsl(var(--blue-900) / 0.3); }
   .hover\:bg-green-900\/30:hover { background-color: hsl(var(--green-900) / 0.3); }
+
+  /* Link hover color utilities aligned with design tokens */
+  .hover\:text-main-accent:hover { color: var(--main-accent); }
+  .hover\:text-contrasting-1:hover { color: var(--contrasting-1); }
+  .hover\:text-contrasting-2:hover { color: var(--contrasting-2); }
+
+  /* Text decoration color utilities for links */
+  .decoration-main-accent { text-decoration-color: var(--main-accent); }
+  .decoration-contrasting-1 { text-decoration-color: var(--contrasting-1); }
+  .decoration-contrasting-2 { text-decoration-color: var(--contrasting-2); }
 
   /* Opacity utilities */
   .bg-black\/20 { background-color: hsl(var(--black) / 0.2); }

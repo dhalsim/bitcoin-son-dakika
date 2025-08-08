@@ -39,7 +39,7 @@ const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <header className="bg-background shadow-md relative">
+    <header className="shadow-md relative">
       {/* Background image */}
       <div
         className="absolute inset-0 opacity-20"
@@ -220,7 +220,7 @@ const Header = () => {
               <input
                 type="text"
                 placeholder="Haber ara..."
-                className="pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-64 bg-background text-foreground transition-all duration-300"
+                className="pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-64 text-foreground transition-all duration-300"
               />
             </div>
 
