@@ -72,13 +72,7 @@ export default function Index() {
   const sideNews = latestNews.slice(5, 7); // Next 2 news items
 
   return (
-    <MainContent
-      breakingNews={{
-        title: featuredContent?.title || "Bitcoin Haberleri",
-        summary:
-          featuredContent?.summary || "Güncel Bitcoin haberleri ve analizler",
-      }}
-    >
+    <MainContent>
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
           {/* Main Content */}
