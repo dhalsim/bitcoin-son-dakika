@@ -20,6 +20,9 @@ const PriceBar = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const autoscrollIntervalRef = useRef<number | null>(null);
+  const resumeTimeoutRef = useRef<number | null>(null);
+  const isUserInteractingRef = useRef(false);
 
   // Create a simple duplicated array for continuous scrolling
   const displayPrices = [...prices, ...prices, ...prices];
@@ -144,49 +147,80 @@ const PriceBar = () => {
       return;
     }
 
-    let autoscrollInterval: NodeJS.Timeout;
-    let isUserInteracting = false;
+    // Ensure we start centered on the middle copy to allow seamless wrapping
+    const singleSetWidth = container.scrollWidth / 3;
+    if (
+      container.scrollLeft < singleSetWidth ||
+      container.scrollLeft >= singleSetWidth * 2
+    ) {
+      container.scrollLeft = singleSetWidth;
+    }
 
     const startAutoscroll = () => {
-      if (isUserInteracting) {
+      if (isUserInteractingRef.current) {
         return;
       }
 
-      autoscrollInterval = setInterval(() => {
-        if (!container || isUserInteracting) {
+      if (autoscrollIntervalRef.current !== null) {
+        return;
+      } // already running
+
+      const id = window.setInterval(() => {
+        if (!scrollContainerRef.current || isUserInteractingRef.current) {
           return;
         }
 
-        const { scrollLeft, scrollWidth } = container;
-        const singleSetWidth = scrollWidth / 3;
+        const el = scrollContainerRef.current;
+        const widthPerSet = el.scrollWidth / 3;
 
-        // Move slowly to the right
-        const newScrollLeft = scrollLeft + 1;
-
-        // Reset to middle copy when reaching boundaries
-        if (newScrollLeft >= singleSetWidth * 2) {
-          container.scrollLeft = singleSetWidth;
-        } else {
-          container.scrollLeft = newScrollLeft;
+        let next = el.scrollLeft + 1; // slow, smooth move to the right
+        // Wrap within the triple content to create the infinite effect
+        if (next >= widthPerSet * 2) {
+          next = next - widthPerSet; // jump back by one set to stay in middle band
         }
-      }, 50); // Move every 50ms for smooth scrolling
+
+        if (next < 0) {
+          next = next + widthPerSet; // guard for unexpected negatives
+        }
+
+        el.scrollLeft = next;
+      }, 50);
+
+      autoscrollIntervalRef.current = id;
     };
 
     const stopAutoscroll = () => {
-      if (autoscrollInterval) {
-        clearInterval(autoscrollInterval);
+      if (autoscrollIntervalRef.current !== null) {
+        window.clearInterval(autoscrollIntervalRef.current);
+        autoscrollIntervalRef.current = null;
       }
     };
 
-    const handleUserInteraction = () => {
-      isUserInteracting = true;
-      stopAutoscroll();
+    const scheduleAutoscrollResume = () => {
+      if (resumeTimeoutRef.current !== null) {
+        window.clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = null;
+      }
 
-      // Resume autoscroll after user stops interacting
-      setTimeout(() => {
-        isUserInteracting = false;
+      resumeTimeoutRef.current = window.setTimeout(() => {
+        isUserInteractingRef.current = false;
+        // Re-center if we drifted to edges during interaction
+        const el = scrollContainerRef.current;
+        if (el) {
+          const widthPerSet = el.scrollWidth / 3;
+          if (el.scrollLeft < widthPerSet || el.scrollLeft >= widthPerSet * 2) {
+            el.scrollLeft = widthPerSet + (el.scrollLeft % widthPerSet);
+          }
+        }
+
         startAutoscroll();
-      }, 2000); // Wait 2 seconds after user interaction
+      }, 2000);
+    };
+
+    const handleUserInteraction = () => {
+      isUserInteractingRef.current = true;
+      stopAutoscroll();
+      scheduleAutoscrollResume();
     };
 
     // Start autoscroll
@@ -197,10 +231,17 @@ const PriceBar = () => {
     container.addEventListener("touchstart", handleUserInteraction, {
       passive: true,
     });
-    container.addEventListener("wheel", handleUserInteraction);
+    container.addEventListener("wheel", handleUserInteraction, {
+      passive: true,
+    });
 
     return () => {
       stopAutoscroll();
+      if (resumeTimeoutRef.current !== null) {
+        window.clearTimeout(resumeTimeoutRef.current);
+        resumeTimeoutRef.current = null;
+      }
+
       container.removeEventListener("mousedown", handleUserInteraction);
       container.removeEventListener("touchstart", handleUserInteraction);
       container.removeEventListener("wheel", handleUserInteraction);
@@ -221,7 +262,8 @@ const PriceBar = () => {
                   <PopoverContent className="w-80" align="start">
                     <div className="space-y-2 text-sm">
                       <h4 className="font-medium text-foreground">
-                        ₿ Bitcoin (BTC)
+                        <span className="bitcoin-symbol text-main-accent mr-1"></span>
+                        <span>Bitcoin (BTC)</span>
                       </h4>
                       <div className="text-muted-foreground">
                         Bitcoin, merkezi olmayan dijital para birimidir. Satoshi
@@ -254,10 +296,14 @@ const PriceBar = () => {
                 veya{" "}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className="text-white satoshi-symbol text-lg ml-2 hover:opacity-80 transition-opacity cursor-pointer"></button>
+                    <button className="text-black satoshi-symbol text-lg ml-2 mb-1 hover:opacity-80 transition-opacity cursor-pointer"></button>
                   </PopoverTrigger>
                   <PopoverContent className="w-80" align="start">
                     <div className="space-y-2 text-sm">
+                      <h4 className="font-medium text-foreground">
+                        <span className="satoshi-symbol text-main-accent mr-2"></span>
+                        <span>Satoshi (sat)</span>
+                      </h4>
                       <div className="flex flex-col text-muted-foreground">
                         <p className="flex items-start gap-2">
                           <span>🔹</span>
