@@ -56,17 +56,9 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   const displayName = getDisplayName(author, event.pubkey);
   const slug: string | null = title ? createTitleSlug(title) : null;
   const isArticle = event.kind === 30023;
-  const link: string | null = slug
-    ? isArticle
-      ? `/article/${slug}`
-      : `/news/${slug}`
-    : null;
+  const link: string | null = slug ? (isArticle ? `/article/${slug}` : `/news/${slug}`) : null;
 
-  const titleText = title
-    ? isArticle
-      ? `Makale - ${title}`
-      : `Haber - ${title}`
-    : "";
+  const titleText = title ? (isArticle ? `Makale - ${title}` : `Haber - ${title}`) : "";
 
   const hasLink = titleText !== "" && link && summary;
 
@@ -94,11 +86,8 @@ export const NewsCard: React.FC<NewsCardProps> = ({
 
   const CONTENT_PREVIEW_LENGTH = 200;
   const hasSummary = Boolean(summary && summary.trim().length > 0);
-  const isContentLong =
-    Boolean(event.content) && event.content.length > CONTENT_PREVIEW_LENGTH;
-  const fullText = hasSummary
-    ? `${summary}\n\n${event.content}`
-    : event.content;
+  const isContentLong = Boolean(event.content) && event.content.length > CONTENT_PREVIEW_LENGTH;
+  const fullText = hasSummary ? `${summary}\n\n${event.content}` : event.content;
   const previewText = hasSummary
     ? summary
     : isContentLong
@@ -111,15 +100,11 @@ export const NewsCard: React.FC<NewsCardProps> = ({
     <Card className="h-full">
       {imageElement && (
         <CardHeader>
-          <div
-            className={`relative ${featured ? "h-48 sm:h-64" : "h-40 sm:h-48"}`}
-          >
+          <div className={`relative ${featured ? "h-48 sm:h-64" : "h-40 sm:h-48"}`}>
             {imageElement}
             <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
               <CategoryTags
-                tags={event.tags
-                  .filter((tag) => tag[0] === "t")
-                  .map((tag) => tag[1])}
+                tags={event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1])}
                 tagClassName="text-xs"
               />
             </div>
@@ -153,9 +138,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         {titleElement && (
           <h3
             className={`font-bold text-foreground mb-2 sm:mb-3 hover:text-main-accent transition-colors cursor-pointer ${
-              featured
-                ? "text-lg sm:text-xl leading-tight"
-                : "text-base sm:text-lg leading-tight"
+              featured ? "text-lg sm:text-xl leading-tight" : "text-base sm:text-lg leading-tight"
             }`}
           >
             {titleElement}
@@ -166,9 +149,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         {!image && event.tags && event.tags.length > 0 && (
           <div className="mb-3">
             <CategoryTags
-              tags={event.tags
-                .filter((tag) => tag[0] === "t")
-                .map((tag) => tag[1])}
+              tags={event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1])}
               className="text-xs"
             />
           </div>
@@ -195,11 +176,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         {/* Interactive Statistics */}
         {event && (
           <div className="mt-4 pt-4 border-t border-border">
-            <EventStatistics
-              event={event}
-              author={author}
-              className="justify-start"
-            />
+            <EventStatistics event={event} author={author} className="justify-start" />
           </div>
         )}
       </CardContent>

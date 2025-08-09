@@ -30,9 +30,7 @@ export const useBitcoinStats = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(
-          `${WEBSITE_URL}/api/bitcoin-stats/mempool`,
-        );
+        const response = await fetch(`${WEBSITE_URL}/api/bitcoin-stats/mempool`);
         console.log("Response status:", response.status);
 
         if (!response.ok) {
@@ -43,9 +41,7 @@ export const useBitcoinStats = () => {
         console.log("Bitcoin stats data:", rawBitcoinStats);
 
         if (!isSuccessResponse(rawBitcoinStats)) {
-          throw new Error(
-            rawBitcoinStats.error || "Failed to fetch Bitcoin stats",
-          );
+          throw new Error(rawBitcoinStats.error || "Failed to fetch Bitcoin stats");
         }
 
         const bitcoinStats = BitcoinStatsDataSchema.parse(rawBitcoinStats);
@@ -53,9 +49,7 @@ export const useBitcoinStats = () => {
         setStats(bitcoinStats);
       } catch (err) {
         console.error("Error fetching Bitcoin stats:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch Bitcoin stats",
-        );
+        setError(err instanceof Error ? err.message : "Failed to fetch Bitcoin stats");
       } finally {
         setLoading(false);
       }

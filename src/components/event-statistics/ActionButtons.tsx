@@ -19,11 +19,7 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useUserWriteRelays } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { getUserPubkey } from "@/lib/nip07";
@@ -72,9 +68,7 @@ export function ActionButtons({
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [isQuotesAtBottom, setIsQuotesAtBottom] = useState(false);
   const [showZapDialog, setShowZapDialog] = useState(false);
-  const [currentUserPubkey, setCurrentUserPubkey] = useState<string | null>(
-    null,
-  );
+  const [currentUserPubkey, setCurrentUserPubkey] = useState<string | null>(null);
   const [hasZapped, setHasZapped] = useState(false);
 
   const writeRelays = useUserWriteRelays();
@@ -164,9 +158,7 @@ export function ActionButtons({
         key: "repost",
         icon: <Repeat2 className="h-4 w-4" />,
         count: _repostsCount,
-        events: statistics?.reposts
-          ? Array.from(statistics.reposts.values())
-          : [],
+        events: statistics?.reposts ? Array.from(statistics.reposts.values()) : [],
         color: "text-blue-600",
       });
     }
@@ -198,11 +190,7 @@ export function ActionButtons({
         (a, b) => b.events.length - a.events.length,
       );
       sortedEmojis.forEach((customEmoji) => {
-        if (
-          !customEmoji ||
-          !customEmoji.events ||
-          customEmoji.events.length === 0
-        ) {
+        if (!customEmoji || !customEmoji.events || customEmoji.events.length === 0) {
           return;
         }
 
@@ -244,9 +232,7 @@ export function ActionButtons({
     const total = groups.reduce(
       (sum, group) =>
         sum +
-        (["like" as const, "dislike" as const, "emoji" as const].includes(
-          group.type as any,
-        )
+        (["like" as const, "dislike" as const, "emoji" as const].includes(group.type as any)
           ? group.count
           : 0),
       0,
@@ -254,9 +240,7 @@ export function ActionButtons({
     const userReposted = !!(
       currentUserPubkey &&
       statistics?.reposts &&
-      Array.from(statistics.reposts.values()).some(
-        (r) => r.pubkey === currentUserPubkey,
-      )
+      Array.from(statistics.reposts.values()).some((r) => r.pubkey === currentUserPubkey)
     );
 
     return {
@@ -332,8 +316,7 @@ export function ActionButtons({
           title: "Başarılı",
           description: "Repost başarıyla gönderildi",
         }),
-      (error) =>
-        toast({ title: "Hata", description: error, variant: "destructive" }),
+      (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
     );
   };
 
@@ -387,8 +370,7 @@ export function ActionButtons({
         setQuoteContent("");
         saveDraft(`quote-${event.id}`, "");
       },
-      (error) =>
-        toast({ title: "Hata", description: error, variant: "destructive" }),
+      (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
     );
   };
 
@@ -408,15 +390,9 @@ export function ActionButtons({
             size="sm"
             onClick={onToggleExpanded}
             className={`h-6 w-6 p-0 hover:text-amber-800 ${isExpanded ? "text-amber-700" : ""}`}
-            title={
-              isExpanded ? "Reaksiyonları daralt" : "Reaksiyonları genişlet"
-            }
+            title={isExpanded ? "Reaksiyonları daralt" : "Reaksiyonları genişlet"}
           >
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         )}
 
@@ -463,9 +439,7 @@ export function ActionButtons({
                 <DialogContent className="max-w-[32rem]">
                   <DialogHeader>
                     <DialogTitle>Emoji seç</DialogTitle>
-                    <DialogDescription>
-                      Bir emoji seçerek tepki verin.
-                    </DialogDescription>
+                    <DialogDescription>Bir emoji seçerek tepki verin.</DialogDescription>
                   </DialogHeader>
                   <div className="max-h-[400px] overflow-y-auto">
                     <EmojiBoard
@@ -513,11 +487,7 @@ export function ActionButtons({
 
       {/* Expanded reactions panel */}
       {isExpanded && totalReactions > 0 && (
-        <ExpandedReactions
-          reactionGroups={reactionGroups}
-          profiles={profiles}
-          author={author}
-        />
+        <ExpandedReactions reactionGroups={reactionGroups} profiles={profiles} author={author} />
       )}
 
       {/* Replies section */}
@@ -531,9 +501,7 @@ export function ActionButtons({
             profiles={profiles}
             onThreadReply={() => {}}
             onThreadScroll={() => {
-              const container = document.querySelector(
-                "[data-thread-container]",
-              ) as HTMLDivElement;
+              const container = document.querySelector("[data-thread-container]") as HTMLDivElement;
               if (container) {
                 handleScrollDetection({ current: container }, setIsAtBottom);
               }
@@ -568,14 +536,9 @@ export function ActionButtons({
           onPostQuote={handlePostQuote}
           onQuoteKeyDown={handleQuoteKeyDown}
           onQuotesScroll={() => {
-            const container = document.querySelector(
-              "[data-quotes-container]",
-            ) as HTMLDivElement;
+            const container = document.querySelector("[data-quotes-container]") as HTMLDivElement;
             if (container) {
-              handleScrollDetection(
-                { current: container },
-                setIsQuotesAtBottom,
-              );
+              handleScrollDetection({ current: container }, setIsQuotesAtBottom);
             }
           }}
         />

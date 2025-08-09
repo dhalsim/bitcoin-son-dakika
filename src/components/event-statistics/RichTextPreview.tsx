@@ -7,8 +7,7 @@ export function RichTextPreview({ content }: RichTextPreviewProps) {
       // URLs
       {
         pattern: /(https?:\/\/[^\s]+)/g,
-        replacement:
-          '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>',
+        replacement: '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>',
       },
       // @mentions (npub or hex)
       {

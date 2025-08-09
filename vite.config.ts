@@ -14,6 +14,8 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // ensure no accidental node 'canvas' resolution
+      canvas: false as unknown as string,
     },
   },
   optimizeDeps: {
@@ -28,13 +30,9 @@ export default defineConfig(() => ({
       output: {
         // Keep readable chunk names
         chunkFileNames:
-          process.env.NODE_ENV === "production"
-            ? "assets/[name]-[hash].js"
-            : "assets/[name].js",
+          process.env.NODE_ENV === "production" ? "assets/[name]-[hash].js" : "assets/[name].js",
         entryFileNames:
-          process.env.NODE_ENV === "production"
-            ? "assets/[name]-[hash].js"
-            : "assets/[name].js",
+          process.env.NODE_ENV === "production" ? "assets/[name]-[hash].js" : "assets/[name].js",
       },
     },
   },

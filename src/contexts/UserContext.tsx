@@ -127,8 +127,7 @@ export function UserProvider({ children }: UserProviderProps) {
         setUserProfile((prev) => ({
           ...prev,
           isLoading: false,
-          error:
-            err instanceof Error ? err.message : "Failed to load user profile",
+          error: err instanceof Error ? err.message : "Failed to load user profile",
         }));
       }
     };
@@ -190,8 +189,7 @@ export function UserProvider({ children }: UserProviderProps) {
           readRelays: DEFAULT_READ_RELAYS,
           writeRelays: DEFAULT_WRITE_RELAYS,
           isLoading: false,
-          error:
-            err instanceof Error ? err.message : "Failed to load user relays",
+          error: err instanceof Error ? err.message : "Failed to load user relays",
         });
       }
     };
@@ -203,11 +201,7 @@ export function UserProvider({ children }: UserProviderProps) {
   useEffect(() => {
     const loadUserFollowings = async () => {
       // Only load followings if relays are loaded and not failed
-      if (
-        userRelays.isLoading ||
-        userRelays.error ||
-        userRelays.writeRelays.length === 0
-      ) {
+      if (userRelays.isLoading || userRelays.error || userRelays.writeRelays.length === 0) {
         return;
       }
 
@@ -256,10 +250,7 @@ export function UserProvider({ children }: UserProviderProps) {
           eventTags: [],
           pubkeys: [],
           isLoading: false,
-          error:
-            err instanceof Error
-              ? err.message
-              : "Failed to load user followings",
+          error: err instanceof Error ? err.message : "Failed to load user followings",
         });
       }
     };
@@ -285,9 +276,7 @@ export function UserProvider({ children }: UserProviderProps) {
     refreshProfile,
   };
 
-  return (
-    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
-  );
+  return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>;
 }
 
 export function useUserContext(): UserContextType {

@@ -63,8 +63,7 @@ function parseText(text: string): TextSegment[] {
   while ((match = urlRegex.exec(text)) !== null) {
     const isAlreadyMatched = allMatches.some(
       (existing) =>
-        existing.index <= match.index! &&
-        existing.index + existing.match[0].length > match.index!,
+        existing.index <= match.index! && existing.index + existing.match[0].length > match.index!,
     );
 
     if (!isAlreadyMatched) {
@@ -161,13 +160,7 @@ export function RenderedText({
           );
         case "link":
           if (enableRichPreviews) {
-            return (
-              <LinkPreview
-                key={key}
-                url={segment.url!}
-                className={richPreviewClassName}
-              />
-            );
+            return <LinkPreview key={key} url={segment.url!} className={richPreviewClassName} />;
           }
 
           return (

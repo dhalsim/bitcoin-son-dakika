@@ -17,8 +17,12 @@ import { publishToRelays } from "../src/lib/utils.js";
 export async function GET(_request: Request) {
   try {
     // For GET requests, return public admin data (no authentication required for viewing)
-    const { adminUsers, editorUsers, articleTags, newsTags } =
-      await fetchNostrSets(["admin-users", "editor-users", "articles", "news"]);
+    const { adminUsers, editorUsers, articleTags, newsTags } = await fetchNostrSets([
+      "admin-users",
+      "editor-users",
+      "articles",
+      "news",
+    ]);
 
     return SuccessResponse({
       adminUsers,
@@ -38,16 +42,16 @@ export async function POST(request: Request) {
   const masterAdminPrivateKey = process.env.MASTER_ADMIN_PRIVATEKEY;
 
   if (!masterAdminPrivateKey) {
-    return ErrorResponse(
-      undefined,
-      "Master admin private key not configured",
-      500,
-    );
+    return ErrorResponse(undefined, "Master admin private key not configured", 500);
   }
 
   try {
-    const { adminUsers, editorUsers, articleTags, newsTags } =
-      await fetchNostrSets(["admin-users", "editor-users", "articles", "news"]);
+    const { adminUsers, editorUsers, articleTags, newsTags } = await fetchNostrSets([
+      "admin-users",
+      "editor-users",
+      "articles",
+      "news",
+    ]);
 
     console.log({
       adminUsers,
@@ -75,68 +79,23 @@ export async function POST(request: Request) {
       case "trigger-deploy":
         return handleTriggerDeploy(request);
       case "add-editor-pubkey":
-        return handleAddEditor(
-          masterAdminPrivateKey,
-          editorUsers,
-          authResult,
-          requestBody,
-        );
+        return handleAddEditor(masterAdminPrivateKey, editorUsers, authResult, requestBody);
       case "remove-editor-pubkey":
-        return handleRemoveEditor(
-          masterAdminPrivateKey,
-          editorUsers,
-          authResult,
-          requestBody,
-        );
+        return handleRemoveEditor(masterAdminPrivateKey, editorUsers, authResult, requestBody);
       case "add-admin-pubkey":
-        return handleAddAdmin(
-          masterAdminPrivateKey,
-          adminUsers,
-          authResult,
-          requestBody,
-        );
+        return handleAddAdmin(masterAdminPrivateKey, adminUsers, authResult, requestBody);
       case "remove-admin-pubkey":
-        return handleRemoveAdmin(
-          masterAdminPrivateKey,
-          adminUsers,
-          authResult,
-          requestBody,
-        );
+        return handleRemoveAdmin(masterAdminPrivateKey, adminUsers, authResult, requestBody);
       case "add-article":
-        return handleAddArticle(
-          masterAdminPrivateKey,
-          articleTags,
-          authResult,
-          requestBody,
-        );
+        return handleAddArticle(masterAdminPrivateKey, articleTags, authResult, requestBody);
       case "add-news":
-        return handleAddNews(
-          masterAdminPrivateKey,
-          newsTags,
-          authResult,
-          requestBody,
-        );
+        return handleAddNews(masterAdminPrivateKey, newsTags, authResult, requestBody);
       case "remove-news":
-        return handleRemoveNews(
-          masterAdminPrivateKey,
-          newsTags,
-          authResult,
-          requestBody,
-        );
+        return handleRemoveNews(masterAdminPrivateKey, newsTags, authResult, requestBody);
       case "remove-article":
-        return handleRemoveArticle(
-          masterAdminPrivateKey,
-          articleTags,
-          authResult,
-          requestBody,
-        );
+        return handleRemoveArticle(masterAdminPrivateKey, articleTags, authResult, requestBody);
       case "publish-news":
-        return handlePublishNews(
-          masterAdminPrivateKey,
-          newsTags,
-          authResult,
-          requestBody,
-        );
+        return handlePublishNews(masterAdminPrivateKey, newsTags, authResult, requestBody);
       default:
         return ErrorResponse(undefined, "Invalid action", 400);
     }
@@ -371,12 +330,7 @@ async function handlePublishNews(
     return ErrorResponse(undefined, "Content and title are required", 400);
   }
 
-  return await publishNews(
-    masterAdminPrivateKey,
-    currentNews,
-    authResult.pubkey,
-    data,
-  );
+  return await publishNews(masterAdminPrivateKey, currentNews, authResult.pubkey, data);
 }
 
 /** Editor Actions */
@@ -464,8 +418,7 @@ async function addArticle(
 
     // Check if article already exists
     const existingArticle = currentArticles.find(
-      (article) =>
-        article.aTag === data.aTag && article.relay === data.relayTag,
+      (article) => article.aTag === data.aTag && article.relay === data.relayTag,
     );
 
     if (existingArticle) {
@@ -619,10 +572,7 @@ async function publishNews(
 
 async function handleTriggerDeploy(request: Request) {
   try {
-    const { adminUsers, editorUsers } = await fetchNostrSets([
-      "admin-users",
-      "editor-users",
-    ]);
+    const { adminUsers, editorUsers } = await fetchNostrSets(["admin-users", "editor-users"]);
 
     // Authenticate user - require editor role for deployment
     const authResult = await authenticateNIP98(
@@ -655,11 +605,7 @@ async function handleTriggerDeploy(request: Request) {
         userRoles: authResult.roles,
       });
     } else {
-      return ErrorResponse(
-        undefined,
-        "Failed to trigger deploy hook",
-        response.status,
-      );
+      return ErrorResponse(undefined, "Failed to trigger deploy hook", response.status);
     }
   } catch (error) {
     return ErrorResponse(error);

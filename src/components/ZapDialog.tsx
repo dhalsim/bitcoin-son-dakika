@@ -133,8 +133,7 @@ export const ZapDialog = memo(function ZapDialog({
         if (typeof window === "undefined" || !window.nostr) {
           toast({
             title: "NIP-07 Gerekli",
-            description:
-              "Zap göndermek için bir NIP-07 cüzdan uzantısı gereklidir.",
+            description: "Zap göndermek için bir NIP-07 cüzdan uzantısı gereklidir.",
             variant: "destructive",
           });
 
@@ -173,8 +172,7 @@ export const ZapDialog = memo(function ZapDialog({
 
         toast({
           title: "Zap Hazır",
-          description:
-            "Fatura oluşturuldu. QR kodu tarayarak ödeme yapabilirsiniz.",
+          description: "Fatura oluşturuldu. QR kodu tarayarak ödeme yapabilirsiniz.",
         });
       } catch (error) {
         console.error("Failed to create zap:", error);
@@ -201,9 +199,7 @@ export const ZapDialog = memo(function ZapDialog({
               <Zap className="h-5 w-5 text-orange-500" />
               <span>Zap Modal Yükleniyor...</span>
             </DialogTitle>
-            <DialogDescription>
-              Zap modalı yüklenirken lütfen bekleyin.
-            </DialogDescription>
+            <DialogDescription>Zap modalı yüklenirken lütfen bekleyin.</DialogDescription>
           </DialogHeader>
         </DialogContent>
       </Dialog>
@@ -237,9 +233,7 @@ export const ZapDialog = memo(function ZapDialog({
               <Zap className="h-5 w-5 text-orange-500" />
               <span>Zap Gönder</span>
             </DialogTitle>
-            <DialogDescription>
-              Lightning Network üzerinden sats gönderin.
-            </DialogDescription>
+            <DialogDescription>Lightning Network üzerinden sats gönderin.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 pt-4">
@@ -290,9 +284,7 @@ export const ZapDialog = memo(function ZapDialog({
                 className="mt-2 min-h-[80px] resize-none"
                 maxLength={200}
               />
-              <div className="text-xs text-gray-500 mt-1">
-                {comment.length}/200 karakter
-              </div>
+              <div className="text-xs text-gray-500 mt-1">{comment.length}/200 karakter</div>
             </div>
 
             {/* Summary */}
@@ -300,9 +292,7 @@ export const ZapDialog = memo(function ZapDialog({
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Gönderilecek miktar:</span>
-                  <span className="font-semibold text-orange-700">
-                    {finalAmount} sats
-                  </span>
+                  <span className="font-semibold text-orange-700">{finalAmount} sats</span>
                 </div>
                 {comment && (
                   <div className="mt-2 text-xs text-gray-600">
@@ -314,11 +304,7 @@ export const ZapDialog = memo(function ZapDialog({
 
             {/* Action buttons */}
             <div className="flex space-x-2 pt-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
                 İptal
               </Button>
               <Button

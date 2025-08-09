@@ -16,9 +16,7 @@ interface UsePriceDataReturn {
 
 const cache = getCache();
 
-export function usePriceData(
-  refreshInterval: number = 10 * 60 * 1000,
-): UsePriceDataReturn {
+export function usePriceData(refreshInterval: number = 10 * 60 * 1000): UsePriceDataReturn {
   // 10 minutes default
   const [prices, setPrices] = useState<PriceData[]>([]);
   const [btcPrice, setBtcPrice] = useState<string | null>(null);
@@ -65,9 +63,7 @@ export function usePriceData(
       }
     } catch (err) {
       console.error("Error fetching price data:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch price data",
-      );
+      setError(err instanceof Error ? err.message : "Failed to fetch price data");
     } finally {
       setLoading(false);
     }

@@ -19,9 +19,7 @@ export default function ArticlesPage() {
   const ssgData = useSSGData();
 
   // Get only article items and sort by publish date
-  const articleItems = ssgData.articles.sort(
-    (a, b) => b.publishedAt - a.publishedAt,
-  );
+  const articleItems = ssgData.articles.sort((a, b) => b.publishedAt - a.publishedAt);
 
   // If no content is available, show empty state
   if (articleItems.length === 0) {

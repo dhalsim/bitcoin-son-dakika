@@ -7,12 +7,7 @@ interface NIP05BadgeProps {
   size?: "sm" | "md" | "lg";
 }
 
-export function NIP05Badge({
-  nip05,
-  pubkey,
-  className = "",
-  size = "md",
-}: NIP05BadgeProps) {
+export function NIP05Badge({ nip05, pubkey, className = "", size = "md" }: NIP05BadgeProps) {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [couldNotLoad, setCouldNotLoad] = useState(false);
@@ -36,9 +31,7 @@ export function NIP05Badge({
           return;
         }
 
-        const response = await fetch(
-          `https://${host}/.well-known/nostr.json?name=${username}`,
-        );
+        const response = await fetch(`https://${host}/.well-known/nostr.json?name=${username}`);
 
         if (!response.ok) {
           setCouldNotLoad(true);
@@ -156,15 +149,10 @@ export function NIP05Badge({
   };
 
   return (
-    <div
-      className={`flex items-center space-x-1 ${className}`}
-      title={getDescription()}
-    >
+    <div className={`flex items-center space-x-1 ${className}`} title={getDescription()}>
       <div className={`flex items-center space-x-1 ${textColor}`}>
         {currentIcon}
-        <span className={`text-xs ${isVerified ? "font-medium" : ""}`}>
-          {nip05}
-        </span>
+        <span className={`text-xs ${isVerified ? "font-medium" : ""}`}>{nip05}</span>
       </div>
     </div>
   );

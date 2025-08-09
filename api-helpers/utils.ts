@@ -31,17 +31,11 @@ export const PROFILE_RELAYS = [
 export const MASTER_ADMIN_PUBKEY =
   "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
-export function ErrorResponse(
-  e?: Error,
-  message?: string,
-  status: number = 500,
-) {
+export function ErrorResponse(e?: Error, message?: string, status: number = 500) {
   return new Response(
     JSON.stringify({
       success: false,
-      message:
-        message ||
-        (e instanceof Error ? e.message : "Error processing request"),
+      message: message || (e instanceof Error ? e.message : "Error processing request"),
       error: e instanceof Error ? e.message : "Unknown error",
     }),
     {
@@ -80,10 +74,7 @@ export function PublishEventResponse(
   );
 }
 
-export function SuccessResponse(
-  data: Record<string, unknown>,
-  status: number = 200,
-) {
+export function SuccessResponse(data: Record<string, unknown>, status: number = 200) {
   return new Response(
     JSON.stringify({
       success: true,
@@ -167,15 +158,9 @@ export async function authenticateNIP98(
     }
 
     // Get user roles from Nostr events
-    const userRoles = await getUserRolesFromNostr(
-      nostrEvent.pubkey,
-      adminUsers,
-      editorUsers,
-    );
+    const userRoles = await getUserRolesFromNostr(nostrEvent.pubkey, adminUsers, editorUsers);
 
-    const hasRequiredRole = requiredRoles.some((role) =>
-      userRoles.includes(role),
-    );
+    const hasRequiredRole = requiredRoles.some((role) => userRoles.includes(role));
 
     if (!hasRequiredRole) {
       const requiredRolesString = requiredRoles.join(" or ");
@@ -249,9 +234,7 @@ export type FetchNostrSetsResult = {
 /**
  * Fetch Nostr sets for admin users, editor users, articles, and news
  */
-export async function fetchNostrSets(
-  sets: EventSet[],
-): Promise<FetchNostrSetsResult> {
+export async function fetchNostrSets(sets: EventSet[]): Promise<FetchNostrSetsResult> {
   try {
     let adminUsers: string[] = [];
     let editorUsers: string[] = [];
@@ -263,15 +246,11 @@ export async function fetchNostrSets(
 
     for (const [set, event] of eventResults) {
       if (set === "admin-users") {
-        adminUsers = event.tags
-          .filter((tag) => tag[0] === "p" && tag[1])
-          .map((tag) => tag[1]);
+        adminUsers = event.tags.filter((tag) => tag[0] === "p" && tag[1]).map((tag) => tag[1]);
       }
 
       if (set === "editor-users") {
-        editorUsers = event.tags
-          .filter((tag) => tag[0] === "p" && tag[1])
-          .map((tag) => tag[1]);
+        editorUsers = event.tags.filter((tag) => tag[0] === "p" && tag[1]).map((tag) => tag[1]);
       }
 
       if (set === "articles") {
@@ -308,23 +287,16 @@ export async function fetchNostrSets(
 }
 
 function getEventSetType(set: EventSet, type: "follow" | "curation"): boolean {
-  return set === "admin-users" || set === "editor-users"
-    ? type === "follow"
-    : type === "curation";
+  return set === "admin-users" || set === "editor-users" ? type === "follow" : type === "curation";
 }
 
 export type EventSet = "admin-users" | "editor-users" | "articles" | "news";
 
-const fetchSets = async (
-  sets: EventSet[],
-): Promise<Map<EventSet, EventItem>> => {
+const fetchSets = async (sets: EventSet[]): Promise<Map<EventSet, EventItem>> => {
   const hasFollowSet = sets.some((set) => getEventSetType(set, "follow"));
   const hasCurationSet = sets.some((set) => getEventSetType(set, "curation"));
 
-  const kinds = [
-    hasFollowSet ? 30000 : null,
-    hasCurationSet ? 30004 : null,
-  ].filter(Boolean);
+  const kinds = [hasFollowSet ? 30000 : null, hasCurationSet ? 30004 : null].filter(Boolean);
 
   return new Promise((resolve, reject) => {
     const events = new Map<EventSet, EventItem>();
@@ -397,17 +369,11 @@ export interface CacheConfig {
   cdnMaxAge?: number; // CDN-specific cache duration
 }
 
-export function applyCacheHeaders(
-  response: Response,
-  strategy: CacheConfig,
-): Response {
+export function applyCacheHeaders(response: Response, strategy: CacheConfig): Response {
   const cacheControl = `s-maxage=${strategy.maxAge}, stale-while-revalidate=${strategy.staleWhileRevalidate}`;
 
   response.headers.set("Cache-Control", cacheControl);
-  response.headers.set(
-    "CDN-Cache-Control",
-    `s-maxage=${strategy.cdnMaxAge || strategy.maxAge}`,
-  );
+  response.headers.set("CDN-Cache-Control", `s-maxage=${strategy.cdnMaxAge || strategy.maxAge}`);
 
   // Add ETag for better cache validation
   const etag = `"${Date.now()}-${Math.random().toString(36).substr(2, 9)}"`;

@@ -142,10 +142,7 @@ export class LocalStorageCache {
         return JSON.parse(stored);
       }
     } catch (error) {
-      console.warn(
-        `Failed to load cache key "${key}" from localStorage:`,
-        error,
-      );
+      console.warn(`Failed to load cache key "${key}" from localStorage:`, error);
     }
 
     return undefined;
@@ -175,10 +172,7 @@ export class LocalStorageCache {
       const storageKey = this.getStorageKey(key);
       localStorage.removeItem(storageKey);
     } catch (error) {
-      console.warn(
-        `Failed to delete cache key "${key}" from localStorage:`,
-        error,
-      );
+      console.warn(`Failed to delete cache key "${key}" from localStorage:`, error);
     }
   }
 
@@ -238,16 +232,11 @@ export class LocalStorageCache {
     this.setToStorage(key, value);
   }
 
-  getNip02(
-    pubkey: string,
-  ): { event: EventItem; followRelays: string[] } | null {
+  getNip02(pubkey: string): { event: EventItem; followRelays: string[] } | null {
     return this.getCachedValue(`nip02-${pubkey}`);
   }
 
-  setNip02(
-    pubkey: string,
-    value: { event: EventItem; followRelays: string[] },
-  ): void {
+  setNip02(pubkey: string, value: { event: EventItem; followRelays: string[] }): void {
     const key = `nip02-${pubkey}`;
     this.cache.set(key, value);
     this.setToStorage(key, value);
@@ -264,9 +253,7 @@ export class LocalStorageCache {
   }
 
   getNip10Replies(eventId: string): Map<string, EventItem> {
-    const parsedArray = this.getCachedValue<[string, EventItem][]>(
-      `nip10-replies-${eventId}`,
-    );
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(`nip10-replies-${eventId}`);
 
     return new Map(parsedArray);
   }
@@ -278,17 +265,13 @@ export class LocalStorageCache {
   }
 
   getNip18Quotes(identifier: string): Map<string, EventItem> {
-    const parsedArray = this.getCachedValue<[string, EventItem][]>(
-      `nip18-quotes-${identifier}`,
-    );
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(`nip18-quotes-${identifier}`);
 
     return new Map(parsedArray);
   }
 
   getNip18Reposts(eventId: string): Map<string, EventItem> {
-    const parsedArray = this.getCachedValue<[string, EventItem][]>(
-      `nip18-reposts-${eventId}`,
-    );
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(`nip18-reposts-${eventId}`);
 
     return new Map(parsedArray);
   }
@@ -316,9 +299,7 @@ export class LocalStorageCache {
   }
 
   getNip22ArticleReplies(aTag: string): Map<string, EventItem> {
-    const parsedArray = this.getCachedValue<[string, EventItem][]>(
-      `nip22-article-replies-${aTag}`,
-    );
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(`nip22-article-replies-${aTag}`);
 
     return new Map(parsedArray);
   }
@@ -330,9 +311,7 @@ export class LocalStorageCache {
   }
 
   getNip25Reactions(eventId: string): Map<string, EventItem> {
-    const parsedArray = this.getCachedValue<[string, EventItem][]>(
-      `nip25-reactions-${eventId}`,
-    );
+    const parsedArray = this.getCachedValue<[string, EventItem][]>(`nip25-reactions-${eventId}`);
 
     return new Map(parsedArray);
   }
@@ -344,9 +323,7 @@ export class LocalStorageCache {
   }
 
   getNip57Zaps(eventId: string): Map<string, ZapReceipt> | null {
-    const parsedArray = this.getCachedValue<[string, ZapReceipt][]>(
-      `nip57-zaps-${eventId}`,
-    );
+    const parsedArray = this.getCachedValue<[string, ZapReceipt][]>(`nip57-zaps-${eventId}`);
 
     return new Map(parsedArray);
   }
@@ -385,8 +362,7 @@ export class LocalStorageCache {
   }
 
   getProfileItems(): Map<string, ProfileItem> {
-    const parsedArray =
-      this.getCachedValue<[string, ProfileItem][]>(`profile-items`);
+    const parsedArray = this.getCachedValue<[string, ProfileItem][]>(`profile-items`);
 
     return new Map(parsedArray);
   }

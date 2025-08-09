@@ -106,9 +106,7 @@ export default function TestEventPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h1 className="text-lg font-semibold text-red-800 mb-2">
-              Error Loading Event
-            </h1>
+            <h1 className="text-lg font-semibold text-red-800 mb-2">Error Loading Event</h1>
             <p className="text-red-700">{error}</p>
             <p className="text-sm text-red-600 mt-2">Event ID: {eventId}</p>
           </div>
@@ -122,9 +120,7 @@ export default function TestEventPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h1 className="text-lg font-semibold text-yellow-800 mb-2">
-              Event Not Found
-            </h1>
+            <h1 className="text-lg font-semibold text-yellow-800 mb-2">Event Not Found</h1>
             <p className="text-yellow-700">
               The event with ID {eventId} could not be found on the relays.
             </p>
@@ -158,9 +154,7 @@ export default function TestEventPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h1 className="text-lg font-semibold text-blue-800 mb-2">
-            Event Test Page
-          </h1>
+          <h1 className="text-lg font-semibold text-blue-800 mb-2">Event Test Page</h1>
           <p className="text-blue-700 text-sm">
             Testing EventStatistics component with event ID: {eventId}
           </p>

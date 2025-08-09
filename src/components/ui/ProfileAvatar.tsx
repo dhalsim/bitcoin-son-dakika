@@ -6,11 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FollowButton } from "@/components/ui/FollowButton";
 import { NIP05Badge } from "@/components/ui/NIP05Badge";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { type ProfileItem } from "@/lib/nip01";
 
 import { PROFILE_RELAYS } from "../../../api-helpers/utils";
@@ -27,10 +23,7 @@ interface ProfileAvatarProps {
 }
 
 // Helper function to get display name from profile
-export const getDisplayName = (
-  profile: ProfileItem | undefined,
-  pubkey: string,
-): string => {
+export const getDisplayName = (profile: ProfileItem | undefined, pubkey: string): string => {
   return profile?.display_name || profile?.name || `${pubkey.slice(0, 8)}...`;
 };
 
@@ -83,9 +76,7 @@ export function ProfileAvatar({
       <Avatar
         className={`${sizeClasses} ${className} ${"cursor-pointer hover:opacity-80 transition-opacity"} overflow-hidden`}
       >
-        <AvatarFallback className="text-xs">
-          {pubkey.slice(0, 2).toUpperCase()}
-        </AvatarFallback>
+        <AvatarFallback className="text-xs">{pubkey.slice(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
     );
   }
@@ -98,16 +89,10 @@ export function ProfileAvatar({
         className={`${sizeClasses} ${className} ${"cursor-pointer hover:opacity-80 transition-opacity"} overflow-hidden`}
         onClick={handleAvatarClick}
       >
-        {profile.picture && (
-          <AvatarImage src={profile.picture} alt={displayName} />
-        )}
-        <AvatarFallback className="text-xs">
-          {displayName.slice(0, 2).toUpperCase()}
-        </AvatarFallback>
+        {profile.picture && <AvatarImage src={profile.picture} alt={displayName} />}
+        <AvatarFallback className="text-xs">{displayName.slice(0, 2).toUpperCase()}</AvatarFallback>
         {badge && (
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-            {badge}
-          </div>
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">{badge}</div>
         )}
       </Avatar>
     </div>
@@ -120,27 +105,19 @@ export function ProfileAvatar({
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
-              {profile.picture && (
-                <AvatarImage src={profile.picture} alt={displayName} />
-              )}
+              {profile.picture && <AvatarImage src={profile.picture} alt={displayName} />}
               <AvatarFallback className="text-sm">
                 {displayName.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                {displayName}
-              </h4>
-              {profile.nip05 && (
-                <NIP05Badge nip05={profile.nip05} pubkey={pubkey} size="sm" />
-              )}
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100">{displayName}</h4>
+              {profile.nip05 && <NIP05Badge nip05={profile.nip05} pubkey={pubkey} size="sm" />}
             </div>
           </div>
 
           {profile.about && (
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              {profile.about}
-            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-300">{profile.about}</p>
           )}
 
           {popupContent && (
@@ -150,12 +127,7 @@ export function ProfileAvatar({
           )}
 
           <div className="flex space-x-2">
-            <Button
-              onClick={handleProfileClick}
-              variant="outline"
-              size="sm"
-              className="flex-1"
-            >
+            <Button onClick={handleProfileClick} variant="outline" size="sm" className="flex-1">
               <ExternalLink className="h-4 w-4 mr-2" />
               Profili Gör
             </Button>

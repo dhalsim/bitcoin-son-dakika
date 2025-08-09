@@ -11,11 +11,7 @@ import { ActionButtons, type EventStatisticsProps } from "./event-statistics";
 
 const cache = getCache();
 
-export function EventStatistics({
-  event,
-  author,
-  className = "",
-}: EventStatisticsProps) {
+export function EventStatistics({ event, author, className = "" }: EventStatisticsProps) {
   // State management
   const [statistics, setStatistics] = useState<EventStatistics | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,9 +44,7 @@ export function EventStatistics({
       ...Array.from(statistics.quotes.values()).map((quote) => quote.pubkey),
       ...Array.from(statistics.reposts.values()).map((repost) => repost.pubkey),
       ...Array.from(statistics.likes.values()).map((like) => like.pubkey),
-      ...Array.from(statistics.dislikes.values()).map(
-        (dislike) => dislike.pubkey,
-      ),
+      ...Array.from(statistics.dislikes.values()).map((dislike) => dislike.pubkey),
       ...Array.from(statistics.emojis.values()).flatMap((customEmoji) =>
         customEmoji.events.map((event) => event.pubkey),
       ),

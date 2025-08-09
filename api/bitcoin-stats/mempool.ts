@@ -5,29 +5,20 @@ import {
   MempoolMempoolSchema,
   MempoolHashrateSchema,
 } from "../../api-helpers/bitcoin-stats/schemas.js";
-import {
-  applyCacheHeaders,
-  ErrorResponse,
-  SuccessResponse,
-} from "../../api-helpers/utils.js";
+import { applyCacheHeaders, ErrorResponse, SuccessResponse } from "../../api-helpers/utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {
   try {
     // Fetch data from Mempool.space API endpoints in parallel
-    const [
-      hashrateResponse,
-      feesResponse,
-      difficultyResponse,
-      mempoolResponse,
-      heightResponse,
-    ] = await Promise.allSettled([
-      fetch("https://mempool.space/api/v1/mining/hashrate/3d"),
-      fetch("https://mempool.space/api/v1/fees/recommended"),
-      fetch("https://mempool.space/api/v1/difficulty-adjustment"),
-      fetch("https://mempool.space/api/mempool"),
-      fetch("https://mempool.space/api/blocks/tip/height"),
-    ]);
+    const [hashrateResponse, feesResponse, difficultyResponse, mempoolResponse, heightResponse] =
+      await Promise.allSettled([
+        fetch("https://mempool.space/api/v1/mining/hashrate/3d"),
+        fetch("https://mempool.space/api/v1/fees/recommended"),
+        fetch("https://mempool.space/api/v1/difficulty-adjustment"),
+        fetch("https://mempool.space/api/mempool"),
+        fetch("https://mempool.space/api/blocks/tip/height"),
+      ]);
 
     // Check if any endpoint failed
     const failedEndpoints: string[] = [];
@@ -41,9 +32,7 @@ export async function GET() {
     }
 
     if (difficultyResponse.status === "rejected") {
-      failedEndpoints.push(
-        "Difficulty API failed: " + difficultyResponse.reason,
-      );
+      failedEndpoints.push("Difficulty API failed: " + difficultyResponse.reason);
     }
 
     if (mempoolResponse.status === "rejected") {
@@ -79,10 +68,7 @@ export async function GET() {
       throw new Error("Failed to fetch fees data");
     }
 
-    if (
-      difficultyResponse.status !== "fulfilled" ||
-      !difficultyResponse.value.ok
-    ) {
+    if (difficultyResponse.status !== "fulfilled" || !difficultyResponse.value.ok) {
       throw new Error("Failed to fetch difficulty data");
     }
 
@@ -184,11 +170,7 @@ export async function GET() {
   } catch (error) {
     console.error("Bitcoin Stats API error:", error);
 
-    const errorResponse = ErrorResponse(
-      error,
-      "Failed to fetch Bitcoin statistics",
-      500,
-    );
+    const errorResponse = ErrorResponse(error, "Failed to fetch Bitcoin statistics", 500);
 
     // Apply error caching strategy
     return applyCacheHeaders(errorResponse, {

@@ -1,15 +1,8 @@
 import TradingView from "@mathieuc/tradingview";
 import { createClient } from "redis";
 
-import {
-  applyCacheHeaders,
-  ErrorResponse,
-  SuccessResponse,
-} from "../../api-helpers/utils.js";
-import {
-  type BaseEndpointResponse,
-  type PriceData,
-} from "../../src/types/api.js";
+import { applyCacheHeaders, ErrorResponse, SuccessResponse } from "../../api-helpers/utils.js";
+import { type BaseEndpointResponse, type PriceData } from "../../src/types/api.js";
 
 const redis = await createClient({
   url: process.env.REDIS_URL,
@@ -93,9 +86,7 @@ export async function OPTIONS() {
   });
 }
 
-async function getCommodities(
-  client: TradingView.Client,
-): Promise<PriceData[]> {
+async function getCommodities(client: TradingView.Client): Promise<PriceData[]> {
   const commodities: Ticker[] = [
     {
       symbol: "XAU",
@@ -286,10 +277,7 @@ type GetPriceDataResponse = {
   change: number;
 };
 
-function getPriceData(
-  client: TradingView.Client,
-  ticker: Ticker,
-): Promise<GetPriceDataResponse> {
+function getPriceData(client: TradingView.Client, ticker: Ticker): Promise<GetPriceDataResponse> {
   return new Promise((resolve, reject) => {
     const chart = new client.Session.Chart();
 
@@ -306,9 +294,7 @@ function getPriceData(
 
       const data: GetPriceDataResponse = {
         current:
-          ticker.currency === "sats"
-            ? Number(current.toFixed(0))
-            : Number(current.toFixed(8)),
+          ticker.currency === "sats" ? Number(current.toFixed(0)) : Number(current.toFixed(8)),
         change: Number(percentageChange.toFixed(2)),
       };
 
@@ -319,11 +305,7 @@ function getPriceData(
 
     chart.onError((...error) => {
       reject(
-        new Error(
-          `Chart error for ${ticker.symbol}, ${ticker.priceSymbol}: ${error.join(
-            " ",
-          )}`,
-        ),
+        new Error(`Chart error for ${ticker.symbol}, ${ticker.priceSymbol}: ${error.join(" ")}`),
       );
 
       cleanup();

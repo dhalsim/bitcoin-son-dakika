@@ -46,9 +46,7 @@ const hexToEmoji = (hex: string): string => {
   // Handle compound emojis with multiple codepoints
   const codepoints = hex.split("-");
 
-  return codepoints
-    .map((code) => String.fromCodePoint(parseInt(code, 16)))
-    .join("");
+  return codepoints.map((code) => String.fromCodePoint(parseInt(code, 16))).join("");
 };
 
 const cache = getCache();
@@ -66,10 +64,7 @@ const saveEmojiUsage = (emoji: string) => {
   }
 };
 
-export function EmojiBoard({
-  onEmojiSelected,
-  onClose: _onClose,
-}: EmojiPickerProps) {
+export function EmojiBoard({ onEmojiSelected, onClose: _onClose }: EmojiPickerProps) {
   const [emojiData, setEmojiData] = useState<EmojiCategories>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -176,9 +171,7 @@ export function EmojiBoard({
           return (
             <Button
               key={category.key}
-              variant={
-                selectedCategory === category.key ? "outline" : "default"
-              }
+              variant={selectedCategory === category.key ? "outline" : "default"}
               size="sm"
               onClick={() => handleCategoryClick(category.key)}
               className="text-xs"
@@ -218,9 +211,7 @@ export function EmojiBoard({
       </ScrollArea>
 
       {Object.keys(filteredEmojis).length === 0 && (
-        <div className="text-center text-gray-500 py-8">
-          No emojis found matching your search.
-        </div>
+        <div className="text-center text-gray-500 py-8">No emojis found matching your search.</div>
       )}
     </div>
   );

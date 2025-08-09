@@ -4,11 +4,7 @@ import { extractAmountFromBolt11 } from "@/lib/nip57";
 
 import type { ExpandedReactionsProps } from "./types";
 
-export function ExpandedReactions({
-  reactionGroups,
-  profiles,
-  author,
-}: ExpandedReactionsProps) {
+export function ExpandedReactions({ reactionGroups, profiles, author }: ExpandedReactionsProps) {
   if (reactionGroups.length === 0) {
     return null;
   }
@@ -16,13 +12,8 @@ export function ExpandedReactions({
   return (
     <div className="pt-3 space-y-3 border-l-2 border-amber-700 bg-amber-50/30 rounded-r-lg pl-4">
       {reactionGroups.map((group) => (
-        <div
-          key={group.key}
-          className="grid grid-cols-[auto_auto_1fr] gap-3 items-center"
-        >
-          <span className={`flex items-center ${group.color}`}>
-            {group.icon}
-          </span>
+        <div key={group.key} className="grid grid-cols-[auto_auto_1fr] gap-3 items-center">
+          <span className={`flex items-center ${group.color}`}>{group.icon}</span>
 
           <span className="text-sm font-medium text-right min-w-[1rem] flex items-center">
             {group.count}
@@ -36,13 +27,9 @@ export function ExpandedReactions({
               let profile = profiles.get(pubkey);
 
               if (group.type === "zap") {
-                const Ptag = reactionEvent.tags.find(
-                  (tag) => tag[0] === "P",
-                )?.[1];
+                const Ptag = reactionEvent.tags.find((tag) => tag[0] === "P")?.[1];
 
-                const bolt11 = reactionEvent.tags.find(
-                  (tag) => tag[0] === "bolt11",
-                )?.[1];
+                const bolt11 = reactionEvent.tags.find((tag) => tag[0] === "bolt11")?.[1];
 
                 const zapRequestTag = reactionEvent.tags.find(
                   (tag) => tag[0] === "description",
@@ -75,17 +62,13 @@ export function ExpandedReactions({
                   // Create zap message for popup
                   profile = profiles[pubkey];
                   const zapperName =
-                    profile?.display_name ||
-                    profile?.name ||
-                    `${pubkey.slice(0, 8)}...`;
+                    profile?.display_name || profile?.name || `${pubkey.slice(0, 8)}...`;
 
-                  const zappedName =
-                    author?.display_name || `${author?.pubkey.slice(0, 8)}...`;
+                  const zappedName = author?.display_name || `${author?.pubkey.slice(0, 8)}...`;
 
                   zapMessage = (
                     <span>
-                      <strong>{zapperName}</strong> {zappedName}'ye {amount}{" "}
-                      Sats ⚡️ Gönderdi
+                      <strong>{zapperName}</strong> {zappedName}'ye {amount} Sats ⚡️ Gönderdi
                       {zapContent ? `, Mesaj: "${zapContent}"` : ""}
                     </span>
                   );

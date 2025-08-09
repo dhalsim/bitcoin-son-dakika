@@ -8,11 +8,7 @@ interface CategoryTagsProps {
   tagClassName?: string;
 }
 
-export function CategoryTags({
-  tags,
-  className = "",
-  tagClassName = "",
-}: CategoryTagsProps) {
+export function CategoryTags({ tags, className = "", tagClassName = "" }: CategoryTagsProps) {
   if (!tags || tags.length === 0) {
     return null;
   }

@@ -10,12 +10,7 @@ import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";
 import MainContent from "../components/MainContent";
 import { getDisplayName, ProfileAvatar } from "../components/ui/ProfileAvatar";
-import {
-  WEBSITE_NAME,
-  WEBSITE_DESCRIPTION,
-  WEBSITE_URL,
-  LOGO_URL,
-} from "../lib/constants";
+import { WEBSITE_NAME, WEBSITE_DESCRIPTION, WEBSITE_URL, LOGO_URL } from "../lib/constants";
 
 import NotFound from "./$";
 
@@ -59,9 +54,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw new Response("SSG data not available", { status: 500 });
   }
 
-  const newsItem = ssgData.news.find(
-    (article) => createTitleSlug(article.title) === slug,
-  );
+  const newsItem = ssgData.news.find((article) => createTitleSlug(article.title) === slug);
 
   if (!newsItem) {
     throw new Response("News item not found", { status: 404 });
@@ -78,8 +71,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
       { title: "Haber Bulunamadı - Bitcoin Son Dakika" },
       {
         name: "description",
-        content:
-          "Aradığınız haber bulunamadı. Ana sayfaya geri dönebilirsiniz.",
+        content: "Aradığınız haber bulunamadı. Ana sayfaya geri dönebilirsiniz.",
       },
     ];
   }
@@ -144,9 +136,7 @@ export default function NewsDetailPage() {
                   size="md"
                 />
                 <div>
-                  <div className="font-medium text-foreground">
-                    {displayName}
-                  </div>
+                  <div className="font-medium text-foreground">{displayName}</div>
                   <div className="text-xs">{time}</div>
                 </div>
               </div>

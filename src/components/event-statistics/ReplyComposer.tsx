@@ -1,8 +1,9 @@
-import { useRef } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+
 import { RichTextPreview } from "./RichTextPreview";
 import type { ReplyComposerProps } from "./types";
 
@@ -35,26 +36,15 @@ export function ReplyComposer({
       {/* Preview toggle */}
       {replyContent.trim() && (
         <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onShowPreviewToggle}
-            className="text-xs"
-          >
-            {showPreview ? (
-              <EyeOff className="h-3 w-3 mr-1" />
-            ) : (
-              <Eye className="h-3 w-3 mr-1" />
-            )}
+          <Button variant="ghost" size="sm" onClick={onShowPreviewToggle} className="text-xs">
+            {showPreview ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
             {showPreview ? "Hide Preview" : "Show Preview"}
           </Button>
         </div>
       )}
 
       {/* Preview */}
-      {showPreview && replyContent.trim() && (
-        <RichTextPreview content={replyContent} />
-      )}
+      {showPreview && replyContent.trim() && <RichTextPreview content={replyContent} />}
 
       {/* Action buttons */}
       <div className="flex justify-between items-center">

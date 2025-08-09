@@ -9,24 +9,28 @@ The zap functionality allows users to send Lightning payments to content creator
 ## Components
 
 ### 1. ZapDialog (`src/components/ZapDialog.tsx`)
+
 - Main dialog for initiating zaps
 - Allows users to select amount (preset or custom)
 - Optional comment field
 - Integrates with NIP-07 for signing zap requests
 
 ### 2. ZapInvoiceDialog (`src/components/ZapInvoiceDialog.tsx`)
+
 - Displays the Lightning invoice with QR code
 - Copy functionality for the invoice
 - Download QR code as SVG
 - Instructions for payment
 
 ### 3. Zap Utilities (`src/lib/zap-utils.ts`)
+
 - `createZap()`: Complete zap flow
 - `generateZapRequest()`: Creates zap request event (kind 9734)
 - `sendZapRequest()`: Sends request to LNURL callback
 - `hasUserZapped()`: Checks if user has zapped an event
 
 ### 4. Zap Receipt Handling (`src/lib/nip57.ts`)
+
 - `getZaps()`: Fetches and validates zap receipts (kind 9735)
 - `validateZapReceipt()`: Validates zap receipts
 - `extractAmountFromBolt11()`: Extracts amount from Lightning invoice
@@ -43,16 +47,19 @@ The zap functionality allows users to send Lightning payments to content creator
 ## Features
 
 ### Zap Indicators
+
 - Zap button shows filled icon when user has zapped
 - Orange color indicates user's zap
 - Real-time updates when new zaps are received
 
 ### QR Code Generation
+
 - Uses `qrcode` library for SVG generation
 - Downloadable QR codes
 - Copyable invoice text
 
 ### NIP-07 Integration
+
 - Requires NIP-07 extension for signing
 - Graceful fallback with error messages
 - Automatic pubkey detection
@@ -87,6 +94,7 @@ const { zaps, totalAmount, count } = useZapReceipts(event);
 ## Testing
 
 The implementation includes:
+
 - Error handling for missing NIP-07 extension
 - Validation of zap receipts
 - Real-time zap receipt listening
@@ -97,4 +105,4 @@ The implementation includes:
 - Zap receipts are validated according to NIP-57
 - Bolt11 invoices are parsed safely
 - NIP-07 extension is required for signing
-- No private keys are stored locally 
+- No private keys are stored locally

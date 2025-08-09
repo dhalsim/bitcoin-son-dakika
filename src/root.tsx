@@ -1,10 +1,4 @@
-import {
-  Outlet,
-  Links,
-  Meta,
-  Scripts,
-  isRouteErrorResponse,
-} from "react-router";
+import { Outlet, Links, Meta, Scripts, isRouteErrorResponse } from "react-router";
 import type { MetaFunction, LinksFunction } from "react-router";
 
 import turkishWindowNostrJs from "@/i18n/tr.json";

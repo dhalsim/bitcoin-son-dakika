@@ -1,49 +1,34 @@
-import {
-  Shield,
-  Key,
-  AlertCircle,
-  Loader2,
-  Users,
-  UserPlus,
-  Trash2,
-  RefreshCw,
-  Plus,
-  FileText,
-  Rocket,
-  X,
-  Upload,
-} from "lucide-react";
+import { Key, AlertCircle, Loader2 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
 import { nip19 } from "nostr-tools";
 import { useState, useEffect, useCallback } from "react";
 
+import AdminStatistics from "@/components/admin/AdminStatistics";
+import ArticleCuration from "@/components/admin/ArticleCuration";
+import DeployTrigger from "@/components/admin/DeployTrigger";
+import NewsComposer from "@/components/admin/NewsComposer";
+import NewsCuration from "@/components/admin/NewsCuration";
+import UserManagement from "@/components/admin/UserManagement";
+import { createNIP98Auth, validateNpub } from "@/components/admin/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { pool } from "@/lib/utils";
 
-import {
-  ADMIN_RELAYS,
-  PROFILE_RELAYS,
-  type PublishEventResponse,
-} from "../../api-helpers/utils";
+// Displayed while the route hydrates on initial load
+export function HydrateFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center p-8">
+      <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span>Yükleniyor...</span>
+      </div>
+    </div>
+  );
+}
+
+import { ADMIN_RELAYS, type PublishEventResponse } from "../../api-helpers/utils";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }
@@ -107,8 +92,7 @@ type Payload =
   | AddEditorPayload
   | PublishNewsPayload;
 
-const MASTER_ADMIN_PUBKEY =
-  "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
+const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
 interface AdminData {
   adminUsers: string[];
@@ -126,88 +110,14 @@ interface UserInfo {
   roles?: string[];
 }
 
-const CATEGORY_OPTIONS = [
-  "bitcoin",
-  "nostr",
-  "analiz",
-  "piyasa",
-  "teknoloji",
-  "ekonomi",
-  "regülasyon",
-  "mining",
-  "defi",
-  "nft",
-  "ethereum",
-  "altcoin",
-  "güvenlik",
-  "eğitim",
-  "haber",
-  "geliştirme",
-];
-
-type NpubValidationResult =
-  | {
-      valid: true;
-      pubkey: string;
-    }
-  | {
-      valid: false;
-      error: string;
-    };
-
-const validateNpub = (npub: string): NpubValidationResult => {
-  const decoded = nip19.decode(npub);
-
-  if (decoded.type !== "npub") {
-    return {
-      valid: false,
-      error: "Adres npub formatında olmalıdır",
-    };
-  }
-
-  return {
-    valid: true,
-    pubkey: decoded.data,
-  };
-};
-
 export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
   const [adminData, setAdminData] = useState<AdminData | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo>({});
   const [error, setError] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<string>("");
-  const [deployLoading, setDeployLoading] = useState(false);
-  const [deploySuccess, setDeploySuccess] = useState(false);
 
-  // Form states
-  const [newAdminNpub, setNewAdminNpub] = useState("");
-  const [newEditorNpub, setNewEditorNpub] = useState("");
-
-  // News form states
-  const [newsEventId, setNewsEventId] = useState("");
-  const [newsRelay, setNewsRelay] = useState("");
-
-  // Article form states
-  const [articleInputMethod, setArticleInputMethod] = useState<
-    "naddr" | "fields"
-  >("naddr");
-  const [articleNaddr, setArticleNaddr] = useState("");
-  const [articleNpub, setArticleNpub] = useState("");
-  const [articleDTag, setArticleDTag] = useState("");
-  const [articleRelay, setArticleRelay] = useState("");
-
-  const [publishSuccess, setPublishSuccess] =
-    useState<PublishEventResponse | null>(null);
-
-  // News creation form states
-  const [newsContent, setNewsContent] = useState("");
-  const [newsTitle, setNewsTitle] = useState("");
-  const [newsSummary, setNewsSummary] = useState("");
-  const [newsImageUrl, setNewsImageUrl] = useState("");
-  const [_newsImageFile, setNewsImageFile] = useState<File | null>(null);
-  const [newsTags, setNewsTags] = useState<string[]>([]);
-  const [newsPublishLoading, setNewsPublishLoading] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState<PublishEventResponse | null>(null);
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
@@ -265,9 +175,7 @@ export default function AdminPanel() {
             const adminUsersEvent = events.get("admin-users");
 
             if (!adminUsersEvent) {
-              setError(
-                "Admin kullanıcılarını yüklerken hata oluştu, logları kontrol ediniz",
-              );
+              setError("Admin kullanıcılarını yüklerken hata oluştu, logları kontrol ediniz");
               setLoading(false);
 
               return;
@@ -276,9 +184,7 @@ export default function AdminPanel() {
             const editorUsersEvent = events.get("editor-users");
 
             if (!editorUsersEvent) {
-              setError(
-                "Editör kullanıcılarını yüklerken hata oluştu, logları kontrol ediniz",
-              );
+              setError("Editör kullanıcılarını yüklerken hata oluştu, logları kontrol ediniz");
               setLoading(false);
 
               return;
@@ -287,9 +193,7 @@ export default function AdminPanel() {
             const newsEvent = events.get("news");
 
             if (!newsEvent) {
-              setError(
-                "Haberleri yüklerken hata oluştu, logları kontrol ediniz",
-              );
+              setError("Haberleri yüklerken hata oluştu, logları kontrol ediniz");
               setLoading(false);
 
               return;
@@ -298,9 +202,7 @@ export default function AdminPanel() {
             const articlesEvent = events.get("articles");
 
             if (!articlesEvent) {
-              setError(
-                "Makaleleri yüklerken hata oluştu, logları kontrol ediniz",
-              );
+              setError("Makaleleri yüklerken hata oluştu, logları kontrol ediniz");
               setLoading(false);
 
               return;
@@ -386,30 +288,11 @@ export default function AdminPanel() {
     checkUserInfo();
   }, []);
 
-  const createNIP98Auth = async (method: string, url: string) => {
-    if (!window.nostr || !userInfo.pubkey) {
-      throw new Error("Nostr uzantısı gerekli");
-    }
-
-    const authEvent = {
-      kind: 27235,
-      created_at: Math.floor(Date.now() / 1000),
-      tags: [
-        ["u", url],
-        ["method", method],
-      ],
-      content: "",
-      pubkey: userInfo.pubkey,
-    };
-
-    const signedEvent = await window.nostr.signEvent(authEvent);
-
-    return `Nostr ${btoa(JSON.stringify(signedEvent))}`;
-  };
-
   const performAction = async (data: Payload) => {
     setActionLoading(data.action);
+
     setError("");
+
     setPublishSuccess(null);
 
     try {
@@ -429,6 +312,7 @@ export default function AdminPanel() {
 
       if (result.success) {
         await loadAdminData();
+
         setPublishSuccess(result);
       } else {
         setError(result.error || "İşlem başarısız");
@@ -440,217 +324,43 @@ export default function AdminPanel() {
     }
   };
 
-  const addAdmin = () => {
-    if (!newAdminNpub.trim()) {
-      return;
-    }
-
-    const validation = validateNpub(newAdminNpub.trim());
-
-    if (validation.valid === false) {
-      setError(validation.error);
-
-      return;
-    }
-
-    performAction({
-      action: "add-admin-pubkey",
-      pubkey: validation.pubkey,
-    });
-
-    // Clear the input on success
-    setNewAdminNpub("");
-  };
-
-  const removeAdmin = (pubkey: string) => {
-    performAction({ action: "remove-admin-pubkey", pubkey });
-  };
-
-  const addEditor = () => {
-    if (!newEditorNpub.trim()) {
-      return;
-    }
-
-    const validation = validateNpub(newEditorNpub.trim());
-
-    if (validation.valid === false) {
-      setError(validation.error);
-
-      return;
-    }
-
-    performAction({
-      action: "add-editor-pubkey",
-      pubkey: validation.pubkey,
-    });
-
-    // Clear the input on success
-    setNewEditorNpub("");
-  };
-
-  const removeEditor = (pubkey: string) => {
-    performAction({ action: "remove-editor-pubkey", pubkey });
-  };
-
-  const addNews = () => {
-    if (!newsEventId.trim() || !newsRelay.trim()) {
-      return;
-    }
-
-    performAction({
-      action: "add-news",
-      eventId: newsEventId.trim(),
-      relay: newsRelay.trim(),
-    });
-  };
-
-  const addArticle = async () => {
-    if (articleInputMethod === "naddr") {
-      if (!articleNaddr.trim()) {
-        setError("NAddr gerekli");
-
-        return;
-      }
-
-      await performAction({
-        action: "add-article",
-        type: "naddr",
-        naddr: articleNaddr.trim(),
-      });
-    } else {
-      if (!articleNpub.trim() || !articleDTag.trim() || !articleRelay.trim()) {
-        setError("Yazar Npub, D Tag ve Relay gerekli");
-
-        return;
-      }
-
-      const validation = validateNpub(articleNpub.trim());
-      if (validation.valid === false) {
-        setError(validation.error);
-
-        return;
-      }
-
-      const aTag = `30023:${validation.pubkey}:${articleDTag.trim()}`;
-      await performAction({
-        action: "add-article",
-        type: "a",
-        a: aTag,
-        relay: articleRelay.trim(),
-      });
-    }
-
-    // Clear form
-    setArticleNaddr("");
-    setArticleNpub("");
-    setArticleDTag("");
-    setArticleRelay("");
-  };
-
-  const removeNews = (eventId: string, relay: string) => {
-    performAction({
-      action: "remove-news",
-      eventId,
-      relay,
-    });
-  };
-
-  const removeArticle = (aTag: string, relay: string) => {
-    performAction({
-      action: "remove-article",
-      aTag,
-      relay,
-    });
-  };
-
-  const triggerDeploy = async () => {
-    setDeployLoading(true);
-    setError("");
-    setDeploySuccess(false);
-
+  const uploadToX = async (blobFromChild?: Blob) => {
     try {
-      const authHeader = await createNIP98Auth(
-        "POST",
-        `${window.location.origin}/api/admin/trigger-deploy`,
-      );
+      const blob = blobFromChild;
+      if (!blob) {
+        setError("Görsel oluşturulamadı");
+
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("action", "upload-to-x");
+      formData.append("file", new File([blob], "post.png", { type: "image/png" }));
+
+      const authHeader = await createNIP98Auth("POST", `${window.location.origin}/api/admin`);
 
       const response = await fetch("/api/admin", {
         method: "POST",
-        body: JSON.stringify({
-          action: "trigger-deploy",
-        }),
         headers: {
-          "Content-Type": "application/json",
           Authorization: authHeader,
         },
+        body: formData,
       });
 
       const result = await response.json();
+      if (!result.success) {
+        setError(result.error || "X yükleme başarısız");
 
-      if (result.success) {
-        setDeploySuccess(true);
-        setTimeout(() => setDeploySuccess(false), 5000); // Clear success message after 5 seconds
-      } else {
-        setError(result.error || "Deploy tetikleme başarısız");
+        return;
       }
+
+      setPublishSuccess((prev) => ({
+        ...(prev as any),
+        xMediaId: result.media_id,
+      }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Deploy tetikleme hatası");
-    } finally {
-      setDeployLoading(false);
+      setError(err instanceof Error ? err.message : "X yükleme hatası");
     }
-  };
-
-  const publishNews = async () => {
-    if (!newsContent.trim() || !newsTitle.trim()) {
-      setError("İçerik ve başlık alanları zorunludur");
-
-      return;
-    }
-
-    setNewsPublishLoading(true);
-    setError("");
-
-    try {
-      const payload: PublishNewsPayload = {
-        action: "publish-news",
-        content: newsContent.trim(),
-        title: newsTitle.trim(),
-        tags: newsTags,
-      };
-
-      // Add optional fields if provided
-      if (newsSummary.trim()) {
-        payload.summary = newsSummary.trim();
-      }
-
-      if (newsImageUrl.trim()) {
-        payload.image = newsImageUrl.trim();
-      }
-
-      await performAction(payload);
-
-      // Clear form on success
-      setNewsContent("");
-      setNewsTitle("");
-      setNewsSummary("");
-      setNewsImageUrl("");
-      setNewsImageFile(null);
-      setNewsTags([]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Haber yayınlama hatası");
-    } finally {
-      setNewsPublishLoading(false);
-    }
-  };
-
-  const addTag = (tag: string) => {
-    if (tag.trim() && !newsTags.includes(tag.trim())) {
-      setNewsTags([...newsTags, tag.trim()]);
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setNewsTags(newsTags.filter((tag) => tag !== tagToRemove));
   };
 
   if (loading) {
@@ -664,22 +374,16 @@ export default function AdminPanel() {
     );
   }
 
-  const userIsAdmin =
-    userInfo.pubkey && adminData?.adminUsers.includes(userInfo.pubkey);
-  const userIsEditor =
-    userInfo.pubkey && adminData?.editorUsers.includes(userInfo.pubkey);
+  const userIsAdmin = userInfo.pubkey && adminData?.adminUsers.includes(userInfo.pubkey);
+  const userIsEditor = userInfo.pubkey && adminData?.editorUsers.includes(userInfo.pubkey);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
-            Yönetim Paneli
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Bitcoin Son Dakika - İçerik Yönetimi
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Yönetim Paneli</h1>
+          <p className="text-gray-600 dark:text-gray-400">Bitcoin Son Dakika - İçerik Yönetimi</p>
 
           {publishSuccess && (
             <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
@@ -690,9 +394,7 @@ export default function AdminPanel() {
                 <p>Gönderilen eventler:</p>
                 {publishSuccess.result.map((result) => {
                   if (result.success) {
-                    return (
-                      <p key={result.relay}>"Başarılı" ({result.relay})</p>
-                    );
+                    return <p key={result.relay}>"Başarılı" ({result.relay})</p>;
                   } else {
                     return (
                       <p key={result.relay} className="text-red-500">
@@ -718,8 +420,7 @@ export default function AdminPanel() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                İşlem yapmak için Nostr uzantısı gerekli. Veriler görüntüleme
-                genel erişime açıktır.
+                İşlem yapmak için Nostr uzantısı gerekli. Veriler görüntüleme genel erişime açıktır.
               </AlertDescription>
             </Alert>
           )}
@@ -733,755 +434,75 @@ export default function AdminPanel() {
           </Alert>
         )}
 
-        {/* Admin Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <Shield className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    {adminData?.adminUsers.length || 0}
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Yöneticiler
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <Users className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    {adminData?.editorUsers.length || 0}
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-400">Editörler</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <AlertCircle className="h-8 w-8 text-orange-500" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    {adminData?.news.length || 0}
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-400">Haberler</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <RefreshCw className="h-8 w-8 text-purple-500" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    {adminData?.articles.length || 0}
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-400">Makaleler</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Bitcoinsondakika olarak Haber Gir - Show if user is editor */}
-        {userIsEditor && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Bitcoinsondakika olarak Haber Gir
-              </CardTitle>
-              <CardDescription>
-                Yeni bir haber içeriği oluştur ve doğrudan yayınla
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Content Column */}
-                <div className="space-y-4">
-                  <div>
-                    <Label
-                      htmlFor="newsContent"
-                      className="text-base font-medium"
-                    >
-                      Haber İçeriği *
-                    </Label>
-                    <Textarea
-                      id="newsContent"
-                      placeholder="Haberinizin içeriğini buraya yazın..."
-                      value={newsContent}
-                      onChange={(e) => setNewsContent(e.target.value)}
-                      className="min-h-[300px] resize-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Metadata Column */}
-                <div className="space-y-4">
-                  {/* Title */}
-                  <div>
-                    <Label
-                      htmlFor="newsTitle"
-                      className="text-base font-medium"
-                    >
-                      Başlık *
-                    </Label>
-                    <Input
-                      id="newsTitle"
-                      placeholder="Haber başlığı"
-                      value={newsTitle}
-                      onChange={(e) => setNewsTitle(e.target.value)}
-                    />
-                  </div>
-
-                  {/* Summary */}
-                  <div>
-                    <Label
-                      htmlFor="newsSummary"
-                      className="text-base font-medium"
-                    >
-                      Özet (İsteğe bağlı)
-                    </Label>
-                    <Textarea
-                      id="newsSummary"
-                      placeholder="Haberin kısa özeti..."
-                      value={newsSummary}
-                      onChange={(e) => setNewsSummary(e.target.value)}
-                      className="min-h-[80px] resize-none"
-                    />
-                  </div>
-
-                  {/* Image */}
-                  <div>
-                    <Label className="text-base font-medium">Görsel</Label>
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Görsel URL'si"
-                        value={newsImageUrl}
-                        onChange={(e) => setNewsImageUrl(e.target.value)}
-                      />
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                          disabled
-                        >
-                          <Upload className="h-4 w-4" />
-                          Dosya Yükle
-                        </Button>
-                        <span className="text-sm text-gray-500">
-                          (Yakında eklenecek)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Tags */}
-                  <div>
-                    <Label className="text-base font-medium">Etiketler</Label>
-                    <div className="space-y-2">
-                      <Select onValueChange={addTag}>
-                        <SelectTrigger className="bg-white dark:bg-gray-800">
-                          <SelectValue placeholder="Etiket ekle" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {CATEGORY_OPTIONS.filter(
-                            (tag) => !newsTags.includes(tag),
-                          ).map((tag) => (
-                            <SelectItem key={tag} value={tag}>
-                              {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      {/* Selected Tags */}
-                      {newsTags.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {newsTags.map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="secondary"
-                              className="flex items-center gap-1"
-                            >
-                              {tag}
-                              <button
-                                onClick={() => removeTag(tag)}
-                                className="ml-1 hover:text-red-500"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Publish Button */}
-                  <div className="pt-4">
-                    <Button
-                      onClick={publishNews}
-                      disabled={
-                        newsPublishLoading ||
-                        !newsContent.trim() ||
-                        !newsTitle.trim()
-                      }
-                      className="w-full"
-                      size="lg"
-                    >
-                      {newsPublishLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Yayınlanıyor...
-                        </>
-                      ) : (
-                        <>
-                          <Rocket className="h-4 w-4 mr-2" />
-                          Haberi Yayınla
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Content Curation - Show if user is editor */}
-        {(userIsEditor || userIsAdmin) && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* News Management */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5" />
-                    Haber Küratörlüğü ({adminData?.news.length || 0})
-                  </CardTitle>
-                  <CardDescription>
-                    Küratörlenen haber içerikleri, Son güncelleme:{" "}
-                    {new Date(
-                      adminData?.newsLastTimeUpdated || 0,
-                    ).toLocaleString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    {adminData?.news.length === 0 ? (
-                      <p className="text-gray-500 text-sm">
-                        Henüz haber eklenmemiş
-                      </p>
-                    ) : (
-                      adminData?.news.map((newsItem) => (
-                        <div
-                          key={`${newsItem.eTag}-${newsItem.relay}`}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                        >
-                          <div>
-                            <a
-                              className="font-mono text-sm"
-                              href={`https://njump.me/${nip19.neventEncode({
-                                id: newsItem.eTag,
-                                relays: [newsItem.relay],
-                              })}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {newsItem.eTag.substring(0, 6)}...
-                              {newsItem.eTag.substring(
-                                newsItem.eTag.length - 6,
-                                newsItem.eTag.length,
-                              )}
-                            </a>
-                          </div>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            disabled={actionLoading === "remove-news"}
-                            onClick={() =>
-                              removeNews(newsItem.eTag, newsItem.relay)
-                            }
-                          >
-                            {actionLoading === "remove-news" ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  <div className="space-y-3 pt-4 border-t">
-                    <Label htmlFor="newsEventId">Yeni Haber Ekle</Label>
-                    <Input
-                      id="newsEventId"
-                      placeholder="Event ID girin"
-                      value={newsEventId}
-                      onChange={(e) => setNewsEventId(e.target.value)}
-                    />
-                    <Input
-                      placeholder="Relay URL"
-                      value={newsRelay}
-                      onChange={(e) => setNewsRelay(e.target.value)}
-                    />
-                    <Button
-                      className="w-full"
-                      variant="secondary"
-                      disabled={
-                        !newsEventId.trim() ||
-                        !newsRelay.trim() ||
-                        actionLoading === "add-news"
-                      }
-                      onClick={addNews}
-                    >
-                      {actionLoading === "add-news" ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4 mr-2" />
-                      )}
-                      Haber Ekle
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Article Management */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <RefreshCw className="h-5 w-5" />
-                    Makale Küratörlüğü ({adminData?.articles.length || 0})
-                  </CardTitle>
-                  <CardDescription>
-                    Küratörlenen makale içerikleri, Son güncelleme:{" "}
-                    {new Date(
-                      adminData?.articlesLastTimeUpdated || 0,
-                    ).toLocaleString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    {adminData?.articles.length === 0 ? (
-                      <p className="text-gray-500 text-sm">
-                        Henüz makale eklenmemiş
-                      </p>
-                    ) : (
-                      adminData?.articles.map((articleItem) => {
-                        const [kind, pubkey, dTag] =
-                          articleItem.aTag.split(":");
-
-                        return (
-                          <div
-                            key={`${articleItem.aTag}-${articleItem.relay}`}
-                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                          >
-                            <div>
-                              <a
-                                className="font-mono text-sm"
-                                href={`https://njump.me/${nip19.naddrEncode({
-                                  identifier: dTag,
-                                  kind: Number(kind),
-                                  pubkey: pubkey,
-                                })}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {articleItem.aTag.substring(0, 6)}...
-                                {articleItem.aTag.substring(
-                                  articleItem.aTag.length - 6,
-                                  articleItem.aTag.length,
-                                )}
-                              </a>
-                            </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              disabled={actionLoading === "remove-article"}
-                              onClick={() =>
-                                removeArticle(
-                                  articleItem.aTag,
-                                  articleItem.relay,
-                                )
-                              }
-                            >
-                              {actionLoading === "remove-article" ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  <div className="space-y-3 pt-4 border-t">
-                    <Label>Yeni Makale Ekle</Label>
-
-                    {/* Input Method Toggle */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant={
-                          articleInputMethod === "naddr" ? "default" : "outline"
-                        }
-                        size="sm"
-                        onClick={() => setArticleInputMethod("naddr")}
-                      >
-                        NAddr Girişi
-                      </Button>
-                      <Button
-                        variant={
-                          articleInputMethod === "fields"
-                            ? "default"
-                            : "outline"
-                        }
-                        size="sm"
-                        onClick={() => setArticleInputMethod("fields")}
-                      >
-                        Manuel Giriş
-                      </Button>
-                    </div>
-
-                    {articleInputMethod === "naddr" ? (
-                      <div className="space-y-3">
-                        <Input
-                          placeholder="naddr1..."
-                          value={articleNaddr}
-                          onChange={(e) => setArticleNaddr(e.target.value)}
-                        />
-                        <p className="text-sm text-gray-500">
-                          NAddr formatında makale adresini girin
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        <div>
-                          <Input
-                            placeholder="npub1..."
-                            value={articleNpub}
-                            onChange={(e) => setArticleNpub(e.target.value)}
-                          />
-                          <p className="text-sm text-gray-500">
-                            Npub formatında yazar adresini girin (örn: npub1...)
-                          </p>
-                          {userInfo.pubkey && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                // Convert user's pubkey to npub format
-                                const userNpub = nip19.npubEncode(
-                                  userInfo.pubkey,
-                                );
-
-                                setArticleNpub(userNpub);
-                              }}
-                              className="mt-1"
-                            >
-                              Kendi npub'imi kullan
-                            </Button>
-                          )}
-                        </div>
-
-                        <Input
-                          placeholder="D Tag (Makale ID)"
-                          value={articleDTag}
-                          onChange={(e) => setArticleDTag(e.target.value)}
-                        />
-
-                        <Input
-                          placeholder="wss://relay.example.com (isteğe bağlı)"
-                          value={articleRelay}
-                          onChange={(e) => setArticleRelay(e.target.value)}
-                        />
-
-                        <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                          <p className="text-sm text-blue-700 dark:text-blue-300">
-                            <strong>A Tag Preview:</strong>{" "}
-                            {articleNpub && articleDTag
-                              ? (() => {
-                                  const validation = validateNpub(articleNpub);
-
-                                  if (validation.valid) {
-                                    return `30023:${validation.pubkey}:${articleDTag}`;
-                                  } else {
-                                    return "Geçersiz npub formatı";
-                                  }
-                                })()
-                              : "Npub ve D Tag gerekli"}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <Button
-                      className="w-full"
-                      disabled={
-                        actionLoading === "add-article" ||
-                        (articleInputMethod === "naddr"
-                          ? !articleNaddr.trim()
-                          : !articleNpub.trim() || !articleDTag.trim())
-                      }
-                      onClick={addArticle}
-                    >
-                      {actionLoading === "add-article" ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <FileText className="h-4 w-4 mr-2" />
-                      )}
-                      Makale Ekle
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Deploy Trigger Section */}
-            {userIsAdmin && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Rocket className="h-5 w-5" />
-                    Site Deployment
-                  </CardTitle>
-                  <CardDescription>
-                    Değişiklikleri canlı siteye uygula
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {deploySuccess && (
-                    <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-                      <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      <AlertDescription className="text-green-800 dark:text-green-300">
-                        Deploy başarıyla tetiklendi! Site birkaç dakika içinde
-                        güncellenecek.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="flex items-center gap-4">
-                    <Button
-                      onClick={triggerDeploy}
-                      disabled={deployLoading}
-                      className="flex items-center gap-2"
-                    >
-                      {deployLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Rocket className="h-4 w-4" />
-                      )}
-                      {deployLoading
-                        ? "Deploy Tetikleniyor..."
-                        : "Deploy Tetikle"}
-                    </Button>
-
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Son değişiklikleri canlı siteye uygular
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+        <Tabs defaultValue="stats" className="mt-6">
+          <TabsList className="flex flex-wrap gap-2">
+            <TabsTrigger value="stats">İstatistikler</TabsTrigger>
+            {userIsEditor && <TabsTrigger value="compose">Haber Yayınla</TabsTrigger>}
+            {(userIsEditor || userIsAdmin) && (
+              <TabsTrigger value="news">Haber Kürasyonu</TabsTrigger>
             )}
-          </div>
-        )}
+            {(userIsEditor || userIsAdmin) && (
+              <TabsTrigger value="articles">Makale Kürasyonu</TabsTrigger>
+            )}
+            {userIsEditor && <TabsTrigger value="deploy">Deploy</TabsTrigger>}
+            {userIsAdmin && <TabsTrigger value="users">Kullanıcılar</TabsTrigger>}
+          </TabsList>
 
-        {/* Admin Management - Only show if user is admin */}
-        {userIsAdmin && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Admin Users Management */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    Yöneticiler ({adminData?.adminUsers.length || 0})
-                  </CardTitle>
-                  <CardDescription>
-                    Kullanıcı ekleyip çıkarabilir, Son güncelleme:{" "}
-                    {new Date(
-                      adminData?.adminsLastTimeUpdated || 0,
-                    ).toLocaleString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    {adminData?.adminUsers.map((pubkey) => (
-                      <div
-                        key={pubkey}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                      >
-                        <a
-                          className="font-mono text-sm"
-                          href={`https://njump.me/${nip19.nprofileEncode({
-                            pubkey: pubkey,
-                            relays: PROFILE_RELAYS,
-                          })}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {pubkey.substring(0, 6)}...
-                          {pubkey.substring(pubkey.length - 6, pubkey.length)}
-                        </a>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={
-                            actionLoading === "remove-admin-pubkey" ||
-                            adminData.adminUsers.length === 1
-                          }
-                          onClick={() => removeAdmin(pubkey)}
-                        >
-                          {actionLoading === "remove-admin-pubkey" ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+          <TabsContent value="stats">
+            <AdminStatistics adminData={adminData as any} />
+          </TabsContent>
 
-                  <div className="space-y-3 pt-4 border-t">
-                    <Label htmlFor="newAdminNpub">
-                      Yeni Yönetici Ekle (npub)
-                    </Label>
-                    <Input
-                      id="newAdminNpub"
-                      placeholder="npub1..."
-                      value={newAdminNpub}
-                      onChange={(e) => setNewAdminNpub(e.target.value)}
-                    />
-                    <p className="text-sm text-gray-500">
-                      Npub formatında kullanıcı adresini girin (örn: npub1...)
-                    </p>
-                    <Button
-                      className="w-full"
-                      disabled={
-                        !newAdminNpub.trim() ||
-                        actionLoading === "add-admin-pubkey"
-                      }
-                      onClick={addAdmin}
-                    >
-                      {actionLoading === "add-admin-pubkey" ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <UserPlus className="h-4 w-4 mr-2" />
-                      )}
-                      Yönetici Ekle
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+          {userIsEditor && (
+            <TabsContent value="compose">
+              <NewsComposer performAction={performAction} onUploadToX={uploadToX} />
+            </TabsContent>
+          )}
 
-              {/* Editor Users Management */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Editörler ({adminData?.editorUsers.length || 0})
-                  </CardTitle>
-                  <CardDescription>
-                    İçerik yayınlayabilir ve deploy tetikleyebilir, Son
-                    güncelleme:{" "}
-                    {new Date(
-                      adminData?.editorsLastTimeUpdated || 0,
-                    ).toLocaleString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    {adminData?.editorUsers.map((pubkey) => (
-                      <div
-                        key={pubkey}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                      >
-                        <a
-                          className="font-mono text-sm"
-                          href={`https://njump.me/${nip19.nprofileEncode({
-                            pubkey: pubkey,
-                            relays: PROFILE_RELAYS,
-                          })}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {pubkey.substring(0, 6)}...
-                          {pubkey.substring(pubkey.length - 6, pubkey.length)}
-                        </a>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          disabled={actionLoading === "remove-editor-pubkey"}
-                          onClick={() => removeEditor(pubkey)}
-                        >
-                          {actionLoading === "remove-editor-pubkey" ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+          {(userIsEditor || userIsAdmin) && (
+            <TabsContent value="news">
+              <NewsCuration
+                news={adminData?.news || []}
+                lastUpdated={adminData?.newsLastTimeUpdated || 0}
+                performAction={performAction}
+                reload={loadAdminData}
+              />
+            </TabsContent>
+          )}
 
-                  <div className="space-y-3 pt-4 border-t">
-                    <Label htmlFor="newEditorNpub">
-                      Yeni Editör Ekle (npub)
-                    </Label>
-                    <Input
-                      id="newEditorNpub"
-                      placeholder="npub1..."
-                      value={newEditorNpub}
-                      onChange={(e) => setNewEditorNpub(e.target.value)}
-                    />
-                    <p className="text-sm text-gray-500">
-                      Npub formatında kullanıcı adresini girin (örn: npub1...)
-                    </p>
-                    <Button
-                      className="w-full"
-                      variant="secondary"
-                      disabled={
-                        !newEditorNpub.trim() ||
-                        actionLoading === "add-editor-pubkey"
-                      }
-                      onClick={addEditor}
-                    >
-                      {actionLoading === "add-editor-pubkey" ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <UserPlus className="h-4 w-4 mr-2" />
-                      )}
-                      Editör Ekle
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
+          {(userIsEditor || userIsAdmin) && (
+            <TabsContent value="articles">
+              <ArticleCuration
+                articles={adminData?.articles || []}
+                lastUpdated={adminData?.articlesLastTimeUpdated || 0}
+                performAction={performAction}
+                reload={loadAdminData}
+                userNpub={userInfo.pubkey ? nip19.npubEncode(userInfo.pubkey) : undefined}
+              />
+            </TabsContent>
+          )}
+
+          {userIsEditor && (
+            <TabsContent value="deploy">
+              <DeployTrigger />
+            </TabsContent>
+          )}
+
+          {userIsAdmin && (
+            <TabsContent value="users">
+              <UserManagement
+                adminUsers={adminData?.adminUsers || []}
+                editorUsers={adminData?.editorUsers || []}
+                performAction={performAction}
+              />
+            </TabsContent>
+          )}
+        </Tabs>
 
         {/* No permissions message */}
         {userInfo.pubkey && !userIsAdmin && !userIsEditor && (
           <Alert>
             <AlertDescription>
-              Bu hesap için henüz yetki tanımlanmamış. Yöneticiden yetki talep
-              edin.
+              Bu hesap için henüz yetki tanımlanmamış. Yöneticiden yetki talep edin.
             </AlertDescription>
           </Alert>
         )}

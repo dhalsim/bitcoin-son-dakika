@@ -52,10 +52,7 @@ function processNewsEvent(event: EventItem, author: ProfileItem): NewsItem {
   };
 }
 
-function processArticleEvent(
-  event: EventItem,
-  author: ProfileItem,
-): ArticleItem {
+function processArticleEvent(event: EventItem, author: ProfileItem): ArticleItem {
   const titleTag = event.tags.find((tag) => tag[0] === "title");
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
   const dTag = event.tags.find((tag) => tag[0] === "d");
@@ -114,9 +111,7 @@ export async function fetchSSGData(): Promise<SSGData> {
     ),
   ]);
 
-  const profilePubkeys = new Set(
-    [...newsEvents, ...articlesEvents].map((item) => item.pubkey),
-  );
+  const profilePubkeys = new Set([...newsEvents, ...articlesEvents].map((item) => item.pubkey));
 
   const profileEvents = await getProfileEvents(Array.from(profilePubkeys));
 
@@ -124,9 +119,7 @@ export async function fetchSSGData(): Promise<SSGData> {
     const profile = profileEvents.get(ne.pubkey);
 
     if (!profile) {
-      throw new Error(
-        `Author not found or profile can't be parsed: ${ne.pubkey}`,
-      );
+      throw new Error(`Author not found or profile can't be parsed: ${ne.pubkey}`);
     }
 
     const relayHintTag = newsTags.find((tag) => tag.eTag === ne.id);
@@ -142,9 +135,7 @@ export async function fetchSSGData(): Promise<SSGData> {
     const profile = profileEvents.get(ae.pubkey);
 
     if (!profile) {
-      throw new Error(
-        `Author not found or profile can't be parsed: ${ae.pubkey}`,
-      );
+      throw new Error(`Author not found or profile can't be parsed: ${ae.pubkey}`);
     }
 
     const dTag = ae.tags.find((tag) => tag[0] === "d");
@@ -168,9 +159,7 @@ export async function fetchSSGData(): Promise<SSGData> {
   newsItems.sort((a, b) => b.publishedAt - a.publishedAt);
   articleItems.sort((a, b) => b.publishedAt - a.publishedAt);
 
-  console.log(
-    `Fetched ${newsItems.length} news items and ${articleItems.length} articles`,
-  );
+  console.log(`Fetched ${newsItems.length} news items and ${articleItems.length} articles`);
 
   return {
     news: newsItems,
@@ -179,9 +168,7 @@ export async function fetchSSGData(): Promise<SSGData> {
   };
 }
 
-export function getProfileEvents(
-  profilePubkeys: string[],
-): Promise<Map<string, ProfileItem>> {
+export function getProfileEvents(profilePubkeys: string[]): Promise<Map<string, ProfileItem>> {
   return new Promise((resolve) => {
     getProfiles({
       authors: profilePubkeys,
@@ -266,14 +253,10 @@ export function getDisplayName(profile: ProfileItem, pubkey: string) {
 }
 
 // Helper function to find profile by slug
-export function findProfileBySlug(
-  ssgData: SSGData,
-  slug: string,
-): ProfileItem | undefined {
+export function findProfileBySlug(ssgData: SSGData, slug: string): ProfileItem | undefined {
   const profiles = getUniqueProfiles(ssgData);
 
   return profiles.find(
-    (profile) =>
-      createProfileSlug(getDisplayName(profile, profile.pubkey)) === slug,
+    (profile) => createProfileSlug(getDisplayName(profile, profile.pubkey)) === slug,
   );
 }

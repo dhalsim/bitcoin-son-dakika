@@ -1,6 +1,7 @@
 # Son Bitcoin Haberleri
 
 ---
+
 Title: Spot Bitcoin ETF'lerinde net girişler yeniden hızlandı
 Summary: ABD'deki spot Bitcoin ETF'lerine birkaç gün aradan sonra yeniden net para girişi görüldü; bu, kurumsal talebin sürdüğüne işaret ediyor.
 Content:
@@ -12,6 +13,7 @@ Tags: bitcoin, piyasa, ekonomi, analiz, haber
 Source: https://farside.co.uk/btc/
 
 ---
+
 Title: Bitcoin madencilik zorluğu ve hash rate rekor tazeledi
 Summary: Madencilik zorluğu ve toplam ağ hesaplama gücü tüm zamanların en yüksek seviyelerine yakın seyrediyor; halving sonrası verimlilik ve ölçek artışı dikkat çekiyor.
 Content:
@@ -22,6 +24,7 @@ Tags: bitcoin, mining, teknoloji, ekonomi, haber
 Source: https://www.btc.com/stats/diff
 
 ---
+
 Title: MicroStrategy birikimli Bitcoin alımlarını artırdığını duyurdu
 Summary: MicroStrategy, kurumsal hazine stratejisi kapsamında Bitcoin birikimini büyütmeye devam ettiğini ve uzun vadeli tutma planını yinelediğini açıkladı.
 Content:
@@ -32,6 +35,7 @@ Tags: bitcoin, ekonomi, analiz, haber
 Source: https://www.microstrategy.com/en/investor-relations/bitcoin
 
 ---
+
 Title: Lightning Network kullanımında büyüme sinyalleri
 Summary: Ödeme odaklı uygulamalar ve borsalar, Lightning Network entegrasyonlarını genişletirken düşük ücretli anlık ödemeler için yeni kullanım alanları öne çıkıyor.
 Content:
@@ -42,6 +46,7 @@ Tags: bitcoin, teknoloji, geliştirme, haber
 Source: https://river.com/lightning-network/
 
 ---
+
 Title: Fiyat dalgalanması sürerken piyasa odağı makro ve likiditeye çevrildi
 Summary: Bitcoin fiyatı kısa vadede geniş bantta dalgalanırken, yatırımcılar makro veriler, likidite koşulları ve ETF giriş-çıkışlarının etkisini izliyor.
 Content:
@@ -52,6 +57,7 @@ Tags: bitcoin, piyasa, analiz, ekonomi, haber
 Source: https://www.coindesk.com/price/bitcoin/
 
 ---
+
 Title: Stablecoin düzenlemesi gündemde: piyasada belirsizlik azalıyor
 Summary: Stablecoin'lere yönelik kapsamlı yasal çerçeve adımları, ihraççıların denetimi ve rezerv şeffaflığını artırmayı hedefliyor.
 Content:
@@ -62,6 +68,7 @@ Tags: stablecoin, mevzuat, ödeme, finansal-innovasyon
 Source: https://www.whitehouse.gov/briefing-room/
 
 ---
+
 Title: Büyük banka kripto saklama hizmetini genişletiyor
 Summary: Avrupa merkezli büyük bir banka, kurumsal müşterilere kripto varlık saklama ve raporlama hizmetlerini genişlettiğini açıkladı.
 Content:
@@ -72,6 +79,7 @@ Tags: bankacılık, saklama, kurumsal, altyapı
 Source: https://www.ft.com/crypto
 
 ---
+
 Title: Bitcoin ile yönetilen futbol girişimi dikkat çekiyor
 Summary: Bölgesel bir kulüp yapısı, bütçe yönetimi ve taraftar katılımı için Bitcoin temelli bir modelle sahaya çıkıyor.
 Content:
@@ -82,6 +90,7 @@ Tags: spor, futbol, benimsenme, topluluk
 Source: https://cadenaser.com/
 
 ---
+
 Title: Emeklilik planlarında kripto varlık erişimi genişliyor
 Summary: Bazı sağlayıcılar, 401(k) benzeri emeklilik planları içinde sınırlı kripto varlık tahsisine izin veren ürünleri yaygınlaştırıyor.
 Content:
@@ -92,6 +101,7 @@ Tags: emeklilik, 401k, politika, tasarruf
 Source: https://apnews.com/
 
 ---
+
 Title: Kripto ATM sağlayıcısında veri ihlali iddiası sonrası güvenlik gündemde
 Summary: Bir ATM sağlayıcısına yönelik veri ihlali iddiaları, kişisel verilerin korunması ve operasyonel güvenlik protokollerini tekrar tartışmaya açtı.
 Content:

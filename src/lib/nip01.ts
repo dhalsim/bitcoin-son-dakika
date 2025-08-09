@@ -5,10 +5,7 @@ import { PROFILE_RELAYS } from "../../api-helpers/utils";
 
 import { logCloseReasons, pool } from "./utils";
 
-export const parseProfileEvent = (
-  event: NostrEvent,
-  relay: string,
-): ProfileItem | null => {
+export const parseProfileEvent = (event: NostrEvent, relay: string): ProfileItem | null => {
   try {
     const content = JSON.parse(event.content);
 
@@ -54,11 +51,7 @@ export type GetProfilesParams = {
 };
 
 // New optimized function that works with ProfileItem cache
-export function getProfiles({
-  authors,
-  cachedProfiles,
-  onUpdate,
-}: GetProfilesParams) {
+export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesParams) {
   const receivedEventRelayMap = new Map<string, string>();
   const newProfiles = new Map<string, ProfileItem>();
 

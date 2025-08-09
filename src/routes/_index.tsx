@@ -3,17 +3,8 @@ import type { MetaFunction } from "react-router";
 import MainContent from "../components/MainContent";
 import NewsCard from "../components/NewsCard";
 import Sidebar from "../components/Sidebar";
-import {
-  useLatestNews,
-  useLatestArticles,
-  useSSGData,
-} from "../contexts/SSGContext";
-import {
-  WEBSITE_NAME,
-  WEBSITE_DESCRIPTION,
-  WEBSITE_URL,
-  LOGO_URL,
-} from "../lib/constants";
+import { useLatestNews, useLatestArticles, useSSGData } from "../contexts/SSGContext";
+import { WEBSITE_NAME, WEBSITE_DESCRIPTION, WEBSITE_URL, LOGO_URL } from "../lib/constants";
 
 export const meta: MetaFunction = () => {
   const title = `${WEBSITE_NAME} - Güncel Bitcoin Haberleri ve Analizler`;
@@ -26,8 +17,7 @@ export const meta: MetaFunction = () => {
     { name: "description", content: description },
     {
       name: "keywords",
-      content:
-        "bitcoin, kripto para, lightning network, madencilik, bitcoin haberleri",
+      content: "bitcoin, kripto para, lightning network, madencilik, bitcoin haberleri",
     },
     // Open Graph
     { property: "og:site_name", content: WEBSITE_NAME },
@@ -54,9 +44,7 @@ export default function Index() {
       <MainContent>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">
-              Haberler Yükleniyor...
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground mb-4">Haberler Yükleniyor...</h1>
             <p className="text-muted-foreground">
               Güncel Bitcoin haberleri ve analizler yakında burada olacak.
             </p>
@@ -86,20 +74,18 @@ export default function Index() {
 
             {/* Category Tabs */}
             <div className="flex space-x-2 sm:space-x-4 mb-4 sm:mb-6 border-b border-border overflow-x-auto">
-              {["Tümü", "Haberler", "Köşe Yazıları", "Eğitim", "Podcast"].map(
-                (tab) => (
-                  <button
-                    key={tab}
-                    className={`pb-2 px-1 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                      tab === "Tümü"
-                        ? "border-main-accent text-main-accent"
-                        : "border-transparent text-muted-foreground hover:text-main-accent"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ),
-              )}
+              {["Tümü", "Haberler", "Köşe Yazıları", "Eğitim", "Podcast"].map((tab) => (
+                <button
+                  key={tab}
+                  className={`pb-2 px-1 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                    tab === "Tümü"
+                      ? "border-main-accent text-main-accent"
+                      : "border-transparent text-muted-foreground hover:text-main-accent"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
             {/* Main News Grid */}
@@ -151,9 +137,7 @@ export default function Index() {
                 <h3 className="font-bold mb-2">SSG Data Debug:</h3>
                 <p>News items: {ssgData.news.length}</p>
                 <p>Articles: {ssgData.articles.length}</p>
-                <p>
-                  Last updated: {new Date(ssgData.lastUpdated).toLocaleString()}
-                </p>
+                <p>Last updated: {new Date(ssgData.lastUpdated).toLocaleString()}</p>
               </div>
             )}
           </div>

@@ -46,9 +46,7 @@ export function SSGProvider({ children }: SSGProviderProps) {
     }
     // In development mode, provide fallback data instead of throwing
     else if (process.env.NODE_ENV === "development") {
-      console.warn(
-        "SSG data not available in development mode. Using fallback data.",
-      );
+      console.warn("SSG data not available in development mode. Using fallback data.");
       ssgData = createFallbackData();
     }
     // Throw error if no SSG data is available in production
@@ -67,9 +65,7 @@ export function SSGProvider({ children }: SSGProviderProps) {
     };
   }, []);
 
-  return (
-    <SSGContext.Provider value={contextValue}>{children}</SSGContext.Provider>
-  );
+  return <SSGContext.Provider value={contextValue}>{children}</SSGContext.Provider>;
 }
 
 export function useSSGContext(): SSGContextType {
@@ -121,19 +117,13 @@ export function useArticleItem(id: string): ArticleItem | undefined {
 export function useNewsByTag(tag: string): NewsItem[] {
   const news = useNewsItems();
 
-  return useMemo(
-    () => news.filter((item) => item.tags.includes(tag)),
-    [news, tag],
-  );
+  return useMemo(() => news.filter((item) => item.tags.includes(tag)), [news, tag]);
 }
 
 export function useArticlesByTag(tag: string): ArticleItem[] {
   const articles = useArticleItems();
 
-  return useMemo(
-    () => articles.filter((item) => item.tags.includes(tag)),
-    [articles, tag],
-  );
+  return useMemo(() => articles.filter((item) => item.tags.includes(tag)), [articles, tag]);
 }
 
 // Additional utility hooks
@@ -144,14 +134,11 @@ export function useAllContent(): (NewsItem | ArticleItem)[] {
   return useMemo(() => [...news, ...articles], [news, articles]);
 }
 
-export function useLatestContent(
-  limit: number = 10,
-): (NewsItem | ArticleItem)[] {
+export function useLatestContent(limit: number = 10): (NewsItem | ArticleItem)[] {
   const allContent = useAllContent();
 
   return useMemo(
-    () =>
-      allContent.sort((a, b) => b.publishedAt - a.publishedAt).slice(0, limit),
+    () => allContent.sort((a, b) => b.publishedAt - a.publishedAt).slice(0, limit),
     [allContent, limit],
   );
 }

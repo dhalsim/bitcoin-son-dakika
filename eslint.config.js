@@ -29,10 +29,12 @@ export default [
     },
     settings: {
       "import/resolver": {
-        typescript: true
+        typescript: true,
       },
-      "import/internal-regex": "^@(lib|services|components|hooks|types|pages|contexts|data|routes)/",
-      "import/external-regex": "^(?!@(lib|services|components|hooks|types|pages|contexts|data|routes)/)"
+      "import/internal-regex":
+        "^@(lib|services|components|hooks|types|pages|contexts|data|routes)/",
+      "import/external-regex":
+        "^(?!@(lib|services|components|hooks|types|pages|contexts|data|routes)/)",
     },
     rules: {
       // React Hooks
@@ -49,7 +51,7 @@ export default [
             order: "asc",
             caseInsensitive: true,
           },
-        }
+        },
       ],
 
       // Prettier rules

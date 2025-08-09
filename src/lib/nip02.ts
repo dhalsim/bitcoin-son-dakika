@@ -33,10 +33,7 @@ export async function getFollowsEvent(
     return;
   }
 
-  if (
-    cachedFollowsData &&
-    userFollowListEvent.id === cachedFollowsData.event.id
-  ) {
+  if (cachedFollowsData && userFollowListEvent.id === cachedFollowsData.event.id) {
     // nothing to update
     return;
   }

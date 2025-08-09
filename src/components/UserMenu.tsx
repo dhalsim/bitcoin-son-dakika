@@ -18,9 +18,7 @@ export function UserMenu() {
 
   // If profile is loading, show loading state
   if (userProfile.isLoading) {
-    return (
-      <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
-    );
+    return <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />;
   }
 
   // If no user is logged in, show login button
@@ -62,11 +60,7 @@ export function UserMenu() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 rounded-full p-0 sm:flex"
-        >
+        <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 sm:flex">
           <ProfileAvatar
             pubkey={userProfile.pubkey}
             profile={userProfile.profile}

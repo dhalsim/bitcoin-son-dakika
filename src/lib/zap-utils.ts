@@ -3,11 +3,7 @@ import { type NostrEvent } from "nostr-tools";
 
 import { getCache } from "./cache";
 import { getUserPubkey, signEventByNip07 } from "./nip07";
-import {
-  validateZapReceipt,
-  type LnUrlpResponse,
-  type ZapReceipt,
-} from "./nip57";
+import { validateZapReceipt, type LnUrlpResponse, type ZapReceipt } from "./nip57";
 import { pool } from "./utils";
 
 export interface ZapRequest {
@@ -102,11 +98,7 @@ export function hasUserZapped(
   zaps: Map<string, any>,
 ): boolean {
   for (const zap of zaps.values()) {
-    if (
-      zap.event.tags.some(
-        (tag: string[]) => tag[0] === "e" && tag[1] === eventId,
-      )
-    ) {
+    if (zap.event.tags.some((tag: string[]) => tag[0] === "e" && tag[1] === eventId)) {
       // Check if this zap was made by the current user
       const pTag = zap.event.tags.find((tag: string[]) => tag[0] === "P");
       if (pTag && pTag[1] === userPubkey) {
@@ -168,10 +160,7 @@ export async function listenForZapReceipt(
           return;
         }
 
-        const zapReceipt = validateZapReceipt(
-          { ...zapReceiptEvent, relay },
-          invoice,
-        );
+        const zapReceipt = validateZapReceipt({ ...zapReceiptEvent, relay }, invoice);
 
         if (!zapReceipt) {
           return;
@@ -192,9 +181,7 @@ export async function listenForZapReceipt(
           return;
         }
 
-        const bolt11Tag = zapReceiptEvent.tags.find(
-          (tag: string[]) => tag[0] === "bolt11",
-        )?.[1];
+        const bolt11Tag = zapReceiptEvent.tags.find((tag: string[]) => tag[0] === "bolt11")?.[1];
 
         if (!bolt11Tag) {
           console.warn("Zap receipt bolt11 tag is missing");

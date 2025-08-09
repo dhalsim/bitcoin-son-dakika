@@ -26,8 +26,7 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
     console.log("theme", theme);
 
     const script = document.createElement("script");
-    script.src =
-      "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
     script.type = "text/javascript";
     script.async = true;
     script.innerHTML = `
@@ -84,11 +83,7 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
         style={{ height: "calc(100% - 32px)", width: "100%" }}
       ></div>
       <div className="tradingview-widget-copyright">
-        <a
-          href="https://www.tradingview.com/"
-          rel="noopener nofollow"
-          target="_blank"
-        >
+        <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
           <span className="blue-text">Track all markets on TradingView</span>
         </a>
       </div>

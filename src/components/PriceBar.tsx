@@ -1,10 +1,4 @@
-import React, {
-  useRef,
-  useState,
-  useCallback,
-  useEffect,
-  useMemo,
-} from "react";
+import React, { useRef, useState, useCallback, useEffect, useMemo } from "react";
 
 import { usePriceData } from "../hooks/usePriceData";
 
@@ -149,10 +143,7 @@ const PriceBar = () => {
 
     // Ensure we start centered on the middle copy to allow seamless wrapping
     const singleSetWidth = container.scrollWidth / 3;
-    if (
-      container.scrollLeft < singleSetWidth ||
-      container.scrollLeft >= singleSetWidth * 2
-    ) {
+    if (container.scrollLeft < singleSetWidth || container.scrollLeft >= singleSetWidth * 2) {
       container.scrollLeft = singleSetWidth;
     }
 
@@ -266,8 +257,8 @@ const PriceBar = () => {
                         <span>Bitcoin (BTC)</span>
                       </h4>
                       <div className="text-muted-foreground">
-                        Bitcoin, merkezi olmayan dijital para birimidir. Satoshi
-                        Nakamoto tarafından 2009 yılında oluşturulmuştur.
+                        Bitcoin, merkezi olmayan dijital para birimidir. Satoshi Nakamoto tarafından
+                        2009 yılında oluşturulmuştur.
                       </div>
                       <div className="text-muted-foreground">
                         <p>Bitcoin'in en önemli özellikleri</p>
@@ -319,17 +310,14 @@ const PriceBar = () => {
                         </p>
                       </div>
                       <div className="text-muted-foreground">
-                        Bitcoin, 100 milyon <strong>satoshi</strong> adlı daha
-                        küçük birimlere bölünebilir. Satoshi veya kısaca{" "}
-                        <strong>sat</strong>, Bitcoin'in en küçük birimidir. 1
-                        sat = 0.00000001 BTC (yani bir Bitcoin'in yüz milyonda
-                        biri).
+                        Bitcoin, 100 milyon <strong>satoshi</strong> adlı daha küçük birimlere
+                        bölünebilir. Satoshi veya kısaca <strong>sat</strong>, Bitcoin'in en küçük
+                        birimidir. 1 sat = 0.00000001 BTC (yani bir Bitcoin'in yüz milyonda biri).
                       </div>
                       <div className="text-muted-foreground">
-                        Bitcoin almak için 1 BTC'nin tamamını almanız gerekmez.
-                        İstediğiniz kadar küçük miktarda satın alabilir veya
-                        gönderebilirsiniz. Bu, Bitcoin'i herkes için
-                        erişilebilir kılar.
+                        Bitcoin almak için 1 BTC'nin tamamını almanız gerekmez. İstediğiniz kadar
+                        küçük miktarda satın alabilir veya gönderebilirsiniz. Bu, Bitcoin'i herkes
+                        için erişilebilir kılar.
                       </div>
                       <div className="text-muted-foreground">
                         <p>Örneğin:</p>
@@ -374,9 +362,7 @@ const PriceBar = () => {
               </p>
             </div>
             <div className="flex flex-row text-xs font-normal">
-              <span className="italic ">
-                "Her şey bitcoin karşısında sıfıra gidiyor"
-              </span>
+              <span className="italic ">"Her şey bitcoin karşısında sıfıra gidiyor"</span>
               <span className="ml-2">- Max Keiser</span>
             </div>
           </div>
@@ -462,9 +448,7 @@ const PriceBar = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 p-6 pt-0 min-h-0">
-            {selectedSymbol && (
-              <Chart key={selectedSymbol} symbol={selectedSymbol} />
-            )}
+            {selectedSymbol && <Chart key={selectedSymbol} symbol={selectedSymbol} />}
           </div>
         </DialogContent>
       </Dialog>

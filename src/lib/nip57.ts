@@ -63,10 +63,7 @@ export function extractAmountFromBolt11(bolt11: string): number {
 }
 
 // Helper function to validate zap receipt according to NIP-57
-export function validateZapReceipt(
-  zapReceipt: EventItem,
-  invoice?: string,
-): ZapReceipt | null {
+export function validateZapReceipt(zapReceipt: EventItem, invoice?: string): ZapReceipt | null {
   try {
     // Find bolt11 tag
     const bolt11Tag = zapReceipt.tags.find((tag) => tag[0] === "bolt11");
@@ -79,9 +76,7 @@ export function validateZapReceipt(
     }
 
     // Find description tag (contains the zap request)
-    const descriptionTag = zapReceipt.tags.find(
-      (tag) => tag[0] === "description",
-    );
+    const descriptionTag = zapReceipt.tags.find((tag) => tag[0] === "description");
 
     if (!descriptionTag || !descriptionTag[1]) {
       return null;
@@ -201,9 +196,7 @@ const LnUrlpResponse = z.object({
 
 export type LnUrlpResponse = z.infer<typeof LnUrlpResponse>;
 
-export async function getLnurlData(
-  lud16: string,
-): Promise<LnUrlpResponse | null> {
+export async function getLnurlData(lud16: string): Promise<LnUrlpResponse | null> {
   const [username, domain] = lud16.split("@");
 
   const lnurl = `https://${domain}/.well-known/lnurlp/${username}`;

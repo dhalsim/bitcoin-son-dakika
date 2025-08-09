@@ -6,13 +6,7 @@ import { useBitcoinStats } from "../hooks/useBitcoinStats.js";
 
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
-const Sidebar = ({
-  news,
-  articles,
-}: {
-  news: NewsItem[];
-  articles: ArticleItem[];
-}) => {
+const Sidebar = ({ news, articles }: { news: NewsItem[]; articles: ArticleItem[] }) => {
   const { stats, loading, error } = useBitcoinStats();
 
   return (
@@ -26,17 +20,12 @@ const Sidebar = ({
 
         <div className="space-y-4">
           {articles.map((article, index) => (
-            <div
-              key={index}
-              className="border-b border-border pb-3 last:border-b-0 last:pb-0"
-            >
+            <div key={index} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
               <h4 className="font-medium text-foreground hover:text-main-accent cursor-pointer text-sm leading-snug mb-1">
                 {article.title}
               </h4>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  {article.author.display_name}
-                </span>
+                <span className="text-xs text-muted-foreground">{article.author.display_name}</span>
                 <span className="text-xs text-muted-foreground">
                   {new Date(article.publishedAt).toLocaleDateString()}
                 </span>
@@ -61,10 +50,7 @@ const Sidebar = ({
 
         <div className="space-y-4">
           {news.map((n, index) => (
-            <div
-              key={index}
-              className="border-b border-border pb-3 last:border-b-0 last:pb-0"
-            >
+            <div key={index} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
               <h4 className="font-medium text-foreground hover:text-main-accent cursor-pointer text-sm leading-snug mb-1">
                 {n.title}
               </h4>
@@ -126,9 +112,7 @@ const Sidebar = ({
                 <div className="flex items-center gap-2">
                   <div>
                     <div className="flex items-center gap-2">
-                      <div className="font-medium text-foreground">
-                        Bitcoin Yarılanması
-                      </div>
+                      <div className="font-medium text-foreground">Bitcoin Yarılanması</div>
                       <Popover>
                         <PopoverTrigger asChild>
                           <button className="text-muted-foreground hover:text-foreground transition-colors">
@@ -142,27 +126,21 @@ const Sidebar = ({
                             </h4>
                             <div className="text-sm text-muted-foreground space-y-2">
                               <p>
-                                Bitcoin halving, her 210,000 blokta bir
-                                gerçekleşen ve madencilere ödenen Bitcoin
-                                miktarını yarıya indiren bir olaydır.
+                                Bitcoin halving, her 210,000 blokta bir gerçekleşen ve madencilere
+                                ödenen Bitcoin miktarını yarıya indiren bir olaydır.
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>Son halving: 2024 Nisan (blok 840,000)</span>
+                              </p>
+                              <p className="flex items-start gap-2">
+                                <span>🔹</span>
+                                <span>Sonraki halving: 2028 Nisan (blok 1,050,000)</span>
                               </p>
                               <p className="flex items-start gap-2">
                                 <span>🔹</span>
                                 <span>
-                                  Son halving: 2024 Nisan (blok 840,000)
-                                </span>
-                              </p>
-                              <p className="flex items-start gap-2">
-                                <span>🔹</span>
-                                <span>
-                                  Sonraki halving: 2028 Nisan (blok 1,050,000)
-                                </span>
-                              </p>
-                              <p className="flex items-start gap-2">
-                                <span>🔹</span>
-                                <span>
-                                  Halving sonrası madencilere ödenen miktar
-                                  1.5625 BTC'ye düşecek.
+                                  Halving sonrası madencilere ödenen miktar 1.5625 BTC'ye düşecek.
                                 </span>
                               </p>
                             </div>
@@ -170,15 +148,11 @@ const Sidebar = ({
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Sonraki halving'e kalan
-                    </div>
+                    <div className="text-xs text-muted-foreground">Sonraki halving'e kalan</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-medium text-foreground">
-                    {stats.halving.remainingDays}
-                  </div>
+                  <div className="font-medium text-foreground">{stats.halving.remainingDays}</div>
                   <div className="text-xs text-muted-foreground">gün</div>
                 </div>
               </div>
@@ -187,9 +161,7 @@ const Sidebar = ({
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Halving'e Kalan</span>
-                  <span>
-                    {stats.halving.remainingBlocks.toLocaleString()} blok
-                  </span>
+                  <span>{stats.halving.remainingBlocks.toLocaleString()} blok</span>
                 </div>
                 <div className="w-full bg-muted h-2 rounded-full overflow-hidden border-1">
                   <div
@@ -207,9 +179,7 @@ const Sidebar = ({
               <div className="flex items-center gap-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="font-medium text-foreground">
-                      Hash Oranı
-                    </div>
+                    <div className="font-medium text-foreground">Hash Oranı</div>
                     <Popover>
                       <PopoverTrigger asChild>
                         <button className="text-muted-foreground hover:text-foreground transition-colors">
@@ -223,35 +193,28 @@ const Sidebar = ({
                           </h4>
                           <div className="text-sm text-muted-foreground space-y-2">
                             <p>
-                              Hashrate, Bitcoin madencilik ağının saniyede
-                              gerçekleştirdiği toplam işlem (hash) sayısını
-                              gösterir.
+                              Hashrate, Bitcoin madencilik ağının saniyede gerçekleştirdiği toplam
+                              işlem (hash) sayısını gösterir.
                             </p>
-                            <p>
-                              Ne kadar yüksekse, ağ o kadar güvenli ve rekabet
-                              yoğundur.
-                            </p>
+                            <p>Ne kadar yüksekse, ağ o kadar güvenli ve rekabet yoğundur.</p>
                             <div className="space-y-1">
                               <p className="flex items-start gap-2">
                                 <span>🔹</span>
                                 <span>
-                                  Genellikle EH/s (saniyede exahash) ile ölçülür
-                                  — yani saniyede trilyonlarca işlem yapılır.
+                                  Genellikle EH/s (saniyede exahash) ile ölçülür — yani saniyede
+                                  trilyonlarca işlem yapılır.
                                 </span>
                               </p>
                               <p className="flex items-start gap-2">
                                 <span>🔹</span>
                                 <span>
-                                  Hashrate yükselirse, blok bulmak zorlaşır ve
-                                  zorluk (difficulty) artar.
+                                  Hashrate yükselirse, blok bulmak zorlaşır ve zorluk (difficulty)
+                                  artar.
                                 </span>
                               </p>
                               <p className="flex items-start gap-2">
                                 <span>🔹</span>
-                                <span>
-                                  Düşerse, bloklar daha yavaş bulunur ve zorluk
-                                  azalır.
-                                </span>
+                                <span>Düşerse, bloklar daha yavaş bulunur ve zorluk azalır.</span>
                               </p>
                             </div>
                           </div>
@@ -259,15 +222,11 @@ const Sidebar = ({
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {stats.hashrate.unit}
-                  </div>
+                  <div className="text-xs text-muted-foreground">{stats.hashrate.unit}</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-medium text-foreground">
-                  {stats.hashrate.value}
-                </div>
+                <div className="font-medium text-foreground">{stats.hashrate.value}</div>
               </div>
             </div>
 
@@ -284,26 +243,20 @@ const Sidebar = ({
                       </PopoverTrigger>
                       <PopoverContent className="w-80" align="start">
                         <div className="space-y-2">
-                          <h4 className="font-medium text-foreground">
-                            ⚒️ Bitcoin Zorluk Ayarı
-                          </h4>
+                          <h4 className="font-medium text-foreground">⚒️ Bitcoin Zorluk Ayarı</h4>
                           <div className="text-sm text-muted-foreground space-y-2">
                             <p>
-                              Bitcoin, her 2.016 blokta bir (~2 hafta), ortalama
-                              blok süresini 10 dakika civarında tutmak için
-                              madencilik zorluğunu otomatik olarak ayarlar.
+                              Bitcoin, her 2.016 blokta bir (~2 hafta), ortalama blok süresini 10
+                              dakika civarında tutmak için madencilik zorluğunu otomatik olarak
+                              ayarlar.
                             </p>
                             <p className="flex items-start gap-2">
                               <span>🔹</span>
-                              <span>
-                                Bloklar çok hızlı kazılıyorsa, zorluk artar.
-                              </span>
+                              <span>Bloklar çok hızlı kazılıyorsa, zorluk artar.</span>
                             </p>
                             <p className="flex items-start gap-2">
                               <span>🔹</span>
-                              <span>
-                                Bloklar çok yavaş kazılıyorsa, zorluk azalır.
-                              </span>
+                              <span>Bloklar çok yavaş kazılıyorsa, zorluk azalır.</span>
                             </p>
                           </div>
                         </div>
@@ -314,18 +267,17 @@ const Sidebar = ({
               </div>
               <div className="text-right space-y-1">
                 <div>
-                  <div className="font-medium text-foreground">
-                    Beklenen Ayar
-                  </div>
+                  <div className="font-medium text-foreground">Beklenen Ayar</div>
                   <span className="text-base font-medium text-foreground">
                     <span className="text-xs text-muted-foreground">
-                      {new Date(
-                        stats.difficulty.estimatedRetargetDate,
-                      ).toLocaleDateString("tr-TR", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}{" "}
+                      {new Date(stats.difficulty.estimatedRetargetDate).toLocaleDateString(
+                        "tr-TR",
+                        {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        },
+                      )}{" "}
                       tarihinde{" "}
                     </span>
                     <span
@@ -352,30 +304,23 @@ const Sidebar = ({
                       </PopoverTrigger>
                       <PopoverContent className="w-80" align="start">
                         <div className="space-y-2">
-                          <h4 className="font-medium text-foreground">
-                            🚰 Mempool Durumu
-                          </h4>
+                          <h4 className="font-medium text-foreground">🚰 Mempool Durumu</h4>
                           <div className="text-sm text-muted-foreground space-y-2">
                             <p>
-                              Mempool, henüz bloklara eklenmemiş ve onay
-                              bekleyen Bitcoin işlemlerinin geçici olarak
-                              tutulduğu yerdir.
+                              Mempool, henüz bloklara eklenmemiş ve onay bekleyen Bitcoin
+                              işlemlerinin geçici olarak tutulduğu yerdir.
                             </p>
                             <p className="flex items-start gap-2">
                               <span>🔹</span>
                               <span>
                                 Şu anda mempool'da onay bekleyen{" "}
-                                <strong>
-                                  {stats.mempool.count.toLocaleString()}
-                                </strong>{" "}
-                                işlem var.
+                                <strong>{stats.mempool.count.toLocaleString()}</strong> işlem var.
                               </span>
                             </p>
                             <p className="flex items-start gap-2">
                               <span>🔹</span>
                               <span>
-                                Bu işlemler toplam{" "}
-                                <strong>{stats.mempool.size} vB</strong> yer
+                                Bu işlemler toplam <strong>{stats.mempool.size} vB</strong> yer
                                 kaplıyor ve madencilere ödenecek toplam ücret{" "}
                                 <strong>{stats.mempool.totalFee}</strong>.
                               </span>
@@ -383,9 +328,8 @@ const Sidebar = ({
                             <p className="flex items-start gap-2">
                               <span>🔹</span>
                               <span>
-                                Mempool durumu:{" "}
-                                <strong>{stats.mempool.status}</strong>.
-                                Ücretler yüksek olabilir.
+                                Mempool durumu: <strong>{stats.mempool.status}</strong>. Ücretler
+                                yüksek olabilir.
                               </span>
                             </p>
                           </div>
@@ -393,18 +337,14 @@ const Sidebar = ({
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {stats.mempool.status}
-                  </div>
+                  <div className="text-xs text-muted-foreground">{stats.mempool.status}</div>
                 </div>
               </div>
               <div className="text-right">
                 <div className="font-medium text-foreground">
                   {stats.mempool.count.toLocaleString()} Txs
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {stats.mempool.size} vB
-                </div>
+                <div className="text-xs text-muted-foreground">{stats.mempool.size} vB</div>
               </div>
             </div>
 
@@ -412,9 +352,7 @@ const Sidebar = ({
               <div className="flex items-center gap-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="font-medium text-foreground">
-                      Önerilen Ücret
-                    </div>
+                    <div className="font-medium text-foreground">Önerilen Ücret</div>
                     <Popover>
                       <PopoverTrigger asChild>
                         <button className="text-muted-foreground hover:text-foreground transition-colors">
@@ -423,14 +361,11 @@ const Sidebar = ({
                       </PopoverTrigger>
                       <PopoverContent className="w-80" align="start">
                         <div className="space-y-2">
-                          <h4 className="font-medium text-foreground">
-                            İşlem Ücreti Tahminleri
-                          </h4>
+                          <h4 className="font-medium text-foreground">İşlem Ücreti Tahminleri</h4>
                           <div className="text-sm text-muted-foreground space-y-2">
                             <p>
-                              Bu tahminler, işleminizin ne kadar sürede
-                              onaylanmasını istediğinize göre önerilen işlem
-                              ücretleridir (satoshi/vB cinsinden).
+                              Bu tahminler, işleminizin ne kadar sürede onaylanmasını istediğinize
+                              göre önerilen işlem ücretleridir (satoshi/vB cinsinden).
                             </p>
                             <p className="flex items-start gap-2">
                               <span>🔹</span>
@@ -461,9 +396,8 @@ const Sidebar = ({
                               </span>
                             </p>
                             <p>
-                              Uygun ücreti seçerken mempool yoğunluğunu ve
-                              işleminizin ne kadar acil olduğunu göz önünde
-                              bulundurun.
+                              Uygun ücreti seçerken mempool yoğunluğunu ve işleminizin ne kadar acil
+                              olduğunu göz önünde bulundurun.
                             </p>
                           </div>
                         </div>
@@ -474,9 +408,7 @@ const Sidebar = ({
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-medium text-foreground">
-                  {stats.fees.halfHourFee}
-                </div>
+                <div className="font-medium text-foreground">{stats.fees.halfHourFee}</div>
                 <div className="text-xs text-muted-foreground">30 dk</div>
               </div>
             </div>
@@ -487,12 +419,8 @@ const Sidebar = ({
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <div>
-                    <div className="font-medium text-foreground text-sm">
-                      Hızlı Onay
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      ~10 dakika
-                    </div>
+                    <div className="font-medium text-foreground text-sm">Hızlı Onay</div>
+                    <div className="text-xs text-muted-foreground">~10 dakika</div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -507,12 +435,8 @@ const Sidebar = ({
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                   <div>
-                    <div className="font-medium text-foreground text-sm">
-                      30 Dakika
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Önerilen
-                    </div>
+                    <div className="font-medium text-foreground text-sm">30 Dakika</div>
+                    <div className="text-xs text-muted-foreground">Önerilen</div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -527,12 +451,8 @@ const Sidebar = ({
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                   <div>
-                    <div className="font-medium text-foreground text-sm">
-                      1 Saat
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      ~60 dakika
-                    </div>
+                    <div className="font-medium text-foreground text-sm">1 Saat</div>
+                    <div className="text-xs text-muted-foreground">~60 dakika</div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -547,12 +467,8 @@ const Sidebar = ({
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
                   <div>
-                    <div className="font-medium text-foreground text-sm">
-                      Ekonomi
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      ~24 saat
-                    </div>
+                    <div className="font-medium text-foreground text-sm">Ekonomi</div>
+                    <div className="text-xs text-muted-foreground">~24 saat</div>
                   </div>
                 </div>
                 <div className="text-right">

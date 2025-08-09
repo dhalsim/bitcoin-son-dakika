@@ -18,11 +18,7 @@ interface LinkPreviewProps {
   showFallback?: boolean;
 }
 
-export function LinkPreview({
-  url,
-  className = "",
-  showFallback = true,
-}: LinkPreviewProps) {
+export function LinkPreview({ url, className = "", showFallback = true }: LinkPreviewProps) {
   const [ogData, setOgData] = useState<OpenGraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -170,14 +166,10 @@ export function LinkPreview({
 
             <div className="flex items-center gap-1 mt-1">
               {siteName && (
-                <span className="text-xs text-gray-500 dark:text-gray-500">
-                  {siteName}
-                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-500">{siteName}</span>
               )}
               {siteName && <span className="text-xs text-gray-400">•</span>}
-              <span className="text-xs text-gray-500 dark:text-gray-500 truncate">
-                {domain}
-              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-500 truncate">{domain}</span>
             </div>
           </div>
         </div>

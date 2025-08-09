@@ -34,11 +34,7 @@ export function publishToRelays(
 }
 
 export function logCloseReasons(reasons: string[]): void {
-  const normalReasons = [
-    "closed automatically on eose",
-    "closed by client",
-    "closed by caller",
-  ];
+  const normalReasons = ["closed automatically on eose", "closed by client", "closed by caller"];
 
   const nonNormalReasons = reasons.filter((r) => !normalReasons.includes(r));
 

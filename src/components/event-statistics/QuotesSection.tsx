@@ -58,9 +58,7 @@ export function QuotesSection({
                             `${quote.pubkey.slice(0, 8)}...${quote.pubkey.slice(-8)}`}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {new Date(
-                            quote.created_at * 1000,
-                          ).toLocaleDateString()}
+                          {new Date(quote.created_at * 1000).toLocaleDateString()}
                         </span>
                       </div>
                       <div className="text-sm text-gray-700 dark:text-gray-300">
@@ -74,9 +72,7 @@ export function QuotesSection({
               })}
             </div>
           ) : (
-            <div className="text-sm text-gray-500 italic">
-              Henüz alıntı yapılmamış
-            </div>
+            <div className="text-sm text-gray-500 italic">Henüz alıntı yapılmamış</div>
           )}
         </div>
 
@@ -116,9 +112,7 @@ export function QuotesSection({
         )}
 
         {/* Preview */}
-        {showQuotePreview && quoteContent.trim() && (
-          <RichTextPreview content={quoteContent} />
-        )}
+        {showQuotePreview && quoteContent.trim() && <RichTextPreview content={quoteContent} />}
 
         {/* Action buttons */}
         <div className="flex justify-between items-center">

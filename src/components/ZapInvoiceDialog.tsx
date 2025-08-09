@@ -43,8 +43,7 @@ export function ZapInvoiceDialog({
 }: ZapInvoiceDialogProps) {
   const [qrSvg, setQrSvg] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [receivedZapReceipt, setReceivedZapReceipt] =
-    useState<ZapReceipt | null>(null);
+  const [receivedZapReceipt, setReceivedZapReceipt] = useState<ZapReceipt | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -82,33 +81,19 @@ export function ZapInvoiceDialog({
       return;
     }
 
-    listenForZapReceipt(
-      zappedEvent,
-      invoice,
-      lnurlData,
-      relays,
-      (zapReceipt) => {
-        console.log("Zap receipt received", zapReceipt);
+    listenForZapReceipt(zappedEvent, invoice, lnurlData, relays, (zapReceipt) => {
+      console.log("Zap receipt received", zapReceipt);
 
-        if (zapReceipt) {
-          setReceivedZapReceipt(zapReceipt);
+      if (zapReceipt) {
+        setReceivedZapReceipt(zapReceipt);
 
-          setStatistics({
-            ...statistics,
-            zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
-          });
-        }
-      },
-    );
-  }, [
-    qrSvg,
-    zappedEvent,
-    invoice,
-    lnurlData,
-    relays,
-    statistics,
-    setStatistics,
-  ]);
+        setStatistics({
+          ...statistics,
+          zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
+        });
+      }
+    });
+  }, [qrSvg, zappedEvent, invoice, lnurlData, relays, statistics, setStatistics]);
 
   const copyInvoice = async () => {
     try {
@@ -175,9 +160,7 @@ export function ZapInvoiceDialog({
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">Miktar:</span>
-              <span className="font-semibold text-orange-700">
-                {amount} sats
-              </span>
+              <span className="font-semibold text-orange-700">{amount} sats</span>
             </div>
             {comment && (
               <div className="mt-2 text-xs text-gray-600">

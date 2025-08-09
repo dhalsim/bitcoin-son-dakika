@@ -92,10 +92,7 @@ export default function ProfilePage() {
           {error && (
             <div className="text-red-500 text-center mb-4 flex items-center justify-center gap-2">
               <p>{error}</p>
-              <button
-                onClick={() => setError(null)}
-                className="text-blue-500 hover:text-blue-600"
-              >
+              <button onClick={() => setError(null)} className="text-blue-500 hover:text-blue-600">
                 <X className="w-4 h-4" fill="currentColor" />
               </button>
             </div>
@@ -128,9 +125,7 @@ export default function ProfilePage() {
 
             {/* Profile Links */}
             <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
-              {profile.nip05 && (
-                <NIP05Badge nip05={profile.nip05} pubkey={profile.pubkey} />
-              )}
+              {profile.nip05 && <NIP05Badge nip05={profile.nip05} pubkey={profile.pubkey} />}
               {profile.website && (
                 <a
                   href={
@@ -142,11 +137,7 @@ export default function ProfilePage() {
                   rel="noopener noreferrer"
                   className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 hover:underline"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
                       d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
@@ -161,11 +152,7 @@ export default function ProfilePage() {
                   href={`lightning:${profile.lud16}`}
                   className="flex items-center space-x-1 text-orange-600 dark:text-orange-400 hover:underline"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
                       d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
@@ -186,11 +173,7 @@ export default function ProfilePage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
                     d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"

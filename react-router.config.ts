@@ -91,17 +91,13 @@ export default {
 
     // Generate news routes for all unique news
     const articlesRoutes = ssgData.articles
-      .filter(
-        (n): n is typeof n & { title: string } => !!n.title && !!n.summary,
-      )
+      .filter((n): n is typeof n & { title: string } => !!n.title && !!n.summary)
       .map((n) => `/article/${createTitleSlug(n.title)}`);
 
     console.log(`Generated ${articlesRoutes.length} article routes`);
 
     const newsRoutes = ssgData.news
-      .filter(
-        (n): n is typeof n & { title: string } => !!n.title && !!n.summary,
-      )
+      .filter((n): n is typeof n & { title: string } => !!n.title && !!n.summary)
       .map((n) => `/news/${createTitleSlug(n.title)}`);
 
     console.log(`Generated ${newsRoutes.length} news routes`);
@@ -109,7 +105,6 @@ export default {
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
       "/news", // Haberler sayfası - static
-      "/admin-panel", // Admin panel - dynamic, but needs to be discovered
       "/ssg-debug", // SSG debug page - only available in development
       "/enson", // Enson sayfası - static
       ...profileRoutes, // Profile pages - static

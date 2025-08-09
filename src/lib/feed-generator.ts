@@ -1,9 +1,4 @@
-import {
-  WEBSITE_URL,
-  WEBSITE_NAME,
-  WEBSITE_DESCRIPTION,
-  LOGO_URL,
-} from "./constants";
+import { WEBSITE_URL, WEBSITE_NAME, WEBSITE_DESCRIPTION, LOGO_URL } from "./constants";
 import type { SSGData } from "./ssg-data";
 
 export function generateRSSFeed(ssgData: SSGData): string {

@@ -10,12 +10,7 @@ import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";
 import MainContent from "../components/MainContent";
 import { getDisplayName, ProfileAvatar } from "../components/ui/ProfileAvatar";
-import {
-  WEBSITE_NAME,
-  WEBSITE_DESCRIPTION,
-  WEBSITE_URL,
-  LOGO_URL,
-} from "../lib/constants";
+import { WEBSITE_NAME, WEBSITE_DESCRIPTION, WEBSITE_URL, LOGO_URL } from "../lib/constants";
 
 import NotFound from "./$";
 
@@ -59,9 +54,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw new Response("SSG data not available", { status: 500 });
   }
 
-  const articleItem = ssgData.articles.find(
-    (article) => createTitleSlug(article.title) === slug,
-  );
+  const articleItem = ssgData.articles.find((article) => createTitleSlug(article.title) === slug);
 
   if (!articleItem) {
     throw new Response("Article not found", { status: 404 });
@@ -78,8 +71,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
       { title: "Makale Bulunamadı - Bitcoin Son Dakika" },
       {
         name: "description",
-        content:
-          "Aradığınız makale bulunamadı. Ana sayfaya geri dönebilirsiniz.",
+        content: "Aradığınız makale bulunamadı. Ana sayfaya geri dönebilirsiniz.",
       },
     ];
   }
@@ -118,10 +110,7 @@ export default function ArticleDetailPage() {
   }
 
   const time = getTimeAgo(articleItem.publishedAt);
-  const displayName = getDisplayName(
-    articleItem.author,
-    articleItem.event.pubkey,
-  );
+  const displayName = getDisplayName(articleItem.author, articleItem.event.pubkey);
 
   return (
     <MainContent>
@@ -151,9 +140,7 @@ export default function ArticleDetailPage() {
                       disablePopup={true}
                       size="md"
                     />
-                    <div className="font-medium text-foreground">
-                      {displayName}
-                    </div>
+                    <div className="font-medium text-foreground">{displayName}</div>
                   </div>
                 </Link>
               </div>
@@ -177,29 +164,19 @@ export default function ArticleDetailPage() {
                 components={{
                   // Custom styling for markdown elements
                   h1: ({ children }) => (
-                    <h1 className="text-3xl font-bold text-foreground mb-4">
-                      {children}
-                    </h1>
+                    <h1 className="text-3xl font-bold text-foreground mb-4">{children}</h1>
                   ),
                   h2: ({ children }) => (
-                    <h2 className="text-2xl font-bold text-foreground mb-3 mt-6">
-                      {children}
-                    </h2>
+                    <h2 className="text-2xl font-bold text-foreground mb-3 mt-6">{children}</h2>
                   ),
                   h3: ({ children }) => (
-                    <h3 className="text-xl font-bold text-foreground mb-2 mt-5">
-                      {children}
-                    </h3>
+                    <h3 className="text-xl font-bold text-foreground mb-2 mt-5">{children}</h3>
                   ),
                   h4: ({ children }) => (
-                    <h4 className="text-lg font-bold text-foreground mb-2 mt-4">
-                      {children}
-                    </h4>
+                    <h4 className="text-lg font-bold text-foreground mb-2 mt-4">{children}</h4>
                   ),
                   p: ({ children }) => (
-                    <p className="mb-4 text-foreground leading-relaxed">
-                      {children}
-                    </p>
+                    <p className="mb-4 text-foreground leading-relaxed">{children}</p>
                   ),
                   ul: ({ children }) => (
                     <ul className="list-disc list-inside mb-4 space-y-1 text-foreground">
@@ -211,9 +188,7 @@ export default function ArticleDetailPage() {
                       {children}
                     </ol>
                   ),
-                  li: ({ children }) => (
-                    <li className="text-foreground">{children}</li>
-                  ),
+                  li: ({ children }) => <li className="text-foreground">{children}</li>,
                   blockquote: ({ children }) => (
                     <blockquote className="border-l-4 border-main-accent pl-4 py-2 mb-4 bg-muted rounded-r">
                       <p className="text-muted-foreground italic">{children}</p>
@@ -231,9 +206,7 @@ export default function ArticleDetailPage() {
 
                     return (
                       <pre className="bg-muted p-4 rounded-lg overflow-x-auto mb-4">
-                        <code className="text-sm font-mono text-foreground">
-                          {children}
-                        </code>
+                        <code className="text-sm font-mono text-foreground">{children}</code>
                       </pre>
                     );
                   },
@@ -256,9 +229,7 @@ export default function ArticleDetailPage() {
                   ),
                   table: ({ children }) => (
                     <div className="overflow-x-auto mb-4">
-                      <table className="min-w-full border border-border">
-                        {children}
-                      </table>
+                      <table className="min-w-full border border-border">{children}</table>
                     </div>
                   ),
                   th: ({ children }) => (
@@ -267,9 +238,7 @@ export default function ArticleDetailPage() {
                     </th>
                   ),
                   td: ({ children }) => (
-                    <td className="border border-border px-4 py-2">
-                      {children}
-                    </td>
+                    <td className="border border-border px-4 py-2">{children}</td>
                   ),
                 }}
               >

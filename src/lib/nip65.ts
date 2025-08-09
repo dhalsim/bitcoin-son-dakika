@@ -12,13 +12,9 @@ export type Nip65Relays = {
 function toReadWriteRelays(tags: string[][]): Nip65Relays {
   const relayTags = tags.filter((tag) => tag[0] === "r");
 
-  const readRelays = relayTags
-    .filter((tag) => tag[2] === "read" || !tag[2])
-    .map((tag) => tag[1]);
+  const readRelays = relayTags.filter((tag) => tag[2] === "read" || !tag[2]).map((tag) => tag[1]);
 
-  const writeRelays = relayTags
-    .filter((tag) => tag[2] === "write" || !tag[2])
-    .map((tag) => tag[1]);
+  const writeRelays = relayTags.filter((tag) => tag[2] === "write" || !tag[2]).map((tag) => tag[1]);
 
   const flatRelays = relayTags.map((tag) => ({
     relay: tag[1],

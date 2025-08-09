@@ -1,13 +1,4 @@
-import {
-  Search,
-  Menu,
-  Moon,
-  Sun,
-  Rss,
-  Atom,
-  X,
-  ChevronDown,
-} from "lucide-react";
+import { Search, Menu, Moon, Sun, Rss, Atom, X, ChevronDown } from "lucide-react";
 import React, { useState } from "react";
 
 import { useTheme } from "../contexts/ThemeContext";
@@ -136,10 +127,7 @@ const Header = () => {
           <div className="hidden lg:flex items-center space-x-6">
             {/* Desktop Navigation */}
             <nav className="flex items-center space-x-6">
-              <a
-                href="/"
-                className="text-foreground font-medium px-2 py-1 rounded"
-              >
+              <a href="/" className="text-foreground font-medium px-2 py-1 rounded">
                 Ana Sayfa
               </a>
 
@@ -206,10 +194,7 @@ const Header = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <a
-                href="/podcast"
-                className="text-foreground font-medium px-2 py-1 rounded"
-              >
+              <a href="/podcast" className="text-foreground font-medium px-2 py-1 rounded">
                 Podcast
               </a>
             </nav>
@@ -262,22 +247,13 @@ const Header = () => {
                       <a href="/news" className="block text-left-menu-accent">
                         Son Dakika
                       </a>
-                      <a
-                        href="/tag/analiz?type=news"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/tag/analiz?type=news" className="block text-left-menu-accent">
                         Piyasa Analizi
                       </a>
-                      <a
-                        href="/tag/teknoloji?type=news"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/tag/teknoloji?type=news" className="block text-left-menu-accent">
                         Teknoloji
                       </a>
-                      <a
-                        href="/tag/duzenlemeler?type=news"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/tag/duzenlemeler?type=news" className="block text-left-menu-accent">
                         Düzenlemeler
                       </a>
                     </div>
@@ -288,28 +264,16 @@ const Header = () => {
                       <a href="/articles">Köşe Yazıları</a>
                     </h3>
                     <div className="pl-4 space-y-2">
-                      <a
-                        href="/articles"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/articles" className="block text-left-menu-accent">
                         Güncel Yorumlar
                       </a>
-                      <a
-                        href="/tag/analiz?type=article"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/tag/analiz?type=article" className="block text-left-menu-accent">
                         Teknik Analiz
                       </a>
-                      <a
-                        href="/tag/ekonomi?type=article"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/tag/ekonomi?type=article" className="block text-left-menu-accent">
                         Ekonomi
                       </a>
-                      <a
-                        href="/tag/teknoloji?type=article"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/tag/teknoloji?type=article" className="block text-left-menu-accent">
                         Teknoloji
                       </a>
                     </div>
@@ -320,28 +284,16 @@ const Header = () => {
                       <a href="/egitim">Eğitim</a>
                     </h3>
                     <div className="pl-4 space-y-2">
-                      <a
-                        href="/egitim/bitcoin-temelleri"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/egitim/bitcoin-temelleri" className="block text-left-menu-accent">
                         Bitcoin Temelleri
                       </a>
-                      <a
-                        href="/egitim/cuzdan-kullanimi"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/egitim/cuzdan-kullanimi" className="block text-left-menu-accent">
                         Cüzdan Kullanımı
                       </a>
-                      <a
-                        href="/egitim/guvenlik"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/egitim/guvenlik" className="block text-left-menu-accent">
                         Güvenlik
                       </a>
-                      <a
-                        href="/egitim/lightning-network"
-                        className="block text-left-menu-accent"
-                      >
+                      <a href="/egitim/lightning-network" className="block text-left-menu-accent">
                         Lightning Network
                       </a>
                     </div>

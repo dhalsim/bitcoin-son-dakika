@@ -66,10 +66,7 @@ function extractEmojiInfo(reaction: EventItem): {
     // Look for emoji tag
     const emojiTag = reaction.tags.find(
       (tag) =>
-        tag[0] === "emoji" &&
-        tag[1] === emojiName &&
-        tag[2] &&
-        tag[2].startsWith("https://"),
+        tag[0] === "emoji" && tag[1] === emojiName && tag[2] && tag[2].startsWith("https://"),
     );
 
     return {
@@ -101,8 +98,7 @@ function chooseBestUrl(urls: string[]): string {
   return Object.entries(urlCounts).sort(([, a], [, b]) => b - a)[0][0];
 }
 
-const likeFilter = (reaction: EventItem) =>
-  reaction.content === "+" || reaction.content === "";
+const likeFilter = (reaction: EventItem) => reaction.content === "+" || reaction.content === "";
 const dislikeFilter = (reaction: EventItem) => reaction.content === "-";
 
 type ReactionsTransformed = {
@@ -196,17 +192,12 @@ export function getEventStatistics(
 
   // Get reposts (NIP-18) - only for kind 1 events
   if (event.kind === 1) {
-    const repostCleanup = getReposts(
-      event,
-      STATISTICS_RELAYS,
-      stats.reposts,
-      (reposts) => {
-        // merge the reposts with the cache
-        stats.reposts = new Map([...stats.reposts, ...reposts]);
+    const repostCleanup = getReposts(event, STATISTICS_RELAYS, stats.reposts, (reposts) => {
+      // merge the reposts with the cache
+      stats.reposts = new Map([...stats.reposts, ...reposts]);
 
-        onUpdate({ ...stats });
-      },
-    );
+      onUpdate({ ...stats });
+    });
 
     if (repostCleanup) {
       cleanupFunctions.push(repostCleanup);
@@ -214,25 +205,18 @@ export function getEventStatistics(
   }
 
   // Get reactions (NIP-25) - works for all event types
-  const reactionCleanup = getReactions(
-    event,
-    STATISTICS_RELAYS,
-    stats.reactions,
-    (reactions) => {
-      // merge the reactions with the cache
-      stats.reactions = new Map([...stats.reactions, ...reactions]);
+  const reactionCleanup = getReactions(event, STATISTICS_RELAYS, stats.reactions, (reactions) => {
+    // merge the reactions with the cache
+    stats.reactions = new Map([...stats.reactions, ...reactions]);
 
-      const { likes, dislikes, emojis } = reactionsToMap(
-        Array.from(reactions.values()),
-      );
+    const { likes, dislikes, emojis } = reactionsToMap(Array.from(reactions.values()));
 
-      stats.likes = likes;
-      stats.dislikes = dislikes;
-      stats.emojis = emojis;
+    stats.likes = likes;
+    stats.dislikes = dislikes;
+    stats.emojis = emojis;
 
-      onUpdate({ ...stats });
-    },
-  );
+    onUpdate({ ...stats });
+  });
 
   if (reactionCleanup) {
     cleanupFunctions.push(reactionCleanup);
@@ -250,17 +234,12 @@ export function getEventStatistics(
     cleanupFunctions.push(zapsCleanup);
   }
 
-  const quotesCleanup = getKind1Quotes(
-    event,
-    STATISTICS_RELAYS,
-    stats.quotes,
-    (quotes) => {
-      // merge the quotes with the cache
-      stats.quotes = new Map([...stats.quotes, ...quotes]);
+  const quotesCleanup = getKind1Quotes(event, STATISTICS_RELAYS, stats.quotes, (quotes) => {
+    // merge the quotes with the cache
+    stats.quotes = new Map([...stats.quotes, ...quotes]);
 
-      onUpdate({ ...stats });
-    },
-  );
+    onUpdate({ ...stats });
+  });
 
   if (quotesCleanup) {
     cleanupFunctions.push(quotesCleanup);
@@ -269,17 +248,12 @@ export function getEventStatistics(
   // Handle different event types
   if (event.kind === 1) {
     // Kind 1 (notes) - use NIP-10
-    const repliesCleanup = getKind1Replies(
-      event,
-      STATISTICS_RELAYS,
-      stats.replies,
-      (replies) => {
-        // merge the replies with the cache
-        stats.replies = new Map([...stats.replies, ...replies]);
+    const repliesCleanup = getKind1Replies(event, STATISTICS_RELAYS, stats.replies, (replies) => {
+      // merge the replies with the cache
+      stats.replies = new Map([...stats.replies, ...replies]);
 
-        onUpdate({ ...stats });
-      },
-    );
+      onUpdate({ ...stats });
+    });
 
     if (repliesCleanup) {
       cleanupFunctions.push(repliesCleanup);

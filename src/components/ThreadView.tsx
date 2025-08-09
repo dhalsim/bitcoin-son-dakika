@@ -42,10 +42,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
       >
         {/* Expand/Collapse button */}
         {hasChildren && (
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="flex-shrink-0 mt-1"
-          >
+          <button onClick={() => setIsExpanded(!isExpanded)} className="flex-shrink-0 mt-1">
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-gray-500" />
             ) : (
@@ -69,11 +66,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
               {displayName}
             </span>
             {profile?.nip05 && (
-              <NIP05Badge
-                nip05={profile.nip05}
-                pubkey={node.event.pubkey}
-                size="sm"
-              />
+              <NIP05Badge nip05={profile.nip05} pubkey={node.event.pubkey} size="sm" />
             )}
             <span className="text-xs text-gray-500">
               {new Date(node.event.created_at * 1000).toLocaleDateString()}
@@ -112,12 +105,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
   );
 }
 
-export function ThreadView({
-  thread,
-  className = "",
-  onReply,
-  profiles,
-}: ThreadViewProps) {
+export function ThreadView({ thread, className = "", onReply, profiles }: ThreadViewProps) {
   if (!thread || thread.length === 0) {
     return (
       <div className={`text-sm text-gray-500 dark:text-gray-400 ${className}`}>
@@ -128,21 +116,14 @@ export function ThreadView({
 
   const getRepliesCount = (node: ReplyNode): number => {
     // Count this node as a reply plus all its children
-    return (
-      1 + node.children.reduce((acc, child) => acc + getRepliesCount(child), 0)
-    );
+    return 1 + node.children.reduce((acc, child) => acc + getRepliesCount(child), 0);
   };
 
-  const repliesCount = thread.reduce(
-    (acc, node) => acc + getRepliesCount(node),
-    0,
-  );
+  const repliesCount = thread.reduce((acc, node) => acc + getRepliesCount(node), 0);
 
   return (
     <div className={`space-y-1 ${className}`}>
-      <h3 className="text-lg font-semibold text-purple-600 mb-4">
-        Yanıtlar ({repliesCount})
-      </h3>
+      <h3 className="text-lg font-semibold text-purple-600 mb-4">Yanıtlar ({repliesCount})</h3>
 
       {thread.map((node) => (
         <ThreadNode
