@@ -13,6 +13,18 @@ import type { NewsTag } from "api-helpers/utils";
 import UploadToX from "./UploadToX";
 import { publishToX } from "./utils";
 
+type XPublishData =
+  | {
+      type: "success";
+      success: boolean;
+      message: string;
+    }
+  | {
+      type: "error";
+      error: string;
+    }
+  | { type: "loading" };
+
 export default function NewsCuration({
   news,
   lastUpdated,
@@ -31,6 +43,7 @@ export default function NewsCuration({
   const [shareOpen, setShareOpen] = useState(false);
   const [newsEvents, setNewsEvents] = useState<Map<string, EventItem>>(new Map());
   const [shareData, setShareData] = useState<EventItem | null>(null);
+  const [xPublishData, setXPublishData] = useState<XPublishData | null>(null);
 
   useEffect(() => {
     if (news.length > 0) {
@@ -191,10 +204,38 @@ export default function NewsCuration({
         open={shareOpen}
         onOpenChange={setShareOpen}
         eventItem={shareData}
-        onUpload={publishToX}
+        onUpload={async ({ blob, title, summary }) => {
+          try {
+            const res = await publishToX({ blob, title, summary });
+
+            const data = await res.json();
+
+            if (data.success) {
+              const { success, ...rest } = data;
+
+              setXPublishData({ type: "success", success: true, message: JSON.stringify(rest) });
+            } else {
+              setXPublishData({ type: "error", error: data.message });
+            }
+          } catch (error) {
+            setXPublishData({ type: "error", error: error.message });
+          }
+        }}
         width={800}
         height={600}
       />
+
+      {xPublishData && xPublishData.type === "error" && (
+        <div className="text-red-500 text-sm">{xPublishData.error}</div>
+      )}
+
+      {xPublishData && xPublishData.type === "success" && (
+        <div className="text-green-500 text-sm">{xPublishData.message}</div>
+      )}
+
+      {xPublishData && xPublishData.type === "loading" && (
+        <div className="text-gray-500 text-sm">Twitter'a yükleniyor...</div>
+      )}
     </Card>
   );
 }

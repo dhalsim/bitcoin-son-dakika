@@ -62,14 +62,14 @@ export async function publishToX({
   blob: Blob;
   title: string;
   summary: string;
-}) {
+}): Promise<Response> {
   const formData = new FormData();
   formData.append("media", new File([blob], "post.png", { type: "image/png" }));
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = `${origin}/api/admin`;
 
-  const response = await fetch(url, {
+  return fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -81,6 +81,4 @@ export async function publishToX({
       summary,
     }),
   });
-
-  console.log(response);
 }
