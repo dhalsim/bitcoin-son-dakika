@@ -68,11 +68,13 @@ export async function publishToX({
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = `${origin}/api/admin`;
+  const auth = await createNIP98Auth("POST", url);
 
   return fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: auth,
     },
     body: JSON.stringify({
       action: "upload-to-x",
