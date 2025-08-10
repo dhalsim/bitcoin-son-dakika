@@ -1,7 +1,5 @@
 import { nip19 } from "nostr-tools";
 
-import { WEBSITE_URL } from "@/lib/constants";
-
 export type NpubValidationResult =
   | { valid: true; pubkey: string }
   | { valid: false; error: string };
@@ -44,10 +42,10 @@ export async function createNIP98Auth(method: string, url: string): Promise<stri
 
 export async function postAdminAction(data: any): Promise<any> {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const url = `${origin}/api/admin`;
+  const auth = await createNIP98Auth("POST", url);
 
-  const auth = await createNIP98Auth("POST", `${origin}/api/admin`);
-
-  const res = await fetch(`${WEBSITE_URL}/api/admin`, {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: auth },
     body: JSON.stringify(data),
@@ -68,7 +66,10 @@ export async function publishToX({
   const formData = new FormData();
   formData.append("media", new File([blob], "post.png", { type: "image/png" }));
 
-  const response = await fetch(`${WEBSITE_URL}/api/admin`, {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const url = `${origin}/api/admin`;
+
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
