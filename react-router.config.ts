@@ -104,9 +104,10 @@ export default {
 
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
+      "/admin-panel", // Admin paneli - static
       "/news", // Haberler sayfası - static
-      "/ssg-debug", // SSG debug page - only available in development
-      "/enson", // Enson sayfası - static
+      "/articles", // Makaleler sayfası - static
+      "/son-dakika", // Son dakika sayfası - static
       ...profileRoutes, // Profile pages - static
       ...tagRoutes, // Tag pages - static
       ...articlesRoutes, // Article detail pages - static
