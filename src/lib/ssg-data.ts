@@ -1,4 +1,4 @@
-import { fetchNostrSets, pool } from "../../api-helpers/utils";
+import { fetchNostrSets, pool } from "../../api-helpers/utils.js";
 
 import type { EventItem, ProfileItem } from "./nip01";
 import { getProfiles } from "./nip01";

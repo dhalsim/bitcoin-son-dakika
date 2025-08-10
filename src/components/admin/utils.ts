@@ -60,12 +60,10 @@ export async function publishToX({
   blob,
   title,
   summary,
-  content,
 }: {
   blob: Blob;
   title: string;
   summary: string;
-  content: string;
 }) {
   const formData = new FormData();
   formData.append("media", new File([blob], "post.png", { type: "image/png" }));
@@ -80,7 +78,6 @@ export async function publishToX({
       formData,
       title,
       summary,
-      content,
     }),
   });
 

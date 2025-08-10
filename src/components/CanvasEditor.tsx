@@ -12,11 +12,12 @@ export type CanvasEditorHandle = {
     options?: {
       x?: number;
       y?: number;
-      fontSize?: number;
-      fill?: string;
-      fontFamily?: string;
-      stroke?: string;
-      strokeWidth?: number;
+      fontSize: number;
+      fontFamily: string;
+      fill: string;
+      shadowColor: string;
+      shadowBlur: number;
+      shadowOpacity: number;
     },
   ) => void;
   clearOverlays: () => void;
@@ -243,19 +244,17 @@ const CanvasEditor = memo(
           }
 
           const K = window.Konva;
-          const fontSize = options?.fontSize ?? 28;
+
           const node = new K.Text({
-            text: text ?? "",
+            text,
             x: options?.x ?? 24,
             y: options?.y ?? 24,
-            fontSize,
-            fontFamily: options?.fontFamily ?? "Inter, ui-sans-serif, system-ui",
-            fill: options?.fill ?? "#ffffff",
-            stroke: options?.stroke ?? "#000000",
-            strokeWidth: options?.strokeWidth ?? 0,
-            shadowColor: "#000000",
-            shadowBlur: 6,
-            shadowOpacity: 0.4,
+            fontSize: options.fontSize,
+            fontFamily: options.fontFamily,
+            fill: options.fill,
+            shadowColor: options.shadowColor,
+            shadowBlur: options.shadowBlur,
+            shadowOpacity: options.shadowOpacity,
             draggable: true,
             listening: true,
           });

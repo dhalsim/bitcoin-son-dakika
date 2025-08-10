@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { EventItem } from "@/lib/nip01";
 
@@ -17,12 +24,10 @@ type UploadToXProps = {
     blob,
     title,
     summary,
-    content,
   }: {
     blob: Blob;
     title: string;
     summary: string;
-    content: string;
   }) => Promise<void> | void;
   width?: number;
   height?: number;
@@ -40,25 +45,36 @@ export default function UploadToX({
   const [title, setTitle] = useState<string | undefined>(undefined);
   const [summary, setSummary] = useState<string | undefined>(undefined);
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
-  const [content, setContent] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [overlayText, setOverlayText] = useState<string>("");
-  const [overlayFontSize, setOverlayFontSize] = useState<number>(28);
-  const [overlayFill, setOverlayFill] = useState<string>("#ffffff");
-  const [overlayStroke, setOverlayStroke] = useState<string>("#000000");
-  const [overlayStrokeWidth, setOverlayStrokeWidth] = useState<number>(0);
+
+  const [overlayTextConfig, setOverlayTextConfig] = useState<{
+    text: string;
+    fontSize: number;
+    fontFamily: string;
+    fill: string;
+    shadowColor: string;
+    shadowBlur: number;
+    shadowOpacity: number;
+  }>({
+    text: "",
+    fontSize: 60,
+    fontFamily: "Inter, ui-sans-serif, system-ui",
+    fill: "#ffffff",
+    shadowColor: "#000000",
+    shadowBlur: 3,
+    shadowOpacity: 1,
+  });
 
   useEffect(() => {
     if (open && eventItem) {
       const title = eventItem.tags.find((t) => t[0] === "title")?.[1];
       const summary = eventItem.tags.find((t) => t[0] === "summary")?.[1];
       const imageUrl = eventItem.tags.find((t) => t[0] === "image")?.[1];
-      const content = eventItem.tags.find((t) => t[0] === "content")?.[1];
 
       setTitle(title);
       setSummary(summary);
       setImageUrl(imageUrl);
-      setContent(content);
 
       setLoading(false);
     }
@@ -89,14 +105,6 @@ export default function UploadToX({
               <Label>Görsel URL</Label>
               <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
             </div>
-            <div>
-              <Label>İçerik</Label>
-              <Textarea
-                className="min-h-[160px]"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-              />
-            </div>
 
             <Button
               disabled={loading || !imageUrl?.trim()}
@@ -112,12 +120,7 @@ export default function UploadToX({
                     return;
                   }
 
-                  await onUpload({
-                    blob,
-                    title,
-                    summary,
-                    content,
-                  });
+                  await onUpload({ blob, title, summary });
 
                   onOpenChange(false);
                 } finally {
@@ -193,10 +196,12 @@ export default function UploadToX({
                       }
 
                       canvasRef.current.addOverlayText(overlayText.trim(), {
-                        fontSize: overlayFontSize,
-                        fill: overlayFill,
-                        stroke: overlayStroke,
-                        strokeWidth: overlayStrokeWidth,
+                        fontSize: overlayTextConfig.fontSize,
+                        fontFamily: overlayTextConfig.fontFamily,
+                        fill: overlayTextConfig.fill,
+                        shadowColor: overlayTextConfig.shadowColor,
+                        shadowBlur: overlayTextConfig.shadowBlur,
+                        shadowOpacity: overlayTextConfig.shadowOpacity,
                       });
                     }}
                   >
@@ -211,38 +216,110 @@ export default function UploadToX({
                       type="number"
                       min={8}
                       max={200}
-                      value={overlayFontSize}
-                      onChange={(e) => setOverlayFontSize(Number(e.target.value) || 0)}
+                      value={overlayTextConfig.fontSize}
+                      onChange={(e) =>
+                        setOverlayTextConfig({
+                          ...overlayTextConfig,
+                          fontSize: Number(e.target.value) || 0,
+                        })
+                      }
                     />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="min-w-[90px]">Kontur Kalınlığı</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={20}
-                      value={overlayStrokeWidth}
-                      onChange={(e) => setOverlayStrokeWidth(Number(e.target.value) || 0)}
-                    />
-                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="min-w-[90px]">Yazı Tipi</Label>
+                  <Select
+                    value={overlayTextConfig.fontFamily}
+                    onValueChange={(v) =>
+                      setOverlayTextConfig({ ...overlayTextConfig, fontFamily: v })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Yazı tipini seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Inter, ui-sans-serif, system-ui">
+                        Inter / System Sans
+                      </SelectItem>
+                      <SelectItem value="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', sans-serif">
+                        System Sans
+                      </SelectItem>
+                      <SelectItem value="Helvetica, Arial, sans-serif">
+                        Helvetica / Arial
+                      </SelectItem>
+                      <SelectItem value="Georgia, 'Times New Roman', serif">
+                        Serif (Georgia)
+                      </SelectItem>
+                      <SelectItem value="'Times New Roman', Times, serif">
+                        Times New Roman
+                      </SelectItem>
+                      <SelectItem value="Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace">
+                        Monospace (Menlo)
+                      </SelectItem>
+                      <SelectItem value="'Courier New', Courier, monospace">Courier New</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex items-center gap-2">
                     <Label className="min-w-[90px]">Yazı Rengi</Label>
                     <Input
                       type="color"
-                      value={overlayFill}
-                      onChange={(e) => setOverlayFill(e.target.value)}
+                      value={overlayTextConfig.fill}
+                      onChange={(e) =>
+                        setOverlayTextConfig({
+                          ...overlayTextConfig,
+                          fill: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Label className="min-w-[90px]">Gölge Rengi</Label>
+                    <Input
+                      type="color"
+                      value={overlayTextConfig.shadowColor}
+                      onChange={(e) =>
+                        setOverlayTextConfig({
+                          ...overlayTextConfig,
+                          shadowColor: e.target.value,
+                        })
+                      }
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Label className="min-w-[90px]">Kontur Rengi</Label>
+                    <Label className="min-w-[90px]">Gölge Bulanıklığı</Label>
                     <Input
-                      type="color"
-                      value={overlayStroke}
-                      onChange={(e) => setOverlayStroke(e.target.value)}
+                      type="number"
+                      min={0}
+                      max={50}
+                      value={overlayTextConfig.shadowBlur}
+                      onChange={(e) =>
+                        setOverlayTextConfig({
+                          ...overlayTextConfig,
+                          shadowBlur: Number(e.target.value) || 0,
+                        })
+                      }
                     />
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="min-w-[90px]">Gölge Opaklığı</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={overlayTextConfig.shadowOpacity}
+                    onChange={(e) =>
+                      setOverlayTextConfig({
+                        ...overlayTextConfig,
+                        shadowOpacity: Math.max(0, Math.min(1, Number(e.target.value) || 0)),
+                      })
+                    }
+                  />
                 </div>
               </div>
             </div>
