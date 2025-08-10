@@ -79,6 +79,27 @@ export async function POST(request: Request) {
       return ErrorResponse(undefined, authResult.error, authResult.status);
     }
 
+    const contentType = request.headers.get("content-type")?.toLowerCase() || "";
+
+    // If multipart, parse as FormData and route accordingly (used for upload-to-x)
+    if (contentType.includes("multipart/form-data")) {
+      const form = await request.formData();
+      const action = form.get("action");
+
+      if (action === "upload-to-x") {
+        const title = String(form.get("title") || "");
+
+        return handleUploadToX(twitterBearerToken, authResult, {
+          action: "upload-to-x",
+          formData: form,
+          title,
+        } as UploadToXPayload);
+      }
+
+      return ErrorResponse(undefined, "Invalid action for multipart request", 400);
+    }
+
+    // Otherwise, parse JSON
     const requestBody = await request.json();
     const { action } = requestBody;
 
@@ -177,8 +198,6 @@ type UploadToXPayload = {
   action: "upload-to-x";
   formData: FormData;
   title: string;
-  summary: string;
-  content: string;
 };
 
 /** Editor Handlers */
@@ -650,16 +669,24 @@ async function handleUploadToX(
     return ErrorResponse(undefined, "File is required", 400);
   }
 
+  // Build a clean form for X API: include only expected fields
+  const media = formData.get("media") as File | null;
+  if (!media) {
+    return ErrorResponse(undefined, "Media file missing", 400);
+  }
+
+  const xForm = new FormData();
+  xForm.append("media", media);
   // Ref: https://docs.x.com/x-api/media/upload-media
-  formData.append("media_category", "tweet_image");
-  formData.append("media_type", "image/png");
+  xForm.append("media_category", "tweet_image");
+  xForm.append("media_type", "image/png");
 
   const uploadResponse = await fetch("https://api.x.com/2/media/upload", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${twitterBearerToken}`,
     },
-    body: formData,
+    body: xForm,
   });
 
   if (!uploadResponse.ok) {

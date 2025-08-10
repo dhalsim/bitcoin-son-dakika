@@ -57,14 +57,14 @@ export async function postAdminAction(data: any): Promise<any> {
 export async function publishToX({
   blob,
   title,
-  summary,
 }: {
   blob: Blob;
   title: string;
-  summary: string;
 }): Promise<Response> {
-  const formData = new FormData();
-  formData.append("media", new File([blob], "post.png", { type: "image/png" }));
+  const form = new FormData();
+  form.append("action", "upload-to-x");
+  form.append("title", title);
+  form.append("media", new File([blob], "post.png", { type: "image/png" }));
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = `${origin}/api/admin`;
@@ -73,14 +73,9 @@ export async function publishToX({
   return fetch(url, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      // Do NOT set Content-Type here; the browser will set the proper multipart boundary
       Authorization: auth,
     },
-    body: JSON.stringify({
-      action: "upload-to-x",
-      formData,
-      title,
-      summary,
-    }),
+    body: form,
   });
 }

@@ -20,15 +20,7 @@ type UploadToXProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   eventItem: EventItem;
-  publishToX: ({
-    blob,
-    title,
-    summary,
-  }: {
-    blob: Blob;
-    title: string;
-    summary: string;
-  }) => Promise<Response>;
+  publishToX: ({ blob, title }: { blob: Blob; title: string }) => Promise<Response>;
   width?: number;
   height?: number;
 };
@@ -133,7 +125,7 @@ export default function UploadToX({
                     return;
                   }
 
-                  const res = await publishToX({ blob, title, summary });
+                  const res = await publishToX({ blob, title });
 
                   const data = await res.json();
 
