@@ -20,7 +20,7 @@ type UploadToXProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   eventItem: EventItem;
-  onUpload: ({
+  publishToX: ({
     blob,
     title,
     summary,
@@ -28,16 +28,28 @@ type UploadToXProps = {
     blob: Blob;
     title: string;
     summary: string;
-  }) => Promise<void> | void;
+  }) => Promise<Response>;
   width?: number;
   height?: number;
 };
+
+type XPublishData =
+  | {
+      type: "success";
+      success: boolean;
+      message: string;
+    }
+  | {
+      type: "error";
+      error: string;
+    }
+  | { type: "loading" };
 
 export default function UploadToX({
   open,
   onOpenChange,
   eventItem,
-  onUpload,
+  publishToX,
   width = 800,
   height = 600,
 }: UploadToXProps) {
@@ -47,7 +59,7 @@ export default function UploadToX({
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [overlayText, setOverlayText] = useState<string>("");
-
+  const [xPublishData, setXPublishData] = useState<XPublishData | null>(null);
   const [overlayTextConfig, setOverlayTextConfig] = useState<{
     text: string;
     fontSize: number;
@@ -114,33 +126,51 @@ export default function UploadToX({
                 }
 
                 setLoading(true);
+
                 try {
                   const blob = await canvasRef.current.exportAsBlob();
                   if (!blob) {
                     return;
                   }
 
-                  await onUpload({ blob, title, summary });
+                  const res = await publishToX({ blob, title, summary });
 
-                  onOpenChange(false);
+                  const data = await res.json();
+
+                  if (data.success) {
+                    const { success, ...rest } = data;
+
+                    setXPublishData({
+                      type: "success",
+                      success: true,
+                      message: JSON.stringify(rest),
+                    });
+                  } else {
+                    setXPublishData({ type: "error", error: data.message });
+                  }
+                } catch (error) {
+                  setXPublishData({ type: "error", error: error.message });
                 } finally {
                   setLoading(false);
                 }
               }}
               className="w-full"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Yükleniyor...
-                </>
-              ) : (
-                <>
-                  <Rocket className="h-4 w-4 mr-2" />
-                  X'e Yükle
-                </>
-              )}
+              <Rocket className="h-4 w-4 mr-2" />
+              X'e Yükle
             </Button>
+
+            {xPublishData && xPublishData.type === "error" && (
+              <div className="text-red-500 text-sm">{xPublishData.error}</div>
+            )}
+
+            {xPublishData && xPublishData.type === "success" && (
+              <div className="text-green-500 text-sm">{xPublishData.message}</div>
+            )}
+
+            {xPublishData && xPublishData.type === "loading" && (
+              <div className="text-gray-500 text-sm">Twitter'a yükleniyor...</div>
+            )}
           </div>
 
           <div className="space-y-2">
