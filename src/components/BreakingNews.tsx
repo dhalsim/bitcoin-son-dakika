@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { createTitleSlug } from "@/lib/ssg-data";
+import { createTitleSlug } from "../../api-helpers/utils";
 
 import { useLatestNews } from "../contexts/SSGContext";
 

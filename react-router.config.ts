@@ -4,6 +4,7 @@ import { join } from "path";
 import type { Config } from "@react-router/dev/config";
 import { vercelPreset } from "@vercel/react-router/vite";
 
+import { createTitleSlug } from "./api-helpers/utils";
 import { generateFeeds } from "./src/lib/feed-generator";
 import {
   fetchSSGData,
@@ -11,7 +12,6 @@ import {
   getUniqueProfiles,
   createProfileSlug,
   getUniqueTags,
-  createTitleSlug,
 } from "./src/lib/ssg-data";
 
 // Type declaration for global SSG data

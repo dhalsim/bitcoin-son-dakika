@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { Link } from "react-router";
 
 import type { EventItem, ProfileItem } from "@/lib/nip01";
-import { createTitleSlug, createProfileSlug } from "@/lib/ssg-data";
+import { createProfileSlug } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
+
+import { createTitleSlug } from "../../api-helpers/utils";
 
 import { CategoryTags } from "./CategoryTags";
 import { EventStatistics } from "./EventStatistics";

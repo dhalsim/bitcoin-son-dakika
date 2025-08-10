@@ -1,4 +1,4 @@
-import { fetchNostrSets, pool } from "../../api-helpers/utils.js";
+import { fetchNostrSets, pool } from "../../api-helpers/utils";
 
 import type { EventItem, ProfileItem } from "./nip01";
 import { getProfiles } from "./nip01";
@@ -221,31 +221,6 @@ export function createProfileSlug(displayName: string): string {
     .replace(/\s+/g, "-") // Replace spaces with hyphens
     .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
     .trim();
-}
-
-export function createTitleSlug(title: string): string {
-  return (
-    title
-      .toLowerCase()
-      // replace turkish characters with english characters
-      .replace(/ğ/g, "g")
-      .replace(/Ğ/g, "G")
-      .replace(/ı/g, "i")
-      .replace(/İ/g, "I")
-      .replace(/ş/g, "s")
-      .replace(/Ş/g, "S")
-      .replace(/ü/g, "u")
-      .replace(/Ü/g, "U")
-      .replace(/ö/g, "o")
-      .replace(/Ö/g, "O")
-      .replace(/ç/g, "c")
-      .replace(/Ç/g, "C")
-      .replace(/[^a-z0-9\s-]/g, "") // Remove special characters except spaces and hyphens
-      .trim()
-      .replace(/\s+/g, "-") // Replace spaces with hyphens
-      .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
-      .trim()
-  );
 }
 
 export function getDisplayName(profile: ProfileItem, pubkey: string) {

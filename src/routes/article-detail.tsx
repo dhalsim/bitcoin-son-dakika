@@ -4,7 +4,9 @@ import { Link, useLoaderData } from "react-router";
 import remarkGfm from "remark-gfm";
 
 import type { SSGData } from "@/lib/ssg-data";
-import { createProfileSlug, createTitleSlug } from "@/lib/ssg-data";
+import { createProfileSlug } from "@/lib/ssg-data";
+
+import { createTitleSlug } from "../../api-helpers/utils";
 
 import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";

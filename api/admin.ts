@@ -10,8 +10,8 @@ import {
   authenticateNIP98,
   fetchNostrSets,
   PublishEventResponse,
+  createTitleSlug,
 } from "../api-helpers/utils.js";
-import { createTitleSlug } from "../src/lib/ssg-data.js";
 import { publishToRelays } from "../src/lib/utils.js";
 
 // Vercel Edge Function handler for GET requests

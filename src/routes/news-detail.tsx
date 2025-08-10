@@ -3,8 +3,9 @@ import type { MetaFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 
 import type { SSGData } from "@/lib/ssg-data";
-import { createTitleSlug } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
+
+import { createTitleSlug } from "../../api-helpers/utils";
 
 import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";
