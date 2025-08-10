@@ -13,7 +13,17 @@ type UploadToXProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   eventItem: EventItem;
-  onUpload: (blob: Blob) => Promise<void> | void;
+  onUpload: ({
+    blob,
+    title,
+    summary,
+    content,
+  }: {
+    blob: Blob;
+    title: string;
+    summary: string;
+    content: string;
+  }) => Promise<void> | void;
   width?: number;
   height?: number;
 };
@@ -102,7 +112,13 @@ export default function UploadToX({
                     return;
                   }
 
-                  await onUpload(blob);
+                  await onUpload({
+                    blob,
+                    title,
+                    summary,
+                    content,
+                  });
+
                   onOpenChange(false);
                 } finally {
                   setLoading(false);

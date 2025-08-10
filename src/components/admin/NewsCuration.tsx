@@ -189,14 +189,19 @@ export default function NewsCuration({
         open={shareOpen}
         onOpenChange={setShareOpen}
         eventItem={shareData}
-        onUpload={async (blob) => {
+        onUpload={async ({ blob, title, summary, content }) => {
           const formData = new FormData();
-          formData.append("action", "upload-to-x");
           formData.append("media", new File([blob], "post.png", { type: "image/png" }));
 
           const response = await fetch("/api/admin", {
             method: "POST",
-            body: JSON.stringify({ action: "upload-to-x", formData }),
+            body: JSON.stringify({
+              action: "upload-to-x",
+              formData,
+              title,
+              summary,
+              content,
+            }),
           });
 
           console.log(response);

@@ -11,6 +11,7 @@ import {
   fetchNostrSets,
   PublishEventResponse,
 } from "../api-helpers/utils.js";
+import { createTitleSlug } from "../src/lib/ssg-data";
 import { publishToRelays } from "../src/lib/utils.js";
 
 // Vercel Edge Function handler for GET requests
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
       case "publish-news":
         return handlePublishNews(masterAdminPrivateKey, newsTags, authResult, requestBody);
       case "upload-to-x":
-        return handleUploadToX(twitterBearerToken, newsTags, authResult, requestBody);
+        return handleUploadToX(twitterBearerToken, authResult, requestBody);
       default:
         return ErrorResponse(undefined, "Invalid action", 400);
     }
@@ -175,6 +176,9 @@ type PublishNewsPayload = {
 type UploadToXPayload = {
   action: "upload-to-x";
   formData: FormData;
+  title: string;
+  summary: string;
+  content: string;
 };
 
 /** Editor Handlers */
@@ -627,7 +631,6 @@ async function handleTriggerDeploy(request: Request) {
 
 async function handleUploadToX(
   twitterBearerToken: string,
-  newsTags: NewsTag[],
   authResult: AuthResult,
   data: UploadToXPayload,
 ) {
@@ -651,7 +654,7 @@ async function handleUploadToX(
   formData.append("media_category", "tweet_image");
   formData.append("media_type", "image/png");
 
-  const response = await fetch("https://api.x.com/2/media/upload", {
+  const uploadResponse = await fetch("https://api.x.com/2/media/upload", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${twitterBearerToken}`,
@@ -659,15 +662,85 @@ async function handleUploadToX(
     body: formData,
   });
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => "");
+  if (!uploadResponse.ok) {
+    const text = await uploadResponse.text().catch(() => "");
 
-    return ErrorResponse(undefined, `X upload failed: ${response.status} ${text}`, response.status);
+    return ErrorResponse(
+      undefined,
+      `X upload failed: ${uploadResponse.status} ${text}`,
+      uploadResponse.status,
+    );
   }
 
-  const json = (await response.json().catch(() => ({}))) as any;
+  try {
+    const uploadJson = await uploadResponse.json();
 
-  return SuccessResponse({ message: "Uploaded to X", data: json });
+    if (uploadJson.errors) {
+      return ErrorResponse(undefined, uploadJson.errors.map((e: any) => e.message).join(", "), 400);
+    }
+
+    const { id: mediaId } = uploadJson.data;
+
+    if (!mediaId) {
+      return ErrorResponse(undefined, "Media ID not found", 400);
+    }
+
+    try {
+      const mediaTweetResponse = await fetch("https://api.x.com/2/tweets", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${twitterBearerToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          media: { media_ids: [mediaId] },
+          text: data.title,
+        }),
+      });
+
+      const { id: mediaTweetId, errors } = await mediaTweetResponse.json();
+
+      if (errors) {
+        return ErrorResponse(undefined, errors.map((e: any) => e.message).join(", "), 400);
+      }
+
+      if (!mediaTweetId) {
+        return ErrorResponse(undefined, "Reply to ID not found", 400);
+      }
+
+      const newsUrl = `https://bitcoinsindakika.com/news/${createTitleSlug(data.title)}`;
+
+      const replyTweetResponse = await fetch("https://api.x.com/2/tweets", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${twitterBearerToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reply: {
+            in_reply_to_tweet_id: mediaTweetId,
+          },
+          text: `Haberin devamı için ve daha fazlası için: ${newsUrl}`,
+        }),
+      });
+
+      const { id: replyTweetId, errors: replyTweetErrors } = await replyTweetResponse.json();
+
+      if (replyTweetErrors) {
+        return ErrorResponse(
+          undefined,
+          replyTweetErrors.map((e: any) => e.message).join(", "),
+          400,
+        );
+      }
+
+      return SuccessResponse({ message: "Uploaded to X", data: { mediaTweetId, replyTweetId } });
+    } catch (error) {
+      console.error(error);
+    }
+  } catch (error) {
+    return ErrorResponse(error);
+  }
 }
 
 /** Admin Handlers */
