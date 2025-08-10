@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { hexToBytes } from "@noble/hashes/utils";
 import { finalizeEvent, nip19 } from "nostr-tools";
 
@@ -40,18 +42,6 @@ export async function GET(_request: Request) {
 
 // Vercel Edge Function handler for POST requests
 export async function POST(request: Request) {
-  const masterAdminPrivateKey = process.env.MASTER_ADMIN_PRIVATEKEY;
-
-  if (!masterAdminPrivateKey) {
-    return ErrorResponse(undefined, "Master admin private key not configured", 500);
-  }
-
-  const twitterBearerToken = process.env.TWITTER_BEARER_TOKEN;
-
-  if (!twitterBearerToken) {
-    return ErrorResponse(undefined, "Twitter bearer token not configured", 500);
-  }
-
   try {
     const { adminUsers, editorUsers, articleTags, newsTags } = await fetchNostrSets([
       "admin-users",
@@ -87,16 +77,45 @@ export async function POST(request: Request) {
       const action = form.get("action");
 
       if (action === "upload-to-x") {
+        const {
+          TWITTER_API_KEY,
+          TWITTER_API_SECRET,
+          TWITTER_ACCESS_TOKEN,
+          TWITTER_ACCESS_TOKEN_SECRET,
+        } = process.env;
+
+        if (
+          !TWITTER_API_KEY ||
+          !TWITTER_API_SECRET ||
+          !TWITTER_ACCESS_TOKEN ||
+          !TWITTER_ACCESS_TOKEN_SECRET
+        ) {
+          return ErrorResponse(undefined, "Twitter credentials not configured", 500);
+        }
+
         const title = String(form.get("title") || "");
 
-        return handleUploadToX(twitterBearerToken, authResult, {
-          action: "upload-to-x",
-          formData: form,
-          title,
-        } as UploadToXPayload);
+        return handleUploadToX({
+          TWITTER_API_KEY,
+          TWITTER_API_SECRET,
+          TWITTER_ACCESS_TOKEN,
+          TWITTER_ACCESS_TOKEN_SECRET,
+          authResult,
+          data: {
+            action: "upload-to-x",
+            formData: form,
+            title,
+          },
+        });
       }
 
       return ErrorResponse(undefined, "Invalid action for multipart request", 400);
+    }
+
+    const masterAdminPrivateKey = process.env.MASTER_ADMIN_PRIVATEKEY;
+
+    if (!masterAdminPrivateKey) {
+      return ErrorResponse(undefined, "Master admin private key not configured", 500);
     }
 
     // Otherwise, parse JSON
@@ -124,8 +143,6 @@ export async function POST(request: Request) {
         return handleRemoveArticle(masterAdminPrivateKey, articleTags, authResult, requestBody);
       case "publish-news":
         return handlePublishNews(masterAdminPrivateKey, newsTags, authResult, requestBody);
-      case "upload-to-x":
-        return handleUploadToX(twitterBearerToken, authResult, requestBody);
       default:
         return ErrorResponse(undefined, "Invalid action", 400);
     }
@@ -648,11 +665,88 @@ async function handleTriggerDeploy(request: Request) {
   }
 }
 
-async function handleUploadToX(
-  twitterBearerToken: string,
-  authResult: AuthResult,
-  data: UploadToXPayload,
-) {
+type TwitterOAuthParams = {
+  TWITTER_API_KEY: string;
+  TWITTER_API_SECRET: string;
+  TWITTER_ACCESS_TOKEN: string;
+  TWITTER_ACCESS_TOKEN_SECRET: string;
+};
+
+type HandleUploadToXParams = TwitterOAuthParams & {
+  authResult: AuthResult;
+  data: UploadToXPayload;
+};
+
+type XAuthHeaderParams = TwitterOAuthParams & {
+  method: "POST" | "GET" | "PUT" | "DELETE";
+  url: string;
+};
+
+function createXAuthHeader(params: XAuthHeaderParams): string {
+  const {
+    TWITTER_API_KEY,
+    TWITTER_API_SECRET,
+    TWITTER_ACCESS_TOKEN,
+    TWITTER_ACCESS_TOKEN_SECRET,
+    method,
+    url,
+  } = params;
+
+  // OAuth helper to percent-encode
+  const encodeRFC3986 = (str) =>
+    encodeURIComponent(str).replace(
+      /[!'()*]/g,
+      (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+    );
+
+  const oauthParams = {
+    oauth_consumer_key: TWITTER_API_KEY,
+    oauth_nonce: crypto.randomBytes(16).toString("hex"),
+    oauth_signature_method: "HMAC-SHA1",
+    oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+    oauth_token: TWITTER_ACCESS_TOKEN,
+    oauth_version: "1.0",
+  } as Record<string, string>;
+
+  // Step 2: Create the signature base string
+  const baseParams = {
+    ...oauthParams,
+  };
+
+  const paramsString = Object.keys(baseParams)
+    .sort()
+    .map((k) => `${encodeRFC3986(k)}=${encodeRFC3986(baseParams[k])}`)
+    .join("&");
+
+  const baseString = [method, encodeRFC3986(url), encodeRFC3986(paramsString)].join("&");
+
+  // Step 3: Create the signing key
+  const signingKey = `${encodeRFC3986(TWITTER_API_SECRET)}&${encodeRFC3986(TWITTER_ACCESS_TOKEN_SECRET)}`;
+
+  // Step 4: Generate signature
+  const signature = crypto.createHmac("sha1", signingKey).update(baseString).digest("base64");
+
+  oauthParams.oauth_signature = signature;
+
+  // Step 5: Create Authorization header
+  return (
+    "OAuth " +
+    Object.keys(oauthParams)
+      .map((k) => `${encodeRFC3986(k)}="${encodeRFC3986(oauthParams[k])}"`)
+      .join(", ")
+  );
+}
+
+async function handleUploadToX(params: HandleUploadToXParams) {
+  const {
+    TWITTER_API_KEY,
+    TWITTER_API_SECRET,
+    TWITTER_ACCESS_TOKEN,
+    TWITTER_ACCESS_TOKEN_SECRET,
+    authResult,
+    data,
+  } = params;
+
   // Type guard to ensure success
   if (!authResult.success) {
     return ErrorResponse(undefined, "Authentication failed", 401);
@@ -681,10 +775,22 @@ async function handleUploadToX(
   xForm.append("media_category", "tweet_image");
   xForm.append("media_type", "image/png");
 
-  const uploadResponse = await fetch("https://api.x.com/2/media/upload", {
-    method: "POST",
+  const mediaUploadUrl = "https://api.x.com/2/media/upload";
+  const mediaUploadMethod = "POST";
+
+  const authHeader = createXAuthHeader({
+    TWITTER_API_KEY,
+    TWITTER_API_SECRET,
+    TWITTER_ACCESS_TOKEN,
+    TWITTER_ACCESS_TOKEN_SECRET,
+    method: mediaUploadMethod,
+    url: mediaUploadUrl,
+  });
+
+  const uploadResponse = await fetch(mediaUploadUrl, {
+    method: mediaUploadMethod,
     headers: {
-      Authorization: `Bearer ${twitterBearerToken}`,
+      Authorization: authHeader,
     },
     body: xForm,
   });
@@ -713,10 +819,21 @@ async function handleUploadToX(
     }
 
     try {
-      const mediaTweetResponse = await fetch("https://api.x.com/2/tweets", {
-        method: "POST",
+      const tweetUrl = "https://api.x.com/2/tweets";
+      const tweetMethod = "POST";
+
+      const authHeader = createXAuthHeader({
+        TWITTER_API_KEY,
+        TWITTER_API_SECRET,
+        TWITTER_ACCESS_TOKEN,
+        TWITTER_ACCESS_TOKEN_SECRET,
+        method: tweetMethod,
+        url: tweetUrl,
+      });
+
+      const mediaTweetResponse = await fetch(tweetUrl, {
         headers: {
-          Authorization: `Bearer ${twitterBearerToken}`,
+          Authorization: authHeader,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -737,10 +854,10 @@ async function handleUploadToX(
 
       const newsUrl = `https://bitcoinsindakika.com/news/${createTitleSlug(data.title)}`;
 
-      const replyTweetResponse = await fetch("https://api.x.com/2/tweets", {
-        method: "POST",
+      const replyTweetResponse = await fetch(tweetUrl, {
+        method: tweetMethod,
         headers: {
-          Authorization: `Bearer ${twitterBearerToken}`,
+          Authorization: authHeader,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
