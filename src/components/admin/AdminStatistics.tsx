@@ -22,7 +22,9 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
         tabIndex={0}
         onClick={() => onOpenTab?.("users")}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") onOpenTab?.("users");
+          if (e.key === "Enter" || e.key === " ") {
+            onOpenTab?.("users");
+          }
         }}
         className="cursor-pointer hover:ring-1 hover:ring-border"
       >
@@ -42,7 +44,9 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
         tabIndex={0}
         onClick={() => onOpenTab?.("users")}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") onOpenTab?.("users");
+          if (e.key === "Enter" || e.key === " ") {
+            onOpenTab?.("users");
+          }
         }}
         className="cursor-pointer hover:ring-1 hover:ring-border"
       >
@@ -62,7 +66,9 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
         tabIndex={0}
         onClick={() => onOpenTab?.("news")}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") onOpenTab?.("news");
+          if (e.key === "Enter" || e.key === " ") {
+            onOpenTab?.("news");
+          }
         }}
         className="cursor-pointer hover:ring-1 hover:ring-border"
       >
@@ -82,7 +88,9 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
         tabIndex={0}
         onClick={() => onOpenTab?.("articles")}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") onOpenTab?.("articles");
+          if (e.key === "Enter" || e.key === " ") {
+            onOpenTab?.("articles");
+          }
         }}
         className="cursor-pointer hover:ring-1 hover:ring-border"
       >

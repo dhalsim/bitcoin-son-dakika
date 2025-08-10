@@ -6,10 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { EventItem } from "@/lib/nip01";
+import { getKind1Events } from "@/lib/nip01";
+import type { NewsTag } from "api-helpers/utils";
 
 import UploadToX from "./UploadToX";
-import { NewsTag } from "api-helpers/utils";
-import { EventItem, getKind1Events } from "@/lib/nip01";
+import { publishToX } from "./utils";
 
 export default function NewsCuration({
   news,
@@ -189,23 +191,7 @@ export default function NewsCuration({
         open={shareOpen}
         onOpenChange={setShareOpen}
         eventItem={shareData}
-        onUpload={async ({ blob, title, summary, content }) => {
-          const formData = new FormData();
-          formData.append("media", new File([blob], "post.png", { type: "image/png" }));
-
-          const response = await fetch("/api/admin", {
-            method: "POST",
-            body: JSON.stringify({
-              action: "upload-to-x",
-              formData,
-              title,
-              summary,
-              content,
-            }),
-          });
-
-          console.log(response);
-        }}
+        onUpload={publishToX}
         width={800}
         height={600}
       />

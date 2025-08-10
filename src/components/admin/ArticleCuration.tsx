@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { EventItem } from "@/lib/nip01";
+import { getKind1Events } from "@/lib/nip01";
+import type { ArticleTag } from "api-helpers/utils";
 
 import UploadToX from "./UploadToX";
-import { ArticleTag } from "api-helpers/utils";
-import { EventItem, getKind1Events } from "@/lib/nip01";
+import { publishToX } from "./utils";
 
 export default function ArticleCuration({
   articles,
@@ -219,13 +221,7 @@ export default function ArticleCuration({
         open={shareOpen}
         onOpenChange={setShareOpen}
         eventItem={shareData}
-        onUpload={async (blob) => {
-          const formData = new FormData();
-          formData.append("action", "upload-to-x");
-          formData.append("file", new File([blob], "post.png", { type: "image/png" }));
-
-          await fetch("/api/admin", { method: "POST", body: formData });
-        }}
+        onUpload={publishToX}
         width={800}
         height={600}
       />

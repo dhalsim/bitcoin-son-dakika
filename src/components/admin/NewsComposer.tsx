@@ -1,7 +1,6 @@
 import { Loader2, Rocket, Upload, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
-import CanvasEditor, { type CanvasEditorHandle } from "@/components/CanvasEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,19 +34,15 @@ const CATEGORY_OPTIONS = [
   "geliştirme",
 ];
 
-export default function NewsComposer({
-  performAction,
-  onUploadToX,
-}: {
+type NewsComposerProps = {
   performAction: (data: any) => Promise<any>;
-  onUploadToX: (blob: Blob) => Promise<void> | void;
-}) {
-  const canvasRef = useRef<CanvasEditorHandle | null>(null);
+};
+
+export default function NewsComposer({ performAction }: NewsComposerProps) {
   const [newsContent, setNewsContent] = useState("");
   const [newsTitle, setNewsTitle] = useState("");
   const [newsSummary, setNewsSummary] = useState("");
   const [newsImageUrl, setNewsImageUrl] = useState("");
-  const [captionText, setCaptionText] = useState("");
   const [newsTags, setNewsTags] = useState<string[]>([]);
   const [newsPublishLoading, setNewsPublishLoading] = useState(false);
 
@@ -155,27 +150,12 @@ export default function NewsComposer({
                   value={newsImageUrl}
                   onChange={(e) => setNewsImageUrl(e.target.value)}
                 />
-                <Input
-                  placeholder="Görsel başlığı (isteğe bağlı)"
-                  value={captionText}
-                  onChange={(e) => setCaptionText(e.target.value)}
-                />
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="flex items-center gap-2" disabled>
                     <Upload className="h-4 w-4" />
                     Dosya Yükle
                   </Button>
                   <span className="text-sm text-gray-500">(Yakında eklenecek)</span>
-                </div>
-                <div className="pt-2">
-                  <CanvasEditor
-                    ref={canvasRef as any}
-                    imageUrl={newsImageUrl}
-                    captionText={captionText}
-                    width={800}
-                    height={600}
-                    backgroundColor="#000000"
-                  />
                 </div>
               </div>
             </div>
@@ -190,12 +170,14 @@ export default function NewsComposer({
 
                   try {
                     setNewsPublishLoading(true);
+
                     const payload: any = {
                       action: "publish-news",
                       content: newsContent.trim(),
                       title: newsTitle.trim(),
                       tags: newsTags,
                     };
+
                     if (newsSummary.trim()) {
                       payload.summary = newsSummary.trim();
                     }
@@ -226,27 +208,6 @@ export default function NewsComposer({
                   </>
                 )}
               </Button>
-              <div className="mt-3">
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={async () => {
-                    if (!canvasRef.current) {
-                      return;
-                    }
-
-                    const blob = await canvasRef.current.exportAsBlob();
-                    if (!blob) {
-                      return;
-                    }
-
-                    await onUploadToX(blob);
-                  }}
-                  disabled={!newsImageUrl.trim()}
-                >
-                  X'e Yükle (Görsel)
-                </Button>
-              </div>
             </div>
           </div>
         </div>

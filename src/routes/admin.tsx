@@ -9,10 +9,15 @@ import DeployTrigger from "@/components/admin/DeployTrigger";
 import NewsComposer from "@/components/admin/NewsComposer";
 import NewsCuration from "@/components/admin/NewsCuration";
 import UserManagement from "@/components/admin/UserManagement";
-import { createNIP98Auth, validateNpub } from "@/components/admin/utils";
+import { createNIP98Auth } from "@/components/admin/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { pool } from "@/lib/utils";
+import type { ArticleTag, NewsTag } from "../../api-helpers/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WEBSITE_URL } from "@/lib/constants";
+
+import { ADMIN_RELAYS, type PublishEventResponse } from "../../api-helpers/utils";
 
 // Displayed while the route hydrates on initial load
 export function HydrateFallback() {
@@ -25,15 +30,6 @@ export function HydrateFallback() {
     </div>
   );
 }
-
-import {
-  ADMIN_RELAYS,
-  ArticleTag,
-  NewsTag,
-  type PublishEventResponse,
-} from "../../api-helpers/utils";
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }
@@ -304,7 +300,7 @@ export default function AdminPanel() {
     setPublishSuccess(null);
 
     try {
-      const url = "https://www.bitcoinsondakika.com/api/admin";
+      const url = `${WEBSITE_URL}/api/admin`;
       const authHeader = await createNIP98Auth("POST", url);
 
       const response = await fetch(url, {
@@ -329,45 +325,6 @@ export default function AdminPanel() {
       setError(err instanceof Error ? err.message : "Bilinmeyen hata");
     } finally {
       setActionLoading("");
-    }
-  };
-
-  const uploadToX = async (blobFromChild?: Blob) => {
-    try {
-      const blob = blobFromChild;
-      if (!blob) {
-        setError("Görsel oluşturulamadı");
-
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("action", "upload-to-x");
-      formData.append("file", new File([blob], "post.png", { type: "image/png" }));
-
-      const authHeader = await createNIP98Auth("POST", `${window.location.origin}/api/admin`);
-
-      const response = await fetch("/api/admin", {
-        method: "POST",
-        headers: {
-          Authorization: authHeader,
-        },
-        body: formData,
-      });
-
-      const result = await response.json();
-      if (!result.success) {
-        setError(result.error || "X yükleme başarısız");
-
-        return;
-      }
-
-      setPublishSuccess((prev) => ({
-        ...(prev as any),
-        xMediaId: result.media_id,
-      }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "X yükleme hatası");
     }
   };
 
@@ -442,6 +399,15 @@ export default function AdminPanel() {
           </Alert>
         )}
 
+        {actionLoading && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {actionLoading} işlemi yapılıyor, lütfen bekleyiniz...
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Tabs
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as typeof activeTab)}
@@ -465,11 +431,25 @@ export default function AdminPanel() {
               adminData={adminData}
               onOpenTab={(tab) => {
                 // Enforce permissions: only allow switching to tabs that are visible
-                if (tab === "news" && !(userIsEditor || userIsAdmin)) return;
-                if (tab === "articles" && !(userIsEditor || userIsAdmin)) return;
-                if (tab === "users" && !userIsAdmin) return;
-                if (tab === "compose" && !userIsEditor) return;
-                if (tab === "deploy" && !userIsEditor) return;
+                if (tab === "news" && !(userIsEditor || userIsAdmin)) {
+                  return;
+                }
+
+                if (tab === "articles" && !(userIsEditor || userIsAdmin)) {
+                  return;
+                }
+
+                if (tab === "users" && !userIsAdmin) {
+                  return;
+                }
+
+                if (tab === "compose" && !userIsEditor) {
+                  return;
+                }
+
+                if (tab === "deploy" && !userIsEditor) {
+                  return;
+                }
 
                 setActiveTab(tab);
               }}
@@ -478,7 +458,7 @@ export default function AdminPanel() {
 
           {userIsEditor && (
             <TabsContent value="compose">
-              <NewsComposer performAction={performAction} onUploadToX={uploadToX} />
+              <NewsComposer performAction={performAction} />
             </TabsContent>
           )}
 

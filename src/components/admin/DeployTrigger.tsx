@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { WEBSITE_URL } from "@/lib/constants";
 
 import { createNIP98Auth } from "./utils";
 
@@ -21,7 +22,7 @@ export default function DeployTrigger() {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const authHeader = await createNIP98Auth("POST", `${origin}/api/admin/trigger-deploy`);
 
-      const response = await fetch("/api/admin", {
+      const response = await fetch(`${WEBSITE_URL}/api/admin`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

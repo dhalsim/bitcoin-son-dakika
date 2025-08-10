@@ -179,6 +179,7 @@ const CanvasEditor = memo(
             transformer.visible(wasVisible);
             overlayLayerRef.current?.draw();
           }
+
           const res = await fetch(dataUrl);
 
           return await res.blob();
@@ -201,6 +202,7 @@ const CanvasEditor = memo(
                 // default: 25% of canvas width, preserving aspect ratio
                 targetW = Math.min(naturalW, width * 0.25);
               }
+
               if (targetW && !targetH) {
                 const scale = targetW / naturalW;
                 targetH = naturalH * scale;
@@ -227,9 +229,11 @@ const CanvasEditor = memo(
               if (transformerRef.current) {
                 transformerRef.current.nodes([node]);
               }
+
               overlayLayerRef.current.draw();
               resolve();
             };
+
             img.src = url;
           });
         },
@@ -259,14 +263,19 @@ const CanvasEditor = memo(
           if (transformerRef.current) {
             transformerRef.current.nodes([node]);
           }
+
           overlayLayerRef.current.draw();
         },
         clearOverlays: () => {
-          if (!overlayLayerRef.current) return;
+          if (!overlayLayerRef.current) {
+            return;
+          }
+
           overlayLayerRef.current.destroyChildren();
           if (transformerRef.current) {
             transformerRef.current.nodes([]);
           }
+
           overlayLayerRef.current.draw();
         },
       }));
@@ -324,6 +333,7 @@ const CanvasEditor = memo(
                 if (newBox.width < minSize || newBox.height < minSize) {
                   return oldBox;
                 }
+
                 return newBox;
               },
             });
@@ -333,7 +343,10 @@ const CanvasEditor = memo(
           // Selection handling
           overlayLayerRef.current.on("click tap", (evt: any) => {
             const target = evt.target;
-            if (!target || target === overlayLayerRef.current) return;
+            if (!target || target === overlayLayerRef.current) {
+              return;
+            }
+
             transformerRef.current.nodes([target]);
             overlayLayerRef.current.draw();
           });
@@ -403,9 +416,15 @@ const CanvasEditor = memo(
         }
 
         const recomputeScale = () => {
-          if (!wrapperRef.current) return;
+          if (!wrapperRef.current) {
+            return;
+          }
+
           const availableWidth = wrapperRef.current.clientWidth || 0;
-          if (!availableWidth) return;
+          if (!availableWidth) {
+            return;
+          }
+
           const nextScale = Math.min(1, availableWidth / width);
           setDisplayScale(nextScale > 0 ? nextScale : 1);
         };
@@ -420,34 +439,58 @@ const CanvasEditor = memo(
         }
 
         window.addEventListener("resize", recomputeScale);
+
         return () => {
           window.removeEventListener("resize", recomputeScale);
-          if (ro) ro.disconnect();
+          if (ro) {
+            ro.disconnect();
+          }
         };
       }, [width, height]);
 
       // Keyboard: Delete selected overlay with Delete/Backspace
       useEffect(() => {
-        if (typeof window === "undefined") return;
+        if (typeof window === "undefined") {
+          return;
+        }
 
         const isEditableTarget = (el: Element | null): boolean => {
-          if (!el) return false;
+          if (!el) {
+            return false;
+          }
+
           const tag = (el as HTMLElement).tagName;
-          if (tag === "INPUT" || tag === "TEXTAREA") return true;
-          if ((el as HTMLElement).isContentEditable) return true;
+          if (tag === "INPUT" || tag === "TEXTAREA") {
+            return true;
+          }
+
+          if ((el as HTMLElement).isContentEditable) {
+            return true;
+          }
+
           return false;
         };
 
         const onKeyDown = (e: KeyboardEvent) => {
-          if (e.key !== "Delete" && e.key !== "Backspace") return;
+          if (e.key !== "Delete" && e.key !== "Backspace") {
+            return;
+          }
+
           const active = document.activeElement;
-          if (isEditableTarget(active)) return; // don't interfere with typing
+          if (isEditableTarget(active)) {
+            return;
+          } // don't interfere with typing
 
           const transformer = transformerRef.current;
           const overlayLayer = overlayLayerRef.current;
-          if (!transformer || !overlayLayer) return;
+          if (!transformer || !overlayLayer) {
+            return;
+          }
+
           const nodes = transformer.nodes();
-          if (!nodes || nodes.length === 0) return;
+          if (!nodes || nodes.length === 0) {
+            return;
+          }
 
           nodes.forEach((n: any) => n.destroy());
           transformer.nodes([]);
@@ -456,6 +499,7 @@ const CanvasEditor = memo(
         };
 
         window.addEventListener("keydown", onKeyDown);
+
         return () => window.removeEventListener("keydown", onKeyDown);
       }, []);
 

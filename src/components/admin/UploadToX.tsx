@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { EventItem } from "@/lib/nip01";
+import type { EventItem } from "@/lib/nip01";
 
 type UploadToXProps = {
   open: boolean;
@@ -156,7 +156,10 @@ export default function UploadToX({
                   type="button"
                   variant="secondary"
                   onClick={async () => {
-                    if (!canvasRef.current) return;
+                    if (!canvasRef.current) {
+                      return;
+                    }
+
                     await canvasRef.current.addOverlayImageFromUrl(
                       "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png",
                       { width: 160, x: 20, y: 20 },
@@ -185,7 +188,10 @@ export default function UploadToX({
                     type="button"
                     variant="secondary"
                     onClick={() => {
-                      if (!canvasRef.current || !overlayText.trim()) return;
+                      if (!canvasRef.current || !overlayText.trim()) {
+                        return;
+                      }
+
                       canvasRef.current.addOverlayText(overlayText.trim(), {
                         fontSize: overlayFontSize,
                         fill: overlayFill,
