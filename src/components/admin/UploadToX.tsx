@@ -7,14 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { EventItem } from "@/lib/nip01";
 
 type UploadToXProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  initialTitle?: string;
-  initialSummary?: string;
-  initialImage?: string;
-  initialContent?: string;
+  eventItem: EventItem;
   onUpload: (blob: Blob) => Promise<void> | void;
   width?: number;
   height?: number;
@@ -23,29 +21,42 @@ type UploadToXProps = {
 export default function UploadToX({
   open,
   onOpenChange,
-  initialTitle = "",
-  initialSummary = "",
-  initialImage = "",
-  initialContent = "",
+  eventItem,
   onUpload,
   width = 800,
   height = 600,
 }: UploadToXProps) {
   const canvasRef = useRef<CanvasEditorHandle | null>(null);
-  const [title, setTitle] = useState(initialTitle);
-  const [summary, setSummary] = useState(initialSummary);
-  const [imageUrl, setImageUrl] = useState(initialImage);
-  const [content, setContent] = useState(initialContent);
-  const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState<string | undefined>(undefined);
+  const [summary, setSummary] = useState<string | undefined>(undefined);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+  const [content, setContent] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
+  const [overlayText, setOverlayText] = useState<string>("");
+  const [overlayFontSize, setOverlayFontSize] = useState<number>(28);
+  const [overlayFill, setOverlayFill] = useState<string>("#ffffff");
+  const [overlayStroke, setOverlayStroke] = useState<string>("#000000");
+  const [overlayStrokeWidth, setOverlayStrokeWidth] = useState<number>(0);
 
   useEffect(() => {
-    if (open) {
-      setTitle(initialTitle);
-      setSummary(initialSummary);
-      setImageUrl(initialImage);
-      setContent(initialContent);
+    if (open && eventItem) {
+      const title = eventItem.tags.find((t) => t[0] === "title")?.[1];
+      const summary = eventItem.tags.find((t) => t[0] === "summary")?.[1];
+      const imageUrl = eventItem.tags.find((t) => t[0] === "image")?.[1];
+      const content = eventItem.tags.find((t) => t[0] === "content")?.[1];
+
+      setTitle(title);
+      setSummary(summary);
+      setImageUrl(imageUrl);
+      setContent(content);
+
+      setLoading(false);
     }
-  }, [open, initialTitle, initialSummary, initialImage, initialContent]);
+  }, [open, eventItem]);
+
+  if (loading) {
+    return <div>Yükleniyor...</div>;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,7 +89,7 @@ export default function UploadToX({
             </div>
 
             <Button
-              disabled={loading || !imageUrl.trim()}
+              disabled={loading || !imageUrl?.trim()}
               onClick={async () => {
                 if (!canvasRef.current) {
                   return;
@@ -122,6 +133,97 @@ export default function UploadToX({
               height={height}
               backgroundColor="#000000"
             />
+
+            <div className="mt-2 grid grid-cols-1 gap-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={async () => {
+                    if (!canvasRef.current) return;
+                    await canvasRef.current.addOverlayImageFromUrl(
+                      "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png",
+                      { width: 160, x: 20, y: 20 },
+                    );
+                  }}
+                >
+                  Logoyu Ekle
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => canvasRef.current?.clearOverlays()}
+                >
+                  Temizle
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Metin..."
+                    value={overlayText}
+                    onChange={(e) => setOverlayText(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      if (!canvasRef.current || !overlayText.trim()) return;
+                      canvasRef.current.addOverlayText(overlayText.trim(), {
+                        fontSize: overlayFontSize,
+                        fill: overlayFill,
+                        stroke: overlayStroke,
+                        strokeWidth: overlayStrokeWidth,
+                      });
+                    }}
+                  >
+                    Metni Ekle
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Label className="min-w-[90px]">Yazı Boyutu</Label>
+                    <Input
+                      type="number"
+                      min={8}
+                      max={200}
+                      value={overlayFontSize}
+                      onChange={(e) => setOverlayFontSize(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="min-w-[90px]">Kontur Kalınlığı</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={20}
+                      value={overlayStrokeWidth}
+                      onChange={(e) => setOverlayStrokeWidth(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Label className="min-w-[90px]">Yazı Rengi</Label>
+                    <Input
+                      type="color"
+                      value={overlayFill}
+                      onChange={(e) => setOverlayFill(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="min-w-[90px]">Kontur Rengi</Label>
+                    <Input
+                      type="color"
+                      value={overlayStroke}
+                      onChange={(e) => setOverlayStroke(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>

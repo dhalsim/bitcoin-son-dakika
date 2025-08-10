@@ -1,14 +1,15 @@
 import { AlertCircle, Loader2, Trash2, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import UploadToX from "./UploadToX";
-
-type NewsItem = { eTag: string; relay: string };
+import { NewsTag } from "api-helpers/utils";
+import { EventItem, getKind1Events } from "@/lib/nip01";
 
 export default function NewsCuration({
   news,
@@ -16,7 +17,7 @@ export default function NewsCuration({
   performAction,
   reload,
 }: {
-  news: NewsItem[];
+  news: NewsTag[];
   lastUpdated: number;
   performAction: (data: any) => Promise<any>;
   reload: () => Promise<void> | void;
@@ -26,23 +27,37 @@ export default function NewsCuration({
   const [adding, setAdding] = useState(false);
   const [removingKey, setRemovingKey] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const [shareData, setShareData] = useState<{
-    title?: string;
-    summary?: string;
-    image?: string;
-    content?: string;
-  } | null>(null);
+  const [newsEvents, setNewsEvents] = useState<Map<string, EventItem>>(new Map());
+  const [shareData, setShareData] = useState<EventItem | null>(null);
+
+  useEffect(() => {
+    if (news.length > 0) {
+      const relays = new Set(news.map((n) => n.relay));
+      const ids = news.map((n) => n.eTag);
+
+      const cleanup = getKind1Events(Array.from(relays), ids, (events) => {
+        setNewsEvents(events);
+      });
+
+      return () => {
+        cleanup();
+      };
+    }
+  }, [news]);
 
   const onAddNews = async () => {
     try {
       setAdding(true);
+
       await performAction({
         action: "add-news",
         eventId: newsEventId.trim(),
         relay: newsRelay.trim(),
       });
+
       setNewsEventId("");
       setNewsRelay("");
+
       await reload();
     } finally {
       setAdding(false);
@@ -51,9 +66,12 @@ export default function NewsCuration({
 
   const onRemoveNews = async (eventId: string, relay: string) => {
     const key = `${eventId}-${relay}`;
+
     try {
       setRemovingKey(key);
+
       await performAction({ action: "remove-news", eventId, relay });
+
       await reload();
     } finally {
       setRemovingKey(null);
@@ -76,49 +94,70 @@ export default function NewsCuration({
         <div className="space-y-2">
           {news?.length === 0 ? (
             <p className="text-gray-500 text-sm">Henüz haber eklenmemiş</p>
-          ) : (
-            news.map((n) => (
+          ) : newsEvents.size === 0 ? (
+            Array.from({ length: news.length }).map((_, idx) => (
               <div
-                key={`${n.eTag}-${n.relay}`}
+                key={`skeleton-${idx}`}
                 className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
               >
-                <div className="font-mono text-sm">
-                  {n.eTag.substring(0, 6)}...
-                  {n.eTag.substring(n.eTag.length - 6)}
+                <div className="flex-1 min-w-0">
+                  <Skeleton className="h-4 w-48 mb-2" />
+                  <Skeleton className="h-3 w-72" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      // We don't have full news metadata here; open with minimal info, user can edit
-                      setShareData({
-                        title: "",
-                        summary: "",
-                        image: "",
-                        content: "",
-                      });
-                      setShareOpen(true);
-                    }}
-                    title="X'e yükle"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={removingKey === `${n.eTag}-${n.relay}`}
-                    onClick={() => onRemoveNews(n.eTag, n.relay)}
-                  >
-                    {removingKey === `${n.eTag}-${n.relay}` ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </Button>
+                <div className="flex items-center gap-2 ml-4">
+                  <Skeleton className="h-8 w-20 rounded-md" />
+                  <Skeleton className="h-8 w-8 rounded-md" />
                 </div>
               </div>
             ))
+          ) : (
+            Array.from(newsEvents.values())
+              .sort((a, b) => b.created_at - a.created_at)
+              .map((event) => {
+                const content = event.content || "";
+                const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
+                const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
+                const display = titleTag || summaryTag || content;
+
+                return (
+                  <div
+                    key={`${event.id}-${event.relay}`}
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-mono text-xs text-muted-foreground">
+                        {event.id.substring(0, 6)}...{event.id.substring(event.id.length - 6)}
+                      </div>
+                      <div className="text-sm truncate max-w-[48ch]">{display}</div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShareData(event);
+                          setShareOpen(true);
+                        }}
+                        title="X'e yükle"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={removingKey === `${event.id}-${event.relay}`}
+                        onClick={() => onRemoveNews(event.id, event.relay)}
+                      >
+                        {removingKey === `${event.id}-${event.relay}` ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
           )}
         </div>
         <div className="space-y-3 pt-4 border-t">
@@ -145,18 +184,22 @@ export default function NewsCuration({
           </Button>
         </div>
       </CardContent>
+
       <UploadToX
         open={shareOpen}
         onOpenChange={setShareOpen}
-        initialTitle={shareData?.title}
-        initialSummary={shareData?.summary}
-        initialImage={shareData?.image}
-        initialContent={shareData?.content}
+        eventItem={shareData}
         onUpload={async (blob) => {
           const formData = new FormData();
           formData.append("action", "upload-to-x");
-          formData.append("file", new File([blob], "post.png", { type: "image/png" }));
-          await fetch("/api/admin", { method: "POST", body: formData });
+          formData.append("media", new File([blob], "post.png", { type: "image/png" }));
+
+          const response = await fetch("/api/admin", {
+            method: "POST",
+            body: JSON.stringify({ action: "upload-to-x", formData }),
+          });
+
+          console.log(response);
         }}
         width={800}
         height={600}

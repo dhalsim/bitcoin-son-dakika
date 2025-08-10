@@ -9,10 +9,23 @@ type AdminData = {
   articles: { aTag: string; relay: string }[];
 };
 
-export default function AdminStatistics({ adminData }: { adminData: AdminData | null }) {
+type AdminStatisticsProps = {
+  adminData: AdminData | null;
+  onOpenTab?: (tab: "stats" | "news" | "articles" | "users" | "compose" | "deploy") => void;
+};
+
+export default function AdminStatistics({ adminData, onOpenTab }: AdminStatisticsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <Card>
+      <Card
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpenTab?.("users")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onOpenTab?.("users");
+        }}
+        className="cursor-pointer hover:ring-1 hover:ring-border"
+      >
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <Shield className="h-8 w-8 text-blue-500" />
@@ -24,7 +37,15 @@ export default function AdminStatistics({ adminData }: { adminData: AdminData | 
         </CardContent>
       </Card>
 
-      <Card>
+      <Card
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpenTab?.("users")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onOpenTab?.("users");
+        }}
+        className="cursor-pointer hover:ring-1 hover:ring-border"
+      >
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <Users className="h-8 w-8 text-green-500" />
@@ -36,7 +57,15 @@ export default function AdminStatistics({ adminData }: { adminData: AdminData | 
         </CardContent>
       </Card>
 
-      <Card>
+      <Card
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpenTab?.("news")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onOpenTab?.("news");
+        }}
+        className="cursor-pointer hover:ring-1 hover:ring-border"
+      >
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <AlertCircle className="h-8 w-8 text-orange-500" />
@@ -48,7 +77,15 @@ export default function AdminStatistics({ adminData }: { adminData: AdminData | 
         </CardContent>
       </Card>
 
-      <Card>
+      <Card
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpenTab?.("articles")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") onOpenTab?.("articles");
+        }}
+        className="cursor-pointer hover:ring-1 hover:ring-border"
+      >
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <RefreshCw className="h-8 w-8 text-purple-500" />

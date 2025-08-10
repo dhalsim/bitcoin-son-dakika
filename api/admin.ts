@@ -45,6 +45,12 @@ export async function POST(request: Request) {
     return ErrorResponse(undefined, "Master admin private key not configured", 500);
   }
 
+  const twitterBearerToken = process.env.TWITTER_BEARER_TOKEN;
+
+  if (!twitterBearerToken) {
+    return ErrorResponse(undefined, "Twitter bearer token not configured", 500);
+  }
+
   try {
     const { adminUsers, editorUsers, articleTags, newsTags } = await fetchNostrSets([
       "admin-users",
@@ -96,6 +102,8 @@ export async function POST(request: Request) {
         return handleRemoveArticle(masterAdminPrivateKey, articleTags, authResult, requestBody);
       case "publish-news":
         return handlePublishNews(masterAdminPrivateKey, newsTags, authResult, requestBody);
+      case "upload-to-x":
+        return handleUploadToX(twitterBearerToken, newsTags, authResult, requestBody);
       default:
         return ErrorResponse(undefined, "Invalid action", 400);
     }
@@ -162,6 +170,11 @@ type PublishNewsPayload = {
   summary?: string;
   image?: string;
   tags: string[];
+};
+
+type UploadToXPayload = {
+  action: "upload-to-x";
+  formData: FormData;
 };
 
 /** Editor Handlers */
@@ -610,6 +623,51 @@ async function handleTriggerDeploy(request: Request) {
   } catch (error) {
     return ErrorResponse(error);
   }
+}
+
+async function handleUploadToX(
+  twitterBearerToken: string,
+  newsTags: NewsTag[],
+  authResult: AuthResult,
+  data: UploadToXPayload,
+) {
+  // Type guard to ensure success
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  // Only editors and admins can publish news
+  if (!authResult.roles.includes("editor")) {
+    return ErrorResponse(undefined, "Only editors can publish news", 403);
+  }
+
+  const { formData } = data;
+
+  if (!formData) {
+    return ErrorResponse(undefined, "File is required", 400);
+  }
+
+  // Ref: https://docs.x.com/x-api/media/upload-media
+  formData.append("media_category", "tweet_image");
+  formData.append("media_type", "image/png");
+
+  const response = await fetch("https://api.x.com/2/media/upload", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${twitterBearerToken}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+
+    return ErrorResponse(undefined, `X upload failed: ${response.status} ${text}`, response.status);
+  }
+
+  const json = (await response.json().catch(() => ({}))) as any;
+
+  return SuccessResponse({ message: "Uploaded to X", data: json });
 }
 
 /** Admin Handlers */

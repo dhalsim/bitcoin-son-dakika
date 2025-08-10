@@ -98,14 +98,56 @@ export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesPa
           onUpdate(new Map(newProfiles));
           newProfiles.clear();
         }
-
-        onUpdate(null);
       },
       onclose: logCloseReasons,
     },
   );
 
   // Return cleanup function
+  return () => {
+    sub.close();
+  };
+}
+
+export function getKind1Events(
+  relays: string[],
+  ids: string[],
+  onUpdate: (events: Map<string, EventItem>) => void,
+) {
+  const newEvents = new Map<string, EventItem>();
+  const receivedEventRelayMap = new Map<string, string>();
+
+  const sub = pool.subscribe(
+    relays,
+    {
+      ids,
+      kinds: [1],
+    },
+    {
+      receivedEvent: (relay, id) => {
+        receivedEventRelayMap.set(id, relay.url);
+      },
+      onevent: (event) => {
+        const relay = receivedEventRelayMap.get(event.id);
+
+        if (!relay) {
+          console.error("Received event from unknown relay", event);
+
+          return;
+        }
+
+        newEvents.set(event.id, { ...event, relay });
+      },
+      oneose: () => {
+        if (newEvents.size) {
+          onUpdate(new Map(newEvents));
+          newEvents.clear();
+        }
+      },
+      onclose: logCloseReasons,
+    },
+  );
+
   return () => {
     sub.close();
   };

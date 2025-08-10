@@ -1,5 +1,5 @@
 import { Loader2, RefreshCw, Trash2, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import UploadToX from "./UploadToX";
-
-type ArticleItem = { aTag: string; relay: string };
+import { ArticleTag } from "api-helpers/utils";
+import { EventItem, getKind1Events } from "@/lib/nip01";
 
 export default function ArticleCuration({
   articles,
@@ -17,7 +17,7 @@ export default function ArticleCuration({
   reload,
   userNpub,
 }: {
-  articles: ArticleItem[];
+  articles: ArticleTag[];
   lastUpdated: number;
   performAction: (data: any) => Promise<any>;
   reload: () => Promise<void> | void;
@@ -31,12 +31,24 @@ export default function ArticleCuration({
   const [adding, setAdding] = useState(false);
   const [removingKey, setRemovingKey] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const [shareData, setShareData] = useState<{
-    title?: string;
-    summary?: string;
-    image?: string;
-    content?: string;
-  } | null>(null);
+  const [shareData, setShareData] = useState<EventItem | null>(null);
+  const [articleEvents, setArticleEvents] = useState<Map<string, EventItem>>(new Map());
+
+  useEffect(() => {
+    if (articles.length > 0) {
+      const relays = new Set(articles.map((n) => n.relay));
+      const ids = articles.map((n) => n.aTag);
+
+      // TODO: this needs to be getKind30023Events nip23.ts
+      const cleanup = getKind1Events(Array.from(relays), ids, (events) => {
+        setArticleEvents(events);
+      });
+
+      return () => {
+        cleanup();
+      };
+    }
+  }, [articles]);
 
   const onAddByNaddr = async () => {
     try {
@@ -113,12 +125,7 @@ export default function ArticleCuration({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setShareData({
-                        title: "",
-                        summary: "",
-                        image: "",
-                        content: "",
-                      });
+                      setShareData(articleEvents.get(a.aTag));
                       setShareOpen(true);
                     }}
                     title="X'e yükle"
@@ -207,13 +214,11 @@ export default function ArticleCuration({
           )}
         </div>
       </CardContent>
+
       <UploadToX
         open={shareOpen}
         onOpenChange={setShareOpen}
-        initialTitle={shareData?.title}
-        initialSummary={shareData?.summary}
-        initialImage={shareData?.image}
-        initialContent={shareData?.content}
+        eventItem={shareData}
         onUpload={async (blob) => {
           const formData = new FormData();
           formData.append("action", "upload-to-x");

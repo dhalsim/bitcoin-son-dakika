@@ -26,7 +26,12 @@ export function HydrateFallback() {
   );
 }
 
-import { ADMIN_RELAYS, type PublishEventResponse } from "../../api-helpers/utils";
+import {
+  ADMIN_RELAYS,
+  ArticleTag,
+  NewsTag,
+  type PublishEventResponse,
+} from "../../api-helpers/utils";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -99,9 +104,9 @@ interface AdminData {
   adminsLastTimeUpdated: number;
   editorUsers: string[];
   editorsLastTimeUpdated: number;
-  news: { eTag: string; relay: string }[];
+  news: NewsTag[];
   newsLastTimeUpdated: number;
-  articles: { aTag: string; relay: string }[];
+  articles: ArticleTag[];
   articlesLastTimeUpdated: number;
 }
 
@@ -116,6 +121,9 @@ export default function AdminPanel() {
   const [userInfo, setUserInfo] = useState<UserInfo>({});
   const [error, setError] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<
+    "stats" | "news" | "articles" | "users" | "compose" | "deploy"
+  >("stats");
 
   const [publishSuccess, setPublishSuccess] = useState<PublishEventResponse | null>(null);
 
@@ -434,7 +442,11 @@ export default function AdminPanel() {
           </Alert>
         )}
 
-        <Tabs defaultValue="stats" className="mt-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+          className="mt-6"
+        >
           <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="stats">İstatistikler</TabsTrigger>
             {userIsEditor && <TabsTrigger value="compose">Haber Yayınla</TabsTrigger>}
@@ -449,7 +461,19 @@ export default function AdminPanel() {
           </TabsList>
 
           <TabsContent value="stats">
-            <AdminStatistics adminData={adminData as any} />
+            <AdminStatistics
+              adminData={adminData}
+              onOpenTab={(tab) => {
+                // Enforce permissions: only allow switching to tabs that are visible
+                if (tab === "news" && !(userIsEditor || userIsAdmin)) return;
+                if (tab === "articles" && !(userIsEditor || userIsAdmin)) return;
+                if (tab === "users" && !userIsAdmin) return;
+                if (tab === "compose" && !userIsEditor) return;
+                if (tab === "deploy" && !userIsEditor) return;
+
+                setActiveTab(tab);
+              }}
+            />
           </TabsContent>
 
           {userIsEditor && (
