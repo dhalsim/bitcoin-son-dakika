@@ -123,6 +123,8 @@ export default function AdminPanel() {
   >("stats");
 
   const [publishSuccess, setPublishSuccess] = useState<PublishEventResponse | null>(null);
+  const [composerPrefill, setComposerPrefill] = useState<any | null>(null);
+  const [composerPrefillToken, setComposerPrefillToken] = useState<string>("");
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
@@ -465,7 +467,11 @@ export default function AdminPanel() {
 
           {userIsEditor && (
             <TabsContent value="compose">
-              <NewsComposer performAction={performAction} />
+              <NewsComposer
+                performAction={performAction}
+                prefill={composerPrefill || undefined}
+                prefillToken={composerPrefillToken}
+              />
             </TabsContent>
           )}
 
@@ -494,7 +500,13 @@ export default function AdminPanel() {
 
           {userIsEditor && (
             <TabsContent value="sources">
-              <NewsSources />
+              <NewsSources
+                onPrefill={(data) => {
+                  setComposerPrefill(data);
+                  setComposerPrefillToken(`${Date.now()}`);
+                  setActiveTab("compose");
+                }}
+              />
             </TabsContent>
           )}
 

@@ -1,5 +1,5 @@
 import { Loader2, Rocket, Upload, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,17 +34,37 @@ const CATEGORY_OPTIONS = [
   "geliştirme",
 ];
 
-type NewsComposerProps = {
-  performAction: (data: any) => Promise<any>;
+type PrefillData = {
+  title?: string;
+  summary?: string;
+  image?: string;
+  content?: string;
+  tags?: string[];
 };
 
-export default function NewsComposer({ performAction }: NewsComposerProps) {
+type NewsComposerProps = {
+  performAction: (data: any) => Promise<any>;
+  prefill?: PrefillData;
+  prefillToken?: string;
+};
+
+export default function NewsComposer({ performAction, prefill, prefillToken }: NewsComposerProps) {
   const [newsContent, setNewsContent] = useState("");
   const [newsTitle, setNewsTitle] = useState("");
   const [newsSummary, setNewsSummary] = useState("");
   const [newsImageUrl, setNewsImageUrl] = useState("");
   const [newsTags, setNewsTags] = useState<string[]>([]);
   const [newsPublishLoading, setNewsPublishLoading] = useState(false);
+
+  // Apply prefill whenever token changes
+  useEffect(() => {
+    if (!prefill) return;
+    if (typeof prefill.title === "string") setNewsTitle(prefill.title);
+    if (typeof prefill.summary === "string") setNewsSummary(prefill.summary);
+    if (typeof prefill.image === "string") setNewsImageUrl(prefill.image);
+    if (typeof prefill.content === "string") setNewsContent(prefill.content);
+    if (Array.isArray(prefill.tags)) setNewsTags(prefill.tags);
+  }, [prefillToken]);
 
   const addTag = (tag: string) => {
     if (tag.trim() && !newsTags.includes(tag.trim())) {

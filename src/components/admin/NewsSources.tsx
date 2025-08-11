@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Share2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -17,7 +17,7 @@ type ScrapedItem = {
   source: ScraperSource;
 };
 
-export default function NewsSources() {
+export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => void }) {
   const [scrapes, setScrapes] = useState<ScrapedItem[]>([]);
   const [scrapesLoading, setScrapesLoading] = useState<boolean>(false);
   const [scrapesError, setScrapesError] = useState<string>("");
@@ -144,6 +144,23 @@ export default function NewsSources() {
                           {new Date(item.published).toLocaleString()}
                         </span>
                       )}
+                      <button
+                        type="button"
+                        className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded border hover:bg-accent"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          onPrefill?.({
+                            title: item.title,
+                            summary: item.summary,
+                            image: item.image,
+                            content: item.summary || "",
+                            tags: ["bitcoin"],
+                          });
+                        }}
+                        title="Haber formuna kopyala"
+                      >
+                        <Share2 className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
                 </div>
