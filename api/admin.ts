@@ -771,9 +771,9 @@ async function handleUploadToX(params: HandleUploadToXParams) {
   }
 
   const xForm = new FormData();
-  xForm.append("media", new Blob([media]), "image.png");
+  // Use the uploaded File directly; v1.1 expects 'media' part as binary
+  xForm.append("media", media);
   xForm.append("media_category", "tweet_image");
-  xForm.append("media_type", "image/png");
 
   // X media upload uses v1.1 endpoint
   const mediaUploadUrl = "https://upload.twitter.com/1.1/media/upload.json";
@@ -833,6 +833,7 @@ async function handleUploadToX(params: HandleUploadToXParams) {
       });
 
       const mediaTweetResponse = await fetch(tweetUrl, {
+        method: tweetMethod,
         headers: {
           Authorization: authHeader,
           "Content-Type": "application/json",
@@ -844,12 +845,15 @@ async function handleUploadToX(params: HandleUploadToXParams) {
       });
 
       const mediaTweetJson = await mediaTweetResponse.json();
+      const mediaTweetId = mediaTweetJson?.data?.id;
+      const mediaTweetErrors = mediaTweetJson?.errors;
 
-      const { data } = mediaTweetJson;
-      const { id: mediaTweetId, errors } = data;
-
-      if (errors) {
-        return ErrorResponse(undefined, errors.map((e: any) => e.message).join(", "), 400);
+      if (mediaTweetErrors) {
+        return ErrorResponse(
+          undefined,
+          mediaTweetErrors.map((e: any) => e.message).join(", "),
+          400,
+        );
       }
 
       if (!mediaTweetId) {
