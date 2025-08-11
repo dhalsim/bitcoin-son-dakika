@@ -860,7 +860,7 @@ async function handleUploadToX(params: HandleUploadToXParams) {
         return ErrorResponse(undefined, "Reply to ID not found", 400);
       }
 
-      const newsUrl = `https://bitcoinsindakika.com/news/${createTitleSlug(title)}`;
+      const newsUrl = `https://bitcoinsondakika.com/news/${createTitleSlug(title)}`;
 
       const replyTweetResponse = await fetch(tweetUrl, {
         method: tweetMethod,
@@ -872,7 +872,7 @@ async function handleUploadToX(params: HandleUploadToXParams) {
           reply: {
             in_reply_to_tweet_id: mediaTweetId,
           },
-          text: `Haberin devamı için ve daha fazlası için: ${newsUrl}`,
+          text: `Haberin devamı ve daha fazlası için: ${newsUrl}`,
         }),
       });
 

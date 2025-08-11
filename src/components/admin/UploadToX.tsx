@@ -49,7 +49,7 @@ export default function UploadToX({
   const [title, setTitle] = useState<string | undefined>(undefined);
   const [summary, setSummary] = useState<string | undefined>(undefined);
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // initializing
   const [overlayText, setOverlayText] = useState<string>("");
   const [xPublishData, setXPublishData] = useState<XPublishData | null>(null);
   const [overlayTextConfig, setOverlayTextConfig] = useState<{
@@ -84,9 +84,7 @@ export default function UploadToX({
     }
   }, [open, eventItem]);
 
-  if (loading) {
-    return <div>Yükleniyor...</div>;
-  }
+  const isUploading = xPublishData?.type === "loading";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,18 +109,17 @@ export default function UploadToX({
             </div>
 
             <Button
-              disabled={loading || !imageUrl?.trim()}
+              disabled={loading || isUploading || !imageUrl?.trim()}
               onClick={async () => {
                 if (!canvasRef.current) {
                   return;
                 }
 
-                setLoading(true);
-
+                setXPublishData({ type: "loading" });
                 try {
                   const blob = await canvasRef.current.exportAsBlob();
                   if (!blob) {
-                    return;
+                    throw new Error("Görsel oluşturulamadı");
                   }
 
                   const res = await publishToX({ blob, title });
@@ -131,7 +128,6 @@ export default function UploadToX({
 
                   if (data.success) {
                     const { success, ...rest } = data;
-
                     setXPublishData({
                       type: "success",
                       success: true,
@@ -142,14 +138,21 @@ export default function UploadToX({
                   }
                 } catch (error) {
                   setXPublishData({ type: "error", error: error.message });
-                } finally {
-                  setLoading(false);
                 }
               }}
               className="w-full"
             >
-              <Rocket className="h-4 w-4 mr-2" />
-              X'e Yükle
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Yükleniyor...
+                </>
+              ) : (
+                <>
+                  <Rocket className="h-4 w-4 mr-2" />
+                  X'e Yükle
+                </>
+              )}
             </Button>
 
             {xPublishData && xPublishData.type === "error" && (
@@ -157,7 +160,33 @@ export default function UploadToX({
             )}
 
             {xPublishData && xPublishData.type === "success" && (
-              <div className="text-green-500 text-sm">{xPublishData.message}</div>
+              <div className="text-green-500 text-sm space-y-2">
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(xPublishData.message || "{}");
+                    const tweetId = parsed?.data?.mediaTweetId;
+                    return (
+                      <>
+                        {tweetId ? (
+                          <a
+                            href={`https://x.com/bitcoin_son_dk/status/${tweetId}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="underline"
+                          >
+                            X gönderisine git
+                          </a>
+                        ) : null}
+                        <pre className="bg-muted text-xs p-2 rounded max-h-48 overflow-auto whitespace-pre-wrap">
+                          {JSON.stringify(parsed, null, 2)}
+                        </pre>
+                      </>
+                    );
+                  } catch {
+                    return <div className="text-xs break-all">{xPublishData.message}</div>;
+                  }
+                })()}
+              </div>
             )}
 
             {xPublishData && xPublishData.type === "loading" && (
@@ -208,10 +237,12 @@ export default function UploadToX({
                     placeholder="Metin..."
                     value={overlayText}
                     onChange={(e) => setOverlayText(e.target.value)}
+                    disabled={isUploading}
                   />
                   <Button
                     type="button"
                     variant="secondary"
+                    disabled={isUploading}
                     onClick={() => {
                       if (!canvasRef.current || !overlayText.trim()) {
                         return;
@@ -245,6 +276,7 @@ export default function UploadToX({
                           fontSize: Number(e.target.value) || 0,
                         })
                       }
+                      disabled={isUploading}
                     />
                   </div>
                 </div>
@@ -252,6 +284,7 @@ export default function UploadToX({
                   <Label className="min-w-[90px]">Yazı Tipi</Label>
                   <Select
                     value={overlayTextConfig.fontFamily}
+                    disabled={isUploading}
                     onValueChange={(v) =>
                       setOverlayTextConfig({ ...overlayTextConfig, fontFamily: v })
                     }
@@ -294,6 +327,7 @@ export default function UploadToX({
                           fill: e.target.value,
                         })
                       }
+                      disabled={isUploading}
                     />
                   </div>
                 </div>
@@ -309,6 +343,7 @@ export default function UploadToX({
                           shadowColor: e.target.value,
                         })
                       }
+                      disabled={isUploading}
                     />
                   </div>
                   <div className="flex items-center gap-2">
@@ -324,6 +359,7 @@ export default function UploadToX({
                           shadowBlur: Number(e.target.value) || 0,
                         })
                       }
+                      disabled={isUploading}
                     />
                   </div>
                 </div>
@@ -341,6 +377,7 @@ export default function UploadToX({
                         shadowOpacity: Math.max(0, Math.min(1, Number(e.target.value) || 0)),
                       })
                     }
+                    disabled={isUploading}
                   />
                 </div>
               </div>

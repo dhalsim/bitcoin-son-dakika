@@ -129,6 +129,7 @@ const CanvasEditor = memo(
       // Visual scale factor to fit the canvas inside its parent container (e.g., Dialog column)
       // Exported bitmap remains at the original logical size (width x height)
       const [displayScale, setDisplayScale] = useState(1);
+      const [konvaReady, setKonvaReady] = useState(false);
 
       useImperativeHandle(ref, () => ({
         exportAsDataURL: () => {
@@ -371,6 +372,7 @@ const CanvasEditor = memo(
           }
 
           layerRef.current.draw();
+          setKonvaReady(true);
         }
 
         ensureKonva();
@@ -559,7 +561,7 @@ const CanvasEditor = memo(
         return () => {
           // no-op cleanup; node destroyed in stage cleanup
         };
-      }, [imageUrl, width, height]);
+      }, [imageUrl, width, height, konvaReady]);
 
       // Update caption text and resize background
       useEffect(() => {
@@ -586,7 +588,7 @@ const CanvasEditor = memo(
               width: `${width}px`,
               height: `${height}px`,
               borderRadius: 6,
-              border: "1px solid var(--border-color, #e5e7eb)",
+              border: "none",
               transform: `scale(${displayScale})`,
               transformOrigin: "top left",
             }}
