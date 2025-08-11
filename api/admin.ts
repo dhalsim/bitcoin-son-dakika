@@ -771,7 +771,7 @@ async function handleUploadToX(params: HandleUploadToXParams) {
   }
 
   const xForm = new FormData();
-  xForm.append("media", media);
+  xForm.append("media", new Blob([media]), "image.png");
   xForm.append("media_category", "tweet_image");
   xForm.append("media_type", "image/png");
 
