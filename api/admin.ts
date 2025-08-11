@@ -2,7 +2,9 @@ import crypto from "node:crypto";
 
 import { hexToBytes } from "@noble/hashes/utils";
 import { finalizeEvent, nip19 } from "nostr-tools";
+import { createClient } from "redis";
 
+import { fetchAllSources, type ScrapedItem } from "../api-helpers/scrapers/index.js";
 import type { AuthResult } from "../api-helpers/types.js";
 import type { ArticleTag, NewsTag } from "../api-helpers/utils.js";
 import {
@@ -125,6 +127,10 @@ export async function POST(request: Request) {
     switch (action) {
       case "trigger-deploy":
         return handleTriggerDeploy(request);
+      case "get-scrapes":
+        return handleGetScrapes(authResult);
+      case "refresh-scrapes":
+        return handleRefreshScrapes(authResult);
       case "add-editor-pubkey":
         return handleAddEditor(masterAdminPrivateKey, editorUsers, authResult, requestBody);
       case "remove-editor-pubkey":
@@ -216,6 +222,122 @@ type UploadToXPayload = {
   formData: FormData;
   title: string;
 };
+
+/** Scraper/Cache Utilities */
+
+const SCRAPES_CACHE_KEY = "scrapes:all";
+const SCRAPES_CACHE_TTL_SECONDS = 15 * 60; // 15 minutes
+
+let redisClient: ReturnType<typeof createClient> | null = null;
+
+async function getRedis() {
+  if (!redisClient) {
+    // Create lazily to avoid cold start in environments without Redis
+    const url = process.env.REDIS_URL;
+
+    if (!url) {
+      throw new Error("REDIS_URL not configured");
+    }
+
+    redisClient = createClient({ url });
+
+    await redisClient.connect();
+  }
+
+  return redisClient;
+}
+
+async function getCachedScrapes(): Promise<{ items: ScrapedItem[]; lastUpdated?: string } | null> {
+  try {
+    const redis = await getRedis();
+    const json = await redis.get(SCRAPES_CACHE_KEY);
+
+    if (!json) {
+      return null;
+    }
+
+    const parsed = JSON.parse(json);
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+async function setCachedScrapes(items: ScrapedItem[]) {
+  try {
+    const redis = await getRedis();
+    const payload = JSON.stringify({ items, lastUpdated: new Date().toISOString() });
+
+    await redis.set(SCRAPES_CACHE_KEY, payload, { EX: SCRAPES_CACHE_TTL_SECONDS });
+  } catch {
+    // ignore cache errors
+  }
+}
+
+async function fetchAndCacheScrapes() {
+  const items = await fetchAllSources();
+
+  await setCachedScrapes(items);
+
+  return items;
+}
+
+async function handleGetScrapes(authResult: AuthResult) {
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  if (!authResult.roles.includes("editor")) {
+    return ErrorResponse(undefined, "Only editors can access scrapes", 403);
+  }
+
+  const cached = await getCachedScrapes();
+
+  if (cached) {
+    return SuccessResponse({
+      message: "Scrapes from cache",
+      ...cached,
+      total: cached.items.length,
+    });
+  }
+
+  try {
+    const items = await fetchAndCacheScrapes();
+
+    return SuccessResponse({
+      message: "Scrapes fetched",
+      items,
+      lastUpdated: new Date().toISOString(),
+      total: items.length,
+    });
+  } catch (error) {
+    return ErrorResponse(error as Error);
+  }
+}
+
+async function handleRefreshScrapes(authResult: AuthResult) {
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  if (!authResult.roles.includes("editor")) {
+    return ErrorResponse(undefined, "Only editors can refresh scrapes", 403);
+  }
+
+  try {
+    const items = await fetchAndCacheScrapes();
+
+    return SuccessResponse({
+      message: "Scrapes refreshed",
+      items,
+      lastUpdated: new Date().toISOString(),
+      total: items.length,
+    });
+  } catch (error) {
+    return ErrorResponse(error as Error);
+  }
+}
 
 /** Editor Handlers */
 

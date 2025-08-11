@@ -8,6 +8,7 @@ import ArticleCuration from "@/components/admin/ArticleCuration";
 import DeployTrigger from "@/components/admin/DeployTrigger";
 import NewsComposer from "@/components/admin/NewsComposer";
 import NewsCuration from "@/components/admin/NewsCuration";
+import NewsSources from "@/components/admin/NewsSources";
 import UserManagement from "@/components/admin/UserManagement";
 import { createNIP98Auth } from "@/components/admin/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -118,7 +119,7 @@ export default function AdminPanel() {
   const [error, setError] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<string>("");
   const [activeTab, setActiveTab] = useState<
-    "stats" | "news" | "articles" | "users" | "compose" | "deploy"
+    "stats" | "news" | "articles" | "users" | "compose" | "deploy" | "sources"
   >("stats");
 
   const [publishSuccess, setPublishSuccess] = useState<PublishEventResponse | null>(null);
@@ -423,6 +424,7 @@ export default function AdminPanel() {
             {(userIsEditor || userIsAdmin) && (
               <TabsTrigger value="articles">Makale Kürasyonu</TabsTrigger>
             )}
+            {userIsEditor && <TabsTrigger value="sources">Haber Kaynakları</TabsTrigger>}
             {userIsEditor && <TabsTrigger value="deploy">Deploy</TabsTrigger>}
             {userIsAdmin && <TabsTrigger value="users">Kullanıcılar</TabsTrigger>}
           </TabsList>
@@ -449,6 +451,10 @@ export default function AdminPanel() {
                 }
 
                 if (tab === "deploy" && !userIsEditor) {
+                  return;
+                }
+
+                if (tab === "sources" && !userIsEditor) {
                   return;
                 }
 
@@ -483,6 +489,12 @@ export default function AdminPanel() {
                 reload={loadAdminData}
                 userNpub={userInfo.pubkey ? nip19.npubEncode(userInfo.pubkey) : undefined}
               />
+            </TabsContent>
+          )}
+
+          {userIsEditor && (
+            <TabsContent value="sources">
+              <NewsSources />
             </TabsContent>
           )}
 
