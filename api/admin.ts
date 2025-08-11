@@ -101,7 +101,7 @@ export async function POST(request: Request) {
           TWITTER_ACCESS_TOKEN,
           TWITTER_ACCESS_TOKEN_SECRET,
           authResult,
-          data: {
+          paramsData: {
             action: "upload-to-x",
             formData: form,
             title,
@@ -674,7 +674,7 @@ type TwitterOAuthParams = {
 
 type HandleUploadToXParams = TwitterOAuthParams & {
   authResult: AuthResult;
-  data: UploadToXPayload;
+  paramsData: UploadToXPayload;
 };
 
 type XAuthHeaderParams = TwitterOAuthParams & {
@@ -744,7 +744,7 @@ async function handleUploadToX(params: HandleUploadToXParams) {
     TWITTER_ACCESS_TOKEN,
     TWITTER_ACCESS_TOKEN_SECRET,
     authResult,
-    data,
+    paramsData,
   } = params;
 
   // Type guard to ensure success
@@ -757,7 +757,7 @@ async function handleUploadToX(params: HandleUploadToXParams) {
     return ErrorResponse(undefined, "Only editors can publish news", 403);
   }
 
-  const { formData } = data;
+  const { formData, title } = paramsData;
 
   if (!formData) {
     return ErrorResponse(undefined, "File is required", 400);
@@ -765,13 +765,13 @@ async function handleUploadToX(params: HandleUploadToXParams) {
 
   // Build a clean form for X API: include only expected fields
   const media = formData.get("media") as File | null;
+
   if (!media) {
     return ErrorResponse(undefined, "Media file missing", 400);
   }
 
   const xForm = new FormData();
   xForm.append("media", media);
-  // Ref: https://docs.x.com/x-api/media/upload-media
   xForm.append("media_category", "tweet_image");
   xForm.append("media_type", "image/png");
 
@@ -813,7 +813,7 @@ async function handleUploadToX(params: HandleUploadToXParams) {
       return ErrorResponse(undefined, uploadJson.errors.map((e: any) => e.message).join(", "), 400);
     }
 
-    const { id: mediaId } = uploadJson.data;
+    const { media_id_string: mediaId } = uploadJson;
 
     if (!mediaId) {
       return ErrorResponse(undefined, "Media ID not found", 400);
@@ -839,11 +839,14 @@ async function handleUploadToX(params: HandleUploadToXParams) {
         },
         body: JSON.stringify({
           media: { media_ids: [mediaId] },
-          text: data.title,
+          text: title,
         }),
       });
 
-      const { id: mediaTweetId, errors } = await mediaTweetResponse.json();
+      const mediaTweetJson = await mediaTweetResponse.json();
+
+      const { data } = mediaTweetJson;
+      const { id: mediaTweetId, errors } = data;
 
       if (errors) {
         return ErrorResponse(undefined, errors.map((e: any) => e.message).join(", "), 400);
@@ -853,7 +856,7 @@ async function handleUploadToX(params: HandleUploadToXParams) {
         return ErrorResponse(undefined, "Reply to ID not found", 400);
       }
 
-      const newsUrl = `https://bitcoinsindakika.com/news/${createTitleSlug(data.title)}`;
+      const newsUrl = `https://bitcoinsindakika.com/news/${createTitleSlug(title)}`;
 
       const replyTweetResponse = await fetch(tweetUrl, {
         method: tweetMethod,
@@ -869,7 +872,10 @@ async function handleUploadToX(params: HandleUploadToXParams) {
         }),
       });
 
-      const { id: replyTweetId, errors: replyTweetErrors } = await replyTweetResponse.json();
+      const replyTweetJson = await replyTweetResponse.json();
+
+      const { data: replyTweetData } = replyTweetJson;
+      const { id: replyTweetId, errors: replyTweetErrors } = replyTweetData;
 
       if (replyTweetErrors) {
         return ErrorResponse(
@@ -937,6 +943,7 @@ async function handleRemoveEditor(
   }
 
   const { pubkey } = data;
+
   if (!pubkey) {
     return ErrorResponse(undefined, "Pubkey is required", 400);
   }
