@@ -149,12 +149,14 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
                         className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded border hover:bg-accent"
                         onClick={(e) => {
                           e.preventDefault();
+
                           onPrefill?.({
                             title: item.title,
                             summary: item.summary,
                             image: item.image,
                             content: item.summary || "",
                             tags: ["bitcoin"],
+                            from: "sources",
                           });
                         }}
                         title="Haber formuna kopyala"

@@ -2,6 +2,7 @@ import { Key, AlertCircle, Loader2 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
 import { nip19 } from "nostr-tools";
 import { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import AdminStatistics from "@/components/admin/AdminStatistics";
 import ArticleCuration from "@/components/admin/ArticleCuration";
@@ -118,13 +119,35 @@ export default function AdminPanel() {
   const [userInfo, setUserInfo] = useState<UserInfo>({});
   const [error, setError] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<
-    "stats" | "news" | "articles" | "users" | "compose" | "deploy" | "sources"
-  >("stats");
+  type AdminTab = "stats" | "news" | "articles" | "users" | "compose" | "deploy" | "sources";
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialTab = (searchParams.get("tab") as AdminTab) || "stats";
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
 
   const [publishSuccess, setPublishSuccess] = useState<PublishEventResponse | null>(null);
   const [composerPrefill, setComposerPrefill] = useState<any | null>(null);
   const [composerPrefillToken, setComposerPrefillToken] = useState<string>("");
+
+  // Sync from URL on back/forward
+  useEffect(() => {
+    const urlTab = (searchParams.get("tab") as AdminTab) || "stats";
+    if (urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+  }, [searchParams]);
+
+  const changeTab = useCallback(
+    (tab: AdminTab) => {
+      setActiveTab(tab);
+      const next = new URLSearchParams(searchParams);
+      next.set("tab", tab);
+      setSearchParams(next, { replace: false });
+    },
+    [searchParams, setSearchParams],
+  );
 
   const loadAdminData = useCallback(async () => {
     setLoading(true);
@@ -414,7 +437,7 @@ export default function AdminPanel() {
 
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+          onValueChange={(value) => changeTab(value as AdminTab)}
           className="mt-6"
         >
           <TabsList className="flex flex-wrap gap-2">
@@ -460,7 +483,7 @@ export default function AdminPanel() {
                   return;
                 }
 
-                setActiveTab(tab);
+                changeTab(tab);
               }}
             />
           </TabsContent>
@@ -504,7 +527,7 @@ export default function AdminPanel() {
                 onPrefill={(data) => {
                   setComposerPrefill(data);
                   setComposerPrefillToken(`${Date.now()}`);
-                  setActiveTab("compose");
+                  changeTab("compose");
                 }}
               />
             </TabsContent>
