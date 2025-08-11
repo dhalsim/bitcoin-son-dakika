@@ -775,7 +775,8 @@ async function handleUploadToX(params: HandleUploadToXParams) {
   xForm.append("media_category", "tweet_image");
   xForm.append("media_type", "image/png");
 
-  const mediaUploadUrl = "https://api.x.com/2/media/upload";
+  // X media upload uses v1.1 endpoint
+  const mediaUploadUrl = "https://upload.twitter.com/1.1/media/upload.json";
   const mediaUploadMethod = "POST";
 
   const authHeader = createXAuthHeader({
