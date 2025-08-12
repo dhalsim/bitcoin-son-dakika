@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { createNIP98Auth } from "./utils";
 
 const CATEGORY_OPTIONS = [
   "bitcoin",
@@ -38,6 +39,7 @@ type PrefillData = {
   title?: string;
   summary?: string;
   image?: string;
+  url?: string;
   content?: string;
   tags?: string[];
   from?: "sources" | string;
@@ -56,6 +58,12 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
   const [newsImageUrl, setNewsImageUrl] = useState("");
   const [newsTags, setNewsTags] = useState<string[]>([]);
   const [newsPublishLoading, setNewsPublishLoading] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [enTitle, setEnTitle] = useState("");
+  const [enSummary, setEnSummary] = useState("");
+  const [enContent, setEnContent] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Apply prefill whenever token changes
   useEffect(() => {
@@ -63,20 +71,51 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
     if (typeof prefill.title === "string") setNewsTitle(prefill.title);
     if (typeof prefill.summary === "string") setNewsSummary(prefill.summary);
     if (typeof prefill.image === "string") setNewsImageUrl(prefill.image);
+    if (typeof prefill.url === "string") setSourceUrl(prefill.url);
     if (typeof prefill.content === "string") setNewsContent(prefill.content);
     if (Array.isArray(prefill.tags)) setNewsTags(prefill.tags);
+    if (typeof prefill.title === "string") setEnTitle(prefill.title);
+    if (typeof prefill.summary === "string") setEnSummary(prefill.summary);
+    if (typeof prefill.content === "string") setEnContent(prefill.content);
   }, [prefillToken]);
 
   const isFromSources = prefill?.from === "sources";
 
-  // Placeholder translation function
-  const autoTranslate = () => {
-    // Future: call translation API with english text -> turkish
-    // For now: prefill right side fields with a simple marker
-    if (isFromSources) {
-      setNewsTitle((t) => (t ? `${t}` : t));
-      setNewsSummary((s) => (s ? `${s}` : s));
-      setNewsContent((c) => (c ? `${c}` : c));
+  const autoTranslate = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const url = `${origin}/api/admin-panel`;
+
+      const authHeader = await createNIP98Auth("POST", url);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify({
+          action: "translate-news",
+          textToTranslate: [enTitle || "", enSummary || "", enContent || ""],
+          targetLanguageCode: "tr",
+        }),
+      });
+
+      const json = await response.json();
+
+      const translations = json?.translations?.translations || json?.translations || [];
+      const [tTitle, tSummary, tContent] = translations.map((t: any) => t?.translatedText || "");
+
+      if (tTitle) setNewsTitle(tTitle);
+      if (tSummary) setNewsSummary(tSummary);
+      if (tContent) setNewsContent(tContent);
+    } catch {
+      setError("Bir hata oluştu. Lütfen daha sonra tekrar deneyin.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -97,26 +136,52 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
         <CardDescription>Yeni bir haber içeriği oluştur ve doğrudan yayınla</CardDescription>
       </CardHeader>
       <CardContent>
+        {error && <div className="text-red-500">{error}</div>}
+
         {isFromSources ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left: English (readonly) */}
+            {/* Left: English/originals */}
             <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-medium">Original URL</Label>
+                {sourceUrl && (
+                  <a
+                    href={sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 underline"
+                  >
+                    Aç
+                  </a>
+                )}
+              </div>
               <div>
                 <Label className="text-base font-medium">English Title</Label>
-                <Input value={prefill?.title || ""} readOnly disabled />
+                <Input value={enTitle} onChange={(e) => setEnTitle(e.target.value)} />
               </div>
               <div>
                 <Label className="text-base font-medium">English Summary</Label>
                 <Textarea
-                  value={prefill?.summary || ""}
-                  readOnly
-                  disabled
+                  value={enSummary}
+                  onChange={(e) => setEnSummary(e.target.value)}
                   className="min-h-[120px]"
                 />
               </div>
               <div>
                 <Label className="text-base font-medium">Image URL</Label>
-                <Input value={prefill?.image || ""} readOnly disabled />
+                <Input value={newsImageUrl} onChange={(e) => setNewsImageUrl(e.target.value)} />
+                {newsImageUrl ? (
+                  <img src={newsImageUrl} alt="preview" className="mt-2 max-h-48 rounded" />
+                ) : null}
+              </div>
+              <div>
+                <Label className="text-base font-medium">English Content</Label>
+                <Textarea
+                  placeholder="Paste original content here..."
+                  value={enContent}
+                  onChange={(e) => setEnContent(e.target.value)}
+                  className="min-h-[240px]"
+                />
               </div>
             </div>
 
@@ -124,14 +189,21 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="text-base font-medium">Başlık (TR) *</Label>
-                <Button type="button" size="sm" variant="secondary" onClick={autoTranslate}>
-                  Oto Çevir
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={autoTranslate}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Çeviriyor..." : "Oto Çevir"}
                 </Button>
               </div>
               <Input
                 placeholder="Haber başlığı"
                 value={newsTitle}
                 onChange={(e) => setNewsTitle(e.target.value)}
+                disabled={isLoading}
               />
 
               <div>

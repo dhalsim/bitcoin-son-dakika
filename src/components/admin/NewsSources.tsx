@@ -154,6 +154,7 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
                             title: item.title,
                             summary: item.summary,
                             image: item.image,
+                            url: item.url,
                             content: item.summary || "",
                             tags: ["bitcoin"],
                             from: "sources",
