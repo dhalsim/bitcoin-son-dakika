@@ -17,7 +17,7 @@ export async function handleTranslateNews(
     return ErrorResponse(undefined, "Only editors can translate news", 403);
   }
 
-  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
     return ErrorResponse(undefined, "Google application credentials not configured", 500);
   }
 
@@ -26,7 +26,12 @@ export async function handleTranslateNews(
   }
 
   try {
-    const client = new TranslationServiceClient();
+    const credentialsJson = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+
+    const client = new TranslationServiceClient({
+      credentials: credentialsJson,
+    });
+
     const [translations] = await client.translateText({
       parent: `projects/${process.env.GOOGLE_PROJECT_ID}/locations/global`,
       mimeType: "text/plain",
