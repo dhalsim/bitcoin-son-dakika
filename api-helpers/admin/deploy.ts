@@ -13,7 +13,7 @@ export async function handleTriggerDeploy(request: Request) {
     );
 
     if (authResult.success === false) {
-      return ErrorResponse(undefined, authResult.error, authResult.status);
+      return ErrorResponse(authResult.error, authResult.status);
     }
 
     const deployHookUrl =
@@ -32,9 +32,9 @@ export async function handleTriggerDeploy(request: Request) {
         userRoles: authResult.roles,
       });
     } else {
-      return ErrorResponse(undefined, "Failed to trigger deploy hook", response.status);
+      return ErrorResponse("Failed to trigger deploy hook", response.status);
     }
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to trigger deploy hook");
   }
 }

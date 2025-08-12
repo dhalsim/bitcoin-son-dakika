@@ -14,16 +14,16 @@ export async function handleAddEditor(
   data: AdminActionData,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("admin")) {
-    return ErrorResponse(undefined, "Only admins can add editors", 403);
+    return ErrorResponse("Only admins can add editors", 403);
   }
 
   const { pubkey } = data;
   if (!pubkey) {
-    return ErrorResponse(undefined, "Pubkey is required", 400);
+    return ErrorResponse("Pubkey is required", 400);
   }
 
   return await updateNostrUserSet(
@@ -42,16 +42,16 @@ export async function handleRemoveEditor(
   data: AdminActionData,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("admin")) {
-    return ErrorResponse(undefined, "Only admins can remove editors", 403);
+    return ErrorResponse("Only admins can remove editors", 403);
   }
 
   const { pubkey } = data;
   if (!pubkey) {
-    return ErrorResponse(undefined, "Pubkey is required", 400);
+    return ErrorResponse("Pubkey is required", 400);
   }
 
   return await updateNostrUserSet(
@@ -70,16 +70,16 @@ export async function handleAddAdmin(
   data: AdminActionData,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("admin")) {
-    return ErrorResponse(undefined, "Only admins can add other admins", 403);
+    return ErrorResponse("Only admins can add other admins", 403);
   }
 
   const { pubkey } = data;
   if (!pubkey) {
-    return ErrorResponse(undefined, "Pubkey is required", 400);
+    return ErrorResponse("Pubkey is required", 400);
   }
 
   return await updateNostrUserSet(
@@ -98,16 +98,16 @@ export async function handleRemoveAdmin(
   data: AdminActionData,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("admin")) {
-    return ErrorResponse(undefined, "Only admins can remove other admins", 403);
+    return ErrorResponse("Only admins can remove other admins", 403);
   }
 
   const { pubkey } = data;
   if (!pubkey) {
-    return ErrorResponse(undefined, "Pubkey is required", 400);
+    return ErrorResponse("Pubkey is required", 400);
   }
 
   return await updateNostrUserSet(
@@ -133,11 +133,11 @@ export async function updateNostrUserSet(
     const existingUser = currentUsers.find((u) => u === pubkey);
     if (operation === "add") {
       if (existingUser) {
-        return ErrorResponse(undefined, "User already exists", 409);
+        return ErrorResponse("User already exists", 409);
       }
     } else {
       if (!existingUser) {
-        return ErrorResponse(undefined, "User not found", 404);
+        return ErrorResponse("User not found", 404);
       }
     }
 
@@ -160,6 +160,6 @@ export async function updateNostrUserSet(
       { pubkey, setType, operation },
     );
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to update Nostr user set");
   }
 }

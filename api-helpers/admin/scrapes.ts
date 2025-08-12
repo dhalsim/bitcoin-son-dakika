@@ -58,11 +58,11 @@ async function fetchAndCacheScrapes() {
 
 export async function handleGetScrapes(authResult: AuthResult) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse(undefined, "Only editors can access scrapes", 403);
+    return ErrorResponse("Only editors can access scrapes", 403);
   }
 
   const cached = await getCachedScrapes();
@@ -84,17 +84,17 @@ export async function handleGetScrapes(authResult: AuthResult) {
       total: items.length,
     });
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to get scrapes");
   }
 }
 
 export async function handleRefreshScrapes(authResult: AuthResult) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse(undefined, "Only editors can refresh scrapes", 403);
+    return ErrorResponse("Only editors can refresh scrapes", 403);
   }
 
   try {
@@ -107,6 +107,6 @@ export async function handleRefreshScrapes(authResult: AuthResult) {
       total: items.length,
     });
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to refresh scrapes");
   }
 }

@@ -27,7 +27,14 @@ export function publishToRelays(
 
         return { success: true, relay: r };
       } catch (error) {
-        return { success: false, relay: r, error: error.message };
+        const message =
+          error instanceof Error
+            ? error.message
+            : typeof error === "string"
+              ? error
+              : "Unknown error";
+
+        return { success: false, relay: r, error: message };
       }
     }),
   );

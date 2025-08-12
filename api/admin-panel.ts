@@ -18,7 +18,7 @@ export async function GET(_request: Request) {
       news: newsTags,
     });
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error);
   }
 }
 

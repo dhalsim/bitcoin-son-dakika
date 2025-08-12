@@ -60,11 +60,7 @@ export async function GET() {
   } catch (error) {
     console.error("New Price Feed API error:", error);
 
-    const errorResponse = ErrorResponse(
-      error instanceof Error ? error : new Error("Unknown error"),
-      "Failed to fetch new price feed data",
-      500,
-    );
+    const errorResponse = ErrorResponse(error || "Failed to fetch new price feed data", 500);
 
     return applyCacheHeaders(errorResponse, {
       maxAge: 60,
@@ -303,9 +299,11 @@ function getPriceData(client: TradingView.Client, ticker: Ticker): Promise<GetPr
       cleanup();
     });
 
-    chart.onError((...error) => {
+    chart.onError((...error: unknown[]) => {
       reject(
-        new Error(`Chart error for ${ticker.symbol}, ${ticker.priceSymbol}: ${error.join(" ")}`),
+        new Error(
+          `Chart error for ${ticker.symbol}, ${ticker.priceSymbol}: ${error.map(String).join(" ")}`,
+        ),
       );
 
       cleanup();

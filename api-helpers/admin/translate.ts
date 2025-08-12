@@ -10,19 +10,19 @@ export async function handleTranslateNews(
   requestBody: TranslateNewsPayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse(undefined, "Only editors can translate news", 403);
+    return ErrorResponse("Only editors can translate news", 403);
   }
 
   if (!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-    return ErrorResponse(undefined, "Google application credentials not configured", 500);
+    return ErrorResponse("Google application credentials not configured", 500);
   }
 
   if (!process.env.GOOGLE_PROJECT_ID) {
-    return ErrorResponse(undefined, "Google project ID not configured", 500);
+    return ErrorResponse("Google project ID not configured", 500);
   }
 
   try {
@@ -41,6 +41,6 @@ export async function handleTranslateNews(
 
     return SuccessResponse({ translations });
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to translate news");
   }
 }

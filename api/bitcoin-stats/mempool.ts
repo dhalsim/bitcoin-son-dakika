@@ -44,12 +44,8 @@ export async function GET() {
     }
 
     if (failedEndpoints.length > 0) {
-      const errorMessage = `Failed to fetch Bitcoin stats: ${failedEndpoints.join(", ")}`;
-      console.error("Bitcoin Stats API error:", errorMessage);
-
       const errorResponse = ErrorResponse(
-        new Error(errorMessage),
-        "Failed to fetch Bitcoin statistics",
+        `Failed to fetch Bitcoin stats: ${failedEndpoints.join(", ")}`,
         500,
       );
 
@@ -168,9 +164,7 @@ export async function GET() {
       cdnMaxAge: 120,
     });
   } catch (error) {
-    console.error("Bitcoin Stats API error:", error);
-
-    const errorResponse = ErrorResponse(error, "Failed to fetch Bitcoin statistics", 500);
+    const errorResponse = ErrorResponse(error || "Failed to fetch Bitcoin statistics", 500);
 
     // Apply error caching strategy
     return applyCacheHeaders(errorResponse, {

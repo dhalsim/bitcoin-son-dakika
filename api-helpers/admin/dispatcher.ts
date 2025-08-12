@@ -25,7 +25,7 @@ export async function handleAdminPost(request: Request): Promise<Response> {
     );
 
     if (authResult.success === false) {
-      return ErrorResponse(undefined, authResult.error, authResult.status);
+      return ErrorResponse(authResult.error, authResult.status);
     }
 
     const contentType = request.headers.get("content-type")?.toLowerCase() || "";
@@ -47,7 +47,7 @@ export async function handleAdminPost(request: Request): Promise<Response> {
           !TWITTER_ACCESS_TOKEN ||
           !TWITTER_ACCESS_TOKEN_SECRET
         ) {
-          return ErrorResponse(undefined, "Twitter credentials not configured", 500);
+          return ErrorResponse("Twitter credentials not configured", 500);
         }
 
         const title = String(form.get("title") || "");
@@ -62,12 +62,12 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         });
       }
 
-      return ErrorResponse(undefined, "Invalid action for multipart request", 400);
+      return ErrorResponse("Invalid action for multipart request", 400);
     }
 
     const masterAdminPrivateKey = process.env.MASTER_ADMIN_PRIVATEKEY;
     if (!masterAdminPrivateKey) {
-      return ErrorResponse(undefined, "Master admin private key not configured", 500);
+      return ErrorResponse("Master admin private key not configured", 500);
     }
 
     const requestBody = await request.json();
@@ -101,9 +101,9 @@ export async function handleAdminPost(request: Request): Promise<Response> {
       case "translate-news":
         return handleTranslateNews(authResult, requestBody);
       default:
-        return ErrorResponse(undefined, "Invalid action", 400);
+        return ErrorResponse("Invalid action", 400);
     }
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to handle admin post");
   }
 }

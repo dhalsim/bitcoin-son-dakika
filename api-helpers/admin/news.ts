@@ -15,16 +15,16 @@ export async function handleAddNews(
   data: AddNewsPayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse(undefined, "Only editors can add news", 403);
+    return ErrorResponse("Only editors can add news", 403);
   }
 
   const { eventId, relay } = data;
   if (!eventId || !relay) {
-    return ErrorResponse(undefined, "Event ID and relay are required", 400);
+    return ErrorResponse("Event ID and relay are required", 400);
   }
 
   const existingNews = currentNews.find(
@@ -32,7 +32,7 @@ export async function handleAddNews(
   );
 
   if (existingNews) {
-    return ErrorResponse(undefined, "News already exists", 409);
+    return ErrorResponse("News already exists", 409);
   }
 
   try {
@@ -40,7 +40,7 @@ export async function handleAddNews(
 
     return PublishEventResponse({ message: `News added successfully`, result }, data);
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to add news");
   }
 }
 
@@ -51,16 +51,16 @@ export async function handleRemoveNews(
   data: RemoveNewsPayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse(undefined, "Only editors can remove news", 403);
+    return ErrorResponse("Only editors can remove news", 403);
   }
 
   const { eventId, relay } = data;
   if (!eventId || !relay) {
-    return ErrorResponse(undefined, "Event ID and relay are required", 400);
+    return ErrorResponse("Event ID and relay are required", 400);
   }
 
   return await removeNews(masterAdminPrivateKey, currentNews, data);
@@ -73,11 +73,11 @@ export async function handlePublishNews(
   data: PublishNewsPayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse(undefined, "Only editors can publish news", 403);
+    return ErrorResponse("Only editors can publish news", 403);
   }
 
   return await publishNews(masterAdminPrivateKey, currentNews, authResult.pubkey, data);
@@ -119,7 +119,7 @@ export async function removeNews(
     const toBeRemoved = currentNews.find((news) => news.eTag === data.eventId);
 
     if (!toBeRemoved) {
-      return ErrorResponse(undefined, "News item not found", 404);
+      return ErrorResponse("News item not found", 404);
     }
 
     const eventTemplate = {
@@ -139,7 +139,7 @@ export async function removeNews(
 
     return PublishEventResponse({ message: "News removed successfully", result }, data);
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to remove news");
   }
 }
 
@@ -181,7 +181,7 @@ export async function publishNews(
     const relay = result.find((r) => r.success)?.relay;
 
     if (!relay) {
-      return ErrorResponse(undefined, "Failed to publish news", 500);
+      return ErrorResponse("Failed to publish news", 500);
     }
 
     const addNewsResult = await addNews(masterPrivateKey, currentNews, {
@@ -197,14 +197,8 @@ export async function publishNews(
       );
     }
 
-    return ErrorResponse(undefined, "Failed to publish news", 500);
+    return ErrorResponse("Failed to publish news", 500);
   } catch (error) {
-    if (error instanceof Error) {
-      return ErrorResponse(error);
-    } else if (typeof error === "string") {
-      return ErrorResponse(undefined, error);
-    }
-
-    return ErrorResponse(undefined, "Unknown error", 500);
+    return ErrorResponse(error || "Failed to publish news");
   }
 }

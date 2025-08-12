@@ -19,11 +19,11 @@ export async function handleAddArticle(
   data: AddArticlePayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse(undefined, "Only editors can add articles", 403);
+    return ErrorResponse("Only editors can add articles", 403);
   }
 
   let aTag: string;
@@ -33,13 +33,13 @@ export async function handleAddArticle(
     try {
       const decoded = nip19.decode(data.naddr);
       if (decoded.type !== "naddr") {
-        return ErrorResponse(undefined, "Invalid naddr format", 400);
+        return ErrorResponse("Invalid naddr format", 400);
       }
 
       aTag = `${decoded.data.kind}:${decoded.data.pubkey}:${decoded.data.identifier}`;
       relayTag = decoded.data.relays?.[0] || "wss://relay.damus.io";
     } catch {
-      return ErrorResponse(undefined, "Invalid naddr", 400);
+      return ErrorResponse("Invalid naddr", 400);
     }
   } else {
     aTag = data.a;
@@ -47,7 +47,7 @@ export async function handleAddArticle(
   }
 
   if (!aTag || !relayTag) {
-    return ErrorResponse(undefined, "Article data is required", 400);
+    return ErrorResponse("Article data is required", 400);
   }
 
   return await addArticle(masterAdminPrivateKey, currentArticles, {
@@ -64,16 +64,16 @@ export async function handleRemoveArticle(
   data: RemoveArticlePayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse(undefined, "Authentication failed", 401);
+    return ErrorResponse("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse(undefined, "Only editors can remove articles", 403);
+    return ErrorResponse("Only editors can remove articles", 403);
   }
 
   const { aTag, relay } = data;
   if (!aTag || !relay) {
-    return ErrorResponse(undefined, "Article data is required", 400);
+    return ErrorResponse("Article data is required", 400);
   }
 
   return await removeArticle(masterAdminPrivateKey, currentArticles, data);
@@ -92,7 +92,7 @@ export async function addArticle(
       (article) => article.aTag === data.aTag && article.relay === data.relayTag,
     );
     if (existingArticle) {
-      return ErrorResponse(undefined, "Article already exists", 409);
+      return ErrorResponse("Article already exists", 409);
     }
 
     const eventTemplate = {
@@ -111,7 +111,7 @@ export async function addArticle(
 
     return PublishEventResponse({ message: "Article added successfully", result }, data);
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to add article");
   }
 }
 
@@ -128,7 +128,7 @@ export async function removeArticle(
       (article) => article.aTag === data.aTag && article.relay === data.relay,
     );
     if (!toBeRemoved) {
-      return ErrorResponse(undefined, "Article not found", 404);
+      return ErrorResponse("Article not found", 404);
     }
 
     const eventTemplate = {
@@ -148,6 +148,6 @@ export async function removeArticle(
 
     return PublishEventResponse({ message: "Article removed successfully", result }, data);
   } catch (error) {
-    return ErrorResponse(error as Error);
+    return ErrorResponse(error || "Failed to remove article");
   }
 }

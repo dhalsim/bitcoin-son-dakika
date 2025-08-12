@@ -31,12 +31,14 @@ export const PROFILE_RELAYS = [
 export const MASTER_ADMIN_PUBKEY =
   "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
-export function ErrorResponse(e?: Error, message?: string, status: number = 500) {
+export function ErrorResponse(e: Error | string | undefined, status: number = 500) {
+  const message = e instanceof Error ? e.message : typeof e === "string" ? e : "Unknown error";
+
   return new Response(
     JSON.stringify({
       success: false,
-      message: message || (e instanceof Error ? e.message : "Error processing request"),
-      error: e instanceof Error ? e.message : "Unknown error",
+      message: message,
+      error: e instanceof Error ? e : undefined,
     }),
     {
       status,
@@ -296,7 +298,9 @@ const fetchSets = async (sets: EventSet[]): Promise<Map<EventSet, EventItem>> =>
   const hasFollowSet = sets.some((set) => getEventSetType(set, "follow"));
   const hasCurationSet = sets.some((set) => getEventSetType(set, "curation"));
 
-  const kinds = [hasFollowSet ? 30000 : null, hasCurationSet ? 30004 : null].filter(Boolean);
+  const kinds = [hasFollowSet ? 30000 : null, hasCurationSet ? 30004 : null].filter(
+    (k: number | null): k is number => k !== null,
+  );
 
   return new Promise((resolve, reject) => {
     const events = new Map<EventSet, EventItem>();
