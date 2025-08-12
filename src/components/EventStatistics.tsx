@@ -41,6 +41,7 @@ export function EventStatistics({ event, author, className = "" }: EventStatisti
 
     return [
       ...Array.from(statistics.replies.values()).map((reply) => reply.pubkey),
+      ...Array.from(statistics.nip22Replies.values()).map((reply) => reply.pubkey),
       ...Array.from(statistics.quotes.values()).map((quote) => quote.pubkey),
       ...Array.from(statistics.reposts.values()).map((repost) => repost.pubkey),
       ...Array.from(statistics.likes.values()).map((like) => like.pubkey),
@@ -48,6 +49,7 @@ export function EventStatistics({ event, author, className = "" }: EventStatisti
       ...Array.from(statistics.emojis.values()).flatMap((customEmoji) =>
         customEmoji.events.map((event) => event.pubkey),
       ),
+      ...Array.from(statistics.zaps.values()).map((zap) => zap.zapRequest.pubkey),
     ];
   }, [statistics]);
 

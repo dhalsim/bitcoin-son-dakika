@@ -142,12 +142,13 @@ export function ActionButtons({
     const groups: ReactionGroup[] = [];
     if (_zapCount > 0) {
       const sortedZaps = zaps.sort((a, b) => b.amount - a.amount);
+
       groups.push({
         type: "zap",
         key: "zap",
         icon: <Zap className="h-4 w-4" />,
         count: sortedZaps.length,
-        events: sortedZaps.map((zap) => zap.event),
+        events: sortedZaps.map((zap) => zap),
         color: "text-orange-500",
       });
     }

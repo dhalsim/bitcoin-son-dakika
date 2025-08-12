@@ -3,6 +3,7 @@ import type React from "react";
 import type { EventStatistics } from "@/lib/event-statistics";
 import type { EventItem, ProfileItem } from "@/lib/nip01";
 import type { ReplyNode } from "@/lib/nip10";
+import type { ZapReceipt } from "@/lib/nip57";
 
 export interface EventStatisticsProps {
   event: EventItem;
@@ -10,14 +11,23 @@ export interface EventStatisticsProps {
   className: string;
 }
 
-export interface ReactionGroup {
-  type: "zap" | "repost" | "like" | "dislike" | "emoji";
-  key: string;
-  icon: React.ReactNode;
-  count: number;
-  events: EventItem[];
-  color: string;
-}
+export type ReactionGroup =
+  | {
+      type: "repost" | "like" | "dislike" | "emoji";
+      key: string;
+      icon: React.ReactNode;
+      count: number;
+      events: EventItem[];
+      color: string;
+    }
+  | {
+      type: "zap";
+      key: string;
+      icon: React.ReactNode;
+      count: number;
+      events: ZapReceipt[];
+      color: string;
+    };
 
 export interface ActionButtonsProps {
   event: EventItem;
