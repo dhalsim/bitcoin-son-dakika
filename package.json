@@ -19,6 +19,7 @@
     "scrape:tv": "node scripts/scrape-tradingview.mjs"
   },
   "dependencies": {
+    "@google-cloud/translate": "^9.2.0",
     "@hookform/resolvers": "^5.1.1",
     "@mathieuc/tradingview": "^3.5.1",
     "@noble/hashes": "^1.4.0",

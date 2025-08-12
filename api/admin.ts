@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 
+import { TranslationServiceClient } from "@google-cloud/translate";
 import { hexToBytes } from "@noble/hashes/utils";
 import { finalizeEvent, nip19 } from "nostr-tools";
 import { createClient } from "redis";
@@ -149,6 +150,9 @@ export async function POST(request: Request) {
         return handleRemoveArticle(masterAdminPrivateKey, articleTags, authResult, requestBody);
       case "publish-news":
         return handlePublishNews(masterAdminPrivateKey, newsTags, authResult, requestBody);
+      case "translate-news":
+        return handleTranslateNews(authResult, requestBody);
+
       default:
         return ErrorResponse(undefined, "Invalid action", 400);
     }
@@ -221,6 +225,12 @@ type UploadToXPayload = {
   action: "upload-to-x";
   formData: FormData;
   title: string;
+};
+
+type TranslateNewsPayload = {
+  action: "translate-news";
+  textToTranslate: string[];
+  targetLanguageCode: string;
 };
 
 /** Scraper/Cache Utilities */
@@ -1015,6 +1025,42 @@ async function handleUploadToX(params: HandleUploadToXParams) {
     } catch (error) {
       console.error(error);
     }
+  } catch (error) {
+    return ErrorResponse(error);
+  }
+}
+
+async function handleTranslateNews(authResult: AuthResult, requestBody: TranslateNewsPayload) {
+  // Type guard to ensure success
+  if (!authResult.success) {
+    return ErrorResponse(undefined, "Authentication failed", 401);
+  }
+
+  // Only editors can translate news
+  if (!authResult.roles.includes("editor")) {
+    return ErrorResponse(undefined, "Only editors can translate news", 403);
+  }
+
+  // Google application credentials are required
+  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    return ErrorResponse(undefined, "Google application credentials not configured", 500);
+  }
+
+  if (!process.env.GOOGLE_PROJECT_ID) {
+    return ErrorResponse(undefined, "Google project ID not configured", 500);
+  }
+
+  try {
+    const client = new TranslationServiceClient();
+
+    const [translations] = await client.translateText({
+      parent: `projects/${process.env.GOOGLE_PROJECT_ID}/locations/global`,
+      mimeType: "text/plain",
+      contents: requestBody.textToTranslate,
+      targetLanguageCode: requestBody.targetLanguageCode,
+    });
+
+    return SuccessResponse({ translations });
   } catch (error) {
     return ErrorResponse(error);
   }

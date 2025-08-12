@@ -42,7 +42,7 @@ export async function createNIP98Auth(method: string, url: string): Promise<stri
 
 export async function postAdminAction(data: any): Promise<any> {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const url = `${origin}/api/admin`;
+  const url = `${origin}/api/admin-panel`;
   const auth = await createNIP98Auth("POST", url);
 
   const res = await fetch(url, {
@@ -67,7 +67,7 @@ export async function publishToX({
   form.append("media", new File([blob], "post.png", { type: "image/png" }));
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const url = `${origin}/api/admin`;
+  const url = `${origin}/api/admin-panel`;
   const auth = await createNIP98Auth("POST", url);
 
   return fetch(url, {

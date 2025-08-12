@@ -4,7 +4,7 @@ import { index, route } from "@react-router/dev/routes";
 export default [
   index("routes/_index.tsx"),
   // can't use "admin" because it's reserved for admin worker function at /functions/admin.ts
-  route("admin-panel", "routes/admin.tsx"),
+  route("admin", "routes/admin.tsx"),
   route("news", "routes/news.tsx"),
   route("news/:slug", "routes/news-detail.tsx"),
   route("article/:slug", "routes/article-detail.tsx"),

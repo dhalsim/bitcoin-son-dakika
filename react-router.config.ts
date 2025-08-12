@@ -104,7 +104,7 @@ export default {
 
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
-      "/admin-panel", // Admin paneli - static
+      "/admin", // Admin paneli - static
       "/news", // Haberler sayfası - static
       "/articles", // Makaleler sayfası - static
       "/son-dakika", // Son dakika sayfası - static

@@ -30,7 +30,7 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
 
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/api/admin`;
+      const url = `${origin}/api/admin-panel`;
 
       const authHeader = await createNIP98Auth("POST", url);
 

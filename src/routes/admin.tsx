@@ -327,7 +327,7 @@ export default function AdminPanel() {
 
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/api/admin`;
+      const url = `${origin}/api/admin-panel`;
       const authHeader = await createNIP98Auth("POST", url);
 
       const response = await fetch(url, {
