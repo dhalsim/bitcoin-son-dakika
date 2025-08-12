@@ -60,6 +60,11 @@ export default function UploadToX({
     shadowColor: string;
     shadowBlur: number;
     shadowOpacity: number;
+    backgroundColor: string;
+    backgroundOpacity: number; // 0..1
+    textAlign: "left" | "center" | "right";
+    backgroundFixedWidth?: number;
+    backgroundVerticalOffset?: number;
   }>({
     text: "",
     fontSize: 60,
@@ -68,6 +73,11 @@ export default function UploadToX({
     shadowColor: "#000000",
     shadowBlur: 3,
     shadowOpacity: 1,
+    backgroundColor: "#000000",
+    backgroundOpacity: 0.5,
+    textAlign: "center",
+    backgroundFixedWidth: undefined,
+    backgroundVerticalOffset: 0,
   });
 
   useEffect(() => {
@@ -255,6 +265,11 @@ export default function UploadToX({
                         shadowColor: overlayTextConfig.shadowColor,
                         shadowBlur: overlayTextConfig.shadowBlur,
                         shadowOpacity: overlayTextConfig.shadowOpacity,
+                        backgroundColor: overlayTextConfig.backgroundColor,
+                        backgroundOpacity: overlayTextConfig.backgroundOpacity,
+                        textAlign: overlayTextConfig.textAlign,
+                        backgroundFixedWidth: overlayTextConfig.backgroundFixedWidth,
+                        backgroundVerticalOffset: overlayTextConfig.backgroundVerticalOffset,
                       });
                     }}
                   >
@@ -330,6 +345,37 @@ export default function UploadToX({
                       disabled={isUploading}
                     />
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="min-w-[90px]">Şerit Rengi</Label>
+                    <Input
+                      type="color"
+                      value={overlayTextConfig.backgroundColor}
+                      onChange={(e) =>
+                        setOverlayTextConfig({
+                          ...overlayTextConfig,
+                          backgroundColor: e.target.value,
+                        })
+                      }
+                      disabled={isUploading}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="min-w-[90px]">Şerit Opaklığı</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={overlayTextConfig.backgroundOpacity}
+                    onChange={(e) =>
+                      setOverlayTextConfig({
+                        ...overlayTextConfig,
+                        backgroundOpacity: Math.max(0, Math.min(1, Number(e.target.value) || 0)),
+                      })
+                    }
+                    disabled={isUploading}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="flex items-center gap-2">
@@ -379,6 +425,60 @@ export default function UploadToX({
                     }
                     disabled={isUploading}
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <Label className="min-w-[90px]">Hizalama</Label>
+                    <Select
+                      value={overlayTextConfig.textAlign}
+                      disabled={isUploading}
+                      onValueChange={(v) =>
+                        setOverlayTextConfig({ ...overlayTextConfig, textAlign: v as any })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Hizalama" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="left">Sol</SelectItem>
+                        <SelectItem value="center">Orta</SelectItem>
+                        <SelectItem value="right">Sağ</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="min-w-[90px]">Şerit Genişliği</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={10}
+                      value={overlayTextConfig.backgroundFixedWidth ?? ""}
+                      placeholder="Otomatik"
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setOverlayTextConfig({
+                          ...overlayTextConfig,
+                          backgroundFixedWidth: Number.isFinite(val) && val > 0 ? val : undefined,
+                        });
+                      }}
+                      disabled={isUploading}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="min-w-[90px]">Dikey İnce Ayar</Label>
+                    <Input
+                      type="number"
+                      step={1}
+                      value={overlayTextConfig.backgroundVerticalOffset ?? 0}
+                      onChange={(e) =>
+                        setOverlayTextConfig({
+                          ...overlayTextConfig,
+                          backgroundVerticalOffset: Number(e.target.value) || 0,
+                        })
+                      }
+                      disabled={isUploading}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

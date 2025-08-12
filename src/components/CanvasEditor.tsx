@@ -18,6 +18,13 @@ export type CanvasEditorHandle = {
       shadowColor: string;
       shadowBlur: number;
       shadowOpacity: number;
+      backgroundColor: string;
+      backgroundOpacity: number; // 0..1
+      backgroundPaddingX?: number;
+      backgroundPaddingY?: number;
+      textAlign?: "left" | "center" | "right";
+      backgroundFixedWidth?: number; // if provided, rect uses this width and text aligns within
+      backgroundVerticalOffset?: number; // fine-tune vertical centering (px)
     },
   ) => void;
   clearOverlays: () => void;
@@ -246,22 +253,90 @@ const CanvasEditor = memo(
 
           const K = window.Konva;
 
-          const node = new K.Text({
-            text,
+          const group = new K.Group({
             x: options?.x ?? 24,
             y: options?.y ?? 24,
+            draggable: true,
+            listening: true,
+            name: "overlay-item",
+          });
+
+          const textNode = new K.Text({
+            text,
+            x: 0,
+            y: 0,
             fontSize: options.fontSize,
             fontFamily: options.fontFamily,
             fill: options.fill,
             shadowColor: options.shadowColor,
             shadowBlur: options.shadowBlur,
             shadowOpacity: options.shadowOpacity,
-            draggable: true,
             listening: true,
+            name: "overlay-item-text",
+            align: options.textAlign ?? "left",
+            wrap: "word",
           });
-          overlayLayerRef.current.add(node);
+
+          // Compute background strip properties
+          const bgOpacity =
+            typeof options.backgroundOpacity === "number" ? options.backgroundOpacity : 0;
+          const bgColor = options.backgroundColor ?? "#000000";
+          const padX = options.backgroundPaddingX ?? 10;
+          const padY = options.backgroundPaddingY ?? 4;
+
+          let rectNode: any | null = null;
+          if (bgOpacity > 0) {
+            // Measure text and create rect behind it with padding
+            // If a fixed background width is provided, enforce it and align text within
+            const fixedWidth = options.backgroundFixedWidth;
+            if (typeof fixedWidth === "number" && fixedWidth > 0) {
+              const contentWidth = Math.max(0, fixedWidth - padX * 2);
+              textNode.width(contentWidth);
+              // ensure align respected
+              textNode.align(options.textAlign ?? "center");
+            }
+
+            // Use pure text metrics to eliminate extra font leading and center vertically
+            const pureTextWidth =
+              typeof (textNode as any).textWidth === "function"
+                ? (textNode as any).textWidth()
+                : textNode.width();
+            const pureTextHeight =
+              typeof (textNode as any).textHeight === "function"
+                ? (textNode as any).textHeight()
+                : textNode.height();
+            const fullTextHeight = textNode.height();
+            const baselineExtra = Math.max(0, fullTextHeight - pureTextHeight);
+            const baselineOffset = baselineExtra / 2; // centers the glyph box vertically
+
+            // Offset text so that the rect can be centered around it
+            textNode.y(baselineOffset);
+
+            const rectWidth =
+              typeof fixedWidth === "number" && fixedWidth > 0
+                ? fixedWidth
+                : pureTextWidth + padX * 2;
+
+            const verticalFineTune = options.backgroundVerticalOffset ?? 0;
+
+            rectNode = new K.Rect({
+              x: -padX,
+              y: -(padY + baselineOffset) + verticalFineTune,
+              width: rectWidth,
+              height: pureTextHeight + padY * 2,
+              fill: bgColor,
+              opacity: Math.max(0, Math.min(1, bgOpacity)),
+              listening: false,
+              name: "overlay-item-bg",
+            });
+            group.add(rectNode);
+          }
+
+          group.add(textNode);
+          overlayLayerRef.current.add(group);
+
           if (transformerRef.current) {
-            transformerRef.current.nodes([node]);
+            transformerRef.current.nodes([group]);
           }
 
           overlayLayerRef.current.draw();
@@ -271,9 +346,20 @@ const CanvasEditor = memo(
             return;
           }
 
-          overlayLayerRef.current.destroyChildren();
+          // Remove all overlay items but keep the transformer node intact
+          const children = overlayLayerRef.current.getChildren();
+          children.forEach((child: any) => {
+            if (transformerRef.current && child === transformerRef.current) {
+              return;
+            }
+
+            child.destroy();
+          });
+
           if (transformerRef.current) {
             transformerRef.current.nodes([]);
+            // Ensure transformer stays on top
+            transformerRef.current.moveToTop();
           }
 
           overlayLayerRef.current.draw();
@@ -347,7 +433,21 @@ const CanvasEditor = memo(
               return;
             }
 
-            transformerRef.current.nodes([target]);
+            // If a child inside a group is clicked, select the parent group named 'overlay-item'
+            let nodeToSelect = target;
+            if (typeof target.findAncestor === "function") {
+              const groupAncestor = target.findAncestor(".overlay-item", true);
+              if (groupAncestor) {
+                nodeToSelect = groupAncestor;
+              }
+            } else if (target.getParent && target.getParent()) {
+              const parent = target.getParent();
+              if (parent && parent.name && parent.name() === "overlay-item") {
+                nodeToSelect = parent;
+              }
+            }
+
+            transformerRef.current.nodes([nodeToSelect]);
             overlayLayerRef.current.draw();
           });
           stageRef.current.on("click tap", (evt: any) => {
