@@ -1,7 +1,6 @@
-import ReactMarkdown from "react-markdown";
 import type { MetaFunction, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
-import remarkGfm from "remark-gfm";
+import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
 
 import type { SSGData } from "@/lib/ssg-data";
 import { createProfileSlug } from "@/lib/ssg-data";
@@ -159,95 +158,7 @@ export default function ArticleDetailPage() {
           </header>
 
           {/* Content */}
-          <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
-            <div className="text-foreground leading-relaxed">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  // Custom styling for markdown elements
-                  h1: ({ children }) => (
-                    <h1 className="text-3xl font-bold text-foreground mb-4">{children}</h1>
-                  ),
-                  h2: ({ children }) => (
-                    <h2 className="text-2xl font-bold text-foreground mb-3 mt-6">{children}</h2>
-                  ),
-                  h3: ({ children }) => (
-                    <h3 className="text-xl font-bold text-foreground mb-2 mt-5">{children}</h3>
-                  ),
-                  h4: ({ children }) => (
-                    <h4 className="text-lg font-bold text-foreground mb-2 mt-4">{children}</h4>
-                  ),
-                  p: ({ children }) => (
-                    <p className="mb-4 text-foreground leading-relaxed">{children}</p>
-                  ),
-                  ul: ({ children }) => (
-                    <ul className="list-disc list-inside mb-4 space-y-1 text-foreground">
-                      {children}
-                    </ul>
-                  ),
-                  ol: ({ children }) => (
-                    <ol className="list-decimal list-inside mb-4 space-y-1 text-foreground">
-                      {children}
-                    </ol>
-                  ),
-                  li: ({ children }) => <li className="text-foreground">{children}</li>,
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-main-accent pl-4 py-2 mb-4 bg-muted rounded-r">
-                      <p className="text-muted-foreground italic">{children}</p>
-                    </blockquote>
-                  ),
-                  code: ({ children, className }) => {
-                    const isInline = !className;
-                    if (isInline) {
-                      return (
-                        <code className="bg-muted px-1 py-0.5 rounded text-sm font-mono text-foreground">
-                          {children}
-                        </code>
-                      );
-                    }
-
-                    return (
-                      <pre className="bg-muted p-4 rounded-lg overflow-x-auto mb-4">
-                        <code className="text-sm font-mono text-foreground">{children}</code>
-                      </pre>
-                    );
-                  },
-                  a: ({ children, href }) => (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-main-accent hover:text-main-accent-dark underline"
-                    >
-                      {children}
-                    </a>
-                  ),
-                  img: ({ src, alt }) => (
-                    <img
-                      src={src}
-                      alt={alt}
-                      className="max-w-full h-auto rounded-lg shadow-lg my-4"
-                    />
-                  ),
-                  table: ({ children }) => (
-                    <div className="overflow-x-auto mb-4">
-                      <table className="min-w-full border border-border">{children}</table>
-                    </div>
-                  ),
-                  th: ({ children }) => (
-                    <th className="border border-border px-4 py-2 bg-muted text-left font-bold">
-                      {children}
-                    </th>
-                  ),
-                  td: ({ children }) => (
-                    <td className="border border-border px-4 py-2">{children}</td>
-                  ),
-                }}
-              >
-                {articleItem.content}
-              </ReactMarkdown>
-            </div>
-          </div>
+          <ArticleMarkdownRenderer content={articleItem.content} className="mb-8" />
 
           {/* Event Statistics */}
           <div className="border-t border-border pt-6">

@@ -15,8 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createNIP98Auth } from "./utils";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
 
 const CATEGORY_OPTIONS = [
   "bitcoin",
@@ -222,10 +221,8 @@ export default function ArticleComposer({ performAction }: ArticleComposerProps)
             {/* Markdown preview */}
             <div>
               <Label className="text-base font-medium">Önizleme</Label>
-              <div className="prose dark:prose-invert max-w-none border rounded-md p-3">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {preview || "Önizleme yok"}
-                </ReactMarkdown>
+              <div className="border rounded-md p-3">
+                <ArticleMarkdownRenderer content={preview || "Önizleme yok"} />
               </div>
             </div>
 
