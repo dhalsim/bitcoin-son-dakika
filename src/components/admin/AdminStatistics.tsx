@@ -11,10 +11,18 @@ type AdminData = {
 
 type AdminStatisticsProps = {
   adminData: AdminData | null;
-  onOpenTab?: (
-    tab: "stats" | "news" | "articles" | "users" | "compose" | "deploy" | "sources",
-  ) => void;
+  onOpenTab?: (tab: AdminTab) => void;
 };
+
+export type AdminTab =
+  | "stats"
+  | "news"
+  | "articles"
+  | "users"
+  | "compose"
+  | "compose-article"
+  | "deploy"
+  | "sources";
 
 export default function AdminStatistics({ adminData, onOpenTab }: AdminStatisticsProps) {
   return (

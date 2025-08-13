@@ -2,13 +2,14 @@ import { Key, AlertCircle, Loader2 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
 import { nip19 } from "nostr-tools";
 import { useState, useEffect, useCallback } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
-import AdminStatistics from "@/components/admin/AdminStatistics";
+import AdminStatistics, { AdminTab } from "@/components/admin/AdminStatistics";
 import ArticleCuration from "@/components/admin/ArticleCuration";
 import DeployTrigger from "@/components/admin/DeployTrigger";
 import NewsComposer from "@/components/admin/NewsComposer";
 import NewsCuration from "@/components/admin/NewsCuration";
+import ArticleComposer from "@/components/admin/ArticleComposer";
 import NewsSources from "@/components/admin/NewsSources";
 import UserManagement from "@/components/admin/UserManagement";
 import { createNIP98Auth } from "@/components/admin/utils";
@@ -16,8 +17,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { pool } from "@/lib/utils";
 import type { ArticleTag, NewsTag } from "../../api-helpers/utils";
+import type { PublishArticlePayload } from "../../api-helpers/admin/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WEBSITE_URL } from "@/lib/constants";
 
 import { ADMIN_RELAYS, type PublishEventResponse } from "../../api-helpers/utils";
 
@@ -93,7 +94,8 @@ type Payload =
   | RemoveAdminPayload
   | RemoveEditorPayload
   | AddEditorPayload
-  | PublishNewsPayload;
+  | PublishNewsPayload
+  | PublishArticlePayload;
 
 const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
@@ -119,9 +121,7 @@ export default function AdminPanel() {
   const [userInfo, setUserInfo] = useState<UserInfo>({});
   const [error, setError] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<string>("");
-  type AdminTab = "stats" | "news" | "articles" | "users" | "compose" | "deploy" | "sources";
-  const navigate = useNavigate();
-  const location = useLocation();
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialTab = (searchParams.get("tab") as AdminTab) || "stats";
@@ -443,6 +443,7 @@ export default function AdminPanel() {
           <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="stats">İstatistikler</TabsTrigger>
             {userIsEditor && <TabsTrigger value="compose">Haber Yayınla</TabsTrigger>}
+            {userIsEditor && <TabsTrigger value="compose-article">Makale Yayınla</TabsTrigger>}
             {(userIsEditor || userIsAdmin) && (
               <TabsTrigger value="news">Haber Kürasyonu</TabsTrigger>
             )}
@@ -483,6 +484,10 @@ export default function AdminPanel() {
                   return;
                 }
 
+                if (tab === "compose-article" && !userIsEditor) {
+                  return;
+                }
+
                 changeTab(tab);
               }}
             />
@@ -495,6 +500,12 @@ export default function AdminPanel() {
                 prefill={composerPrefill || undefined}
                 prefillToken={composerPrefillToken}
               />
+            </TabsContent>
+          )}
+
+          {userIsEditor && (
+            <TabsContent value="compose-article">
+              <ArticleComposer performAction={performAction} />
             </TabsContent>
           )}
 

@@ -1,6 +1,6 @@
 import { authenticateNIP98, ErrorResponse, fetchNostrSets } from "../utils.js";
 
-import { handleAddArticle, handleRemoveArticle } from "./articles.js";
+import { handleAddArticle, handleRemoveArticle, handlePublishArticle } from "./articles.js";
 import { handleTriggerDeploy } from "./deploy.js";
 import { handleAddNews, handlePublishNews, handleRemoveNews } from "./news.js";
 import { handleGetScrapes, handleRefreshScrapes } from "./scrapes.js";
@@ -98,6 +98,8 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         return handleRemoveArticle(masterAdminPrivateKey, articleTags, authResult, requestBody);
       case "publish-news":
         return handlePublishNews(masterAdminPrivateKey, newsTags, authResult, requestBody);
+      case "publish-article":
+        return handlePublishArticle(masterAdminPrivateKey, articleTags, authResult, requestBody);
       case "translate-news":
         return handleTranslateNews(authResult, requestBody);
       default:

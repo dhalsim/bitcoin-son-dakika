@@ -46,6 +46,15 @@ export type PublishNewsPayload = {
   tags: string[];
 };
 
+export type PublishArticlePayload = {
+  action: "publish-article";
+  content: string;
+  title: string;
+  summary?: string;
+  image?: string;
+  tags: string[];
+};
+
 export type UploadToXPayload = {
   action: "upload-to-x";
   formData: FormData;
