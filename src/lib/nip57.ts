@@ -136,6 +136,8 @@ export function getZaps(
   const newZaps = new Map<string, ZapReceipt>();
   const receivedEventRelayMap = new Map<string, string>();
 
+  let eoseCalled = false;
+
   const sub = pool.subscribe(
     relays,
     {
@@ -168,8 +170,17 @@ export function getZaps(
 
         newZaps.set(evt.id, validZap);
         cachedZaps.set(evt.id, validZap);
+
+        if (eoseCalled) {
+          onUpdate(new Map(newZaps));
+          newZaps.clear();
+
+          cache.setNip57Zaps(event.id, cachedZaps);
+        }
       },
       oneose: () => {
+        eoseCalled = true;
+
         if (newZaps.size) {
           onUpdate(new Map(newZaps));
           newZaps.clear();

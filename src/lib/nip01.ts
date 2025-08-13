@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { PROFILE_RELAYS } from "../../api-helpers/utils";
 
+import { getCache } from "./cache";
 import { logCloseReasons, pool } from "./utils";
 
 export const parseProfileEvent = (event: NostrEvent, relay: string): ProfileItem | null => {
@@ -46,14 +47,18 @@ export type EventItem = NostrEvent & {
 
 export type GetProfilesParams = {
   authors: string[];
-  cachedProfiles: Map<string, ProfileItem>;
+  cachedProfiles: Map<string, ProfileItem> | null;
   onUpdate: (profiles: Map<string, ProfileItem> | null) => void;
 };
+
+const cache = getCache();
 
 // New optimized function that works with ProfileItem cache
 export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesParams) {
   const receivedEventRelayMap = new Map<string, string>();
   const newProfiles = new Map<string, ProfileItem>();
+
+  let eoseCalled = false;
 
   // Use subscribe instead of subscribeEose to keep connection open
   const sub = pool.subscribe(
@@ -75,7 +80,7 @@ export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesPa
           return;
         }
 
-        const cachedProfile = cachedProfiles.get(event.pubkey);
+        const cachedProfile = cachedProfiles?.get(event.pubkey);
 
         if (cachedProfile && cachedProfile.created_at > event.created_at) {
           // Skip older profiles
@@ -91,12 +96,27 @@ export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesPa
         }
 
         newProfiles.set(event.pubkey, newProfile);
-        cachedProfiles.set(event.pubkey, newProfile);
+        cachedProfiles?.set(event.pubkey, newProfile);
+
+        if (eoseCalled) {
+          onUpdate(new Map(newProfiles));
+          newProfiles.clear();
+
+          if (cachedProfiles) {
+            cache.setProfileItems(newProfiles);
+          }
+        }
       },
       oneose: () => {
+        eoseCalled = true;
+
         if (newProfiles.size) {
           onUpdate(new Map(newProfiles));
           newProfiles.clear();
+
+          if (cachedProfiles) {
+            cache.setProfileItems(newProfiles);
+          }
         }
       },
       onclose: logCloseReasons,
@@ -116,6 +136,8 @@ export function getKind1Events(
 ) {
   const newEvents = new Map<string, EventItem>();
   const receivedEventRelayMap = new Map<string, string>();
+
+  let eoseCalled = false;
 
   const sub = pool.subscribe(
     relays,
@@ -137,8 +159,15 @@ export function getKind1Events(
         }
 
         newEvents.set(event.id, { ...event, relay });
+
+        if (eoseCalled) {
+          onUpdate(new Map(newEvents));
+          newEvents.clear();
+        }
       },
       oneose: () => {
+        eoseCalled = true;
+
         if (newEvents.size) {
           onUpdate(new Map(newEvents));
           newEvents.clear();

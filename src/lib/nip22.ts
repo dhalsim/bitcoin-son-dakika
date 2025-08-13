@@ -21,6 +21,8 @@ export function getArticleReplies(
   const newReplies = new Map<string, EventItem>();
   const receivedEventRelayMap = new Map<string, string>();
 
+  let eoseCalled = false;
+
   const sub = pool.subscribe(
     relays,
     {
@@ -51,8 +53,17 @@ export function getArticleReplies(
 
         newReplies.set(evt.id, { ...evt, relay });
         cachedReplies.set(evt.id, { ...evt, relay });
+
+        if (eoseCalled) {
+          onUpdate(new Map(newReplies));
+          newReplies.clear();
+
+          cache.setNip22ArticleReplies(aTag, cachedReplies);
+        }
       },
       oneose: () => {
+        eoseCalled = true;
+
         if (newReplies.size) {
           onUpdate(new Map(newReplies));
           newReplies.clear();

@@ -94,9 +94,6 @@ export function EventStatistics({ event, author, className = "" }: EventStatisti
 
           return newProfiles;
         });
-
-        // update the cache
-        cache.setProfileItems(cachedProfiles);
       },
     });
 

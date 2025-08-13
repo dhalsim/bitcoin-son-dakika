@@ -170,10 +170,14 @@ export async function fetchSSGData(): Promise<SSGData> {
 
 export function getProfileEvents(profilePubkeys: string[]): Promise<Map<string, ProfileItem>> {
   return new Promise((resolve) => {
-    getProfiles({
+    const subCloser = getProfiles({
       authors: profilePubkeys,
-      cachedProfiles: new Map(),
-      onUpdate: resolve,
+      cachedProfiles: null,
+      onUpdate: (profiles) => {
+        resolve(profiles);
+
+        subCloser();
+      },
     });
   });
 }

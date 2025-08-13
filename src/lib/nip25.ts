@@ -1,6 +1,9 @@
+import type { EventTemplate } from "nostr-tools";
+
 import { getCache } from "./cache";
-import type { EventItem } from "./nip01";
-import { pool } from "./utils";
+import type { EventItem, ProfileItem } from "./nip01";
+import { getUserPubkey, signEventByNip07 } from "./nip07";
+import { pool, publishToRelays } from "./utils";
 
 const cache = getCache();
 
@@ -18,6 +21,8 @@ export function getReactions(
 ) {
   const newReactions = new Map<string, EventItem>();
   const receivedEventRelayMap = new Map<string, string>();
+
+  let eoseCalled = false;
 
   const sub = pool.subscribe(
     relays,
@@ -47,8 +52,17 @@ export function getReactions(
 
         newReactions.set(evt.id, { ...evt, relay });
         cachedReactions.set(evt.id, { ...evt, relay });
+
+        if (eoseCalled) {
+          onUpdate(new Map(newReactions));
+          newReactions.clear();
+
+          cache.setNip25Reactions(event.id, cachedReactions);
+        }
       },
       oneose: () => {
+        eoseCalled = true;
+
         // Got all stored events
         // send the reposts that we didn't send yet
         if (newReactions.size) {
@@ -64,4 +78,66 @@ export function getReactions(
   return () => {
     sub.close();
   };
+}
+
+export async function postReaction(
+  event: EventItem,
+  author: ProfileItem,
+  content: string,
+  publishRelays: string[],
+  onSuccess: () => void,
+  onError: (reason: string) => void,
+) {
+  if (publishRelays.length === 0) {
+    return onError("Relayler bulunamadı");
+  }
+
+  const userPubkey = await getUserPubkey();
+
+  if (!userPubkey) {
+    return onError("Kullanıcı anahtarı alınamadı");
+  }
+
+  let aTag: string | null = null;
+
+  if (event.kind === 30023) {
+    const dTag = event.tags.find((tag) => tag[0] === "d");
+
+    if (!dTag) {
+      return onError("d tag bulunamadı");
+    }
+
+    aTag = `30023:${event.pubkey}:${dTag[1]}`;
+  }
+
+  const tags = [
+    ["e", event.id, event.relay, event.pubkey],
+    ["p", event.pubkey, author.relay],
+    ["k", String(event.kind)],
+  ];
+
+  if (aTag) {
+    tags.push(["a", aTag]);
+  }
+
+  const reactionEvent: EventTemplate = {
+    kind: 7,
+    content,
+    created_at: Math.floor(Date.now() / 1000),
+    tags,
+  };
+
+  const signedReactionEvent = await signEventByNip07(reactionEvent);
+
+  if (!signedReactionEvent) {
+    return onError("Reaction imzası alınamadı");
+  }
+
+  const publishResult = await publishToRelays(signedReactionEvent, publishRelays);
+
+  if (publishResult.some((result) => result.success)) {
+    onSuccess();
+  } else {
+    onError("Reaction gönderimi başarısız");
+  }
 }

@@ -20,13 +20,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useUserWriteRelays } from "@/contexts/UserContext";
+import { useUserContext, useUserWriteRelays } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
-import { getUserPubkey } from "@/lib/nip07";
-import { createNip10Thread } from "@/lib/nip10";
+import { createNip10Thread, postKind1Reply } from "@/lib/nip10";
 import { postQuoteRepost, postRepost } from "@/lib/nip18";
 import { createNip22Thread } from "@/lib/nip22";
-import { hasUserZapped } from "@/lib/zap-utils";
 
 import { EmojiBoard } from "../EmojiBoard";
 import { ZapDialog } from "../ZapDialog";
@@ -43,7 +41,8 @@ import {
   saveDraft,
   saveEmojiUsage,
 } from "./utils";
-// duplicated imports accidentally added by refactor tool - removing duplicates
+import { fetchNip65Relays } from "@/lib/nip65";
+import { postReaction } from "@/lib/nip25";
 
 export function ActionButtons({
   event,
@@ -52,7 +51,6 @@ export function ActionButtons({
   setStatistics,
   profiles,
 }: ActionButtonsProps) {
-  // UI state moved from parent
   const [isExpanded, setIsExpanded] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const [showQuotes, setShowQuotes] = useState(false);
@@ -68,8 +66,8 @@ export function ActionButtons({
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [isQuotesAtBottom, setIsQuotesAtBottom] = useState(false);
   const [showZapDialog, setShowZapDialog] = useState(false);
-  const [currentUserPubkey, setCurrentUserPubkey] = useState<string | null>(null);
-  const [hasZapped, setHasZapped] = useState(false);
+  const [authorReadRelays, setAuthorReadRelays] = useState<string[]>([]);
+  const { userProfile } = useUserContext();
 
   const writeRelays = useUserWriteRelays();
   const { toast } = useToast();
@@ -105,20 +103,6 @@ export function ActionButtons({
     }
   }, [event?.id, quoteContent]);
 
-  // Current user and zap status
-  useEffect(() => {
-    const run = async () => {
-      const pubkey = await getUserPubkey();
-      setCurrentUserPubkey(pubkey);
-      if (pubkey && event?.id) {
-        const userHasZapped = hasUserZapped(event.id, pubkey, new Map());
-        setHasZapped(userHasZapped);
-      }
-    };
-
-    run();
-  }, [event?.id]);
-
   // Derived counts and groups
   const {
     repliesCount,
@@ -128,7 +112,6 @@ export function ActionButtons({
     zapCount,
     zapAmount,
     reactionGroups,
-    hasUserReposted,
   } = useMemo(() => {
     const zaps = Array.from(statistics?.zaps?.values() || []);
     const _repliesCount = statistics?.replies?.size || 0;
@@ -196,6 +179,7 @@ export function ActionButtons({
         }
 
         let icon: React.ReactNode;
+
         if (customEmoji.url) {
           icon = (
             <img
@@ -238,11 +222,6 @@ export function ActionButtons({
           : 0),
       0,
     );
-    const userReposted = !!(
-      currentUserPubkey &&
-      statistics?.reposts &&
-      Array.from(statistics.reposts.values()).some((r) => r.pubkey === currentUserPubkey)
-    );
 
     return {
       repliesCount: _repliesCount,
@@ -252,13 +231,88 @@ export function ActionButtons({
       zapCount: _zapCount,
       zapAmount: _zapAmount,
       reactionGroups: groups,
-      hasUserReposted: userReposted,
     };
-  }, [statistics, currentUserPubkey]);
+  }, [statistics]);
+
+  useEffect(() => {
+    if (!author) {
+      return;
+    }
+
+    fetchNip65Relays(author.pubkey, (relays) => {
+      setAuthorReadRelays(relays?.readRelays || []);
+    });
+  }, [author]);
+
+  const { hasUserReposted, hasUserZapped, hasUserReacted, hasUserReplied, hasUserQuoted } =
+    useMemo(() => {
+      if (!userProfile?.pubkey) {
+        return {
+          hasUserReposted: false,
+          hasUserZapped: false,
+          hasUserReacted: false,
+          hasUserReplied: false,
+          hasUserQuoted: false,
+        };
+      }
+
+      if (!statistics) {
+        return {
+          hasUserReposted: false,
+          hasUserZapped: false,
+          hasUserReacted: false,
+          hasUserReplied: false,
+          hasUserQuoted: false,
+        };
+      }
+
+      const userReposted = !!(
+        userProfile?.pubkey &&
+        statistics?.reposts &&
+        Array.from(statistics.reposts.values()).some((r) => r.pubkey === userProfile.pubkey)
+      );
+
+      const userZapped = !!(
+        userProfile?.pubkey &&
+        statistics?.zaps &&
+        Array.from(statistics.zaps.values()).some(
+          (zap) => zap.zapRequest.pubkey === userProfile.pubkey,
+        )
+      );
+
+      const userReacted = !!(
+        userProfile?.pubkey &&
+        statistics?.reactions &&
+        Array.from(statistics.reactions.values()).some(
+          (reaction) => reaction.pubkey === userProfile.pubkey,
+        )
+      );
+
+      const userReplied = !!(
+        userProfile?.pubkey &&
+        statistics?.replies &&
+        Array.from(statistics.replies.values()).some((reply) => reply.pubkey === userProfile.pubkey)
+      );
+
+      const userQuoted = !!(
+        userProfile?.pubkey &&
+        statistics?.quotes &&
+        Array.from(statistics.quotes.values()).some((quote) => quote.pubkey === userProfile.pubkey)
+      );
+
+      return {
+        hasUserReposted: userReposted,
+        hasUserZapped: userZapped,
+        hasUserReacted: userReacted,
+        hasUserReplied: userReplied,
+        hasUserQuoted: userQuoted,
+      };
+    }, [statistics, userProfile?.pubkey]);
 
   // Local handlers re-implemented
   const onToggleExpanded = () => {
     setIsExpanded((v) => !v);
+
     if (showReplies) {
       setShowReplies(false);
     }
@@ -270,7 +324,9 @@ export function ActionButtons({
 
   const onShowRepliesClick = () => {
     const next = !showReplies;
+
     setShowReplies(next);
+
     if (isExpanded) {
       setIsExpanded(false);
     }
@@ -281,7 +337,9 @@ export function ActionButtons({
 
     if (next && statistics?.replies) {
       setLoadingThread(true);
+
       let threadData: any[] = [];
+
       if (event.kind === 1) {
         threadData = createNip10Thread(statistics.replies, event.id);
       } else if (event.kind === 30023) {
@@ -295,23 +353,31 @@ export function ActionButtons({
 
   const onReactionClick = (emoji: string) => {
     saveEmojiUsage(emoji);
+
+    const publishRelays = new Set([...authorReadRelays, ...writeRelays]);
+
+    postReaction(
+      event,
+      author,
+      emoji,
+      Array.from(publishRelays),
+      () => {
+        toast({
+          title: "Başarılı",
+          description: "Reaksiyon başarıyla gönderildi",
+        });
+      },
+      (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
+    );
   };
 
   const onRepostClick = () => {
-    if (writeRelays.length === 0) {
-      toast({
-        title: "Hata",
-        description: "Yazma relayleri bulunamadı",
-        variant: "destructive",
-      });
-
-      return;
-    }
+    const publishRelays = new Set([...authorReadRelays, ...writeRelays]);
 
     postRepost(
       event,
       author,
-      writeRelays,
+      Array.from(publishRelays),
       () =>
         toast({
           title: "Başarılı",
@@ -323,7 +389,9 @@ export function ActionButtons({
 
   const onQuoteClick = () => {
     const next = !showQuotes;
+
     setShowQuotes(next);
+
     if (isExpanded) {
       setIsExpanded(false);
     }
@@ -340,10 +408,33 @@ export function ActionButtons({
       return;
     }
 
-    // TODO: Implement actual post
-    setReplyContent("");
-    saveDraft(event.id, "");
-    setShowReplies(false);
+    const publishRelays = new Set([...authorReadRelays, ...writeRelays]);
+
+    if (event.kind === 1) {
+      postKind1Reply(
+        event,
+        author,
+        replyContent,
+        Array.from(publishRelays),
+        () => {
+          toast({
+            title: "Başarılı",
+            description: "Yanıt başarıyla gönderildi",
+          });
+
+          clear();
+        },
+        (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
+      );
+    } else if (event.kind === 30023) {
+      // TODO: postKind23Reply
+      console.log("TODO: postKind23Reply");
+    }
+    const clear = () => {
+      setReplyContent("");
+      saveDraft(event.id, "");
+      setShowReplies(false);
+    };
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -359,10 +450,13 @@ export function ActionButtons({
     }
 
     setShowQuotes(false);
+
+    const publishRelays = new Set([...authorReadRelays, ...writeRelays]);
+
     postQuoteRepost(
       event,
       quoteContent,
-      writeRelays,
+      Array.from(publishRelays),
       () => {
         toast({
           title: "Başarılı",
@@ -399,7 +493,7 @@ export function ActionButtons({
 
         <button
           onClick={onShowRepliesClick}
-          className={`flex items-center space-x-1 transition-colors cursor-pointer ${showReplies ? "text-purple-600" : "hover:text-purple-600"}`}
+          className={`flex items-center space-x-1 transition-colors cursor-pointer hover:text-purple-600 ${showReplies ? "text-purple-600" : ""} ${hasUserReplied ? "text-purple-600" : ""}`}
           title={showReplies ? "Yanıtları gizle" : "Yanıtları göster"}
         >
           <MessageSquare className="h-4 w-4" />
@@ -412,7 +506,11 @@ export function ActionButtons({
               className="flex items-center space-x-1 hover:text-red-600 transition-colors cursor-pointer"
               title="Beğen"
             >
-              <Heart className="h-4 w-4" />
+              {hasUserReacted ? (
+                <Heart className="h-4 w-4 fill-current" />
+              ) : (
+                <Heart className="h-4 w-4" />
+              )}
               <span>{totalReactions}</span>
             </button>
           </PopoverTrigger>
@@ -459,7 +557,7 @@ export function ActionButtons({
         {event.kind === 1 && (
           <button
             onClick={onRepostClick}
-            className={`flex items-center space-x-1 transition-colors cursor-pointer ${hasUserReposted ? "text-blue-600" : "hover:text-blue-600"}`}
+            className={`flex items-center space-x-1 transition-colors cursor-pointer hover:text-blue-600 ${hasUserReposted ? "text-blue-600" : ""}`}
             title={hasUserReposted ? "Reposted" : "Yeniden paylaş"}
           >
             <Repeat2 className="h-4 w-4" />
@@ -469,7 +567,7 @@ export function ActionButtons({
 
         <button
           onClick={onQuoteClick}
-          className={`flex items-center space-x-1 transition-colors cursor-pointer ${showQuotes ? "text-blue-600" : "hover:text-blue-600"}`}
+          className={`flex items-center space-x-1 transition-colors cursor-pointer hover:text-blue-600 ${showQuotes ? "text-blue-600" : ""} ${hasUserQuoted ? "text-blue-600" : ""}`}
           title={showQuotes ? "Alıntıları gizle" : "Alıntıları göster"}
         >
           <Quote className="h-4 w-4" />
@@ -478,10 +576,10 @@ export function ActionButtons({
 
         <button
           onClick={onZapClick}
-          className={`flex items-center space-x-1 transition-colors cursor-pointer ${hasZapped ? "text-orange-600" : "hover:text-orange-600"}`}
-          title={hasZapped ? "Zap Gönderildi" : "Zap Gönder"}
+          className={`flex items-center space-x-1 transition-colors cursor-pointer hover:text-orange-600 ${hasUserZapped ? "text-orange-600" : ""}`}
+          title={hasUserZapped ? "Zap Gönderildi" : "Zap Gönder"}
         >
-          <Zap className={`h-4 w-4 ${hasZapped ? "fill-current" : ""}`} />
+          <Zap className={`h-4 w-4 ${hasUserZapped ? "fill-current" : ""}`} />
           <span>{zapAmount}</span>
         </button>
       </div>

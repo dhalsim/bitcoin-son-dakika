@@ -91,25 +91,6 @@ export async function createZap({
   }
 }
 
-// Check if user has zapped an event
-export function hasUserZapped(
-  eventId: string,
-  userPubkey: string,
-  zaps: Map<string, any>,
-): boolean {
-  for (const zap of zaps.values()) {
-    if (zap.event.tags.some((tag: string[]) => tag[0] === "e" && tag[1] === eventId)) {
-      // Check if this zap was made by the current user
-      const pTag = zap.event.tags.find((tag: string[]) => tag[0] === "P");
-      if (pTag && pTag[1] === userPubkey) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
 const cache = getCache();
 
 // Listen for zap receipt for a specific invoice

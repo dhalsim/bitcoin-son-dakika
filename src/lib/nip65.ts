@@ -56,7 +56,8 @@ export async function fetchNip65Relays(
     return;
   }
 
-  cache.setNip65Event(pubkey, nip65Event);
+  // Relay is not important here
+  cache.setNip65Event(pubkey, { ...nip65Event, relay: PROFILE_RELAYS[0] });
 
   const result = toReadWriteRelays(nip65Event.tags);
 

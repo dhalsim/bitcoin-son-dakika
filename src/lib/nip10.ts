@@ -1,6 +1,9 @@
+import type { EventTemplate } from "nostr-tools";
+
 import { getCache } from "./cache";
-import type { EventItem } from "./nip01";
-import { pool } from "./utils";
+import type { EventItem, ProfileItem } from "./nip01";
+import { getUserPubkey, signEventByNip07 } from "./nip07";
+import { pool, publishToRelays } from "./utils";
 const cache = getCache();
 
 export type ReplyNode = {
@@ -39,6 +42,8 @@ export function getKind1Replies(
   const newReplies = new Map<string, EventItem>();
   const receivedEventRelayMap = new Map<string, string>();
 
+  let eoseCalled = false;
+
   const sub = pool.subscribe(
     relays,
     {
@@ -72,8 +77,17 @@ export function getKind1Replies(
 
         newReplies.set(evt.id, { ...evt, relay });
         cachedReplies.set(evt.id, { ...evt, relay });
+
+        if (eoseCalled) {
+          onUpdate(new Map(newReplies));
+          newReplies.clear();
+
+          cache.setNip10Replies(event.id, cachedReplies);
+        }
       },
       oneose: () => {
+        eoseCalled = true;
+
         if (newReplies.size) {
           onUpdate(new Map(newReplies));
           newReplies.clear();
@@ -87,6 +101,49 @@ export function getKind1Replies(
   return () => {
     sub.close();
   };
+}
+
+export async function postKind1Reply(
+  event: EventItem,
+  author: ProfileItem,
+  content: string,
+  publishRelays: string[],
+  onSuccess: () => void,
+  onError: (reason: string) => void,
+) {
+  if (publishRelays.length === 0) {
+    return onError("Relayler bulunamadı");
+  }
+
+  const userPubkey = await getUserPubkey();
+
+  if (!userPubkey) {
+    return onError("Kullanıcı anahtarı alınamadı");
+  }
+
+  const replyEvent: EventTemplate = {
+    kind: 1,
+    content,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ["e", event.id, event.relay], // e tag with event id and relay URL
+      ["p", event.pubkey, author.relay], // p tag with the pubkey of the event being replied to
+    ],
+  };
+
+  const signedReplyEvent = await signEventByNip07(replyEvent);
+
+  if (!signedReplyEvent) {
+    return onError("Reply imzası alınamadı");
+  }
+
+  const publishResult = await publishToRelays(signedReplyEvent, publishRelays);
+
+  if (publishResult.some((result) => result.success)) {
+    onSuccess();
+  } else {
+    onError("Reply gönderimi başarısız");
+  }
 }
 
 /**

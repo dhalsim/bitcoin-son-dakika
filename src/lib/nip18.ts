@@ -17,6 +17,8 @@ export function getReposts(
   const newReposts = new Map<string, EventItem>();
   const receivedEventRelayMap = new Map<string, string>();
 
+  let eoseCalled = false;
+
   const sub = pool.subscribe(
     relays,
     {
@@ -41,8 +43,17 @@ export function getReposts(
 
         newReposts.set(evt.id, { ...evt, relay });
         cachedReposts.set(evt.id, { ...evt, relay });
+
+        if (eoseCalled) {
+          onUpdate(new Map(newReposts));
+          newReposts.clear();
+
+          cache.setNip18Reposts(event.id, cachedReposts);
+        }
       },
       oneose: () => {
+        eoseCalled = true;
+
         if (newReposts.size) {
           onUpdate(new Map(newReposts));
           newReposts.clear();
@@ -118,6 +129,8 @@ export function getKind1Quotes(
   const newQuotes = new Map<string, EventItem>();
   const receivedEventRelayMap = new Map<string, string>();
 
+  let eoseCalled = false;
+
   const sub = pool.subscribe(
     relays,
     {
@@ -146,8 +159,17 @@ export function getKind1Quotes(
 
         newQuotes.set(evt.id, { ...evt, relay });
         cachedQuotes.set(evt.id, { ...evt, relay });
+
+        if (eoseCalled) {
+          onUpdate(new Map(newQuotes));
+          newQuotes.clear();
+
+          cache.setNip18Quotes(identifier, cachedQuotes);
+        }
       },
       oneose: () => {
+        eoseCalled = true;
+
         if (newQuotes.size) {
           onUpdate(new Map(newQuotes));
           newQuotes.clear();
