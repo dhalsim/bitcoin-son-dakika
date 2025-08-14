@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { createNIP98Auth } from "./utils";
 
-type ScraperSource = "coindesk" | "cointelegraph" | "tradingview" | "bitcoinmagazine";
+type ScraperSource = "coindesk" | "cointelegraph" | "tradingview" | "bitcoinmagazine" | "therage";
 
 type ScrapedItem = {
   title: string;
@@ -78,6 +78,7 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
           <option value="cointelegraph">Cointelegraph</option>
           <option value="tradingview">TradingView</option>
           <option value="bitcoinmagazine">Bitcoin Magazine</option>
+          <option value="therage">The Rage</option>
         </select>
         <button
           className="inline-flex items-center rounded bg-primary text-primary-foreground px-3 py-1 text-sm disabled:opacity-50"

@@ -16,7 +16,8 @@
     "scrape:ct": "node scripts/scrape-cointelegraph.mjs",
     "scrape:bm": "node scripts/scrape-bitcoinmagazine.mjs",
     "scrape:coindesk": "node scripts/scrape-coindesk.mjs",
-    "scrape:tv": "node scripts/scrape-tradingview.mjs"
+    "scrape:tv": "node scripts/scrape-tradingview.mjs",
+    "scrape:therage": "node scripts/scrape-therage.mjs"
   },
   "dependencies": {
     "@google-cloud/translate": "^9.2.0",
