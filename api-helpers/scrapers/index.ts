@@ -1,10 +1,10 @@
-export { type ScraperSource, type ScrapedItem, SCRAPER_SOURCES } from "./types";
-import { scrapeBitcoinMagazine } from "./bitcoinmagazine";
-import { scrapeCoinDesk } from "./coindesk";
-import { scrapeCointelegraph } from "./cointelegraph";
-import { scrapeTheRage } from "./therage";
-import { scrapeTradingView } from "./tradingview";
-import type { ScraperSource, ScrapedItem } from "./types";
+export { type ScraperSource, type ScrapedItem, SCRAPER_SOURCES } from "./types.js";
+import { scrapeBitcoinMagazine } from "./bitcoinmagazine.js";
+import { scrapeCoinDesk } from "./coindesk.js";
+import { scrapeCointelegraph } from "./cointelegraph.js";
+import { scrapeTheRage } from "./therage.js";
+import { scrapeTradingView } from "./tradingview.js";
+import type { ScraperSource, ScrapedItem } from "./types.js";
 
 export async function fetchSource(source: ScraperSource): Promise<ScrapedItem[]> {
   switch (source) {

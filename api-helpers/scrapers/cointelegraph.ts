@@ -1,5 +1,5 @@
-import type { ScrapedItem } from "./types";
-import { normalizeText } from "./utils";
+import type { ScrapedItem } from "./types.js";
+import { normalizeText } from "./utils.js";
 
 export async function scrapeCointelegraph(): Promise<ScrapedItem[]> {
   const API_URL = "https://conpletus.cointelegraph.com/v1/";

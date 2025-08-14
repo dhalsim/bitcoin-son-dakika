@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 
-import type { ScrapedItem } from "./types";
-import { normalizeText } from "./utils";
+import type { ScrapedItem } from "./types.js";
+import { normalizeText } from "./utils.js";
 
 export async function scrapeBitcoinMagazine(): Promise<ScrapedItem[]> {
   const BASE = "https://bitcoinmagazine.com";

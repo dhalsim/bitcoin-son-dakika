@@ -1,5 +1,5 @@
-import type { ScrapedItem } from "./types";
-import { normalizeText } from "./utils";
+import type { ScrapedItem } from "./types.js";
+import { normalizeText } from "./utils.js";
 
 export async function scrapeCoinDesk(): Promise<ScrapedItem[]> {
   const API_BASE = "https://data-api.cryptocompare.com/news/v1/article/list";

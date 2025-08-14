@@ -1,5 +1,5 @@
-import type { ScrapedItem } from "./types";
-import { normalizeText } from "./utils";
+import type { ScrapedItem } from "./types.js";
+import { normalizeText } from "./utils.js";
 
 export async function scrapeTradingView(): Promise<ScrapedItem[]> {
   const API =

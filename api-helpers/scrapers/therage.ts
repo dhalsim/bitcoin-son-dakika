@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 
-import type { ScrapedItem } from "./types";
-import { normalizeText, stripHtml } from "./utils";
+import type { ScrapedItem } from "./types.js";
+import { normalizeText, stripHtml } from "./utils.js";
 
 const RSS_URL = "https://www.therage.co/rss/";
 
