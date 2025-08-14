@@ -352,6 +352,7 @@ export default function AdminPanel() {
           toast({
             title: "Yayın başarılı",
             description: "İşiniz bittiyse deploy etmeyi unutmayın.",
+            variant: "success",
           });
         }
       } else {

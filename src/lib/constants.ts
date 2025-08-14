@@ -4,18 +4,23 @@ export const WEBSITE_DESCRIPTION =
   "Bitcoin dünyasından son dakika haberleri, güncel gelişmeler, analizler ve uzman yorumları";
 export const LOGO_URL = "/bitcoin-son-dakika-logo.png";
 
+const zero = {
+  count: 0,
+  emojiUrl: null,
+};
+
 export const DEFAULT_EMOJI_USAGE = {
-  "❤️": 0,
-  "👍": 0,
-  "👎": 0,
-  "😂": 0,
-  "😡": 0,
-  "😢": 0,
-  "😍": 0,
-  "🔥": 0,
-  "💯": 0,
-  "🤯": 0,
-  "🤩": 0,
-  "🤗": 0,
-  "🤝": 0,
+  "❤️": { ...zero },
+  "👍": { ...zero },
+  "👎": { ...zero },
+  "😂": { ...zero },
+  "😡": { ...zero },
+  "😢": { ...zero },
+  "😍": { ...zero },
+  "🔥": { ...zero },
+  "💯": { ...zero },
+  "🤯": { ...zero },
+  "🤩": { ...zero },
+  "🤗": { ...zero },
+  "🤝": { ...zero },
 };

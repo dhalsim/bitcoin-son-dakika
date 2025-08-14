@@ -84,6 +84,7 @@ export async function postReaction(
   event: EventItem,
   author: ProfileItem,
   content: string,
+  emojiUrl: string | null,
   publishRelays: string[],
   onSuccess: () => void,
   onError: (reason: string) => void,
@@ -120,9 +121,15 @@ export async function postReaction(
     tags.push(["a", aTag]);
   }
 
+  if (emojiUrl) {
+    tags.push(["emoji", content, emojiUrl]);
+  }
+
+  const finalContent = emojiUrl ? `:${content}:` : content;
+
   const reactionEvent: EventTemplate = {
     kind: 7,
-    content,
+    content: finalContent,
     created_at: Math.floor(Date.now() / 1000),
     tags,
   };

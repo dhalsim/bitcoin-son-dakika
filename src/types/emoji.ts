@@ -8,5 +8,8 @@ export interface EmojiCategories {
 }
 
 export type EmojiUsage = {
-  [emoji: string]: number;
+  [emoji: string]: {
+    count: number;
+    emojiUrl: string | null;
+  };
 };

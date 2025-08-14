@@ -41,6 +41,9 @@ export interface ExpandedReactionsProps {
   reactionGroups: ReactionGroup[];
   profiles: Map<string, ProfileItem>;
   author?: ProfileItem;
+  onRepostClick?: () => void;
+  onReactionClick?: (emoji: string, emojiUrl: string | null) => void;
+  onZapClick?: () => void;
 }
 
 export interface ReplyComposerProps {

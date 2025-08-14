@@ -351,8 +351,8 @@ export function ActionButtons({
     }
   };
 
-  const onReactionClick = (emoji: string) => {
-    saveEmojiUsage(emoji);
+  const onReactionClick = (emoji: string, emojiUrl: string | null) => {
+    saveEmojiUsage(emoji, emojiUrl);
 
     const publishRelays = new Set([...authorReadRelays, ...writeRelays]);
 
@@ -360,11 +360,13 @@ export function ActionButtons({
       event,
       author,
       emoji,
+      emojiUrl,
       Array.from(publishRelays),
       () => {
         toast({
           title: "Başarılı",
           description: "Reaksiyon başarıyla gönderildi",
+          variant: "success",
         });
       },
       (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
@@ -382,6 +384,7 @@ export function ActionButtons({
         toast({
           title: "Başarılı",
           description: "Repost başarıyla gönderildi",
+          variant: "success",
         }),
       (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
     );
@@ -420,6 +423,7 @@ export function ActionButtons({
           toast({
             title: "Başarılı",
             description: "Yanıt başarıyla gönderildi",
+            variant: "success",
           });
 
           clear();
@@ -461,6 +465,7 @@ export function ActionButtons({
         toast({
           title: "Başarılı",
           description: "Alıntı başarıyla gönderildi",
+          variant: "success",
         });
         setQuoteContent("");
         saveDraft(`quote-${event.id}`, "");
@@ -516,17 +521,25 @@ export function ActionButtons({
           </PopoverTrigger>
           <PopoverContent className="w-auto p-2" align="start">
             <div className="flex items-center space-x-2">
-              {getMostUsedEmojis().map((emoji) => (
+              {Object.entries(getMostUsedEmojis()).map(([emoji, usage]) => (
                 <button
                   key={emoji}
                   onClick={() => {
-                    onReactionClick(emoji);
+                    onReactionClick(emoji, usage.emojiUrl);
                     setShowReactionPopup(false);
                   }}
                   className="text-2xl hover:scale-110 transition-transform cursor-pointer"
                   title={`React with ${emoji}`}
                 >
-                  {emoji}
+                  {usage.emojiUrl ? (
+                    <img
+                      src={usage.emojiUrl}
+                      alt={`:${emoji}:`}
+                      className="h-6 w-6 object-contain"
+                    />
+                  ) : (
+                    emoji
+                  )}
                 </button>
               ))}
               <Dialog open={showEmojiModal} onOpenChange={setShowEmojiModal}>
@@ -543,7 +556,7 @@ export function ActionButtons({
                   <div className="max-h-[400px] overflow-y-auto">
                     <EmojiBoard
                       onEmojiSelected={(emoji) => {
-                        onReactionClick(emoji);
+                        onReactionClick(emoji, null);
                         setShowEmojiModal(false);
                       }}
                     />
@@ -586,7 +599,14 @@ export function ActionButtons({
 
       {/* Expanded reactions panel */}
       {isExpanded && totalReactions > 0 && (
-        <ExpandedReactions reactionGroups={reactionGroups} profiles={profiles} author={author} />
+        <ExpandedReactions
+          reactionGroups={reactionGroups}
+          profiles={profiles}
+          author={author}
+          onRepostClick={onRepostClick}
+          onReactionClick={onReactionClick}
+          onZapClick={onZapClick}
+        />
       )}
 
       {/* Replies section */}

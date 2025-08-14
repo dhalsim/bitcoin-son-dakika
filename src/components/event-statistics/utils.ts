@@ -1,5 +1,6 @@
 import { getCache } from "@/lib/cache";
 import { DEFAULT_EMOJI_USAGE } from "@/lib/constants";
+import type { EmojiUsage } from "@/types/emoji";
 
 const cache = getCache();
 
@@ -24,22 +25,29 @@ export const loadDraft = (eventId: string): string => {
 };
 
 // Get most used emojis from localStorage
-export const getMostUsedEmojis = (): string[] => {
+export const getMostUsedEmojis = (): EmojiUsage => {
   const usage = cache.getEmojiUsage(DEFAULT_EMOJI_USAGE);
 
   return Object.entries(usage)
-    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .sort(([, a], [, b]) => b.count - a.count)
     .slice(0, 7)
-    .map(([emoji]) => emoji);
+    .reduce((acc, [emoji, usage]) => {
+      acc[emoji] = usage;
+
+      return acc;
+    }, {});
 };
 
 // Save emoji usage
-export const saveEmojiUsage = (emoji: string) => {
+export const saveEmojiUsage = (emoji: string, emojiUrl: string | null) => {
   try {
     const usage = cache.getEmojiUsage(DEFAULT_EMOJI_USAGE);
 
     // increase usage count
-    usage[emoji] = (usage[emoji] || 0) + 1;
+    usage[emoji] = {
+      count: (usage[emoji]?.count || 0) + 1,
+      emojiUrl: emojiUrl || usage[emoji]?.emojiUrl,
+    };
 
     cache.setEmojiUsage(usage);
   } catch {

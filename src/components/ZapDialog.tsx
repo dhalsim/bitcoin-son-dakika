@@ -56,6 +56,7 @@ export const ZapDialog = memo(function ZapDialog({
   const [relays, setRelays] = useState<string[]>(DEFAULT_ZAP_RELAYS);
   const [receipt, setReceipt] = useState<ZapReceipt | null>(null);
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
+  const [isWaitingForReceipt, setIsWaitingForReceipt] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -170,12 +171,18 @@ export const ZapDialog = memo(function ZapDialog({
             const payResult = await window.webln.sendPayment(invoice);
             console.log("WebLN payment result", payResult);
 
+            // Show waiting state while listening for zap receipt
+            setIsWaitingForReceipt(true);
+            // Close the main input dialog while waiting
+            onOpenChange(false);
+
             // Start listening for receipt immediately
             if (lnurlData) {
               listenForZapReceipt(zappedEvent, invoice, lnurlData, relays, (zapReceipt) => {
                 if (zapReceipt) {
                   setReceipt(zapReceipt);
                   setIsReceiptDialogOpen(true);
+                  setIsWaitingForReceipt(false);
                   setStatistics({
                     ...statistics,
                     zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
@@ -390,6 +397,21 @@ export const ZapDialog = memo(function ZapDialog({
           amount={invoiceAmount}
           comment={invoiceComment}
         />
+      )}
+
+      {/* Waiting for receipt dialog (WebLN flow) */}
+      {isWaitingForReceipt && (
+        <Dialog open={isWaitingForReceipt} onOpenChange={setIsWaitingForReceipt}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Zap makbuzu alınıyor</DialogTitle>
+              <DialogDescription>Ödeme alındıktan sonra makbuz görünecek.</DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center justify-center py-6">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Receipt Dialog - shown when receipt arrives (works for both WebLN and manual) */}

@@ -5,6 +5,7 @@ import { getReposts, getKind1Quotes } from "./nip18";
 import { getArticleReplies } from "./nip22";
 import { type CustomEmoji, getReactions } from "./nip25";
 import { type ZapReceipt, getZaps } from "./nip57";
+import { extractEmojiInfo } from "./utils";
 
 export type EventStatistics = {
   zaps: Map<string, ZapReceipt>;
@@ -51,36 +52,6 @@ const STATISTICS_RELAYS = [
   "wss://nostr-pub.wellorder.net",
   "wss://relay.nos.social",
 ];
-
-// Helper function to extract emoji info from reaction event
-function extractEmojiInfo(reaction: EventItem): {
-  name: string;
-  url: string | null;
-} {
-  const content = reaction.content.trim();
-
-  // Check if it's a custom emoji (starts and ends with :)
-  if (content.startsWith(":") && content.endsWith(":") && content.length > 2) {
-    const emojiName = content.slice(1, -1); // Remove surrounding colons
-
-    // Look for emoji tag
-    const emojiTag = reaction.tags.find(
-      (tag) =>
-        tag[0] === "emoji" && tag[1] === emojiName && tag[2] && tag[2].startsWith("https://"),
-    );
-
-    return {
-      name: emojiName,
-      url: emojiTag ? emojiTag[2] : null,
-    };
-  }
-
-  // For unicode emojis or other content
-  return {
-    name: content,
-    url: null,
-  };
-}
 
 // Helper function to choose the best URL when there are conflicts
 function chooseBestUrl(urls: string[]): string {
@@ -209,7 +180,7 @@ export function getEventStatistics(
     // merge the reactions with the cache
     stats.reactions = new Map([...stats.reactions, ...reactions]);
 
-    const { likes, dislikes, emojis } = reactionsToMap(Array.from(reactions.values()));
+    const { likes, dislikes, emojis } = reactionsToMap(Array.from(stats.reactions.values()));
 
     stats.likes = likes;
     stats.dislikes = dislikes;

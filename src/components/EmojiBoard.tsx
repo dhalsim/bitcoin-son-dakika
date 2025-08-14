@@ -16,8 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getCache } from "@/lib/cache";
-import { DEFAULT_EMOJI_USAGE } from "@/lib/constants";
 import type { EmojiCategories } from "@/types/emoji";
+import { saveEmojiUsage } from "./event-statistics";
 
 interface EmojiCategoryConfig {
   key: string;
@@ -50,19 +50,6 @@ const hexToEmoji = (hex: string): string => {
 };
 
 const cache = getCache();
-
-const saveEmojiUsage = (emoji: string) => {
-  try {
-    const usage = cache.getEmojiUsage(DEFAULT_EMOJI_USAGE);
-
-    // increase usage count
-    usage[emoji] = (usage[emoji] || 0) + 1;
-
-    cache.setEmojiUsage(usage);
-  } catch {
-    // Ignore errors
-  }
-};
 
 export function EmojiBoard({ onEmojiSelected, onClose: _onClose }: EmojiPickerProps) {
   const [emojiData, setEmojiData] = useState<EmojiCategories>({});
@@ -131,7 +118,7 @@ export function EmojiBoard({ onEmojiSelected, onClose: _onClose }: EmojiPickerPr
 
   const handleEmojiClick = (hexCode: string) => {
     const emoji = hexToEmoji(hexCode);
-    saveEmojiUsage(emoji);
+    saveEmojiUsage(emoji, null);
     onEmojiSelected(emoji);
   };
 

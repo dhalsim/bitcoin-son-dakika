@@ -5,6 +5,7 @@ import type { ZapReceipt } from "@/lib/nip57";
 import type { ProfileItem } from "@/lib/nip01";
 
 import type { ExpandedReactionsProps } from "./types";
+import { extractEmojiInfo } from "@/lib/utils";
 
 const zapRenderer =
   (profiles: Map<string, ProfileItem>, author: ProfileItem) => (reactionEvent: ZapReceipt) => {
@@ -54,7 +55,14 @@ const zapRenderer =
     }
   };
 
-export function ExpandedReactions({ reactionGroups, profiles, author }: ExpandedReactionsProps) {
+export function ExpandedReactions({
+  reactionGroups,
+  profiles,
+  author,
+  onRepostClick,
+  onReactionClick,
+  onZapClick,
+}: ExpandedReactionsProps) {
   if (reactionGroups.length === 0) {
     return null;
   }
@@ -65,7 +73,69 @@ export function ExpandedReactions({ reactionGroups, profiles, author }: Expanded
     <div className="pt-3 space-y-3 border-l-2 border-amber-700 bg-amber-50/30 rounded-r-lg pl-4">
       {reactionGroups.map((group) => (
         <div key={group.key} className="grid grid-cols-[auto_auto_1fr] gap-3 items-center">
-          <span className={`flex items-center ${group.color}`}>{group.icon}</span>
+          {(() => {
+            const commonClasses = `flex items-center ${group.color}`;
+
+            if (group.type === "zap" && onZapClick) {
+              return (
+                <button
+                  type="button"
+                  onClick={onZapClick}
+                  className={`${commonClasses} cursor-pointer hover:opacity-80`}
+                  title="Zap Gönder"
+                >
+                  {group.icon}
+                </button>
+              );
+            }
+
+            if (group.type === "repost" && onRepostClick) {
+              return (
+                <button
+                  type="button"
+                  onClick={onRepostClick}
+                  className={`${commonClasses} cursor-pointer hover:opacity-80`}
+                  title="Yeniden paylaş"
+                >
+                  {group.icon}
+                </button>
+              );
+            }
+
+            if ((group.type === "like" || group.type === "dislike") && onReactionClick) {
+              const content = group.type === "like" ? "+" : "-";
+              return (
+                <button
+                  type="button"
+                  onClick={() => onReactionClick(content, null)}
+                  className={`${commonClasses} cursor-pointer hover:opacity-80`}
+                  title={group.type === "like" ? "Beğen" : "Beğenme"}
+                >
+                  {group.icon}
+                </button>
+              );
+            }
+
+            if (group.type === "emoji" && onReactionClick) {
+              // Use the first event's content as the emoji to send again
+              const first = group.events[0];
+
+              const { name, url } = extractEmojiInfo(first);
+
+              return (
+                <button
+                  type="button"
+                  onClick={() => onReactionClick(name, url)}
+                  className={`${commonClasses} cursor-pointer hover:opacity-80`}
+                  title="Emoji ile tepki ver"
+                >
+                  {group.icon}
+                </button>
+              );
+            }
+
+            return <span className={commonClasses}>{group.icon}</span>;
+          })()}
 
           <span className="text-sm font-medium text-right min-w-[1rem] flex items-center">
             {group.count}

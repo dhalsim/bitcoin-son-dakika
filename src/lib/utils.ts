@@ -3,6 +3,8 @@ import type { NostrEvent } from "nostr-tools";
 import { Relay, SimplePool } from "nostr-tools";
 import { twMerge } from "tailwind-merge";
 
+import type { EventItem } from "./nip01";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -48,4 +50,33 @@ export function logCloseReasons(reasons: string[]): void {
   if (nonNormalReasons.length > 0) {
     console.log("Profile subscription closed:", nonNormalReasons);
   }
+}
+
+export function extractEmojiInfo(reaction: EventItem): {
+  name: string;
+  url: string | null;
+} {
+  const content = reaction.content.trim();
+
+  // Check if it's a custom emoji (starts and ends with :)
+  if (content.startsWith(":") && content.endsWith(":") && content.length > 2) {
+    const emojiName = content.slice(1, -1); // Remove surrounding colons
+
+    // Look for emoji tag
+    const emojiTag = reaction.tags.find(
+      (tag) =>
+        tag[0] === "emoji" && tag[1] === emojiName && tag[2] && tag[2].startsWith("https://"),
+    );
+
+    return {
+      name: emojiName,
+      url: emojiTag ? emojiTag[2] : null,
+    };
+  }
+
+  // For unicode emojis or other content
+  return {
+    name: content,
+    url: null,
+  };
 }
