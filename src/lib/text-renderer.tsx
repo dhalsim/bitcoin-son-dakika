@@ -2,10 +2,7 @@ import React from "react";
 
 import { LinkPreview } from "@/components/LinkPreview";
 import { ProfileMention } from "@/components/ui/ProfileMention";
-import { nip19 } from "nostr-tools";
-import { getProfiles } from "./nip01";
 import { getCache } from "./cache";
-import { getDisplayName } from "@/components/ui/ProfileAvatar";
 
 // Regular expressions for different content types
 const URL_REGEX =

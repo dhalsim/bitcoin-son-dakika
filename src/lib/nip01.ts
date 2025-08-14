@@ -48,16 +48,26 @@ export type EventItem = NostrEvent & {
 export type GetProfilesParams = {
   authors: string[];
   relayHints?: string[];
-  cachedProfiles: Map<string, ProfileItem>;
   onUpdate: (profiles: Map<string, ProfileItem> | null) => void;
 };
 
 const cache = getCache();
 
 // New optimized function that works with ProfileItem cache
-export function getProfiles({ authors, relayHints, cachedProfiles, onUpdate }: GetProfilesParams) {
+export function getProfiles({ authors, relayHints, onUpdate }: GetProfilesParams) {
+  const cachedProfiles = getCache().getProfileItems();
   const receivedEventRelayMap = new Map<string, string>();
   const newProfiles = new Map<string, ProfileItem>();
+
+  const foundCachedProfiles = new Map(
+    authors
+      .filter((author) => cachedProfiles.has(author))
+      .map((author) => [author, cachedProfiles.get(author)]),
+  );
+
+  if (foundCachedProfiles.size > 0) {
+    onUpdate(foundCachedProfiles);
+  }
 
   let eoseCalled = false;
 
@@ -102,7 +112,11 @@ export function getProfiles({ authors, relayHints, cachedProfiles, onUpdate }: G
           onUpdate(new Map(newProfiles));
           newProfiles.clear();
 
-          cache.setProfileItems(cachedProfiles);
+          const freshCachedProfiles = getCache().getProfileItems();
+
+          freshCachedProfiles.set(event.pubkey, newProfile);
+
+          cache.setProfileItems(freshCachedProfiles);
         }
       },
       oneose: () => {
@@ -112,7 +126,13 @@ export function getProfiles({ authors, relayHints, cachedProfiles, onUpdate }: G
           onUpdate(new Map(newProfiles));
           newProfiles.clear();
 
-          cache.setProfileItems(cachedProfiles);
+          const freshCachedProfiles = getCache().getProfileItems();
+
+          for (const [pubkey, profile] of newProfiles) {
+            freshCachedProfiles.set(pubkey, profile);
+          }
+
+          cache.setProfileItems(freshCachedProfiles);
         }
       },
       onclose: logCloseReasons,

@@ -103,9 +103,8 @@ export function UserProvider({ children }: UserProviderProps) {
         }
 
         // Fetch user profile
-        const subCloser = getProfiles({
+        getProfiles({
           authors: [pubkey],
-          cachedProfiles: new Map(),
           onUpdate: (profiles) => {
             if (!profiles) {
               return;
@@ -117,8 +116,6 @@ export function UserProvider({ children }: UserProviderProps) {
               isLoading: false,
               error: null,
             });
-
-            subCloser();
           },
         });
       } catch (err) {

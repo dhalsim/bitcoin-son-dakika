@@ -6,7 +6,7 @@ import type { Nip07Relays } from "./nip07";
 import type { ZapReceipt } from "./nip57";
 
 // Cache version - increment this when you need to invalidate all cached data
-const CACHE_VERSION = "0.2";
+const CACHE_VERSION = "0.3";
 const CACHE_VERSION_KEY = "bsd-cache-version";
 
 export class LocalStorageCache {

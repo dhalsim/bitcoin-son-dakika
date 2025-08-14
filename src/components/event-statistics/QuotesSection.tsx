@@ -70,7 +70,7 @@ export function QuotesSection({
                           {new Date(quote.created_at * 1000).toLocaleDateString()}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-700 dark:text-gray-300">
+                      <div className="text-sm">
                         <RenderedText enableRichPreviews>
                           {cleanQuoteContent(quote.content)}
                         </RenderedText>

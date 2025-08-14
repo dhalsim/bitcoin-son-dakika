@@ -79,7 +79,6 @@ export function EventStatistics({ event, author, className = "" }: EventStatisti
 
     const subCloser = getProfiles({
       authors: allPubkeys,
-      cachedProfiles,
       onUpdate: (px) => {
         if (!px) {
           return;

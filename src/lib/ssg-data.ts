@@ -172,7 +172,6 @@ export function getProfileEvents(profilePubkeys: string[]): Promise<Map<string, 
   return new Promise((resolve) => {
     const subCloser = getProfiles({
       authors: profilePubkeys,
-      cachedProfiles: new Map(),
       onUpdate: (profiles) => {
         resolve(profiles);
 

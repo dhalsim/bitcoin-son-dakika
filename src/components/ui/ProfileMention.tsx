@@ -28,12 +28,9 @@ export function ProfileMention({
       const { data, type } = nip19.decode(nprofile);
 
       if (type === "nprofile") {
-        const cachedProfiles = getCache().getProfileItems();
-
         const subCloser = getProfiles({
           authors: [data.pubkey],
           relayHints: data.relays,
-          cachedProfiles,
           onUpdate: (profiles) => {
             if (profiles) {
               const profileItem = profiles.get(data.pubkey);

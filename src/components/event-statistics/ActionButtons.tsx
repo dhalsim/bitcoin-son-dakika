@@ -581,7 +581,7 @@ export function ActionButtons({
           className={`flex items-center space-x-1 transition-colors cursor-pointer hover:text-blue-600 ${showQuotes ? "text-blue-600" : ""} ${hasUserQuoted ? "text-blue-600" : ""}`}
           title={showQuotes ? "Alıntıları gizle" : "Alıntıları göster"}
         >
-          <Quote className="h-4 w-4" />
+          <Quote className={`h-4 w-4 ${hasUserQuoted ? "fill-current" : ""}`} />
           <span>{quotesCount}</span>
         </button>
 

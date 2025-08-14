@@ -32,7 +32,6 @@ export default function UserManagement({
   useEffect(() => {
     const subCloser = getProfiles({
       authors: adminUsers.concat(editorUsers),
-      cachedProfiles: new Map(),
       onUpdate: (profiles) => {
         setProfiles(profiles);
 
