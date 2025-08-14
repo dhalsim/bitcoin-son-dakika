@@ -1,12 +1,15 @@
 import { Loader2, Shield, Trash2, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ProfileAvatar, getDisplayName } from "@/components/ui/ProfileAvatar";
 
 import { validateNpub } from "./utils";
+import { getProfiles, ProfileItem } from "@/lib/nip01";
 
 export default function UserManagement({
   adminUsers,
@@ -24,6 +27,35 @@ export default function UserManagement({
   const [removingEditorKey, setRemovingEditorKey] = useState<string | null>(null);
   const [addingAdmin, setAddingAdmin] = useState(false);
   const [addingEditor, setAddingEditor] = useState(false);
+  const [profiles, setProfiles] = useState<Map<string, ProfileItem>>(new Map());
+
+  useEffect(() => {
+    const subCloser = getProfiles({
+      authors: adminUsers.concat(editorUsers),
+      cachedProfiles: null,
+      onUpdate: (profiles) => {
+        setProfiles(profiles);
+
+        subCloser();
+      },
+    });
+  }, [adminUsers, editorUsers]);
+
+  const adminProfiles = useMemo(() => {
+    if (!profiles) {
+      return [];
+    }
+
+    return adminUsers.map((pubkey) => profiles.get(pubkey)).filter((p) => p !== undefined);
+  }, [profiles, adminUsers]);
+
+  const editorProfiles = useMemo(() => {
+    if (!profiles) {
+      return [];
+    }
+
+    return editorUsers.map((pubkey) => profiles.get(pubkey)).filter((p) => p !== undefined);
+  }, [profiles, editorUsers]);
 
   const onAddAdmin = async () => {
     if (!newAdminNpub.trim()) {
@@ -128,29 +160,57 @@ export default function UserManagement({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            {adminUsers.map((pubkey) => (
-              <div
-                key={pubkey}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <span className="font-mono text-sm">
-                  {pubkey.substring(0, 6)}...
-                  {pubkey.substring(pubkey.length - 6)}
-                </span>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={removingAdminKey === pubkey || adminUsers.length === 1}
-                  onClick={() => onRemoveAdmin(pubkey)}
-                >
-                  {removingAdminKey === pubkey ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            ))}
+            {adminUsers.length === 0
+              ? null
+              : adminProfiles.length === 0
+                ? Array.from({ length: adminUsers.length }).map((_, idx) => (
+                    <div
+                      key={`admin-skeleton-${idx}`}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="min-w-0">
+                          <Skeleton className="h-4 w-48 mb-2" />
+                          <Skeleton className="h-3 w-72" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  ))
+                : adminUsers.map((pubkey) => {
+                    const profile = profiles.get(pubkey);
+                    const displayName = getDisplayName(profile, pubkey);
+
+                    return (
+                      <div
+                        key={pubkey}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <ProfileAvatar pubkey={pubkey} profile={profile} size="lg" />
+                          <div className="min-w-0">
+                            <div className="font-medium truncate max-w-[40ch]">{displayName}</div>
+                            <div className="font-mono text-xs text-muted-foreground">
+                              {pubkey.substring(0, 6)}...{pubkey.substring(pubkey.length - 6)}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={removingAdminKey === pubkey || adminUsers.length === 1}
+                          onClick={() => onRemoveAdmin(pubkey)}
+                        >
+                          {removingAdminKey === pubkey ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
           </div>
 
           <div className="space-y-3 pt-4 border-t">
@@ -183,29 +243,57 @@ export default function UserManagement({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            {editorUsers.map((pubkey) => (
-              <div
-                key={pubkey}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <span className="font-mono text-sm">
-                  {pubkey.substring(0, 6)}...
-                  {pubkey.substring(pubkey.length - 6)}
-                </span>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={removingEditorKey === pubkey}
-                  onClick={() => onRemoveEditor(pubkey)}
-                >
-                  {removingEditorKey === pubkey ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            ))}
+            {editorUsers.length === 0
+              ? null
+              : editorProfiles.length === 0
+                ? Array.from({ length: editorUsers.length }).map((_, idx) => (
+                    <div
+                      key={`editor-skeleton-${idx}`}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="min-w-0">
+                          <Skeleton className="h-4 w-48 mb-2" />
+                          <Skeleton className="h-3 w-72" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  ))
+                : editorProfiles.map((profile) => {
+                    const pubkey = profile.pubkey;
+                    const displayName = getDisplayName(profile, pubkey);
+
+                    return (
+                      <div
+                        key={pubkey}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <ProfileAvatar pubkey={pubkey} profile={profile} size="lg" />
+                          <div className="min-w-0">
+                            <div className="font-medium truncate max-w-[40ch]">{displayName}</div>
+                            <div className="font-mono text-xs text-muted-foreground">
+                              {pubkey.substring(0, 6)}...{pubkey.substring(pubkey.length - 6)}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={removingEditorKey === pubkey}
+                          onClick={() => onRemoveEditor(pubkey)}
+                        >
+                          {removingEditorKey === pubkey ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    );
+                  })}
           </div>
 
           <div className="space-y-3 pt-4 border-t">

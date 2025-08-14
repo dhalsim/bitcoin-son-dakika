@@ -21,6 +21,7 @@ import type { PublishArticlePayload } from "../../api-helpers/admin/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ADMIN_RELAYS, type PublishEventResponse } from "../../api-helpers/utils";
+import { toast } from "@/hooks/use-toast";
 
 // Displayed while the route hydrates on initial load
 export function HydrateFallback() {
@@ -345,6 +346,14 @@ export default function AdminPanel() {
         await loadAdminData();
 
         setPublishSuccess(result);
+
+        // Show reminder toast after publish actions
+        if (data.action === "publish-news" || data.action === "publish-article") {
+          toast({
+            title: "Yayın başarılı",
+            description: "İşiniz bittiyse deploy etmeyi unutmayın.",
+          });
+        }
       } else {
         setError(result.error || "İşlem başarısız");
       }
@@ -451,7 +460,6 @@ export default function AdminPanel() {
               <TabsTrigger value="articles">Makale Kürasyonu</TabsTrigger>
             )}
             {userIsEditor && <TabsTrigger value="sources">Haber Kaynakları</TabsTrigger>}
-            {userIsEditor && <TabsTrigger value="deploy">Deploy</TabsTrigger>}
             {userIsAdmin && <TabsTrigger value="users">Kullanıcılar</TabsTrigger>}
           </TabsList>
 
@@ -473,10 +481,6 @@ export default function AdminPanel() {
                 }
 
                 if (tab === "compose" && !userIsEditor) {
-                  return;
-                }
-
-                if (tab === "deploy" && !userIsEditor) {
                   return;
                 }
 
@@ -544,11 +548,7 @@ export default function AdminPanel() {
             </TabsContent>
           )}
 
-          {userIsEditor && (
-            <TabsContent value="deploy">
-              <DeployTrigger />
-            </TabsContent>
-          )}
+          {/* Deploy moved out of tabs */}
 
           {userIsAdmin && (
             <TabsContent value="users">
@@ -560,6 +560,12 @@ export default function AdminPanel() {
             </TabsContent>
           )}
         </Tabs>
+
+        {userIsEditor && (
+          <div className="mt-6">
+            <DeployTrigger />
+          </div>
+        )}
 
         {/* No permissions message */}
         {userInfo.pubkey && !userIsAdmin && !userIsEditor && (
