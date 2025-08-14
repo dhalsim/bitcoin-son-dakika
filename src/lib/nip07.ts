@@ -30,7 +30,11 @@ export function toReadWriteRelays(relaysEntries: RelaysEntries): Nip07Relays {
 }
 
 export async function getNip07Relays(): Promise<Nip07Relays | null> {
-  if (typeof window === "undefined" || !window.nostr) {
+  if (
+    typeof window === "undefined" ||
+    !window.nostr ||
+    typeof window.nostr.getRelays !== "function"
+  ) {
     return null;
   }
 
