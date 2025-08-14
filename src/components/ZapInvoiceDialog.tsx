@@ -1,5 +1,4 @@
 import { Copy } from "lucide-react";
-import type { NostrEvent } from "nostr-tools";
 import { toString as toSvgString } from "qrcode/lib/browser.js";
 import { useEffect, useState } from "react";
 
@@ -12,38 +11,24 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import type { EventStatistics } from "@/lib/event-statistics";
-import type { LnUrlpResponse, ZapReceipt } from "@/lib/nip57";
-import { listenForZapReceipt } from "@/lib/zap-utils";
 
 interface ZapInvoiceDialogProps {
-  relays: string[];
-  lnurlData: LnUrlpResponse;
-  zappedEvent: NostrEvent;
   invoice: string;
   amount: number;
   comment?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  statistics: EventStatistics;
-  setStatistics: (statistics: EventStatistics) => void;
 }
 
 export function ZapInvoiceDialog({
-  relays,
-  lnurlData,
-  zappedEvent,
   invoice,
   amount,
   comment,
   open,
   onOpenChange,
-  statistics,
-  setStatistics,
 }: ZapInvoiceDialogProps) {
   const [qrSvg, setQrSvg] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [receivedZapReceipt, setReceivedZapReceipt] = useState<ZapReceipt | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -76,24 +61,7 @@ export function ZapInvoiceDialog({
     }
   }, [open, invoice, toast]);
 
-  useEffect(() => {
-    if (!qrSvg) {
-      return;
-    }
-
-    listenForZapReceipt(zappedEvent, invoice, lnurlData, relays, (zapReceipt) => {
-      console.log("Zap receipt received", zapReceipt);
-
-      if (zapReceipt) {
-        setReceivedZapReceipt(zapReceipt);
-
-        setStatistics({
-          ...statistics,
-          zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
-        });
-      }
-    });
-  }, [qrSvg, zappedEvent, invoice, lnurlData, relays, statistics, setStatistics]);
+  // Receipt listening moved to parent
 
   const copyInvoice = async () => {
     try {
@@ -111,39 +79,6 @@ export function ZapInvoiceDialog({
       });
     }
   };
-
-  if (receivedZapReceipt) {
-    const amount = receivedZapReceipt.amount;
-    const comment = receivedZapReceipt.comment;
-
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Zap Gönderildi</DialogTitle>
-            <DialogDescription>Zap başarıyla gönderildi.</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 pt-4">
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Miktar:</span>
-                <span className="font-semibold text-orange-700">
-                  {amount}
-                  sats
-                </span>
-              </div>
-              {comment && (
-                <div className="mt-2 text-xs text-gray-600">
-                  <span className="font-medium">Mesaj:</span> {comment}
-                </div>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

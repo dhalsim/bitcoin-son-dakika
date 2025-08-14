@@ -17,10 +17,10 @@ import { useToast } from "@/hooks/use-toast";
 import type { EventStatistics } from "@/lib/event-statistics.js";
 import type { ProfileItem } from "@/lib/nip01";
 import { getNip07Relays, getUserPubkey } from "@/lib/nip07";
-import type { LnUrlpResponse } from "@/lib/nip57";
+import type { LnUrlpResponse, ZapReceipt } from "@/lib/nip57";
 import { getLnurlData } from "@/lib/nip57";
 import { fetchNip65Relays } from "@/lib/nip65";
-import { createZap, DEFAULT_ZAP_RELAYS } from "@/lib/zap-utils";
+import { createZap, DEFAULT_ZAP_RELAYS, listenForZapReceipt } from "@/lib/zap-utils";
 
 import { ZapInvoiceDialog } from "./ZapInvoiceDialog";
 
@@ -54,6 +54,8 @@ export const ZapDialog = memo(function ZapDialog({
   const [lnurlData, setLnurlData] = useState<LnUrlpResponse | null>(null);
   const [isLoadingLnurlData, setIsLoadingLnurlData] = useState(false);
   const [relays, setRelays] = useState<string[]>(DEFAULT_ZAP_RELAYS);
+  const [receipt, setReceipt] = useState<ZapReceipt | null>(null);
+  const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -148,6 +150,47 @@ export const ZapDialog = memo(function ZapDialog({
           relays,
         });
 
+        // If WebLN is available, try to pay the invoice programmatically.
+        if (invoice && typeof window.webln !== "undefined" && window.webln.isEnabled) {
+          try {
+            const isEnabled = await window.webln.isEnabled();
+
+            if (!isEnabled) {
+              await window.webln.enable();
+            }
+
+            // Optional: inspect capabilities
+            try {
+              const info = await window.webln.getInfo();
+              console.log("WebLN info", info);
+            } catch (e) {
+              // non-fatal
+            }
+
+            const payResult = await window.webln.sendPayment(invoice);
+            console.log("WebLN payment result", payResult);
+
+            // Start listening for receipt immediately
+            if (lnurlData) {
+              listenForZapReceipt(zappedEvent, invoice, lnurlData, relays, (zapReceipt) => {
+                if (zapReceipt) {
+                  setReceipt(zapReceipt);
+                  setIsReceiptDialogOpen(true);
+                  setStatistics({
+                    ...statistics,
+                    zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
+                  });
+                }
+              });
+            }
+
+            return;
+          } catch (weblnError) {
+            console.warn("WebLN payment failed, falling back to manual flow", weblnError);
+            // Continue to show invoice dialog for manual payment
+          }
+        }
+
         if (!invoice) {
           toast({
             title: "Hata",
@@ -162,8 +205,22 @@ export const ZapDialog = memo(function ZapDialog({
         setInvoiceAmount(amountInSats);
         setInvoiceComment(comment.trim() || "");
 
-        // Show invoice dialog
+        // Show invoice dialog for manual payment
         setShowInvoice(true);
+
+        // Begin listening for zap receipt (manual or WebLN)
+        if (lnurlData) {
+          listenForZapReceipt(zappedEvent, invoice, lnurlData, relays, (zapReceipt) => {
+            if (zapReceipt) {
+              setReceipt(zapReceipt);
+              setIsReceiptDialogOpen(true);
+              setStatistics({
+                ...statistics,
+                zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
+              });
+            }
+          });
+        }
 
         // Reset form
         setSelectedAmount(null);
@@ -324,7 +381,7 @@ export const ZapDialog = memo(function ZapDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Invoice Dialog - Rendered outside the main dialog */}
+      {/* Invoice Dialog - presentation only */}
       {showInvoice && (
         <ZapInvoiceDialog
           open={showInvoice}
@@ -332,12 +389,33 @@ export const ZapDialog = memo(function ZapDialog({
           invoice={invoice}
           amount={invoiceAmount}
           comment={invoiceComment}
-          lnurlData={lnurlData}
-          zappedEvent={zappedEvent}
-          relays={relays}
-          statistics={statistics}
-          setStatistics={setStatistics}
         />
+      )}
+
+      {/* Receipt Dialog - shown when receipt arrives (works for both WebLN and manual) */}
+      {isReceiptDialogOpen && receipt && (
+        <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Zap Gönderildi</DialogTitle>
+              <DialogDescription>Zap başarıyla gönderildi.</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 pt-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Miktar:</span>
+                  <span className="font-semibold text-orange-700">{receipt.amount} sats</span>
+                </div>
+                {receipt.comment && (
+                  <div className="mt-2 text-xs text-gray-600">
+                    <span className="font-medium">Mesaj:</span> {receipt.comment}
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );

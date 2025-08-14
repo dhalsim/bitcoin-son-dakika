@@ -105,7 +105,7 @@ export function UserProvider({ children }: UserProviderProps) {
         // Fetch user profile
         const subCloser = getProfiles({
           authors: [pubkey],
-          cachedProfiles: null,
+          cachedProfiles: new Map(),
           onUpdate: (profiles) => {
             if (!profiles) {
               return;

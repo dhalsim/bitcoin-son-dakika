@@ -13,6 +13,23 @@ declare global {
         decrypt(pubkey: string, ciphertext: string): Promise<string>;
       };
     };
+
+    webln?: {
+      isEnabled(): Promise<boolean>;
+      enable(): Promise<void>;
+      getInfo(): Promise<{
+        enabled: boolean;
+        supported: boolean;
+        version?: string;
+        supports?: string[];
+        methods?: string[];
+        node?: { alias?: string };
+      }>;
+      sendPayment(invoice: string): Promise<{
+        preimage?: string;
+        paymentHash?: string;
+      }>;
+    };
   }
 }
 

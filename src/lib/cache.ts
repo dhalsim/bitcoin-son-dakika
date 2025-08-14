@@ -350,17 +350,6 @@ export class LocalStorageCache {
     this.deleteFromStorage(key);
   }
 
-  // TODO: May remove them if not used any more
-  getKind0Event(pubkey: string): EventItem | null {
-    return this.getCachedValue(`kind0-${pubkey}`);
-  }
-
-  setKind0Event(pubkey: string, value: EventItem): void {
-    const key = `kind0-${pubkey}`;
-    this.cache.set(key, value);
-    this.setToStorage(key, value);
-  }
-
   getProfileItems(): Map<string, ProfileItem> {
     const parsedArray = this.getCachedValue<[string, ProfileItem][]>(`profile-items`);
 

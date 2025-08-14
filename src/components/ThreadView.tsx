@@ -107,11 +107,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
 
 export function ThreadView({ thread, className = "", onReply, profiles }: ThreadViewProps) {
   if (!thread || thread.length === 0) {
-    return (
-      <div className={`text-sm text-gray-500 dark:text-gray-400 ${className}`}>
-        Henüz yorum yok.
-      </div>
-    );
+    return <div className={`text-sm ${className}`}>Henüz yorum yok.</div>;
   }
 
   const getRepliesCount = (node: ReplyNode): number => {

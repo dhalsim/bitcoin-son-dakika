@@ -47,7 +47,7 @@ export type EventItem = NostrEvent & {
 
 export type GetProfilesParams = {
   authors: string[];
-  cachedProfiles: Map<string, ProfileItem> | null;
+  cachedProfiles: Map<string, ProfileItem>;
   onUpdate: (profiles: Map<string, ProfileItem> | null) => void;
 };
 
@@ -60,7 +60,6 @@ export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesPa
 
   let eoseCalled = false;
 
-  // Use subscribe instead of subscribeEose to keep connection open
   const sub = pool.subscribe(
     PROFILE_RELAYS,
     {
@@ -80,7 +79,7 @@ export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesPa
           return;
         }
 
-        const cachedProfile = cachedProfiles?.get(event.pubkey);
+        const cachedProfile = cachedProfiles.get(event.pubkey);
 
         if (cachedProfile && cachedProfile.created_at > event.created_at) {
           // Skip older profiles
@@ -96,15 +95,13 @@ export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesPa
         }
 
         newProfiles.set(event.pubkey, newProfile);
-        cachedProfiles?.set(event.pubkey, newProfile);
+        cachedProfiles.set(event.pubkey, newProfile);
 
         if (eoseCalled) {
           onUpdate(new Map(newProfiles));
           newProfiles.clear();
 
-          if (cachedProfiles) {
-            cache.setProfileItems(newProfiles);
-          }
+          cache.setProfileItems(newProfiles);
         }
       },
       oneose: () => {
@@ -114,9 +111,7 @@ export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesPa
           onUpdate(new Map(newProfiles));
           newProfiles.clear();
 
-          if (cachedProfiles) {
-            cache.setProfileItems(newProfiles);
-          }
+          cache.setProfileItems(newProfiles);
         }
       },
       onclose: logCloseReasons,
