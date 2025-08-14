@@ -1,6 +1,11 @@
 import React from "react";
 
 import { LinkPreview } from "@/components/LinkPreview";
+import { ProfileMention } from "@/components/ui/ProfileMention";
+import { nip19 } from "nostr-tools";
+import { getProfiles } from "./nip01";
+import { getCache } from "./cache";
+import { getDisplayName } from "@/components/ui/ProfileAvatar";
 
 // Regular expressions for different content types
 const URL_REGEX =
@@ -135,6 +140,8 @@ function parseText(text: string): TextSegment[] {
   return segments;
 }
 
+const cache = getCache();
+
 export function RenderedText({
   children,
   className = "",
@@ -175,6 +182,19 @@ export function RenderedText({
             </a>
           );
         case "nostr":
+          const cleanContent = segment.content.replace("nostr:", "");
+
+          if (cleanContent.startsWith("nprofile1")) {
+            return (
+              <ProfileMention
+                key={key}
+                nprofile={cleanContent}
+                linkClassName={linkClassName}
+                className={className}
+              />
+            );
+          }
+
           return (
             <a
               key={key}

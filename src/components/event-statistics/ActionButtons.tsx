@@ -36,7 +36,7 @@ import { ThreadViewWrapper } from "./ThreadViewWrapper";
 import type { ActionButtonsProps, ReactionGroup } from "./types";
 import {
   getMostUsedEmojis,
-  handleScrollDetection,
+  isContainerAtBottom,
   loadDraft,
   saveDraft,
   saveEmojiUsage,
@@ -63,8 +63,6 @@ export function ActionButtons({
   const [loadingThread, setLoadingThread] = useState(false);
   const [quoteContent, setQuoteContent] = useState("");
   const [showQuotePreview, setShowQuotePreview] = useState(false);
-  const [isAtBottom, setIsAtBottom] = useState(false);
-  const [isQuotesAtBottom, setIsQuotesAtBottom] = useState(false);
   const [showZapDialog, setShowZapDialog] = useState(false);
   const [authorReadRelays, setAuthorReadRelays] = useState<string[]>([]);
   const { userProfile } = useUserContext();
@@ -615,16 +613,9 @@ export function ActionButtons({
           <ThreadViewWrapper
             thread={thread as any}
             loadingThread={loadingThread}
-            isAtBottom={isAtBottom}
             showOnlyCompose={showOnlyCompose}
             profiles={profiles}
             onThreadReply={() => {}}
-            onThreadScroll={() => {
-              const container = document.querySelector("[data-thread-container]") as HTMLDivElement;
-              if (container) {
-                handleScrollDetection({ current: container }, setIsAtBottom);
-              }
-            }}
           />
 
           <ReplyComposer
@@ -647,19 +638,12 @@ export function ActionButtons({
           quotesCount={quotesCount}
           quoteContent={quoteContent}
           showQuotePreview={showQuotePreview}
-          isQuotesAtBottom={isQuotesAtBottom}
           statistics={statistics}
           profiles={profiles}
           onQuoteContentChange={setQuoteContent}
           onShowQuotePreviewToggle={() => setShowQuotePreview((v) => !v)}
           onPostQuote={handlePostQuote}
           onQuoteKeyDown={handleQuoteKeyDown}
-          onQuotesScroll={() => {
-            const container = document.querySelector("[data-quotes-container]") as HTMLDivElement;
-            if (container) {
-              handleScrollDetection({ current: container }, setIsQuotesAtBottom);
-            }
-          }}
         />
       )}
 

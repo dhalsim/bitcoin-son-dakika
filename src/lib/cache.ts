@@ -182,7 +182,6 @@ export class LocalStorageCache {
       return this.cache.get(key);
     }
 
-    // Lazy load from localStorage if not in memory
     const value = this.getFromStorage(key);
 
     if (value !== undefined) {

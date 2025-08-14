@@ -7,7 +7,8 @@ import { getEventStatistics } from "@/lib/event-statistics";
 import type { ProfileItem } from "@/lib/nip01";
 import { getProfiles } from "@/lib/nip01";
 
-import { ActionButtons, type EventStatisticsProps } from "./event-statistics";
+import { ActionButtons } from "./event-statistics/ActionButtons";
+import type { EventStatisticsProps } from "./event-statistics/types";
 
 const cache = getCache();
 

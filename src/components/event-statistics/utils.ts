@@ -56,13 +56,12 @@ export const saveEmojiUsage = (emoji: string, emojiUrl: string | null) => {
 };
 
 // Scroll detection helper
-export const handleScrollDetection = (
-  containerRef: React.RefObject<HTMLDivElement>,
-  setIsAtBottom: (isAtBottom: boolean) => void,
-) => {
-  if (containerRef.current) {
-    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-    const isBottom = scrollTop + clientHeight >= scrollHeight - 1; // 1px tolerance
-    setIsAtBottom(isBottom);
+export const isContainerAtBottom = (containerRef: React.RefObject<HTMLDivElement>) => {
+  if (!containerRef.current) {
+    return true;
   }
+
+  const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+
+  return scrollTop + clientHeight >= scrollHeight - 1; // 1px tolerance
 };

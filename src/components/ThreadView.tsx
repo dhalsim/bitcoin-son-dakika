@@ -73,7 +73,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
             </span>
           </div>
 
-          <div className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+          <div className="text-sm mb-2">
             <RenderedText enableRichPreviews>{node.event.content}</RenderedText>
           </div>
 

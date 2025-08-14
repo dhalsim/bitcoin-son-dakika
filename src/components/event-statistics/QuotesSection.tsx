@@ -1,5 +1,5 @@
 import { Eye, EyeOff } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
@@ -8,22 +8,29 @@ import { RenderedText } from "@/lib/text-renderer";
 
 import { RichTextPreview } from "./RichTextPreview";
 import type { QuotesSectionProps } from "./types";
-import { cleanQuoteContent } from "./utils";
+import { cleanQuoteContent, isContainerAtBottom } from "./utils";
 
 export function QuotesSection({
   quotesCount,
   quoteContent,
   showQuotePreview,
-  isQuotesAtBottom,
   statistics,
   profiles,
   onQuoteContentChange,
   onShowQuotePreviewToggle,
   onPostQuote,
   onQuoteKeyDown,
-  onQuotesScroll,
 }: QuotesSectionProps) {
   const quotesContainerRef = useRef<HTMLDivElement>(null);
+  const [isQuotesAtBottom, setIsQuotesAtBottom] = useState(false);
+
+  useEffect(() => {
+    if (!quotesContainerRef.current) {
+      return;
+    }
+
+    setIsQuotesAtBottom(isContainerAtBottom({ current: quotesContainerRef.current }));
+  }, [quotesContainerRef]);
 
   return (
     <div className="mt-4 border-l-2 border-blue-600 pl-4 space-y-3">
@@ -33,7 +40,9 @@ export function QuotesSection({
           ref={quotesContainerRef}
           data-quotes-container
           className="max-h-[200px] overflow-y-auto overflow-x-hidden pr-2"
-          onScroll={onQuotesScroll}
+          onScroll={() => {
+            setIsQuotesAtBottom(isContainerAtBottom({ current: quotesContainerRef.current }));
+          }}
         >
           {quotesCount > 0 ? (
             <div className="space-y-2">
@@ -78,7 +87,7 @@ export function QuotesSection({
 
         {/* Fixed gradient overlay at bottom - only show when not at bottom */}
         {!isQuotesAtBottom && (
-          <div className="absolute bottom-0 left-0 right-2 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-2 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
         )}
       </div>
 

@@ -47,6 +47,7 @@ export type EventItem = NostrEvent & {
 
 export type GetProfilesParams = {
   authors: string[];
+  relayHints?: string[];
   cachedProfiles: Map<string, ProfileItem>;
   onUpdate: (profiles: Map<string, ProfileItem> | null) => void;
 };
@@ -54,14 +55,14 @@ export type GetProfilesParams = {
 const cache = getCache();
 
 // New optimized function that works with ProfileItem cache
-export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesParams) {
+export function getProfiles({ authors, relayHints, cachedProfiles, onUpdate }: GetProfilesParams) {
   const receivedEventRelayMap = new Map<string, string>();
   const newProfiles = new Map<string, ProfileItem>();
 
   let eoseCalled = false;
 
   const sub = pool.subscribe(
-    PROFILE_RELAYS,
+    relayHints?.length ? relayHints : PROFILE_RELAYS,
     {
       authors: authors,
       kinds: [0],
@@ -101,17 +102,17 @@ export function getProfiles({ authors, cachedProfiles, onUpdate }: GetProfilesPa
           onUpdate(new Map(newProfiles));
           newProfiles.clear();
 
-          cache.setProfileItems(newProfiles);
+          cache.setProfileItems(cachedProfiles);
         }
       },
       oneose: () => {
         eoseCalled = true;
 
-        if (newProfiles.size) {
+        if (newProfiles.size > 0) {
           onUpdate(new Map(newProfiles));
           newProfiles.clear();
 
-          cache.setProfileItems(newProfiles);
+          cache.setProfileItems(cachedProfiles);
         }
       },
       onclose: logCloseReasons,

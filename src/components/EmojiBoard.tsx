@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getCache } from "@/lib/cache";
 import type { EmojiCategories } from "@/types/emoji";
-import { saveEmojiUsage } from "./event-statistics";
+import { saveEmojiUsage } from "./event-statistics/utils";
 
 interface EmojiCategoryConfig {
   key: string;

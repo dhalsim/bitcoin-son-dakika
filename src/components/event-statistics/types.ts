@@ -62,14 +62,12 @@ export interface QuotesSectionProps {
   quotesCount: number;
   quoteContent: string;
   showQuotePreview: boolean;
-  isQuotesAtBottom: boolean;
   statistics: EventStatistics | null;
   profiles: Map<string, ProfileItem>;
   onQuoteContentChange: (content: string) => void;
   onShowQuotePreviewToggle: () => void;
   onPostQuote: () => void;
   onQuoteKeyDown: (e: React.KeyboardEvent) => void;
-  onQuotesScroll: () => void;
 }
 
 export interface RichTextPreviewProps {
@@ -79,9 +77,7 @@ export interface RichTextPreviewProps {
 export interface ThreadViewProps {
   thread: ReplyNode[];
   loadingThread: boolean;
-  isAtBottom: boolean;
   showOnlyCompose: boolean;
   profiles: Map<string, ProfileItem>;
   onThreadReply: (replyEvent: EventItem) => void;
-  onThreadScroll: () => void;
 }
