@@ -115,61 +115,57 @@ export default function ArticleDetailPage() {
 
   return (
     <MainContent>
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        <article className="max-w-4xl mx-auto">
-          {/* Header */}
-          <header className="mb-8">
-            <CategoryTags tags={articleItem.tags} className="mb-4" />
+      <article className="max-w-4xl mx-auto">
+        {/* Header */}
+        <header className="mb-8">
+          <CategoryTags tags={articleItem.tags} className="mb-4" />
 
-            {/* Title */}
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
-              {articleItem.title}
-            </h1>
+          {/* Title */}
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
+            {articleItem.title}
+          </h1>
 
-            {/* Author and Time */}
-            <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
-              <div className="flex flex-col">{time}</div>
-              <div className="text-xs text-muted-foreground">
-                <Link
-                  to={`/profile/${createProfileSlug(displayName)}`}
-                  className="text-foreground font-medium hover:text-main-accent transition-colors"
-                >
-                  <div className="flex items-center">
-                    <ProfileAvatar
-                      pubkey={articleItem.author.pubkey}
-                      profile={articleItem.author}
-                      disablePopup={true}
-                      size="md"
-                    />
-                    <div className="font-medium text-foreground">{displayName}</div>
-                  </div>
-                </Link>
-              </div>
+          {/* Author and Time */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
+            <div className="flex flex-col">{time}</div>
+            <div className="text-xs text-muted-foreground">
+              <Link
+                to={`/profile/${createProfileSlug(displayName)}`}
+                className="text-foreground font-medium hover:text-main-accent transition-colors"
+              >
+                <div className="flex items-center">
+                  <ProfileAvatar
+                    pubkey={articleItem.author.pubkey}
+                    profile={articleItem.author}
+                    disablePopup={true}
+                    size="md"
+                  />
+                  <div className="font-medium text-foreground">{displayName}</div>
+                </div>
+              </Link>
             </div>
-
-            {/* Summary */}
-            {articleItem.summary && (
-              <div className="mb-6">
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  {articleItem.summary}
-                </p>
-              </div>
-            )}
-          </header>
-
-          {/* Content */}
-          <ArticleMarkdownRenderer content={articleItem.content} className="mb-8" />
-
-          {/* Event Statistics */}
-          <div className="border-t border-border pt-6">
-            <EventStatistics
-              event={articleItem.event}
-              author={articleItem.author}
-              className="justify-start"
-            />
           </div>
-        </article>
-      </div>
+
+          {/* Summary */}
+          {articleItem.summary && (
+            <div className="mb-6">
+              <p className="text-lg text-muted-foreground leading-relaxed">{articleItem.summary}</p>
+            </div>
+          )}
+        </header>
+
+        {/* Content */}
+        <ArticleMarkdownRenderer content={articleItem.content} className="mb-8" />
+
+        {/* Event Statistics */}
+        <div className="border-t border-border pt-6">
+          <EventStatistics
+            event={articleItem.event}
+            author={articleItem.author}
+            className="justify-start"
+          />
+        </div>
+      </article>
     </MainContent>
   );
 }

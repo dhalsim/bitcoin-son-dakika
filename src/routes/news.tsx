@@ -27,15 +27,13 @@ export default function NewsPage() {
   if (newsItems.length === 0) {
     return (
       <MainContent>
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Haberler Yükleniyor...
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Güncel Bitcoin haberleri yakında burada olacak.
-            </p>
-          </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Haberler Yükleniyor...
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Güncel Bitcoin haberleri yakında burada olacak.
+          </p>
         </div>
       </MainContent>
     );
@@ -43,22 +41,18 @@ export default function NewsPage() {
 
   return (
     <MainContent>
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        {/* News List - Single Column */}
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-              Tüm Haberler
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Bitcoin dünyasından en güncel haberler
-            </p>
-          </div>
-
-          {newsItems.map((news, index) => (
-            <NewsCard key={index} {...news} />
-          ))}
+      {/* News List - Single Column */}
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            Tüm Haberler
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">Bitcoin dünyasından en güncel haberler</p>
         </div>
+
+        {newsItems.map((news, index) => (
+          <NewsCard key={index} {...news} />
+        ))}
       </div>
     </MainContent>
   );

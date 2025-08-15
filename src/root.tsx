@@ -8,8 +8,15 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { SSGProvider } from "./contexts/SSGContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { UserProvider } from "./contexts/UserContext";
+import { useScrollToTop } from "./hooks/useScrollToTop";
 
 import "./index.css";
+
+// Component to handle scroll to top for all routes
+function ScrollToTop() {
+  useScrollToTop();
+  return null;
+}
 
 export const meta: MetaFunction = () => {
   const title = "Bitcoin Son Dakika - Güncel Bitcoin Haberleri";
@@ -100,6 +107,7 @@ export default function Root() {
           <SSGProvider>
             <UserProvider>
               <ThemeProvider>
+                <ScrollToTop />
                 <Toaster />
                 <Outlet />
               </ThemeProvider>

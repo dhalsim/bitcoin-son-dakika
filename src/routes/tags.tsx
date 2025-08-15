@@ -39,15 +39,13 @@ export default function TagsPage() {
   if (filteredItems.length === 0) {
     return (
       <MainContent>
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              "#{slug}" Etiketi İçin İçerik Bulunamadı
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Bu etiketle ilgili haber veya makale bulunmuyor.
-            </p>
-          </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            "#{slug}" Etiketi İçin İçerik Bulunamadı
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Bu etiketle ilgili haber veya makale bulunmuyor.
+          </p>
         </div>
       </MainContent>
     );
@@ -55,22 +53,20 @@ export default function TagsPage() {
 
   return (
     <MainContent>
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            "#{slug}" Etiketi
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Bu etiketle ilgili tüm haberler ve makaleler
-          </p>
-        </div>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          "#{slug}" Etiketi
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Bu etiketle ilgili tüm haberler ve makaleler
+        </p>
+      </div>
 
-        {/* Filtered Content List - Single Column */}
-        <div className="max-w-4xl mx-auto space-y-6">
-          {filteredItems.map((item, index) => (
-            <NewsCard key={index} {...item} />
-          ))}
-        </div>
+      {/* Filtered Content List - Single Column */}
+      <div className="max-w-4xl mx-auto space-y-6">
+        {filteredItems.map((item, index) => (
+          <NewsCard key={index} {...item} />
+        ))}
       </div>
     </MainContent>
   );

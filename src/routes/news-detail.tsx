@@ -115,65 +115,63 @@ export default function NewsDetailPage() {
 
   return (
     <MainContent>
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        <article className="max-w-4xl mx-auto">
-          {/* Header */}
-          <header className="mb-8">
-            {/* Category and Tags */}
-            <CategoryTags tags={newsItem.tags} className="mb-4" />
+      <article className="max-w-4xl mx-auto">
+        {/* Header */}
+        <header className="mb-8">
+          {/* Category and Tags */}
+          <CategoryTags tags={newsItem.tags} className="mb-4" />
 
-            {/* Title */}
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
-              {newsItem.title}
-            </h1>
+          {/* Title */}
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
+            {newsItem.title}
+          </h1>
 
-            {/* Author and Time */}
-            <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
-              <div className="flex items-center space-x-3">
-                <ProfileAvatar
-                  pubkey={newsItem.author.pubkey}
-                  profile={newsItem.author}
-                  disablePopup={true}
-                  size="md"
-                />
-                <div>
-                  <div className="font-medium text-foreground">{displayName}</div>
-                  <div className="text-xs">{time}</div>
-                </div>
+          {/* Author and Time */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
+            <div className="flex items-center space-x-3">
+              <ProfileAvatar
+                pubkey={newsItem.author.pubkey}
+                profile={newsItem.author}
+                disablePopup={true}
+                size="md"
+              />
+              <div>
+                <div className="font-medium text-foreground">{displayName}</div>
+                <div className="text-xs">{time}</div>
               </div>
-            </div>
-
-            {/* Featured Image */}
-            {newsItem.image && (
-              <div className="mb-8">
-                <img
-                  src={newsItem.image}
-                  alt={newsItem.title}
-                  className="w-full h-auto rounded-lg shadow-lg"
-                />
-              </div>
-            )}
-          </header>
-
-          {/* Content */}
-          <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
-            <div className="text-foreground leading-relaxed">
-              <RenderedText enableRichPreviews preserveNewlines>
-                {newsItem.content}
-              </RenderedText>
             </div>
           </div>
 
-          {/* Event Statistics */}
-          <div className="border-t border-border pt-6">
-            <EventStatistics
-              event={newsItem.event}
-              author={newsItem.author}
-              className="justify-start"
-            />
+          {/* Featured Image */}
+          {newsItem.image && (
+            <div className="mb-8">
+              <img
+                src={newsItem.image}
+                alt={newsItem.title}
+                className="w-full h-auto rounded-lg shadow-lg"
+              />
+            </div>
+          )}
+        </header>
+
+        {/* Content */}
+        <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
+          <div className="text-foreground leading-relaxed">
+            <RenderedText enableRichPreviews preserveNewlines>
+              {newsItem.content}
+            </RenderedText>
           </div>
-        </article>
-      </div>
+        </div>
+
+        {/* Event Statistics */}
+        <div className="border-t border-border pt-6">
+          <EventStatistics
+            event={newsItem.event}
+            author={newsItem.author}
+            className="justify-start"
+          />
+        </div>
+      </article>
     </MainContent>
   );
 }
