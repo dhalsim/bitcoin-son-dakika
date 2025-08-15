@@ -369,6 +369,18 @@ export class LocalStorageCache {
     this.setToStorage("price-data", value);
   }
 
+  getPriceBarVisibility(): boolean {
+    const cached = this.getCachedValue<boolean>("price-bar-visibility");
+
+    // Default to true (visible) if no value is cached
+    return cached !== null ? cached : true;
+  }
+
+  setPriceBarVisibility(value: boolean): void {
+    this.cache.set("price-bar-visibility", value);
+    this.setToStorage("price-bar-visibility", value);
+  }
+
   has(key: string): boolean {
     return this.cache.has(key) || this.getFromStorage(key) !== undefined;
   }

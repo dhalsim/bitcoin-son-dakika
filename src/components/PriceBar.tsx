@@ -1,6 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { X, BarChart3 } from "lucide-react";
 
 import { usePriceData } from "../hooks/usePriceData";
+import { getCache } from "../lib/cache";
 
 import Chart from "./Chart";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
@@ -14,9 +16,31 @@ const PriceBar = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
   const autoscrollIntervalRef = useRef<number | null>(null);
   const resumeTimeoutRef = useRef<number | null>(null);
   const isUserInteractingRef = useRef(false);
+
+  // Initialize visibility from cache
+  useEffect(() => {
+    const cache = getCache();
+
+    setIsVisible(cache.getPriceBarVisibility());
+  }, []);
+
+  // Handle close button click
+  const handleClose = useCallback(() => {
+    const cache = getCache();
+    cache.setPriceBarVisibility(false);
+    setIsVisible(false);
+  }, []);
+
+  // Handle show button click
+  const handleShow = useCallback(() => {
+    const cache = getCache();
+    cache.setPriceBarVisibility(true);
+    setIsVisible(true);
+  }, []);
 
   // Create a simple duplicated array for continuous scrolling
   const displayPrices = [...prices, ...prices, ...prices];
@@ -239,8 +263,36 @@ const PriceBar = () => {
     };
   }, [prices]);
 
+  // If not visible, show a minimal bar with show button
+  if (!isVisible) {
+    return (
+      <div className="bg-main-accent text-white py-2 border-b border-orange-300 relative overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="flex items-center justify-center">
+            <button
+              onClick={handleShow}
+              className="flex items-center space-x-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors duration-200"
+            >
+              <BarChart3 size={16} />
+              <span className="text-sm font-medium">Fiyat Çubuğunu Göster</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-main-accent text-white py-2 border-b border-orange-300 relative overflow-hidden">
+      {/* Close button */}
+      <button
+        onClick={handleClose}
+        className="absolute top-2 right-4 z-20 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors duration-200"
+        aria-label="Close price bar"
+      >
+        <X size={16} />
+      </button>
+
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col space-y-2">
           <div className="flex items-center justify-between">
