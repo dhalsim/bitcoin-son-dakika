@@ -12,6 +12,18 @@ export const meta: MetaFunction = () => {
       name: "description",
       content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin haberleri`,
     },
+    {
+      name: "keywords",
+      content:
+        "bitcoin haberleri, kripto para haberleri, bitcoin son dakika, bitcoin güncel, nostr haberleri, bitcoin analiz, bitcoin piyasa, bitcoin teknoloji",
+    },
+    // Open Graph
+    { property: "og:title", content: `Tüm Haberler - ${WEBSITE_NAME}` },
+    { property: "og:description", content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin haberleri` },
+    { property: "og:type", content: "website" },
+    // Twitter
+    { name: "twitter:title", content: `Tüm Haberler - ${WEBSITE_NAME}` },
+    { name: "twitter:description", content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin haberleri` },
   ];
 };
 

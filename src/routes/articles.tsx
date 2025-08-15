@@ -12,6 +12,24 @@ export const meta: MetaFunction = () => {
       name: "description",
       content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin makaleleri ve analizler`,
     },
+    {
+      name: "keywords",
+      content:
+        "bitcoin makaleleri, bitcoin analiz, bitcoin köşe yazıları, kripto para analiz, bitcoin eğitim, bitcoin teknoloji, bitcoin ekonomi, bitcoin regülasyon, bitcoin güvenlik",
+    },
+    // Open Graph
+    { property: "og:title", content: `Tüm Makaleler - ${WEBSITE_NAME}` },
+    {
+      property: "og:description",
+      content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin makaleleri ve analizler`,
+    },
+    { property: "og:type", content: "website" },
+    // Twitter
+    { name: "twitter:title", content: `Tüm Makaleler - ${WEBSITE_NAME}` },
+    {
+      name: "twitter:description",
+      content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin makaleleri ve analizler`,
+    },
   ];
 };
 

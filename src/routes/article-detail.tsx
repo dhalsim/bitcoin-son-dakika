@@ -86,9 +86,14 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
       : `${WEBSITE_URL}${articleItem.image}`
     : `${WEBSITE_URL}${LOGO_URL}`;
 
+  // Add tags for better SEO
+  const tags = articleItem.tags?.length > 0 ? articleItem.tags.join(", ") : undefined;
+
   return [
     { title },
     { name: "description", content: description },
+    // Keywords (tags)
+    ...(tags ? [{ name: "keywords", content: tags }] : []),
     // Open Graph
     { property: "og:site_name", content: WEBSITE_NAME },
     { property: "og:title", content: title },

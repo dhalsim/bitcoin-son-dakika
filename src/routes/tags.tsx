@@ -8,13 +8,39 @@ import NewsCard from "../components/NewsCard";
 import { useSSGData } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction = ({ params }) => {
+  const { slug } = params;
+
+  if (!slug) {
+    return [
+      { title: `Etiket - ${WEBSITE_NAME}` },
+      {
+        name: "description",
+        content: `${WEBSITE_DESCRIPTION} - Etiket bazlı Bitcoin içerikleri`,
+      },
+      {
+        name: "keywords",
+        content:
+          "bitcoin etiketleri, bitcoin kategorileri, bitcoin tag, bitcoin içerik filtreleme, kripto para etiketleri, nostr etiketleri, bitcoin analiz etiketleri",
+      },
+    ];
+  }
+
+  const title = `#${slug} Etiketi - ${WEBSITE_NAME}`;
+  const description = `${WEBSITE_DESCRIPTION} - #${slug} etiketi ile ilgili Bitcoin haberleri ve makaleleri`;
+  const keywords = `${slug}, bitcoin ${slug}, kripto para ${slug}, nostr ${slug}, bitcoin etiketleri, bitcoin kategorileri, bitcoin içerik filtreleme`;
+
   return [
-    { title: `Etiket - ${WEBSITE_NAME}` },
-    {
-      name: "description",
-      content: `${WEBSITE_DESCRIPTION} - Etiket bazlı Bitcoin içerikleri`,
-    },
+    { title },
+    { name: "description", content: description },
+    { name: "keywords", content: keywords },
+    // Open Graph
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+    { property: "og:type", content: "website" },
+    // Twitter
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: description },
   ];
 };
 
