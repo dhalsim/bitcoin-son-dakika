@@ -47,7 +47,7 @@ export function QuotesSection({
           {quotesCount > 0 ? (
             <div className="space-y-2">
               {Array.from(statistics?.quotes?.values() || []).map((quote) => {
-                const profile = profiles[quote.pubkey];
+                const profile = profiles.get(quote.pubkey);
 
                 return (
                   <div

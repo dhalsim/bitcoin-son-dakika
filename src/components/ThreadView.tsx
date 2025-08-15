@@ -25,7 +25,7 @@ interface ThreadNodeProps {
 function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children.length > 0;
-  const profile = profiles?.[node.event.pubkey];
+  const profile = profiles.get(node.event.pubkey);
   const displayName = getDisplayName(profile, node.event.pubkey);
 
   const handleReply = () => {

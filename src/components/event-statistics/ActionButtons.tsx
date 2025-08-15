@@ -22,7 +22,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useUserContext, useUserWriteRelays } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
-import { createNip10Thread, postKind1Reply } from "@/lib/nip10";
+import { createNip10Thread, postKind1Reply, ReplyNode } from "@/lib/nip10";
 import { postQuoteRepost, postRepost } from "@/lib/nip18";
 import { createNip22Thread } from "@/lib/nip22";
 
@@ -59,7 +59,7 @@ export function ActionButtons({
   const [replyContent, setReplyContent] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [showOnlyCompose, setShowOnlyCompose] = useState(false);
-  const [thread, setThread] = useState<any[]>([]);
+  const [thread, setThread] = useState<ReplyNode[]>([]);
   const [loadingThread, setLoadingThread] = useState(false);
   const [quoteContent, setQuoteContent] = useState("");
   const [showQuotePreview, setShowQuotePreview] = useState(false);
@@ -336,7 +336,7 @@ export function ActionButtons({
     if (next && statistics?.replies) {
       setLoadingThread(true);
 
-      let threadData: any[] = [];
+      let threadData: ReplyNode[] = [];
 
       if (event.kind === 1) {
         threadData = createNip10Thread(statistics.replies, event.id);
@@ -611,7 +611,7 @@ export function ActionButtons({
       {showReplies && (
         <div className="mt-4 border-l-2 border-purple-600 pl-4 space-y-3">
           <ThreadViewWrapper
-            thread={thread as any}
+            thread={thread}
             loadingThread={loadingThread}
             showOnlyCompose={showOnlyCompose}
             profiles={profiles}
