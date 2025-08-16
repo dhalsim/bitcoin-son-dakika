@@ -147,7 +147,7 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
                       )}
                       <button
                         type="button"
-                        className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded border hover:bg-accent"
+                        className="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded border hover:bg-accent cursor-pointer"
                         onClick={(e) => {
                           e.preventDefault();
 

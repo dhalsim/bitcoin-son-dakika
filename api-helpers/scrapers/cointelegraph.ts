@@ -45,9 +45,8 @@ export async function scrapeCointelegraph(): Promise<ScrapedItem[]> {
       const summary = normalizeText(it?.postTranslate?.leadText);
       const published = normalizeText(it?.postTranslate?.published) || undefined;
       const image = it?.postTranslate?.avatar || undefined;
-      const categorySlug = it?.category?.slug || "news";
       const slug = it?.slug || "";
-      const url = `${BASE}/${categorySlug}/${slug}`;
+      const url = `${BASE}/news/${slug}`;
 
       return { title, summary, url, published, image, source: "cointelegraph" as const };
     });
