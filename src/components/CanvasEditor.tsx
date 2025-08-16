@@ -549,7 +549,7 @@ const CanvasEditor = memo(
         };
       }, [width, height]);
 
-      // Keyboard: Delete selected overlay with Delete/Backspace
+      // Keyboard: Delete selected overlay with Delete/Backspace, and arrow key navigation
       useEffect(() => {
         if (typeof window === "undefined") {
           return;
@@ -573,10 +573,6 @@ const CanvasEditor = memo(
         };
 
         const onKeyDown = (e: KeyboardEvent) => {
-          if (e.key !== "Delete" && e.key !== "Backspace") {
-            return;
-          }
-
           const active = document.activeElement;
           if (isEditableTarget(active)) {
             return;
@@ -593,10 +589,43 @@ const CanvasEditor = memo(
             return;
           }
 
-          nodes.forEach((n: any) => n.destroy());
-          transformer.nodes([]);
-          overlayLayer.draw();
-          e.preventDefault();
+          // Handle Delete/Backspace
+          if (e.key === "Delete" || e.key === "Backspace") {
+            nodes.forEach((n: any) => n.destroy());
+            transformer.nodes([]);
+            overlayLayer.draw();
+            e.preventDefault();
+            return;
+          }
+
+          // Handle arrow key navigation
+          if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+            e.preventDefault();
+
+            const moveAmount = e.shiftKey ? 10 : 1; // Shift + arrow = 10px, just arrow = 1px
+
+            nodes.forEach((node: any) => {
+              const currentX = node.x();
+              const currentY = node.y();
+
+              switch (e.key) {
+                case "ArrowUp":
+                  node.y(currentY - moveAmount);
+                  break;
+                case "ArrowDown":
+                  node.y(currentY + moveAmount);
+                  break;
+                case "ArrowLeft":
+                  node.x(currentX - moveAmount);
+                  break;
+                case "ArrowRight":
+                  node.x(currentX + moveAmount);
+                  break;
+              }
+            });
+
+            overlayLayer.draw();
+          }
         };
 
         window.addEventListener("keydown", onKeyDown);

@@ -16,7 +16,7 @@ const Footer = () => {
         }}
       />
 
-      <div className="container mx-auto px-4 py-8 relative z-10">
+      <div className="container mx-auto px-4 py-8 relative z-content">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-3 mb-4">
@@ -131,7 +131,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://nstart.me/_@bitcoinsondakika.com"
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Nostr
@@ -139,7 +139,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="https://x.com/bitcoin_son_dk"
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   X (Twitter)

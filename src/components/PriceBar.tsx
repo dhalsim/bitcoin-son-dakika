@@ -17,33 +17,64 @@ const PriceBar = () => {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+  const [hiddenPrices, setHiddenPrices] = useState<Set<string>>(new Set());
   const autoscrollIntervalRef = useRef<number | null>(null);
   const resumeTimeoutRef = useRef<number | null>(null);
   const isUserInteractingRef = useRef(false);
 
-  // Initialize visibility from cache
+  // Initialize visibility and hidden prices from cache
   useEffect(() => {
     const cache = getCache();
 
     setIsVisible(cache.getPriceBarVisibility());
+
+    const cachedHiddenPrices = cache.getPriceFilter();
+    if (cachedHiddenPrices) {
+      setHiddenPrices(new Set(cachedHiddenPrices));
+    }
   }, []);
 
   // Handle close button click
   const handleClose = useCallback(() => {
     const cache = getCache();
+
     cache.setPriceBarVisibility(false);
+
     setIsVisible(false);
   }, []);
 
   // Handle show button click
   const handleShow = useCallback(() => {
     const cache = getCache();
+
     cache.setPriceBarVisibility(true);
+
     setIsVisible(true);
   }, []);
 
-  // Create a simple duplicated array for continuous scrolling
-  const displayPrices = [...prices, ...prices, ...prices];
+  // Handle hiding a price
+  const handleHidePrice = useCallback(
+    (priceSymbol: string) => {
+      const newHiddenPrices = new Set(hiddenPrices);
+      newHiddenPrices.add(priceSymbol);
+
+      setHiddenPrices(newHiddenPrices);
+
+      // Update cache
+      const cache = getCache();
+
+      cache.setPriceFilter(Array.from(newHiddenPrices));
+    },
+    [hiddenPrices],
+  );
+
+  // Filter out hidden prices
+  const filteredPrices = useMemo(() => {
+    return prices.filter((price) => !hiddenPrices.has(price.priceSymbol));
+  }, [prices, hiddenPrices]);
+
+  // Create a simple duplicated array for continuous scrolling (using filtered prices)
+  const displayPrices = [...filteredPrices, ...filteredPrices, ...filteredPrices];
 
   const oneUsdInSatoshi = useMemo(() => {
     if (prices.length === 0) {
@@ -161,7 +192,7 @@ const PriceBar = () => {
   // Autoscroll functionality
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (!container || prices.length === 0) {
+    if (!container || filteredPrices.length === 0) {
       return;
     }
 
@@ -266,8 +297,8 @@ const PriceBar = () => {
   // If not visible, show a minimal bar with show button
   if (!isVisible) {
     return (
-      <div className="bg-main-accent text-white py-2 border-b border-orange-300 relative overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
+      <div className="bg-main-accent text-white py-2 border-b border-orange-300 relative overflow-hidden z-pricebar pointer-events-auto">
+        <div className="container mx-auto px-4 pr-12 relative z-pricebar">
           <div className="flex items-center justify-center">
             <button
               onClick={handleShow}
@@ -283,17 +314,17 @@ const PriceBar = () => {
   }
 
   return (
-    <div className="bg-main-accent text-white py-2 border-b border-orange-300 relative overflow-hidden">
+    <div className="bg-main-accent text-white py-2 border-b border-orange-300 relative overflow-hidden z-pricebar pointer-events-auto">
       {/* Close button */}
       <button
         onClick={handleClose}
-        className="absolute top-2 right-4 z-20 p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors duration-200"
+        className="absolute top-2 right-4 z-pricebar-ctrl p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors duration-200 cursor-pointer"
         aria-label="Close price bar"
       >
         <X size={16} />
       </button>
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 pr-12 relative z-pricebar">
         <div className="flex flex-col space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex flex-row items-center">
@@ -413,9 +444,26 @@ const PriceBar = () => {
                 )}
               </p>
             </div>
-            <div className="flex flex-row text-xs font-normal">
-              <span className="italic ">"Her şey bitcoin karşısında sıfıra gidiyor"</span>
-              <span className="ml-2">- Max Keiser</span>
+            <div className="flex flex-row items-center space-x-4 text-xs font-normal">
+              <div className="flex items-center space-x-2">
+                <span className="italic">"Her şey bitcoin karşısında sıfıra gidiyor"</span>
+                <span>- Max Keiser</span>
+              </div>
+              {hiddenPrices.size > 0 && (
+                <button
+                  onClick={() => {
+                    setHiddenPrices(new Set());
+
+                    const cache = getCache();
+
+                    cache.setPriceFilter([]);
+                  }}
+                  className="text-white/70 hover:text-white transition-colors duration-200 underline cursor-pointer"
+                  title={`${hiddenPrices.size} gizli fiyat var. Tümünü göster.`}
+                >
+                  {hiddenPrices.size} gizli fiyat
+                </button>
+              )}
             </div>
           </div>
 
@@ -432,51 +480,81 @@ const PriceBar = () => {
               </div>
             )}
             {!loading && !error && (
-              <div
-                ref={scrollContainerRef}
-                className="flex items-center space-x-4 py-2 px-4 overflow-x-auto scrollbar-hide cursor-grab select-none"
-                style={{
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                  WebkitOverflowScrolling: "touch",
-                }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                {displayPrices.map((price, index) => (
-                  <div
-                    key={`${price.symbol}-${index}`}
-                    className="flex items-center space-x-2 text-sm whitespace-nowrap flex-shrink-0 cursor-pointer hover:bg-white/10 rounded-lg px-3 py-1.5 transition-colors duration-200"
-                    onClick={() => handlePriceClick(price.priceSymbol)}
-                  >
-                    <span className="text-white/90 font-medium">
-                      {price.emoji} {price.name}:
-                    </span>
-                    <span className="font-bold text-white">{price.value}</span>
-                    {price.currency === "sats" && (
-                      <span className="text-white satoshi-symbol mb-1"></span>
-                    )}
-                    {price.currency === "BTC" && (
-                      <span className="text-white bitcoin-symbol"></span>
-                    )}
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        parseFloat(price.change) >= 0
-                          ? "text-green-100 bg-green-600/80"
-                          : "text-red-100 bg-red-600/80"
-                      }`}
+              <>
+                {filteredPrices.length === 0 ? (
+                  <div className="flex items-center justify-center py-4 text-white/80">
+                    <span className="text-sm">Tüm fiyatlar gizlendi</span>
+                    <button
+                      onClick={() => {
+                        setHiddenPrices(new Set());
+
+                        const cache = getCache();
+
+                        cache.setPriceFilter([]);
+                      }}
+                      className="ml-2 text-white hover:text-white/80 underline transition-colors duration-200"
                     >
-                      {parseFloat(price.change) >= 0 ? "+" : ""}
-                      {parseFloat(price.change).toFixed(2)}%
-                    </span>
+                      Tümünü göster
+                    </button>
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div
+                    ref={scrollContainerRef}
+                    className="flex items-center space-x-4 py-2 px-4 overflow-x-auto scrollbar-hide cursor-grab select-none"
+                    style={{
+                      scrollbarWidth: "none",
+                      msOverflowStyle: "none",
+                      WebkitOverflowScrolling: "touch",
+                    }}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseLeave}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                  >
+                    {displayPrices.map((price, index) => (
+                      <div
+                        key={`${price.symbol}-${index}`}
+                        className="group flex items-center space-x-2 text-sm whitespace-nowrap flex-shrink-0 cursor-pointer hover:bg-white/10 rounded-lg px-3 py-1.5 transition-colors duration-200"
+                        onClick={() => handlePriceClick(price.priceSymbol)}
+                      >
+                        <span className="text-white/90 font-medium">
+                          {price.emoji} {price.name}:
+                        </span>
+                        <span className="font-bold text-white">{price.value}</span>
+                        {price.currency === "sats" && (
+                          <span className="text-white satoshi-symbol mb-1"></span>
+                        )}
+                        {price.currency === "BTC" && (
+                          <span className="text-white bitcoin-symbol"></span>
+                        )}
+                        <span
+                          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                            parseFloat(price.change) >= 0
+                              ? "text-green-100 bg-green-600/80"
+                              : "text-red-100 bg-red-600/80"
+                          }`}
+                        >
+                          {parseFloat(price.change) >= 0 ? "+" : ""}
+                          {parseFloat(price.change).toFixed(2)}%
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleHidePrice(price.priceSymbol);
+                          }}
+                          className="ml-2 text-white/60 hover:text-red-400 transition-colors duration-200 opacity-0 group-hover:opacity-100"
+                          title="Fiyatı Gizle"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -11,6 +11,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { UserMenu } from "./UserMenu";
+import { SearchBar } from "./SearchBar";
 
 // Function to format current date in Turkish
 const getCurrentDateInTurkish = () => {
@@ -30,7 +31,7 @@ const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <header className="shadow-md relative">
+    <header className="shadow-md relative z-header">
       {/* Background image */}
       <div
         className="absolute inset-0 opacity-20"
@@ -42,7 +43,7 @@ const Header = () => {
         }}
       />
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 relative z-content">
         {/* Top bar */}
         <div className="flex items-center justify-between py-2 border-b border-border">
           <div className="text-xs sm:text-sm text-muted-foreground truncate">
@@ -56,12 +57,27 @@ const Header = () => {
             {/* Social Links */}
             <div className="flex items-center space-x-1 sm:space-x-2">
               <a
-                href="/feed/rss.xml"
+                href="https://njump.me/_@bitcoinsondakika.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+                className="p-1 hover:bg-accent hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
               >
-                <Rss className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                <img src="/nostr-icon.png" alt="Nostr" className="h-6 w-6" />
+              </a>
+              <a
+                href="https://x.com/bitcoin_son_dk"
+                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground"
+                  viewBox="0 0 16 16"
+                >
+                  <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
+                </svg>
               </a>
               <a
                 href="/feed/atom.xml"
@@ -72,18 +88,12 @@ const Header = () => {
                 <Atom className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </a>
               <a
-                href="https://njump.me/_@bitcoinsondakika.com"
+                href="/feed/rss.xml"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 hover:bg-accent hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
+                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
               >
-                <img src="/nostr-icon.png" alt="Nostr" className="h-6 w-6" />
-              </a>
-              <a
-                href="#"
-                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300"
-              >
-                <X className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                <Rss className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </a>
             </div>
 
@@ -124,7 +134,7 @@ const Header = () => {
           </div>
 
           {/* Desktop View */}
-          <div className="hidden lg:flex items-center space-x-6">
+          <div className="hidden lg:flex items-center space-x-6 relative z-header">
             {/* Desktop Navigation */}
             <nav className="flex items-center space-x-6">
               <a href="/" className="text-foreground font-medium px-2 py-1 rounded">
@@ -200,14 +210,7 @@ const Header = () => {
             </nav>
 
             {/* Desktop Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Haber ara..."
-                className="pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-64 text-foreground transition-all duration-300"
-              />
-            </div>
+            <SearchBar />
 
             {/* User Menu */}
             <UserMenu />
@@ -308,15 +311,8 @@ const Header = () => {
 
             {/* Mobile Search Bar */}
             {isSearchOpen && (
-              <div className="md:hidden pb-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <input
-                    type="text"
-                    placeholder="Haber ara..."
-                    className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 w-full bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-all duration-300"
-                  />
-                </div>
+              <div className="md:hidden pb-4 relative z-header">
+                <SearchBar />
               </div>
             )}
           </div>

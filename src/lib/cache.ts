@@ -381,6 +381,15 @@ export class LocalStorageCache {
     this.setToStorage("price-bar-visibility", value);
   }
 
+  setPriceFilter(tickers: string[]): void {
+    this.cache.set("price-filter", tickers);
+    this.setToStorage("price-filter", tickers);
+  }
+
+  getPriceFilter(): string[] {
+    return this.getCachedValue<string[]>("price-filter");
+  }
+
   has(key: string): boolean {
     return this.cache.has(key) || this.getFromStorage(key) !== undefined;
   }

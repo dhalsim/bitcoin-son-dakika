@@ -32,7 +32,7 @@
   html {
     scroll-behavior: smooth;
   }
-  
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -147,6 +147,21 @@
     --border-gray-800: 217.2 32.6% 17.5%;
     --border-blue-500: 217.2 91.2% 59.8%;
     --border-green-500: 142.1 76.2% 36.3%;
+
+    /* Z-index scale (single source of truth) */
+    --z-base: 0;
+    --z-content: 10;
+    --z-sidebar: 20;
+    --z-header: 200;
+    --z-pricebar: 110;
+    --z-pricebar-ctrl: 300;
+    --z-indicator: 1;
+    --z-dropdown: 300;
+    --z-popover: 500;
+    --z-tooltip: 600;
+    --z-dialog: 900;
+    --z-search: 950;
+    --z-toast: 9999;
   }
 
   .dark {
@@ -278,6 +293,46 @@
 }
 
 @layer utilities {
+  /* Z-index utility classes from centralized scale */
+  .z-base {
+    z-index: var(--z-base);
+  }
+  .z-content {
+    z-index: var(--z-content);
+  }
+  .z-sidebar {
+    z-index: var(--z-sidebar);
+  }
+  .z-header {
+    z-index: var(--z-header);
+  }
+  .z-pricebar {
+    z-index: var(--z-pricebar);
+  }
+  .z-pricebar-ctrl {
+    z-index: var(--z-pricebar-ctrl);
+  }
+  .z-dropdown {
+    z-index: var(--z-dropdown);
+  }
+  .z-indicator {
+    z-index: var(--z-indicator);
+  }
+  .z-popover {
+    z-index: var(--z-popover);
+  }
+  .z-tooltip {
+    z-index: var(--z-tooltip);
+  }
+  .z-dialog {
+    z-index: var(--z-dialog);
+  }
+  .z-search {
+    z-index: var(--z-search);
+  }
+  .z-toast {
+    z-index: var(--z-toast);
+  }
   .text-muted-foreground {
     color: hsl(var(--muted-foreground));
   }
