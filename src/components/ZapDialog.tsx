@@ -113,13 +113,14 @@ export const ZapDialog = memo(function ZapDialog({
 
           const finalRelays = deduped.length > 0 ? deduped : DEFAULT_ZAP_RELAYS;
 
-          const invoice = await createZap({
+          const { invoice, provider: zapProvider } = await createZap({
             zappedEvent,
             amountInSats,
             comment: comment.trim() || undefined,
             lnurlData,
             relays: finalRelays,
-            signEvent: (event) => signEvent(event, { reason: "Zap oluşturma" }),
+            signEvent: (params) =>
+              signEvent({ event: params.event, options: { reason: "Zap oluşturma" } }),
           });
 
           // If WebLN is available, try to pay the invoice programmatically.
@@ -165,7 +166,7 @@ export const ZapDialog = memo(function ZapDialog({
                       });
                     }
                   },
-                  () => getPublicKey({ reason: "Zap makbuzu dinleme" }),
+                  zapProvider,
                 );
               }
 
@@ -210,7 +211,7 @@ export const ZapDialog = memo(function ZapDialog({
                   });
                 }
               },
-              () => getPublicKey({ reason: "Zap makbuzu dinleme" }),
+              zapProvider,
             );
           }
 

@@ -1,21 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Key, Smartphone, QrCode, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  AuthIntent,
-  LoginResult,
-  NostrProviderMethod,
-  useNostrAuth,
-} from "@/contexts/NostrAuthContext";
+import { AuthIntent, LoginResult, useNostrAuth } from "@/contexts/NostrAuthContext";
 import { isNip07Available } from "@/lib/providers/Nip07Provider";
 
 interface LoginModalProps {
   open: boolean;
-  onClose: (result: LoginResult<NostrProviderMethod>) => void;
+  onClose: (result: LoginResult) => void;
   intent: AuthIntent;
   reason?: string;
 }

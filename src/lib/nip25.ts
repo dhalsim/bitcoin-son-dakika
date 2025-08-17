@@ -1,4 +1,6 @@
-import type { EventTemplate, NostrEvent } from "nostr-tools";
+import type { EventTemplate } from "nostr-tools";
+
+import type { GetPublicKey, SignEvent } from "@/contexts/NostrAuthContext";
 
 import { getCache } from "./cache";
 import type { EventItem, ProfileItem } from "./nip01";
@@ -85,8 +87,8 @@ export async function postReaction(
   content: string,
   emojiUrl: string | null,
   publishRelays: string[],
-  getPublicKey: () => Promise<string | null>,
-  signEvent: (event: Omit<NostrEvent, "id" | "sig" | "pubkey">) => Promise<NostrEvent>,
+  getPublicKey: GetPublicKey,
+  signEvent: SignEvent,
   onSuccess: () => void,
   onError: (reason: string) => void,
 ) {
@@ -94,7 +96,7 @@ export async function postReaction(
     return onError("Relayler bulunamadı");
   }
 
-  const userPubkey = await getPublicKey();
+  const userPubkey = await getPublicKey({ options: { reason: "Tepki gönderimi" } });
 
   if (!userPubkey) {
     return onError("Kullanıcı anahtarı alınamadı");
@@ -136,7 +138,7 @@ export async function postReaction(
   };
 
   try {
-    const signedReactionEvent = await signEvent(reactionEvent);
+    const { signedEvent: signedReactionEvent } = await signEvent({ event: reactionEvent });
 
     if (!signedReactionEvent) {
       return onError("Reaction imzası alınamadı");

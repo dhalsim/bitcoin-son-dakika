@@ -8,27 +8,20 @@ import { createNip07Provider, Nip07Relays } from "@/lib/providers/Nip07Provider"
 
 export type NostrProviderMethod = "nip07" | "nip46" | "nsec" | "nostrconnect" | "none";
 
-export interface NostrProvider<T extends NostrProviderMethod> {
-  method: T;
+export type NostrProvider = {
+  method: NostrProviderMethod;
   isReady(): Promise<boolean>;
-
-  // Identity
-  getPublicKey(): Promise<string>;
-
-  // Signing
-  signEvent(event: Omit<NostrEvent, "id" | "sig" | "pubkey">): Promise<NostrEvent>;
-
-  // Optional capabilities
+  getPublicKey: GetPublicKey;
+  signEvent: SignEvent;
   getRelays?(): Promise<Nip07Relays>;
-
   hasCapability(cap: "getRelays" | "signEvent"): boolean;
   dispose?(): void;
-}
+};
 
-export type LoginResult<T extends NostrProviderMethod> =
+export type LoginResult =
   | {
       success: true;
-      provider: NostrProvider<T>;
+      provider: NostrProvider;
     }
   | {
       success: false;
@@ -37,43 +30,50 @@ export type LoginResult<T extends NostrProviderMethod> =
 
 export type AuthIntent = "log_in" | "read_pubkey" | "sign_event";
 
-export interface NostrAuthContextValue<T extends NostrProviderMethod> {
-  provider: NostrProvider<T>;
+export type SignEventResult = { signedEvent: NostrEvent; provider: NostrProvider };
+export type SignEventParams = {
+  event: Omit<NostrEvent, "id" | "sig" | "pubkey">;
+  options?: { reason?: string };
+};
+export type SignEvent = (params: SignEventParams) => Promise<SignEventResult>;
+
+export type GetPublicKeyParams = { options?: { reason?: string } };
+export type GetPublicKey = (params: GetPublicKeyParams) => Promise<string | null>;
+
+export interface NostrAuthContextValue {
+  provider: NostrProvider;
   isLoggedIn: boolean;
 
   // Provider lifecycle
-  loginWithNip07(): Promise<LoginResult<T>>;
-  loginWithNsec(nsec: string): Promise<LoginResult<T>>; // future
-  loginWithNip46(uri: string): Promise<LoginResult<T>>; // future
+  loginWithNip07(): Promise<LoginResult>;
+  loginWithNsec(nsec: string): Promise<LoginResult>; // future
+  loginWithNip46(uri: string): Promise<LoginResult>; // future
   logout(): void;
 
   // Core actions (auto-triggers modal if needed)
-  getPublicKey(options?: { reason?: string }): Promise<string | null>;
-  signEvent(
-    event: Omit<NostrEvent, "id" | "sig" | "pubkey">,
-    options?: { reason?: string },
-  ): Promise<NostrEvent>;
+  getPublicKey: GetPublicKey;
+  signEvent: SignEvent;
 
   // Modal control
-  requestLogin(intent: AuthIntent, options?: { reason?: string }): Promise<LoginResult<T>>;
+  requestLogin(intent: AuthIntent, options?: { reason?: string }): Promise<LoginResult>;
 
   // Utility function for components that need to show login modal
-  showLoginModal(intent: AuthIntent, options?: { reason?: string }): Promise<LoginResult<T>>;
+  showLoginModal(intent: AuthIntent, options?: { reason?: string }): Promise<LoginResult>;
 }
 
-const NostrAuthContext = createContext<NostrAuthContextValue<NostrProviderMethod> | null>(null);
+const NostrAuthContext = createContext<NostrAuthContextValue | null>(null);
 
 interface NostrAuthProviderProps {
   children: ReactNode;
 }
 
 export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
-  const [provider, setProvider] = useState<NostrProvider<NostrProviderMethod> | null>(null);
+  const [provider, setProvider] = useState<NostrProvider | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingAuthRequest, setPendingAuthRequest] = useState<{
     intent: AuthIntent;
     options?: { reason?: string };
-    resolve: (loginResult: LoginResult<NostrProviderMethod>) => void;
+    resolve: (loginResult: LoginResult) => void;
   } | null>(null);
 
   const isLoggedIn = useMemo(() => !!provider, [provider]);
@@ -117,7 +117,7 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
     }
   }, []);
 
-  const loginWithNip07 = useCallback(async (): Promise<LoginResult<NostrProviderMethod>> => {
+  const loginWithNip07 = useCallback(async (): Promise<LoginResult> => {
     try {
       const nip07Provider = createNip07Provider();
       const isReady = await nip07Provider.isReady();
@@ -141,12 +141,12 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
     }
   }, []);
 
-  const loginWithNsec = async (nsec: string): Promise<LoginResult<NostrProviderMethod>> => {
+  const loginWithNsec = async (nsec: string): Promise<LoginResult> => {
     // TODO: Implement when NsecProvider is created
     return { success: false, provider: null };
   };
 
-  const loginWithNip46 = async (uri: string): Promise<LoginResult<NostrProviderMethod>> => {
+  const loginWithNip46 = async (uri: string): Promise<LoginResult> => {
     // TODO: Implement when Nip46Provider is created
     return { success: false, provider: null };
   };
@@ -162,10 +162,10 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
   }, [provider]);
 
   const getPublicKey = useCallback(
-    async (options?: { reason?: string }): Promise<string | null> => {
+    async (params: GetPublicKeyParams): Promise<string | null> => {
       if (provider && isLoggedIn) {
         try {
-          return await provider.getPublicKey();
+          return await provider.getPublicKey(params);
         } catch (error) {
           console.error("Failed to get public key from provider:", error);
 
@@ -174,11 +174,14 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
       }
 
       // Request login for pubkey read
-      const { success, provider: loginProvider } = await requestLogin("read_pubkey", options);
+      const { success, provider: loginProvider } = await requestLogin(
+        "read_pubkey",
+        params.options,
+      );
 
       if (success && loginProvider) {
         try {
-          return await loginProvider.getPublicKey();
+          return await loginProvider.getPublicKey(params);
         } catch (error) {
           console.error("Failed to get public key after login:", error);
 
@@ -192,24 +195,22 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
   );
 
   const signEvent = useCallback(
-    async (
-      event: Omit<NostrEvent, "id" | "sig" | "pubkey">,
-      options?: { reason?: string },
-    ): Promise<NostrEvent> => {
+    async (params: SignEventParams): Promise<SignEventResult> => {
       if (provider && isLoggedIn) {
         try {
-          return await provider.signEvent(event);
+          return await provider.signEvent(params);
         } catch (error) {
           console.error("Failed to sign event with provider:", error);
+
           throw error;
         }
       }
 
       // Always request login for signing (ignore suppression)
-      const { success, provider: loginProvider } = await requestLogin("sign_event", options);
+      const { success, provider: loginProvider } = await requestLogin("sign_event", params.options);
       if (success && loginProvider) {
         try {
-          return await loginProvider.signEvent(event);
+          return await loginProvider.signEvent(params);
         } catch (error) {
           console.error("Failed to sign event after login:", error);
           throw error;
@@ -222,10 +223,7 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
   );
 
   const requestLogin = useCallback(
-    async (
-      intent: AuthIntent,
-      options?: { reason?: string },
-    ): Promise<LoginResult<NostrProviderMethod>> => {
+    async (intent: AuthIntent, options?: { reason?: string }): Promise<LoginResult> => {
       return new Promise((resolve) => {
         setPendingAuthRequest({ intent, options, resolve });
         setIsModalOpen(true);
@@ -235,7 +233,7 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
   );
 
   const handleModalClose = useCallback(
-    (result: LoginResult<NostrProviderMethod>) => {
+    (result: LoginResult) => {
       if (pendingAuthRequest) {
         // Pass the full result through to the promise resolution
         pendingAuthRequest.resolve(result);
@@ -248,16 +246,13 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
   );
 
   const showLoginModal = useCallback(
-    async (
-      intent: AuthIntent,
-      options?: { reason?: string },
-    ): Promise<LoginResult<NostrProviderMethod>> => {
+    async (intent: AuthIntent, options?: { reason?: string }): Promise<LoginResult> => {
       return requestLogin(intent, options);
     },
     [requestLogin],
   );
 
-  const contextValue: NostrAuthContextValue<NostrProviderMethod> = {
+  const contextValue: NostrAuthContextValue = {
     provider,
     isLoggedIn,
     loginWithNip07,
@@ -283,7 +278,7 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
   );
 }
 
-export function useNostrAuth(): NostrAuthContextValue<NostrProviderMethod> {
+export function useNostrAuth(): NostrAuthContextValue {
   const context = useContext(NostrAuthContext);
   if (!context) {
     throw new Error("useNostrAuth must be used within a NostrAuthProvider");

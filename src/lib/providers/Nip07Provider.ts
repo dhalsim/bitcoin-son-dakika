@@ -1,8 +1,6 @@
-import type { NostrEvent } from "nostr-tools";
+import type { NostrProvider, SignEventParams, SignEventResult } from "@/contexts/NostrAuthContext";
 
-import type { NostrProvider } from "@/contexts/NostrAuthContext";
-
-export class Nip07Provider implements NostrProvider<"nip07"> {
+export class Nip07Provider implements NostrProvider {
   method: "nip07";
 
   constructor() {
@@ -39,13 +37,13 @@ export class Nip07Provider implements NostrProvider<"nip07"> {
     }
   }
 
-  async signEvent(event: Omit<NostrEvent, "id" | "sig" | "pubkey">): Promise<NostrEvent> {
+  async signEvent(params: SignEventParams): Promise<SignEventResult> {
     if (typeof window === "undefined" || !window.nostr) {
       throw new Error("NIP-07 extension not available");
     }
 
     try {
-      return await window.nostr.signEvent(event as any);
+      return await window.nostr.signEvent(params.event);
     } catch (error) {
       console.error("Failed to sign event with NIP-07:", error);
 

@@ -1,5 +1,7 @@
 import { nip19 } from "nostr-tools";
 
+import type { GetPublicKey, SignEvent } from "@/contexts/NostrAuthContext";
+
 export type NpubValidationResult =
   | { valid: true; pubkey: string }
   | { valid: false; error: string };
@@ -20,10 +22,10 @@ export const validateNpub = (npub: string): NpubValidationResult => {
 export async function createNIP98Auth(
   method: string,
   url: string,
-  getPublicKey: () => Promise<string | null>,
-  signEvent: (event: any) => Promise<any>,
+  getPublicKey: GetPublicKey,
+  signEvent: SignEvent,
 ): Promise<string> {
-  const pubkey = await getPublicKey();
+  const pubkey = await getPublicKey({ options: { reason: "Admin panel işlemleri" } });
 
   if (!pubkey) {
     throw new Error("Giriş yapmanız gerekiyor");
@@ -40,15 +42,15 @@ export async function createNIP98Auth(
     pubkey,
   };
 
-  const signedEvent = await signEvent(authEvent);
+  const { signedEvent } = await signEvent({ event: authEvent });
 
   return `Nostr ${btoa(JSON.stringify(signedEvent))}`;
 }
 
 export async function postAdminAction(
   data: any,
-  getPublicKey: () => Promise<string | null>,
-  signEvent: (event: any) => Promise<any>,
+  getPublicKey: GetPublicKey,
+  signEvent: SignEvent,
 ): Promise<any> {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = `${origin}/api/admin-panel`;

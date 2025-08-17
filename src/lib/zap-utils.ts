@@ -1,6 +1,8 @@
 import type { EventTemplate } from "nostr-tools";
 import { type NostrEvent } from "nostr-tools";
 
+import type { NostrProvider, SignEvent } from "@/contexts/NostrAuthContext";
+
 import { getCache } from "./cache";
 import { validateZapReceipt, type LnUrlpResponse, type ZapReceipt } from "./nip57";
 import { pool } from "./utils";
@@ -30,7 +32,7 @@ interface CreateZapParams {
   lnurlData: LnUrlpResponse;
   relays: string[];
   comment?: string;
-  signEvent: (event: any) => Promise<any>;
+  signEvent: SignEvent;
 }
 
 // Complete zap flow
@@ -41,7 +43,10 @@ export async function createZap({
   comment,
   relays,
   signEvent,
-}: CreateZapParams): Promise<string> {
+}: CreateZapParams): Promise<{
+  invoice: string | null;
+  provider: NostrProvider;
+}> {
   try {
     const amountInMilliSats = amountInSats * 1000;
 
@@ -57,7 +62,9 @@ export async function createZap({
       ],
     };
 
-    const signedZapRequestEvent = await signEvent(zapRequestEvent);
+    const { signedEvent: signedZapRequestEvent, provider } = await signEvent({
+      event: zapRequestEvent,
+    });
 
     if (!signedZapRequestEvent) {
       throw new Error("Zap event imzalanamadı");
@@ -85,14 +92,14 @@ export async function createZap({
     } catch (error) {
       console.error("Failed to fetch zap request:", error);
 
-      return null;
+      return { invoice: null, provider };
     }
 
-    return invoice;
+    return { invoice, provider };
   } catch (error) {
     console.error("Failed to create zap:", error);
 
-    return null;
+    return { invoice: null, provider: null };
   }
 }
 
@@ -105,9 +112,9 @@ export async function listenForZapReceipt(
   lnurlData: LnUrlpResponse,
   relays: string[],
   onReceipt: (zapReceipt: ZapReceipt | null) => void,
-  getPublicKey: () => Promise<string | null>,
+  provider: NostrProvider,
 ) {
-  const userPubkey = await getPublicKey();
+  const userPubkey = await provider.getPublicKey({ options: { reason: "Zap makbuzu dinleme" } });
 
   if (!userPubkey) {
     onReceipt(null);

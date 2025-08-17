@@ -1,4 +1,6 @@
-import type { EventTemplate, NostrEvent } from "nostr-tools";
+import type { EventTemplate } from "nostr-tools";
+
+import type { GetPublicKey, SignEvent } from "@/contexts/NostrAuthContext";
 
 import { getCache } from "./cache";
 import type { EventItem, ProfileItem } from "./nip01";
@@ -107,8 +109,8 @@ export async function postKind1Reply(
   author: ProfileItem,
   content: string,
   publishRelays: string[],
-  getPublicKey: () => Promise<string | null>,
-  signEvent: (event: Omit<NostrEvent, "id" | "sig" | "pubkey">) => Promise<NostrEvent>,
+  getPublicKey: GetPublicKey,
+  signEvent: SignEvent,
   onSuccess: () => void,
   onError: (reason: string) => void,
 ) {
@@ -116,7 +118,7 @@ export async function postKind1Reply(
     return onError("Relayler bulunamadı");
   }
 
-  const userPubkey = await getPublicKey();
+  const userPubkey = await getPublicKey({ options: { reason: "Yanıt gönderimi" } });
 
   if (!userPubkey) {
     return onError("Kullanıcı anahtarı alınamadı");
@@ -133,7 +135,7 @@ export async function postKind1Reply(
   };
 
   try {
-    const signedReplyEvent = await signEvent(replyEvent);
+    const { signedEvent: signedReplyEvent } = await signEvent({ event: replyEvent });
 
     if (!signedReplyEvent) {
       return onError("Reply imzası alınamadı");

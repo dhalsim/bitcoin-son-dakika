@@ -301,7 +301,7 @@ export default function AdminPanel() {
 
   const checkUserInfo = useCallback(async () => {
     try {
-      const pubkey = await getPublicKey({ reason: "Admin panel yetki kontrolü" });
+      const pubkey = await getPublicKey({ options: { reason: "Admin panel yetki kontrolü" } });
 
       if (!pubkey) {
         setUserInfo({});
@@ -340,8 +340,9 @@ export default function AdminPanel() {
       const authHeader = await createNIP98Auth(
         "POST",
         url,
-        () => getPublicKey({ reason: "Admin panel işlemleri" }),
-        (event) => signEvent(event, { reason: "Admin panel işlemleri" }),
+        () => getPublicKey({ options: { reason: "Admin panel işlemleri" } }),
+        (params) =>
+          signEvent({ event: params.event, options: { reason: "Admin panel işlemleri" } }),
       );
 
       const response = await fetch(url, {

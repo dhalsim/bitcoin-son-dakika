@@ -1,4 +1,6 @@
-import { nip19, type EventTemplate, type NostrEvent } from "nostr-tools";
+import { nip19, type EventTemplate } from "nostr-tools";
+
+import type { GetPublicKey, SignEvent } from "@/contexts/NostrAuthContext";
 
 import { getCache } from "./cache";
 import type { EventItem, ProfileItem } from "./nip01";
@@ -73,8 +75,8 @@ export async function postRepost(
   event: EventItem,
   author: ProfileItem,
   publishRelays: string[],
-  getPublicKey: () => Promise<string | null>,
-  signEvent: (event: Omit<NostrEvent, "id" | "sig" | "pubkey">) => Promise<NostrEvent>,
+  getPublicKey: GetPublicKey,
+  signEvent: SignEvent,
   onSuccess: () => void,
   onError: (reason: string) => void,
 ) {
@@ -82,7 +84,7 @@ export async function postRepost(
     return onError("Relayler bulunamadı");
   }
 
-  const userPubkey = await getPublicKey();
+  const userPubkey = await getPublicKey({ options: { reason: "Yeniden paylaşma" } });
 
   if (!userPubkey) {
     console.error("User pubkey not found");
@@ -104,7 +106,7 @@ export async function postRepost(
   };
 
   try {
-    const signedRepostEvent = await signEvent(repostEvent);
+    const { signedEvent: signedRepostEvent } = await signEvent({ event: repostEvent });
 
     if (!signedRepostEvent) {
       return onError("Repost imzası alınamadı");
@@ -196,8 +198,8 @@ export async function postQuoteRepost(
   event: EventItem,
   content: string,
   publishRelays: string[],
-  getPublicKey: () => Promise<string | null>,
-  signEvent: (event: Omit<NostrEvent, "id" | "sig" | "pubkey">) => Promise<NostrEvent>,
+  getPublicKey: GetPublicKey,
+  signEvent: SignEvent,
   onSuccess: () => void,
   onError: (reason: string) => void,
 ) {
@@ -205,7 +207,7 @@ export async function postQuoteRepost(
     return onError("Relayler bulunamadı");
   }
 
-  const userPubkey = await getPublicKey();
+  const userPubkey = await getPublicKey({ options: { reason: "Alıntı gönderimi" } });
 
   if (!userPubkey) {
     console.error("User pubkey not found");
@@ -234,7 +236,7 @@ export async function postQuoteRepost(
   };
 
   try {
-    const signedQuoteEvent = await signEvent(quoteEvent);
+    const { signedEvent: signedQuoteEvent } = await signEvent({ event: quoteEvent });
 
     if (!signedQuoteEvent) {
       return onError("Quote repost imzası alınamadı");

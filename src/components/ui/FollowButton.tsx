@@ -59,7 +59,9 @@ export function FollowButton({
           }
         }
 
-        const userPubkey = await getPublicKey({ reason: "Takip listesi güncellemesi" });
+        const userPubkey = await getPublicKey({
+          options: { reason: "Takip listesi güncellemesi" },
+        });
 
         if (!userPubkey) {
           onError?.("Giriş yapmanız gerekiyor.");
@@ -84,7 +86,10 @@ export function FollowButton({
         };
 
         try {
-          const signedEvent = await signEvent(event, { reason: "Takip listesi güncellemesi" });
+          const { signedEvent } = await signEvent({
+            event,
+            options: { reason: "Takip listesi güncellemesi" },
+          });
 
           if (!signedEvent) {
             throw new Error("İmzalama başarısız");
