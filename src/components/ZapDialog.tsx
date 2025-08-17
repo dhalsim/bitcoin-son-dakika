@@ -21,9 +21,9 @@ import { getLnurlData } from "@/lib/nip57";
 import { fetchNip65Relays } from "@/lib/nip65";
 import { createZap, DEFAULT_ZAP_RELAYS, listenForZapReceipt } from "@/lib/zap-utils";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { useUserContext } from "@/contexts/UserContext";
 
 import { ZapInvoiceDialog } from "./ZapInvoiceDialog";
-import { useUserContext } from "@/contexts/UserContext";
 
 interface ZapDialogProps {
   open: boolean;
@@ -58,7 +58,7 @@ export const ZapDialog = memo(function ZapDialog({
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [isWaitingForReceipt, setIsWaitingForReceipt] = useState(false);
   const { toast } = useToast();
-  const { getPublicKey, signEvent } = useNostrAuth();
+  const { signEvent } = useNostrAuth();
   const { userRelays } = useUserContext();
 
   useEffect(() => {
@@ -119,8 +119,7 @@ export const ZapDialog = memo(function ZapDialog({
             comment: comment.trim() || undefined,
             lnurlData,
             relays: finalRelays,
-            signEvent: (params) =>
-              signEvent({ event: params.event, options: { reason: "Zap oluşturma" } }),
+            signEvent,
           });
 
           // If WebLN is available, try to pay the invoice programmatically.
@@ -160,6 +159,8 @@ export const ZapDialog = memo(function ZapDialog({
                       setReceipt(zapReceipt);
                       setIsReceiptDialogOpen(true);
                       setIsWaitingForReceipt(false);
+                      // Close the waiting dialog automatically
+                      setShowInvoice(false);
                       setStatistics({
                         ...statistics,
                         zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
@@ -205,6 +206,8 @@ export const ZapDialog = memo(function ZapDialog({
                 if (zapReceipt) {
                   setReceipt(zapReceipt);
                   setIsReceiptDialogOpen(true);
+                  // Close the invoice dialog automatically when receipt arrives
+                  setShowInvoice(false);
                   setStatistics({
                     ...statistics,
                     zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
@@ -278,7 +281,22 @@ export const ZapDialog = memo(function ZapDialog({
 
   return (
     <>
-      <Dialog open={open && !showInvoice} onOpenChange={onOpenChange}>
+      <Dialog
+        open={open && !showInvoice}
+        onOpenChange={(openState) => {
+          onOpenChange(openState);
+          if (!openState) {
+            // Reset all states when main dialog is closed
+            setSelectedAmount(null);
+            setCustomAmount("");
+            setComment("");
+            setShowInvoice(false);
+            setIsWaitingForReceipt(false);
+            setReceipt(null);
+            setIsReceiptDialogOpen(false);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
@@ -393,10 +411,15 @@ export const ZapDialog = memo(function ZapDialog({
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Zap makbuzu alınıyor</DialogTitle>
-              <DialogDescription>Ödeme alındıktan sonra makbuz görünecek.</DialogDescription>
+              <DialogDescription>
+                Ödeme alındıktan sonra makbuz otomatik olarak görünecek.
+              </DialogDescription>
             </DialogHeader>
             <div className="flex items-center justify-center py-6">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            </div>
+            <div className="text-center text-sm text-gray-500">
+              WebLN ile ödeme yapıldı, makbuz bekleniyor...
             </div>
           </DialogContent>
         </Dialog>
@@ -404,7 +427,22 @@ export const ZapDialog = memo(function ZapDialog({
 
       {/* Receipt Dialog - shown when receipt arrives (works for both WebLN and manual) */}
       {isReceiptDialogOpen && receipt && (
-        <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
+        <Dialog
+          open={isReceiptDialogOpen}
+          onOpenChange={(open) => {
+            setIsReceiptDialogOpen(open);
+            if (!open) {
+              // Reset all dialog states when receipt dialog is closed
+              setShowInvoice(false);
+              setIsWaitingForReceipt(false);
+              setReceipt(null);
+              // Reset form
+              setSelectedAmount(null);
+              setCustomAmount("");
+              setComment("");
+            }
+          }}
+        >
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Zap Gönderildi</DialogTitle>
@@ -422,6 +460,16 @@ export const ZapDialog = memo(function ZapDialog({
                     <span className="font-medium">Mesaj:</span> {receipt.comment}
                   </div>
                 )}
+              </div>
+
+              {/* Close button */}
+              <div className="flex justify-end pt-2">
+                <Button
+                  onClick={() => setIsReceiptDialogOpen(false)}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  Tamam
+                </Button>
               </div>
             </div>
           </DialogContent>

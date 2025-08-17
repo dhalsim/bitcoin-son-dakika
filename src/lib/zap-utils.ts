@@ -64,6 +64,7 @@ export async function createZap({
 
     const { signedEvent: signedZapRequestEvent, provider } = await signEvent({
       event: zapRequestEvent,
+      options: { reason: "Zap oluşturma" },
     });
 
     if (!signedZapRequestEvent) {

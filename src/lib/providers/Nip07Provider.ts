@@ -1,14 +1,20 @@
-import type { NostrProvider, SignEventParams, SignEventResult } from "@/contexts/NostrAuthContext";
+import type {
+  NostrProvider,
+  NostrProviderMethod,
+  SignEventParams,
+  SignEventResult,
+} from "@/contexts/NostrAuthContext";
 
 export class Nip07Provider implements NostrProvider {
-  method: "nip07";
-
   constructor() {
+    this.method = "nip07";
+
     // Validate that NIP-07 is available
     if (typeof window === "undefined" || !window.nostr) {
       throw new Error("NIP-07 extension not available");
     }
   }
+  method: NostrProviderMethod;
 
   async isReady(): Promise<boolean> {
     try {
@@ -43,7 +49,9 @@ export class Nip07Provider implements NostrProvider {
     }
 
     try {
-      return await window.nostr.signEvent(params.event);
+      const event = await window.nostr.signEvent(params.event);
+
+      return { signedEvent: event, provider: this };
     } catch (error) {
       console.error("Failed to sign event with NIP-07:", error);
 
