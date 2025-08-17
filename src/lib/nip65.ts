@@ -29,6 +29,7 @@ const cache = getCache();
 
 export async function fetchNip65Relays(
   pubkey: string,
+  sendOnce: boolean,
   onUpdate: (relays: Nip65Relays | null) => void,
 ) {
   const cachedNip65Event = cache.getNip65Event(pubkey);
@@ -36,6 +37,10 @@ export async function fetchNip65Relays(
   // send it even if it's null
   if (cachedNip65Event) {
     onUpdate(toReadWriteRelays(cachedNip65Event.tags));
+
+    if (sendOnce) {
+      return;
+    }
   }
 
   const nip65Event = await pool.get(PROFILE_RELAYS, {

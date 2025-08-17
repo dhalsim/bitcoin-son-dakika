@@ -1,12 +1,13 @@
+import type { NostrProviderMethod } from "@/contexts/NostrAuthContext";
 import type { BaseEndpointResponse } from "@/types/api";
 import type { EmojiCategories, EmojiUsage } from "@/types/emoji";
 
 import type { EventItem, ProfileItem } from "./nip01";
-import type { Nip07Relays } from "./nip07";
 import type { ZapReceipt } from "./nip57";
+import type { Nip07Relays } from "./providers/Nip07Provider";
 
 // Cache version - increment this when you need to invalidate all cached data
-const CACHE_VERSION = "0.3";
+const CACHE_VERSION = "0.4";
 const CACHE_VERSION_KEY = "bsd-cache-version";
 
 export class LocalStorageCache {
@@ -388,6 +389,20 @@ export class LocalStorageCache {
 
   getPriceFilter(): string[] {
     return this.getCachedValue<string[]>("price-filter");
+  }
+
+  getAuthLoginState(): { method: NostrProviderMethod; loggedIn: boolean; data?: any } | null {
+    return this.getCachedValue("auth-login-state");
+  }
+
+  setAuthLoginState(value: { method: NostrProviderMethod; loggedIn: boolean; data?: any }): void {
+    this.cache.set("auth-login-state", value);
+    this.setToStorage("auth-login-state", value);
+  }
+
+  deleteAuthLoginState() {
+    this.cache.delete("auth-login-state");
+    this.deleteFromStorage("auth-login-state");
   }
 
   has(key: string): boolean {

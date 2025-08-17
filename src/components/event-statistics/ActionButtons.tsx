@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useUserContext, useUserWriteRelays } from "@/contexts/UserContext";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { createNip10Thread, postKind1Reply, ReplyNode } from "@/lib/nip10";
 import { postQuoteRepost, postRepost } from "@/lib/nip18";
@@ -66,6 +67,7 @@ export function ActionButtons({
   const [showZapDialog, setShowZapDialog] = useState(false);
   const [authorReadRelays, setAuthorReadRelays] = useState<string[]>([]);
   const { userProfile } = useUserContext();
+  const { getPublicKey, signEvent } = useNostrAuth();
 
   const writeRelays = useUserWriteRelays();
   const { toast } = useToast();
@@ -237,7 +239,7 @@ export function ActionButtons({
       return;
     }
 
-    fetchNip65Relays(author.pubkey, (relays) => {
+    fetchNip65Relays(author.pubkey, true, (relays) => {
       setAuthorReadRelays(relays?.readRelays || []);
     });
   }, [author]);
@@ -360,6 +362,8 @@ export function ActionButtons({
       emoji,
       emojiUrl,
       Array.from(publishRelays),
+      () => getPublicKey({ reason: "Reaksiyon gönderme" }),
+      (event) => signEvent(event, { reason: "Reaksiyon gönderme" }),
       () => {
         toast({
           title: "Başarılı",
@@ -378,6 +382,8 @@ export function ActionButtons({
       event,
       author,
       Array.from(publishRelays),
+      () => getPublicKey({ reason: "Repost gönderme" }),
+      (event) => signEvent(event, { reason: "Repost gönderme" }),
       () =>
         toast({
           title: "Başarılı",
@@ -417,6 +423,8 @@ export function ActionButtons({
         author,
         replyContent,
         Array.from(publishRelays),
+        () => getPublicKey({ reason: "Yanıt gönderme" }),
+        (event) => signEvent(event, { reason: "Yanıt gönderme" }),
         () => {
           toast({
             title: "Başarılı",
@@ -459,6 +467,8 @@ export function ActionButtons({
       event,
       quoteContent,
       Array.from(publishRelays),
+      () => getPublicKey({ reason: "Alıntı gönderme" }),
+      (event) => signEvent(event, { reason: "Alıntı gönderme" }),
       () => {
         toast({
           title: "Başarılı",

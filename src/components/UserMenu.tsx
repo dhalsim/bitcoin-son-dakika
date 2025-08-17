@@ -11,10 +11,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
 import { useUserProfile } from "@/contexts/UserContext";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
 export function UserMenu() {
   const userProfile = useUserProfile();
+  const { isLoggedIn, showLoginModal, logout } = useNostrAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // If profile is loading, show loading state
   if (userProfile.isLoading) {
@@ -22,37 +25,73 @@ export function UserMenu() {
   }
 
   // If no user is logged in, show login button
-  if (!userProfile.pubkey) {
+  if (!isLoggedIn) {
     return (
       <Button
         variant="outline"
         size="sm"
-        onClick={() => {
-          // This would typically trigger a login flow
-          console.log("Login requested");
+        onClick={async () => {
+          try {
+            setIsLoggingIn(true);
+
+            const result = await showLoginModal("log_in", {
+              reason: "Profil bilgilerinize erişim için giriş yapmalısınız.",
+            });
+
+            if (!result.success) {
+              console.log("User cancelled login");
+            }
+          } catch (error) {
+            console.error("Login error:", error);
+          } finally {
+            setIsLoggingIn(false);
+          }
         }}
+        disabled={isLoggingIn}
         className="hidden sm:flex"
       >
-        <User className="h-4 w-4 mr-2" />
-        Giriş Yap
+        {isLoggingIn ? (
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+        ) : (
+          <User className="h-4 w-4 mr-2" />
+        )}
+        {isLoggingIn ? "Giriş Yapılıyor..." : "Giriş Yap"}
       </Button>
     );
   }
 
-  // If there's an error, show error state
+  // If there's an error, show error state with retry option
   if (userProfile.error) {
     return (
       <Button
         variant="outline"
         size="sm"
-        onClick={() => {
-          // This would typically retry loading the profile
-          console.log("Retry profile loading");
+        onClick={async () => {
+          try {
+            setIsLoggingIn(true);
+
+            const result = await showLoginModal("read_pubkey", {
+              reason: "Profil bilgilerinize erişim için giriş yapmalısınız.",
+            });
+
+            if (!result.success) {
+              console.log("User cancelled login");
+            }
+          } catch (error) {
+            console.error("Login error:", error);
+          } finally {
+            setIsLoggingIn(false);
+          }
         }}
+        disabled={isLoggingIn}
         className="hidden sm:flex"
       >
-        <User className="h-4 w-4 mr-2" />
-        Yeniden Dene
+        {isLoggingIn ? (
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+        ) : (
+          <User className="h-4 w-4 mr-2" />
+        )}
+        {isLoggingIn ? "Giriş Yapılıyor..." : "Yeniden Dene"}
       </Button>
     );
   }
@@ -112,8 +151,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => {
-            // Logout functionality
-            console.log("Logout clicked");
+            logout();
             setIsOpen(false);
           }}
           className="text-red-600 dark:text-red-400"

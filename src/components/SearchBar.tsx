@@ -227,7 +227,7 @@ export function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={handleFocus}
           onKeyDown={handleKeyDown}
-          className="pl-10 pr-4 py-2 w-64 focus:w-80 transition-all duration-300"
+          className="pl-10 pr-4 py-2 w-48 sm:w-56 md:w-64 focus:w-56 sm:focus:w-64 md:focus:w-80 transition-all duration-300"
         />
         {query && (
           <Button

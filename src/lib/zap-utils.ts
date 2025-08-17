@@ -2,7 +2,6 @@ import type { EventTemplate } from "nostr-tools";
 import { type NostrEvent } from "nostr-tools";
 
 import { getCache } from "./cache";
-import { getUserPubkey, signEventByNip07 } from "./nip07";
 import { validateZapReceipt, type LnUrlpResponse, type ZapReceipt } from "./nip57";
 import { pool } from "./utils";
 
@@ -31,6 +30,7 @@ interface CreateZapParams {
   lnurlData: LnUrlpResponse;
   relays: string[];
   comment?: string;
+  signEvent: (event: any) => Promise<any>;
 }
 
 // Complete zap flow
@@ -40,6 +40,7 @@ export async function createZap({
   lnurlData,
   comment,
   relays,
+  signEvent,
 }: CreateZapParams): Promise<string> {
   try {
     const amountInMilliSats = amountInSats * 1000;
@@ -56,7 +57,11 @@ export async function createZap({
       ],
     };
 
-    const signedZapRequestEvent = await signEventByNip07(zapRequestEvent);
+    const signedZapRequestEvent = await signEvent(zapRequestEvent);
+
+    if (!signedZapRequestEvent) {
+      throw new Error("Zap event imzalanamadı");
+    }
 
     // GET request to zap endpoint
     const zapEndpoint = lnurlData.callback;
@@ -100,8 +105,9 @@ export async function listenForZapReceipt(
   lnurlData: LnUrlpResponse,
   relays: string[],
   onReceipt: (zapReceipt: ZapReceipt | null) => void,
+  getPublicKey: () => Promise<string | null>,
 ) {
-  const userPubkey = await getUserPubkey();
+  const userPubkey = await getPublicKey();
 
   if (!userPubkey) {
     onReceipt(null);

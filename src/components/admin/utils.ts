@@ -17,12 +17,17 @@ export const validateNpub = (npub: string): NpubValidationResult => {
   }
 };
 
-export async function createNIP98Auth(method: string, url: string): Promise<string> {
-  if (typeof window === "undefined" || !window.nostr) {
-    throw new Error("Nostr uzantısı gerekli");
-  }
+export async function createNIP98Auth(
+  method: string,
+  url: string,
+  getPublicKey: () => Promise<string | null>,
+  signEvent: (event: any) => Promise<any>,
+): Promise<string> {
+  const pubkey = await getPublicKey();
 
-  const pubkey = await window.nostr.getPublicKey();
+  if (!pubkey) {
+    throw new Error("Giriş yapmanız gerekiyor");
+  }
 
   const authEvent = {
     kind: 27235,
@@ -35,15 +40,19 @@ export async function createNIP98Auth(method: string, url: string): Promise<stri
     pubkey,
   };
 
-  const signedEvent = await window.nostr.signEvent(authEvent as any);
+  const signedEvent = await signEvent(authEvent);
 
   return `Nostr ${btoa(JSON.stringify(signedEvent))}`;
 }
 
-export async function postAdminAction(data: any): Promise<any> {
+export async function postAdminAction(
+  data: any,
+  getPublicKey: () => Promise<string | null>,
+  signEvent: (event: any) => Promise<any>,
+): Promise<any> {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = `${origin}/api/admin-panel`;
-  const auth = await createNIP98Auth("POST", url);
+  const auth = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
   const res = await fetch(url, {
     method: "POST",
@@ -57,9 +66,13 @@ export async function postAdminAction(data: any): Promise<any> {
 export async function publishToX({
   blob,
   title,
+  getPublicKey,
+  signEvent,
 }: {
   blob: Blob;
   title: string;
+  getPublicKey: () => Promise<string | null>;
+  signEvent: (event: any) => Promise<any>;
 }): Promise<Response> {
   const form = new FormData();
   form.append("action", "upload-to-x");
@@ -68,7 +81,7 @@ export async function publishToX({
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const url = `${origin}/api/admin-panel`;
-  const auth = await createNIP98Auth("POST", url);
+  const auth = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
   return fetch(url, {
     method: "POST",

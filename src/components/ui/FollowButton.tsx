@@ -7,8 +7,8 @@ import {
   useUserFollowings,
   useRefreshFollowings,
 } from "@/contexts/UserContext";
-import { getUserPubkey, signEventByNip07 } from "@/lib/nip07";
 import { publishToRelays } from "@/lib/utils";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
 interface FollowButtonProps {
   pubkey: string;
@@ -31,6 +31,7 @@ export function FollowButton({
   const userWriteRelays = useUserWriteRelays();
   const userFollowings = useUserFollowings();
   const refreshFollowings = useRefreshFollowings();
+  const { getPublicKey, signEvent, isLoggedIn, showLoginModal } = useNostrAuth();
 
   // Check if user is following this pubkey
   const isFollowing = userFollowings.pubkeys.includes(pubkey);
@@ -46,11 +47,22 @@ export function FollowButton({
 
     try {
       const toggleFollow = async () => {
-        const userPubkey = await getUserPubkey();
+        // Check if logged in, show login modal if not
+        if (!isLoggedIn) {
+          const loginSuccess = await showLoginModal("sign_event", {
+            reason: "Takip listesi güncellemesi için giriş yapmalısınız.",
+          });
+
+          if (!loginSuccess) {
+            onError?.("Giriş yapmanız gerekiyor.");
+            return;
+          }
+        }
+
+        const userPubkey = await getPublicKey({ reason: "Takip listesi güncellemesi" });
 
         if (!userPubkey) {
-          onError?.("Nostr uyumlu bir tarayıcı/eklenti kullanınız.");
-
+          onError?.("Giriş yapmanız gerekiyor.");
           return;
         }
 
@@ -71,28 +83,30 @@ export function FollowButton({
           created_at: Math.floor(Date.now() / 1000),
         };
 
-        const signedEvent = await signEventByNip07(event);
+        try {
+          const signedEvent = await signEvent(event, { reason: "Takip listesi güncellemesi" });
 
-        if (!signedEvent) {
-          onError?.("Nostr uyumlu bir tarayıcı/eklenti kullanınız.");
+          if (!signedEvent) {
+            throw new Error("İmzalama başarısız");
+          }
+
+          const published = await publishEvent(signedEvent, userWriteRelays);
+
+          if (!published) {
+            onError?.("Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.");
+            setIsLoading(false);
+
+            return;
+          }
+
+          // Refresh followings from context
+          refreshFollowings();
+          onFollowChange?.(!following);
           setIsLoading(false);
-
-          return;
-        }
-
-        const published = await publishEvent(signedEvent, userWriteRelays);
-
-        if (!published) {
-          onError?.("Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.");
+        } catch (error) {
+          onError?.("İmzalama hatası. Lütfen tekrar deneyiniz.");
           setIsLoading(false);
-
-          return;
         }
-
-        // Refresh followings from context
-        refreshFollowings();
-        onFollowChange?.(!following);
-        setIsLoading(false);
       };
 
       toggleFollow();
@@ -143,7 +157,7 @@ export function FollowButton({
   };
 
   // Don't show button if user is not logged in
-  if (typeof window === "undefined" || !window.nostr) {
+  if (!isLoggedIn) {
     return null;
   }
 

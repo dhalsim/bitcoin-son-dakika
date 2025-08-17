@@ -112,7 +112,7 @@ const Header = () => {
 
         {/* Main header */}
         <div className="flex items-center justify-between py-4">
-          <div className="flex items-center space-x-4 sm:space-x-8">
+          <div className="flex items-center space-x-4 sm:space-x-8 mr-2">
             <a href="/" className="flex items-center">
               {/* Light mode logo (black) */}
               {theme === "light" ? (
@@ -137,10 +137,6 @@ const Header = () => {
           <div className="hidden lg:flex items-center space-x-6 relative z-header">
             {/* Desktop Navigation */}
             <nav className="flex items-center space-x-6">
-              <a href="/" className="text-foreground font-medium px-2 py-1 rounded">
-                Ana Sayfa
-              </a>
-
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
                   <a href="/news">Haberler</a>

@@ -16,13 +16,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { EventStatistics } from "@/lib/event-statistics.js";
 import type { ProfileItem } from "@/lib/nip01";
-import { getNip07Relays, getUserPubkey } from "@/lib/nip07";
 import type { LnUrlpResponse, ZapReceipt } from "@/lib/nip57";
 import { getLnurlData } from "@/lib/nip57";
 import { fetchNip65Relays } from "@/lib/nip65";
 import { createZap, DEFAULT_ZAP_RELAYS, listenForZapReceipt } from "@/lib/zap-utils";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
 import { ZapInvoiceDialog } from "./ZapInvoiceDialog";
+import { useUserContext } from "@/contexts/UserContext";
 
 interface ZapDialogProps {
   open: boolean;
@@ -53,42 +54,12 @@ export const ZapDialog = memo(function ZapDialog({
   const [invoiceComment, setInvoiceComment] = useState("");
   const [lnurlData, setLnurlData] = useState<LnUrlpResponse | null>(null);
   const [isLoadingLnurlData, setIsLoadingLnurlData] = useState(false);
-  const [relays, setRelays] = useState<string[]>(DEFAULT_ZAP_RELAYS);
   const [receipt, setReceipt] = useState<ZapReceipt | null>(null);
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [isWaitingForReceipt, setIsWaitingForReceipt] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const loadUserRelays = async () => {
-      if (!lnurlData) {
-        return;
-      }
-
-      const pubkey = await getUserPubkey();
-
-      if (!pubkey) {
-        return;
-      }
-
-      const nip07Relays = (await getNip07Relays()) || {
-        readRelays: [],
-        writeRelays: [],
-      };
-
-      fetchNip65Relays(pubkey, (nip65Relays) => {
-        const relays = new Set([
-          ...(nip65Relays?.readRelays || []),
-          ...(nip07Relays.readRelays || []),
-          ...DEFAULT_ZAP_RELAYS,
-        ]);
-
-        setRelays(Array.from(relays));
-      });
-    };
-
-    loadUserRelays();
-  }, [lnurlData]);
+  const { getPublicKey, signEvent } = useNostrAuth();
+  const { userRelays } = useUserContext();
 
   useEffect(() => {
     setIsLoadingLnurlData(true);
@@ -132,114 +103,130 @@ export const ZapDialog = memo(function ZapDialog({
       setIsLoading(true);
 
       try {
-        // Check if NIP-07 extension is available
-        if (typeof window === "undefined" || !window.nostr) {
-          toast({
-            title: "NIP-07 Gerekli",
-            description: "Zap göndermek için bir NIP-07 cüzdan uzantısı gereklidir.",
-            variant: "destructive",
+        fetchNip65Relays(zappedEvent.pubkey, true, async (nip65Relays) => {
+          const relays = new Set([
+            ...(nip65Relays?.readRelays || []),
+            ...(userRelays.writeRelays || []),
+          ]);
+
+          const deduped = Array.from(relays);
+
+          const finalRelays = deduped.length > 0 ? deduped : DEFAULT_ZAP_RELAYS;
+
+          const invoice = await createZap({
+            zappedEvent,
+            amountInSats,
+            comment: comment.trim() || undefined,
+            lnurlData,
+            relays: finalRelays,
+            signEvent: (event) => signEvent(event, { reason: "Zap oluşturma" }),
           });
 
-          return;
-        }
-
-        const invoice = await createZap({
-          zappedEvent,
-          amountInSats,
-          comment: comment.trim() || undefined,
-          lnurlData,
-          relays,
-        });
-
-        // If WebLN is available, try to pay the invoice programmatically.
-        if (invoice && typeof window.webln !== "undefined" && window.webln.isEnabled) {
-          try {
-            const isEnabled = await window.webln.isEnabled();
-
-            if (!isEnabled) {
-              await window.webln.enable();
-            }
-
-            // Optional: inspect capabilities
+          // If WebLN is available, try to pay the invoice programmatically.
+          if (invoice && typeof window.webln !== "undefined" && window.webln.isEnabled) {
             try {
-              const info = await window.webln.getInfo();
-              console.log("WebLN info", info);
-            } catch (e) {
-              // non-fatal
+              const isEnabled = await window.webln.isEnabled();
+
+              if (!isEnabled) {
+                await window.webln.enable();
+              }
+
+              // Optional: inspect capabilities
+              try {
+                const info = await window.webln.getInfo();
+                console.log("WebLN info", info);
+              } catch (e) {
+                // non-fatal
+              }
+
+              const payResult = await window.webln.sendPayment(invoice);
+              console.log("WebLN payment result", payResult);
+
+              // Show waiting state while listening for zap receipt
+              setIsWaitingForReceipt(true);
+              // Close the main input dialog while waiting
+              onOpenChange(false);
+
+              // Start listening for receipt immediately
+              if (lnurlData) {
+                listenForZapReceipt(
+                  zappedEvent,
+                  invoice,
+                  lnurlData,
+                  finalRelays,
+                  (zapReceipt) => {
+                    if (zapReceipt) {
+                      setReceipt(zapReceipt);
+                      setIsReceiptDialogOpen(true);
+                      setIsWaitingForReceipt(false);
+                      setStatistics({
+                        ...statistics,
+                        zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
+                      });
+                    }
+                  },
+                  () => getPublicKey({ reason: "Zap makbuzu dinleme" }),
+                );
+              }
+
+              return;
+            } catch (weblnError) {
+              console.warn("WebLN payment failed, falling back to manual flow", weblnError);
+              // Continue to show invoice dialog for manual payment
             }
+          }
 
-            const payResult = await window.webln.sendPayment(invoice);
-            console.log("WebLN payment result", payResult);
+          if (!invoice) {
+            toast({
+              title: "Hata",
+              description: "Zap oluşturulamadı. Lütfen tekrar deneyin.",
+              variant: "destructive",
+            });
 
-            // Show waiting state while listening for zap receipt
-            setIsWaitingForReceipt(true);
-            // Close the main input dialog while waiting
-            onOpenChange(false);
+            return;
+          }
 
-            // Start listening for receipt immediately
-            if (lnurlData) {
-              listenForZapReceipt(zappedEvent, invoice, lnurlData, relays, (zapReceipt) => {
+          setInvoice(invoice);
+          setInvoiceAmount(amountInSats);
+          setInvoiceComment(comment.trim() || "");
+
+          // Show invoice dialog for manual payment
+          setShowInvoice(true);
+
+          // Begin listening for zap receipt for manual payment
+          if (lnurlData) {
+            listenForZapReceipt(
+              zappedEvent,
+              invoice,
+              lnurlData,
+              finalRelays,
+              (zapReceipt) => {
                 if (zapReceipt) {
                   setReceipt(zapReceipt);
                   setIsReceiptDialogOpen(true);
-                  setIsWaitingForReceipt(false);
                   setStatistics({
                     ...statistics,
                     zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
                   });
                 }
-              });
-            }
-
-            return;
-          } catch (weblnError) {
-            console.warn("WebLN payment failed, falling back to manual flow", weblnError);
-            // Continue to show invoice dialog for manual payment
+              },
+              () => getPublicKey({ reason: "Zap makbuzu dinleme" }),
+            );
           }
-        }
 
-        if (!invoice) {
+          // Reset form
+          setSelectedAmount(null);
+          setCustomAmount("");
+          setComment("");
+
           toast({
-            title: "Hata",
-            description: "Zap oluşturulamadı. Lütfen tekrar deneyin.",
-            variant: "destructive",
+            title: "Zap Hazır",
+            description: "Fatura oluşturuldu. QR kodu tarayarak ödeme yapabilirsiniz.",
           });
-
-          return;
-        }
-
-        setInvoice(invoice);
-        setInvoiceAmount(amountInSats);
-        setInvoiceComment(comment.trim() || "");
-
-        // Show invoice dialog for manual payment
-        setShowInvoice(true);
-
-        // Begin listening for zap receipt (manual or WebLN)
-        if (lnurlData) {
-          listenForZapReceipt(zappedEvent, invoice, lnurlData, relays, (zapReceipt) => {
-            if (zapReceipt) {
-              setReceipt(zapReceipt);
-              setIsReceiptDialogOpen(true);
-              setStatistics({
-                ...statistics,
-                zaps: new Map(statistics.zaps).set(zapReceipt.event.id, zapReceipt),
-              });
-            }
-          });
-        }
-
-        // Reset form
-        setSelectedAmount(null);
-        setCustomAmount("");
-        setComment("");
-
-        toast({
-          title: "Zap Hazır",
-          description: "Fatura oluşturuldu. QR kodu tarayarak ödeme yapabilirsiniz.",
         });
       } catch (error) {
         console.error("Failed to create zap:", error);
+
         toast({
           title: "Hata",
           description: "Zap oluşturulamadı. Lütfen tekrar deneyin.",

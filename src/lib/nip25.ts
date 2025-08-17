@@ -1,8 +1,7 @@
-import type { EventTemplate } from "nostr-tools";
+import type { EventTemplate, NostrEvent } from "nostr-tools";
 
 import { getCache } from "./cache";
 import type { EventItem, ProfileItem } from "./nip01";
-import { getUserPubkey, signEventByNip07 } from "./nip07";
 import { pool, publishToRelays } from "./utils";
 
 const cache = getCache();
@@ -86,6 +85,8 @@ export async function postReaction(
   content: string,
   emojiUrl: string | null,
   publishRelays: string[],
+  getPublicKey: () => Promise<string | null>,
+  signEvent: (event: Omit<NostrEvent, "id" | "sig" | "pubkey">) => Promise<NostrEvent>,
   onSuccess: () => void,
   onError: (reason: string) => void,
 ) {
@@ -93,7 +94,7 @@ export async function postReaction(
     return onError("Relayler bulunamadı");
   }
 
-  const userPubkey = await getUserPubkey();
+  const userPubkey = await getPublicKey();
 
   if (!userPubkey) {
     return onError("Kullanıcı anahtarı alınamadı");
@@ -134,17 +135,23 @@ export async function postReaction(
     tags,
   };
 
-  const signedReactionEvent = await signEventByNip07(reactionEvent);
+  try {
+    const signedReactionEvent = await signEvent(reactionEvent);
 
-  if (!signedReactionEvent) {
+    if (!signedReactionEvent) {
+      return onError("Reaction imzası alınamadı");
+    }
+
+    const publishResult = await publishToRelays(signedReactionEvent, publishRelays);
+
+    if (publishResult.some((result) => result.success)) {
+      onSuccess();
+    } else {
+      onError("Reaction gönderimi başarısız");
+    }
+  } catch (error) {
+    console.error("Failed to sign reaction event:", error);
+
     return onError("Reaction imzası alınamadı");
-  }
-
-  const publishResult = await publishToRelays(signedReactionEvent, publishRelays);
-
-  if (publishResult.some((result) => result.success)) {
-    onSuccess();
-  } else {
-    onError("Reaction gönderimi başarısız");
   }
 }

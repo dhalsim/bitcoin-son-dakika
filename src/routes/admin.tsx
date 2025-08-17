@@ -15,7 +15,9 @@ import UserManagement from "@/components/admin/UserManagement";
 import { createNIP98Auth } from "@/components/admin/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { UserMenu } from "@/components/UserMenu";
 import { pool } from "@/lib/utils";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import type { ArticleTag, NewsTag } from "../../api-helpers/utils";
 import type { PublishArticlePayload } from "../../api-helpers/admin/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -122,6 +124,8 @@ export default function AdminPanel() {
   const [userInfo, setUserInfo] = useState<UserInfo>({});
   const [error, setError] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<string>("");
+
+  const { getPublicKey, signEvent } = useNostrAuth();
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -297,11 +301,13 @@ export default function AdminPanel() {
 
   const checkUserInfo = useCallback(async () => {
     try {
-      if (typeof window === "undefined" || !window.nostr) {
+      const pubkey = await getPublicKey({ reason: "Admin panel yetki kontrolü" });
+
+      if (!pubkey) {
+        setUserInfo({});
+        setError("Pubkey okunamadı");
         return;
       }
-
-      const pubkey = await window.nostr.getPublicKey();
 
       const roles = [
         adminData?.adminUsers.includes(pubkey) ? "admin" : null,
@@ -309,10 +315,12 @@ export default function AdminPanel() {
       ].filter(Boolean);
 
       setUserInfo({ pubkey, roles });
-    } catch {
-      console.log("Nostr extension not available or user declined");
+      setError(""); // Clear any previous errors
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Pubkey okunamadı");
+      setUserInfo({});
     }
-  }, [adminData]);
+  }, [adminData, getPublicKey]);
 
   useEffect(() => {
     loadAdminData();
@@ -329,7 +337,12 @@ export default function AdminPanel() {
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const url = `${origin}/api/admin-panel`;
-      const authHeader = await createNIP98Auth("POST", url);
+      const authHeader = await createNIP98Auth(
+        "POST",
+        url,
+        () => getPublicKey({ reason: "Admin panel işlemleri" }),
+        (event) => signEvent(event, { reason: "Admin panel işlemleri" }),
+      );
 
       const response = await fetch(url, {
         method: "POST",
@@ -384,8 +397,17 @@ export default function AdminPanel() {
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">Yönetim Paneli</h1>
-          <p className="text-gray-600 dark:text-gray-400">Bitcoin Son Dakika - İçerik Yönetimi</p>
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
+                Yönetim Paneli
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Bitcoin Son Dakika - İçerik Yönetimi
+              </p>
+            </div>
+            <UserMenu />
+          </div>
 
           {publishSuccess && (
             <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
@@ -427,16 +449,14 @@ export default function AdminPanel() {
             </Alert>
           )}
 
-          {userInfo.pubkey ? (
+          {userInfo.pubkey && (
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="font-mono">
-                <Key className="h-3 w-3 mr-1" />
-                {userInfo.pubkey.substring(0, 16)}...
-              </Badge>
               {userIsAdmin && <Badge variant="default">Admin</Badge>}
               {userIsEditor && <Badge variant="secondary">Editör</Badge>}
             </div>
-          ) : (
+          )}
+
+          {!userInfo.pubkey && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>

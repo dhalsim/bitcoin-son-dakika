@@ -3,8 +3,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import { getProfiles, type ProfileItem } from "@/lib/nip01";
 import { getFollowsEvent } from "@/lib/nip02";
-import { getNip07Relays, getUserPubkey } from "@/lib/nip07";
 import { fetchNip65Relays } from "@/lib/nip65";
+import { useNostrAuth } from "./NostrAuthContext";
 
 export const DEFAULT_READ_RELAYS = [
   "wss://relay.nostr.band/",
@@ -62,6 +62,8 @@ interface UserProviderProps {
 }
 
 export function UserProvider({ children }: UserProviderProps) {
+  const { getPublicKey, provider } = useNostrAuth();
+
   const [userRelays, setUserRelays] = useState<UserRelays>({
     readRelays: DEFAULT_READ_RELAYS,
     writeRelays: DEFAULT_WRITE_RELAYS,
@@ -89,14 +91,16 @@ export function UserProvider({ children }: UserProviderProps) {
       setUserProfile((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const pubkey = await getUserPubkey();
+        // getPublicKey will handle login modal internally if needed
+
+        const pubkey = await getPublicKey({ reason: "Profil yükleme" });
 
         if (!pubkey) {
           setUserProfile({
             pubkey: null,
             profile: null,
             isLoading: false,
-            error: null,
+            error: "Kullanıcı profili yüklenemedi - giriş yapılmadı",
           });
 
           return;
@@ -129,8 +133,19 @@ export function UserProvider({ children }: UserProviderProps) {
       }
     };
 
-    loadUserProfile();
-  }, []);
+    // Only run if we have a provider (user is logged in)
+    if (provider) {
+      loadUserProfile();
+    } else {
+      // Set default state when no provider
+      setUserProfile({
+        pubkey: null,
+        profile: null,
+        isLoading: false,
+        error: "Kullanıcı profili yüklenemedi - giriş yapılmadı",
+      });
+    }
+  }, [provider]); // Only depend on provider changes
 
   // Load user relays
   useEffect(() => {
@@ -138,7 +153,9 @@ export function UserProvider({ children }: UserProviderProps) {
       setUserRelays((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const pubkey = await getUserPubkey();
+        // getPublicKey will handle login modal internally if needed
+
+        const pubkey = await getPublicKey({ reason: "Relay yapılandırması" });
 
         if (!pubkey) {
           // If no user pubkey, just use default relays
@@ -146,14 +163,17 @@ export function UserProvider({ children }: UserProviderProps) {
             readRelays: DEFAULT_READ_RELAYS,
             writeRelays: [],
             isLoading: false,
-            error: null,
+            error: "Relay yapılandırması yüklenemedi - giriş yapılmadı",
           });
 
           return;
         }
 
-        fetchNip65Relays(pubkey, async (nip65Relays) => {
-          const nip07Relays = await getNip07Relays();
+        fetchNip65Relays(pubkey, false, async (nip65Relays) => {
+          // Try to get relays from provider first, fallback to nip07 helper
+          const nip07Relays = provider?.hasCapability("getRelays")
+            ? await provider.getRelays()
+            : { readRelays: [], writeRelays: [] };
 
           let readRelays = new Set([
             ...(nip65Relays?.readRelays || []),
@@ -191,8 +211,19 @@ export function UserProvider({ children }: UserProviderProps) {
       }
     };
 
-    loadUserRelays();
-  }, []);
+    // Only run if we have a provider (user is logged in)
+    if (provider) {
+      loadUserRelays();
+    } else {
+      // Set default state when no provider
+      setUserRelays({
+        readRelays: DEFAULT_READ_RELAYS,
+        writeRelays: [],
+        isLoading: false,
+        error: "Relay yapılandırması yüklenemedi - giriş yapılmadı",
+      });
+    }
+  }, [provider]); // Only depend on provider changes
 
   // Load user followings when relays are loaded
   useEffect(() => {
@@ -205,14 +236,16 @@ export function UserProvider({ children }: UserProviderProps) {
       setUserFollowings((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const pubkey = await getUserPubkey();
+        // getPublicKey will handle login modal internally if needed
+
+        const pubkey = await getPublicKey({ reason: "Takip listesi yükleme" });
 
         if (!pubkey) {
           setUserFollowings({
             eventTags: [],
             pubkeys: [],
             isLoading: false,
-            error: null,
+            error: "Takip listesi yüklenemedi - giriş yapılmadı",
           });
 
           return;
@@ -252,8 +285,24 @@ export function UserProvider({ children }: UserProviderProps) {
       }
     };
 
-    loadUserFollowings();
-  }, [userRelays.isLoading, userRelays.error, userRelays.writeRelays]);
+    // Only run if we have a provider and relays are loaded
+    if (
+      provider &&
+      !userRelays.isLoading &&
+      !userRelays.error &&
+      userRelays.writeRelays.length > 0
+    ) {
+      loadUserFollowings();
+    } else if (!provider) {
+      // Set default state when no provider
+      setUserFollowings({
+        eventTags: [],
+        pubkeys: [],
+        isLoading: false,
+        error: "Takip listesi yüklenemedi - giriş yapılmadı",
+      });
+    }
+  }, [provider, userRelays.isLoading, userRelays.error, userRelays.writeRelays]); // Depend on provider and relay state changes
 
   const refreshFollowings = () => {
     // Trigger a refresh by setting loading state

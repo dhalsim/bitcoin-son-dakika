@@ -1,8 +1,7 @@
-import { nip19, type EventTemplate } from "nostr-tools";
+import { nip19, type EventTemplate, type NostrEvent } from "nostr-tools";
 
 import { getCache } from "./cache";
 import type { EventItem, ProfileItem } from "./nip01";
-import { getUserPubkey, signEventByNip07 } from "./nip07";
 import { getEventIdentifier } from "./nip10";
 import { pool, publishToRelays } from "./utils";
 
@@ -74,6 +73,8 @@ export async function postRepost(
   event: EventItem,
   author: ProfileItem,
   publishRelays: string[],
+  getPublicKey: () => Promise<string | null>,
+  signEvent: (event: Omit<NostrEvent, "id" | "sig" | "pubkey">) => Promise<NostrEvent>,
   onSuccess: () => void,
   onError: (reason: string) => void,
 ) {
@@ -81,7 +82,7 @@ export async function postRepost(
     return onError("Relayler bulunamadı");
   }
 
-  const userPubkey = await getUserPubkey();
+  const userPubkey = await getPublicKey();
 
   if (!userPubkey) {
     console.error("User pubkey not found");
@@ -102,18 +103,24 @@ export async function postRepost(
     ],
   };
 
-  const signedRepostEvent = await signEventByNip07(repostEvent);
+  try {
+    const signedRepostEvent = await signEvent(repostEvent);
 
-  if (!signedRepostEvent) {
+    if (!signedRepostEvent) {
+      return onError("Repost imzası alınamadı");
+    }
+
+    const publishResult = await publishToRelays(signedRepostEvent, publishRelays);
+
+    if (publishResult.some((result) => result.success)) {
+      onSuccess();
+    } else {
+      onError("Repost gönderimi başarısız");
+    }
+  } catch (error) {
+    console.error("Failed to sign repost event:", error);
+
     return onError("Repost imzası alınamadı");
-  }
-
-  const publishResult = await publishToRelays(signedRepostEvent, publishRelays);
-
-  if (publishResult.some((result) => result.success)) {
-    onSuccess();
-  } else {
-    onError("Repost gönderimi başarısız");
   }
 }
 
@@ -189,6 +196,8 @@ export async function postQuoteRepost(
   event: EventItem,
   content: string,
   publishRelays: string[],
+  getPublicKey: () => Promise<string | null>,
+  signEvent: (event: Omit<NostrEvent, "id" | "sig" | "pubkey">) => Promise<NostrEvent>,
   onSuccess: () => void,
   onError: (reason: string) => void,
 ) {
@@ -196,7 +205,7 @@ export async function postQuoteRepost(
     return onError("Relayler bulunamadı");
   }
 
-  const userPubkey = await getUserPubkey();
+  const userPubkey = await getPublicKey();
 
   if (!userPubkey) {
     console.error("User pubkey not found");
@@ -224,17 +233,23 @@ export async function postQuoteRepost(
     ],
   };
 
-  const signedQuoteEvent = await signEventByNip07(quoteEvent);
+  try {
+    const signedQuoteEvent = await signEvent(quoteEvent);
 
-  if (!signedQuoteEvent) {
+    if (!signedQuoteEvent) {
+      return onError("Quote repost imzası alınamadı");
+    }
+
+    const publishResult = await publishToRelays(signedQuoteEvent, publishRelays);
+
+    if (publishResult.some((result) => result.success)) {
+      onSuccess();
+    } else {
+      onError("Quote repost gönderimi başarısız");
+    }
+  } catch (error) {
+    console.error("Failed to sign quote repost event:", error);
+
     return onError("Quote repost imzası alınamadı");
-  }
-
-  const publishResult = await publishToRelays(signedQuoteEvent, publishRelays);
-
-  if (publishResult.some((result) => result.success)) {
-    onSuccess();
-  } else {
-    onError("Quote repost gönderimi başarısız");
   }
 }

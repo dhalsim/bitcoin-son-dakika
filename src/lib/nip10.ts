@@ -1,8 +1,7 @@
-import type { EventTemplate } from "nostr-tools";
+import type { EventTemplate, NostrEvent } from "nostr-tools";
 
 import { getCache } from "./cache";
 import type { EventItem, ProfileItem } from "./nip01";
-import { getUserPubkey, signEventByNip07 } from "./nip07";
 import { pool, publishToRelays } from "./utils";
 const cache = getCache();
 
@@ -108,6 +107,8 @@ export async function postKind1Reply(
   author: ProfileItem,
   content: string,
   publishRelays: string[],
+  getPublicKey: () => Promise<string | null>,
+  signEvent: (event: Omit<NostrEvent, "id" | "sig" | "pubkey">) => Promise<NostrEvent>,
   onSuccess: () => void,
   onError: (reason: string) => void,
 ) {
@@ -115,7 +116,7 @@ export async function postKind1Reply(
     return onError("Relayler bulunamadı");
   }
 
-  const userPubkey = await getUserPubkey();
+  const userPubkey = await getPublicKey();
 
   if (!userPubkey) {
     return onError("Kullanıcı anahtarı alınamadı");
@@ -131,18 +132,24 @@ export async function postKind1Reply(
     ],
   };
 
-  const signedReplyEvent = await signEventByNip07(replyEvent);
+  try {
+    const signedReplyEvent = await signEvent(replyEvent);
 
-  if (!signedReplyEvent) {
+    if (!signedReplyEvent) {
+      return onError("Reply imzası alınamadı");
+    }
+
+    const publishResult = await publishToRelays(signedReplyEvent, publishRelays);
+
+    if (publishResult.some((result) => result.success)) {
+      onSuccess();
+    } else {
+      onError("Reply gönderimi başarısız");
+    }
+  } catch (error) {
+    console.error("Failed to sign reply event:", error);
+
     return onError("Reply imzası alınamadı");
-  }
-
-  const publishResult = await publishToRelays(signedReplyEvent, publishRelays);
-
-  if (publishResult.some((result) => result.success)) {
-    onSuccess();
-  } else {
-    onError("Reply gönderimi başarısız");
   }
 }
 

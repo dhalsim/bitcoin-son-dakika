@@ -1,13 +1,12 @@
 import { Outlet, Links, Meta, Scripts, isRouteErrorResponse } from "react-router";
 import type { MetaFunction, LinksFunction } from "react-router";
 
-import turkishWindowNostrJs from "@/i18n/tr.json";
-
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { SSGProvider } from "./contexts/SSGContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { UserProvider } from "./contexts/UserContext";
+import { NostrAuthProvider } from "./contexts/NostrAuthContext";
 import { useScrollToTop } from "./hooks/useScrollToTop";
 
 import "./index.css";
@@ -50,11 +49,6 @@ export const meta: MetaFunction = () => {
 
 export const links: LinksFunction = () => {
   return [
-    {
-      rel: "preload",
-      href: "/window.nostr.js",
-      as: "script",
-    },
     {
       rel: "apple-touch-icon",
       sizes: "180x180",
@@ -110,27 +104,17 @@ export default function Root() {
       <body>
         <TooltipProvider>
           <SSGProvider>
-            <UserProvider>
-              <ThemeProvider>
-                <ScrollToTop />
-                <Toaster />
-                <Outlet />
-              </ThemeProvider>
-            </UserProvider>
+            <NostrAuthProvider>
+              <UserProvider>
+                <ThemeProvider>
+                  <ScrollToTop />
+                  <Toaster />
+                  <Outlet />
+                </ThemeProvider>
+              </UserProvider>
+            </NostrAuthProvider>
           </SSGProvider>
         </TooltipProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.wnjParams = { 
-              texts: ${JSON.stringify(turkishWindowNostrJs)},
-              position: 'bottom',
-              startHidden: true,
-              compactMode: true,
-              nstartMeLanguage: 'tr',
-            };`,
-          }}
-        />
-        <script src="/window.nostr.js"></script>
         {/* SSG Data Injection */}
         {typeof global !== "undefined" && (
           <script
