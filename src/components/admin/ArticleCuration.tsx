@@ -1,4 +1,4 @@
-import { Loader2, RefreshCw, Trash2, Share2 } from "lucide-react";
+import { Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";

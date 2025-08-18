@@ -3,6 +3,7 @@ import { AlertCircle, Loader2, Share2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
 import { createNIP98Auth } from "./utils";
 
@@ -23,6 +24,7 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
   const [scrapesError, setScrapesError] = useState<string>("");
   const [scrapesLastUpdated, setScrapesLastUpdated] = useState<string>("");
   const [scrapesFilter, setScrapesFilter] = useState<"all" | ScraperSource>("all");
+  const { getPublicKey, signEvent } = useNostrAuth();
 
   const fetchScrapes = useCallback(async (refresh: boolean = false) => {
     setScrapesLoading(true);
@@ -32,7 +34,7 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const url = `${origin}/api/admin-panel`;
 
-      const authHeader = await createNIP98Auth("POST", url);
+      const authHeader = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
       const response = await fetch(url, {
         method: "POST",

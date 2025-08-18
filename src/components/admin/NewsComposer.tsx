@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createNIP98Auth } from "./utils";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
 const CATEGORY_OPTIONS = [
   "bitcoin",
@@ -64,6 +65,7 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
   const [enContent, setEnContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { getPublicKey, signEvent } = useNostrAuth();
 
   // Apply prefill whenever token changes
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const url = `${origin}/api/admin-panel`;
 
-      const authHeader = await createNIP98Auth("POST", url);
+      const authHeader = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
       const response = await fetch(url, {
         method: "POST",

@@ -16,6 +16,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { createNIP98Auth } from "./utils";
 import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
 const CATEGORY_OPTIONS = [
   "bitcoin",
@@ -53,6 +54,7 @@ export default function ArticleComposer({ performAction }: ArticleComposerProps)
   const [enSummary, setEnSummary] = useState("");
   const [enContent, setEnContent] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const { getPublicKey, signEvent } = useNostrAuth();
 
   const preview = useMemo(() => content, [content]);
 
@@ -73,7 +75,7 @@ export default function ArticleComposer({ performAction }: ArticleComposerProps)
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const url = `${origin}/api/admin-panel`;
-      const authHeader = await createNIP98Auth("POST", url);
+      const authHeader = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
       const response = await fetch(url, {
         method: "POST",

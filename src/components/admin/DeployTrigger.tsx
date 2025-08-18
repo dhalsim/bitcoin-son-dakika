@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
 import { createNIP98Auth } from "./utils";
 
@@ -11,6 +12,7 @@ export default function DeployTrigger() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string>("");
+  const { getPublicKey, signEvent } = useNostrAuth();
 
   const triggerDeploy = async () => {
     try {
@@ -20,7 +22,7 @@ export default function DeployTrigger() {
 
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const url = `${origin}/api/admin-panel`;
-      const authHeader = await createNIP98Auth("POST", url);
+      const authHeader = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
       const response = await fetch(url, {
         method: "POST",
