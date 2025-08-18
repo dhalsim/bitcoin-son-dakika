@@ -1,5 +1,6 @@
 import type { EventTemplate } from "nostr-tools";
 
+import { getDisplayName } from "@/components/ui/ProfileAvatar";
 import type { GetPublicKey, SignEvent } from "@/contexts/NostrAuthContext";
 
 import { getCache } from "./cache";
@@ -106,9 +107,19 @@ export function getKind1Replies({ event, relays, cachedReplies, onUpdate }: GetK
   };
 }
 
-export type PostKind1ReplyParams = {
+type Root = {
   event: EventItem;
   author: ProfileItem;
+};
+
+type Parent = {
+  event: EventItem;
+  author: ProfileItem;
+};
+
+export type PostKind1ReplyParams = {
+  root: Root;
+  parent: Parent | null;
   content: string;
   publishRelays: string[];
   getPublicKey: GetPublicKey;
@@ -118,8 +129,8 @@ export type PostKind1ReplyParams = {
 };
 
 export async function postKind1Reply({
-  event,
-  author,
+  root,
+  parent,
   content,
   publishRelays,
   getPublicKey,
@@ -137,14 +148,28 @@ export async function postKind1Reply({
     return onError("Kullanıcı anahtarı alınamadı");
   }
 
+  const tags: string[][] = [
+    ["e", root.event.id, root.event.relay, "root", root.event.pubkey],
+    ["p", root.author.pubkey, root.author.relay, getDisplayName(root.author, root.author.pubkey)],
+  ];
+
+  if (parent) {
+    tags.push(
+      ["e", parent.event.id, parent.event.relay, "reply", parent.event.pubkey],
+      [
+        "p",
+        parent.event.pubkey,
+        parent.event.relay,
+        getDisplayName(parent.author, parent.event.pubkey),
+      ],
+    );
+  }
+
   const replyEvent: EventTemplate = {
     kind: 1,
     content,
     created_at: Math.floor(Date.now() / 1000),
-    tags: [
-      ["e", event.id, event.relay], // e tag with event id and relay URL
-      ["p", event.pubkey, author.relay], // p tag with the pubkey of the event being replied to
-    ],
+    tags,
   };
 
   try {

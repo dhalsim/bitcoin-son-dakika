@@ -41,7 +41,6 @@ export function getArticleReplies({
       kinds: [1111],
       "#A": [aTag],
       "#K": [rootEvent.kind.toString()],
-      "#P": [rootEvent.pubkey],
     },
     {
       receivedEvent(relay, id) {

@@ -13,6 +13,7 @@ interface ThreadViewProps {
   profiles: Map<string, ProfileItem>;
   className?: string;
   onReply?: (event: NostrEvent) => void;
+  replyingTo?: NostrEvent | null;
 }
 
 interface ThreadNodeProps {
@@ -20,13 +21,16 @@ interface ThreadNodeProps {
   depth: number;
   profiles: Map<string, ProfileItem>;
   onReply?: (event: NostrEvent) => void;
+  replyingTo?: NostrEvent | null;
 }
 
-function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
+function ThreadNode({ node, depth, onReply, profiles, replyingTo }: ThreadNodeProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children.length > 0;
   const profile = profiles.get(node.event.pubkey);
   const displayName = getDisplayName(profile, node.event.pubkey);
+  // Only highlight the exact node being replied to, not its children
+  const isBeingRepliedTo = replyingTo?.id === node.event.id;
 
   const handleReply = () => {
     if (onReply) {
@@ -35,9 +39,17 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
   };
 
   return (
-    <div className="border-l-3 border-gray-200 dark:border-gray-700">
+    <div
+      className={`border-l-3 ${
+        isBeingRepliedTo
+          ? "border-blue-400 dark:border-blue-500"
+          : "border-gray-200 dark:border-gray-700"
+      }`}
+    >
       <div
-        className="flex items-start space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        className={`flex items-start space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+          isBeingRepliedTo ? "bg-blue-50 dark:bg-blue-900/20" : ""
+        }`}
         style={{ marginLeft: `${depth * 20}px` }}
       >
         {/* Expand/Collapse button */}
@@ -71,6 +83,11 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
             <span className="text-xs text-gray-500">
               {new Date(node.event.created_at * 1000).toLocaleDateString()}
             </span>
+            {isBeingRepliedTo && (
+              <span className="text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full">
+                Yanıtlanıyor
+              </span>
+            )}
           </div>
 
           <div className="text-sm mb-2">
@@ -80,7 +97,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
           {/* Reply button */}
           <button
             onClick={handleReply}
-            className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+            className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors cursor-pointer"
           >
             Yanıtla
           </button>
@@ -97,6 +114,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
               depth={depth + 1}
               onReply={onReply}
               profiles={profiles}
+              replyingTo={replyingTo}
             />
           ))}
         </div>
@@ -105,22 +123,19 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
   );
 }
 
-export function ThreadView({ thread, className = "", onReply, profiles }: ThreadViewProps) {
+export function ThreadView({
+  thread,
+  profiles,
+  className = "",
+  onReply,
+  replyingTo,
+}: ThreadViewProps) {
   if (!thread || thread.length === 0) {
-    return <div className={`text-sm ${className}`}>Henüz yorum yok.</div>;
+    return <div className={`text-center text-gray-500 py-4 ${className}`}>Henüz yanıt yok.</div>;
   }
 
-  const getRepliesCount = (node: ReplyNode): number => {
-    // Count this node as a reply plus all its children
-    return 1 + node.children.reduce((acc, child) => acc + getRepliesCount(child), 0);
-  };
-
-  const repliesCount = thread.reduce((acc, node) => acc + getRepliesCount(node), 0);
-
   return (
-    <div className={`space-y-1 ${className}`}>
-      <h3 className="text-lg font-semibold text-purple-600 mb-4">Yanıtlar ({repliesCount})</h3>
-
+    <div className={className}>
       {thread.map((node) => (
         <ThreadNode
           key={node.event.id}
@@ -128,6 +143,7 @@ export function ThreadView({ thread, className = "", onReply, profiles }: Thread
           depth={0}
           onReply={onReply}
           profiles={profiles}
+          replyingTo={replyingTo}
         />
       ))}
     </div>

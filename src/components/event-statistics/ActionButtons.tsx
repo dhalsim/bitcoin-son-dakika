@@ -37,6 +37,8 @@ import { ThreadViewWrapper } from "./ThreadViewWrapper";
 import type { ActionButtonsProps, ReactionGroup } from "./types";
 import { getMostUsedEmojis, loadDraft, saveDraft, saveEmojiUsage } from "./utils";
 import { postReaction } from "@/lib/nip25";
+import { NostrEvent } from "nostr-tools";
+import { EventItem } from "@/lib/nip01";
 
 export function ActionButtons({
   event,
@@ -50,13 +52,11 @@ export function ActionButtons({
   const [showQuotes, setShowQuotes] = useState(false);
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [showEmojiModal, setShowEmojiModal] = useState(false);
-  const [replyContent, setReplyContent] = useState("");
-  const [showPreview, setShowPreview] = useState(false);
+  const [showQuotePreview, setShowQuotePreview] = useState(false);
+  const [showZapDialog, setShowZapDialog] = useState(false);
   const [thread, setThread] = useState<ReplyNode[]>([]);
   const [loadingThread, setLoadingThread] = useState(false);
   const [quoteContent, setQuoteContent] = useState("");
-  const [showQuotePreview, setShowQuotePreview] = useState(false);
-  const [showZapDialog, setShowZapDialog] = useState(false);
   const { userProfile } = useUserContext();
   const { getPublicKey, signEvent } = useNostrAuth();
 
@@ -70,7 +70,8 @@ export function ActionButtons({
       return;
     }
 
-    setReplyContent(loadDraft(event.id));
+    // The replyContent state is now managed by ThreadViewWrapper
+    // setReplyContent(loadDraft(event.id));
     setQuoteContent(loadDraft(`quote-${event.id}`));
   }, [event?.id]);
 
@@ -80,10 +81,11 @@ export function ActionButtons({
       return;
     }
 
-    if (replyContent !== loadDraft(event.id)) {
-      saveDraft(event.id, replyContent);
-    }
-  }, [event?.id, replyContent]);
+    // The replyContent state is now managed by ThreadViewWrapper
+    // if (replyContent !== loadDraft(event.id)) {
+    //   saveDraft(event.id, replyContent);
+    // }
+  }, [event?.id]);
 
   useEffect(() => {
     if (!event?.id) {
@@ -395,65 +397,16 @@ export function ActionButtons({
 
   const onZapClick = () => setShowZapDialog(true);
 
+  const onThreadReply = (parentEvent: EventItem) => {
+    console.log("onThreadReply", parentEvent);
+  };
+
   const handlePostReply = () => {
-    if (!replyContent.trim()) {
-      return;
-    }
-
-    if (event.kind === 1) {
-      postKind1Reply({
-        event,
-        author,
-        content: replyContent,
-        publishRelays: Array.from(publishRelays),
-        getPublicKey: () => getPublicKey({ options: { reason: "Yanıt gönderme" } }),
-        signEvent: ({ event: replyEvent }) =>
-          signEvent({ event: replyEvent, options: { reason: "Yanıt gönderme" } }),
-        onSuccess: () => {
-          toast({
-            title: "Başarılı",
-            description: "Yanıt başarıyla gönderildi",
-            variant: "success",
-          });
-
-          clear();
-        },
-        onError: (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
-      });
-    } else if (event.kind === 30023) {
-      postNip22Reply({
-        root: { event, author },
-        parent: null,
-        content: replyContent,
-        publishRelays: Array.from(publishRelays),
-        getPublicKey: () => getPublicKey({ options: { reason: "Yanıt gönderme" } }),
-        signEvent: ({ event: replyEvent }) =>
-          signEvent({ event: replyEvent, options: { reason: "Yanıt gönderme" } }),
-        onSuccess: () => {
-          toast({
-            title: "Başarılı",
-            description: "Yanıt başarıyla gönderildi",
-            variant: "success",
-          });
-
-          clear();
-        },
-        onError: (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
-      });
-    }
-
-    const clear = () => {
-      setReplyContent("");
-      saveDraft(event.id, "");
-      setShowReplies(false);
-    };
+    // This function is now handled by ThreadViewWrapper
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handlePostReply();
-    }
+    // This function is now handled by ThreadViewWrapper
   };
 
   const handlePostQuote = () => {
@@ -625,17 +578,10 @@ export function ActionButtons({
             thread={thread}
             loadingThread={loadingThread}
             profiles={profiles}
-            // TODO: onThreadReply
-            onThreadReply={() => {}}
-          />
-
-          <ReplyComposer
-            replyContent={replyContent}
-            showPreview={showPreview}
-            onReplyContentChange={setReplyContent}
-            onShowPreviewToggle={() => setShowPreview((v) => !v)}
-            onPostReply={handlePostReply}
-            onKeyDown={handleKeyDown}
+            onThreadReply={onThreadReply}
+            rootEvent={event}
+            rootAuthor={author}
+            publishRelays={publishRelays}
           />
         </div>
       )}
