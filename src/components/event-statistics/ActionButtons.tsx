@@ -23,21 +23,20 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useUserContext, useUserWriteRelays } from "@/contexts/UserContext";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { createNip10Thread, postKind1Reply, ReplyNode } from "@/lib/nip10";
+import { createNip10Thread, ReplyNode } from "@/lib/nip10";
 import { postQuoteRepost, postRepost } from "@/lib/nip18";
-import { createNip22Thread, postNip22Reply } from "@/lib/nip22";
+import { createNip22Thread } from "@/lib/nip22";
 
 import { EmojiBoard } from "../EmojiBoard";
 import { ZapDialog } from "../ZapDialog";
+import { ShareButton } from "../ui/ShareButton";
 
 import { ExpandedReactions } from "./ExpandedReactions";
 import { QuotesSection } from "./QuotesSection";
-import { ReplyComposer } from "./ReplyComposer";
 import { ThreadViewWrapper } from "./ThreadViewWrapper";
 import type { ActionButtonsProps, ReactionGroup } from "./types";
 import { getMostUsedEmojis, loadDraft, saveDraft, saveEmojiUsage } from "./utils";
 import { postReaction } from "@/lib/nip25";
-import { NostrEvent } from "nostr-tools";
 import { EventItem } from "@/lib/nip01";
 
 export function ActionButtons({
@@ -575,6 +574,9 @@ export function ActionButtons({
           <Zap className={`h-4 w-4 ${hasUserZapped ? "fill-current" : ""}`} />
           <span>{zapAmount}</span>
         </button>
+        <div className="ml-auto">
+          <ShareButton event={event} />
+        </div>
       </div>
 
       {/* Expanded reactions panel */}

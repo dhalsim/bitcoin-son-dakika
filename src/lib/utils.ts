@@ -80,3 +80,46 @@ export function extractEmojiInfo(reaction: EventItem): {
     url: null,
   };
 }
+
+/**
+ * Share content using Web Share API on mobile or copy to clipboard on desktop
+ * @param url - The URL to share
+ * @param title - The title of the content
+ * @param text - The text description
+ * @returns Promise<boolean> - true if shared successfully, false otherwise
+ */
+export async function shareContent(url: string, title: string, text: string): Promise<boolean> {
+  // Check if Web Share API is available AND if it's a mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent,
+  );
+
+  if (navigator.share && isMobile) {
+    try {
+      await navigator.share({
+        title: title,
+        text: text,
+        url: url,
+      });
+
+      return true;
+    } catch (error) {
+      // User cancelled sharing
+      if (error instanceof Error && error.name === "AbortError") {
+        return false;
+      }
+      // Fall back to clipboard copy
+    }
+  }
+
+  // Desktop or fallback: copy to clipboard
+  try {
+    await navigator.clipboard.writeText(url);
+
+    return true;
+  } catch (error) {
+    console.error("Failed to copy to clipboard:", error);
+
+    return false;
+  }
+}

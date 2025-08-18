@@ -68,16 +68,31 @@ const ToastAction = React.forwardRef<
 ));
 ToastAction.displayName = ToastPrimitives.Action.displayName;
 
+const toastCloseVariants = cva(
+  "absolute right-2 top-2 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground hover:bg-accent focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring group-hover:opacity-100",
+  {
+    variants: {
+      variant: {
+        default: "",
+        destructive:
+          "group-[.destructive]:text-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:hover:bg-destructive/10 group-[.destructive]:focus:ring-destructive",
+        success: "bg-green-500 text-white",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  },
+);
+
 const ToastClose = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Close>,
-  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
->(({ className, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close> &
+    VariantProps<typeof toastCloseVariants>
+>(({ className, variant, ...props }, ref) => (
   <ToastPrimitives.Close
     ref={ref}
-    className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground hover:bg-accent focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring group-hover:opacity-100 group-[.destructive]:text-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:hover:bg-destructive/10 group-[.destructive]:focus:ring-destructive",
-      className,
-    )}
+    className={cn(toastCloseVariants({ variant }), className)}
     toast-close=""
     {...props}
   >
