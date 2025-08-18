@@ -111,7 +111,7 @@ export function EventStatistics({ event, author, className = "" }: EventStatisti
     setLoading(true);
     setError(null);
 
-    const cleanup = getEventStatistics(event, updateStatistics);
+    const cleanup = getEventStatistics(event, author, updateStatistics);
 
     return () => {
       if (cleanup) {
@@ -119,9 +119,6 @@ export function EventStatistics({ event, author, className = "" }: EventStatisti
       }
     };
   }, [event, updateStatistics]);
-
-  // Get current user's pubkey
-  // (removed several UI states and handlers in favor of encapsulation in ActionButtons)
 
   if (loading) {
     return <div>Yükleniyor...</div>;

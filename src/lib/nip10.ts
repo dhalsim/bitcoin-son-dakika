@@ -31,13 +31,15 @@ export function getEventIdentifier(event: EventItem) {
   throw new Error("Invalid event kind");
 }
 
+export type GetKind1RepliesParams = {
+  event: EventItem;
+  relays: string[];
+  cachedReplies: Map<string, EventItem>;
+  onUpdate: (replies: Map<string, EventItem>) => void;
+};
+
 // TODO: deletion of replies is not supported yet
-export function getKind1Replies(
-  event: EventItem,
-  relays: string[],
-  cachedReplies: Map<string, EventItem>,
-  onUpdate: (replies: Map<string, EventItem>) => void,
-) {
+export function getKind1Replies({ event, relays, cachedReplies, onUpdate }: GetKind1RepliesParams) {
   const eventId = event.id;
 
   const newReplies = new Map<string, EventItem>();
@@ -104,16 +106,27 @@ export function getKind1Replies(
   };
 }
 
-export async function postKind1Reply(
-  event: EventItem,
-  author: ProfileItem,
-  content: string,
-  publishRelays: string[],
-  getPublicKey: GetPublicKey,
-  signEvent: SignEvent,
-  onSuccess: () => void,
-  onError: (reason: string) => void,
-) {
+export type PostKind1ReplyParams = {
+  event: EventItem;
+  author: ProfileItem;
+  content: string;
+  publishRelays: string[];
+  getPublicKey: GetPublicKey;
+  signEvent: SignEvent;
+  onSuccess: () => void;
+  onError: (reason: string) => void;
+};
+
+export async function postKind1Reply({
+  event,
+  author,
+  content,
+  publishRelays,
+  getPublicKey,
+  signEvent,
+  onSuccess,
+  onError,
+}: PostKind1ReplyParams) {
   if (publishRelays.length === 0) {
     return onError("Relayler bulunamadı");
   }
@@ -138,7 +151,7 @@ export async function postKind1Reply(
     const { signedEvent: signedReplyEvent } = await signEvent({ event: replyEvent });
 
     if (!signedReplyEvent) {
-      return onError("Reply imzası alınamadı");
+      return onError("Yanıt imzası alınamadı");
     }
 
     const publishResult = await publishToRelays(signedReplyEvent, publishRelays);
@@ -146,12 +159,12 @@ export async function postKind1Reply(
     if (publishResult.some((result) => result.success)) {
       onSuccess();
     } else {
-      onError("Reply gönderimi başarısız");
+      onError("Yanıt gönderimi başarısız");
     }
   } catch (error) {
     console.error("Failed to sign reply event:", error);
 
-    return onError("Reply imzası alınamadı");
+    return onError("Yanıt imzası alınamadı");
   }
 }
 

@@ -81,17 +81,29 @@ export function getReactions(
   };
 }
 
-export async function postReaction(
-  event: EventItem,
-  author: ProfileItem,
-  content: string,
-  emojiUrl: string | null,
-  publishRelays: string[],
-  getPublicKey: GetPublicKey,
-  signEvent: SignEvent,
-  onSuccess: () => void,
-  onError: (reason: string) => void,
-) {
+export type PostReactionParams = {
+  event: EventItem;
+  author: ProfileItem;
+  content: string;
+  emojiUrl: string | null;
+  publishRelays: string[];
+  getPublicKey: GetPublicKey;
+  signEvent: SignEvent;
+  onSuccess: () => void;
+  onError: (reason: string) => void;
+};
+
+export async function postReaction({
+  event,
+  author,
+  content,
+  emojiUrl,
+  publishRelays,
+  getPublicKey,
+  signEvent,
+  onSuccess,
+  onError,
+}: PostReactionParams) {
   if (publishRelays.length === 0) {
     return onError("Relayler bulunamadı");
   }

@@ -1,7 +1,8 @@
-import { fetchNostrSets, pool } from "../../api-helpers/utils";
+import { fetchNostrSets, pool, PROFILE_RELAYS } from "../../api-helpers/utils";
 
 import type { EventItem, ProfileItem } from "./nip01";
 import { getProfiles } from "./nip01";
+import { fetchNip65RelaysForProfiles, type Nip65Relays } from "./nip65";
 
 export interface NewsItem {
   id: string;
@@ -111,9 +112,15 @@ export async function fetchSSGData(): Promise<SSGData> {
     ),
   ]);
 
-  const profilePubkeys = new Set([...newsEvents, ...articlesEvents].map((item) => item.pubkey));
+  const profilePubkeys = [
+    ...new Set([...newsEvents, ...articlesEvents].map((item) => item.pubkey)),
+  ];
 
-  const profileEvents = await getProfileEvents(Array.from(profilePubkeys));
+  const nip65Map = await fetchNip65RelaysForProfiles(PROFILE_RELAYS, profilePubkeys);
+  console.log(`Fetched ${nip65Map.size} nip65 relays for profiles...`);
+
+  const profileEvents = await getProfileEvents(profilePubkeys, nip65Map);
+  console.log(`Fetched ${profileEvents.size} profiles...`);
 
   const newsItems: NewsItem[] = newsEvents.map((ne) => {
     const profile = profileEvents.get(ne.pubkey);
@@ -168,10 +175,14 @@ export async function fetchSSGData(): Promise<SSGData> {
   };
 }
 
-export function getProfileEvents(profilePubkeys: string[]): Promise<Map<string, ProfileItem>> {
+export function getProfileEvents(
+  profilePubkeys: string[],
+  nip65Map: Map<string, Nip65Relays>,
+): Promise<Map<string, ProfileItem>> {
   return new Promise((resolve) => {
     const subCloser = getProfiles({
       authors: profilePubkeys,
+      nip65Map,
       onUpdate: (profiles) => {
         resolve(profiles);
 

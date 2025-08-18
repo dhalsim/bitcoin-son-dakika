@@ -1,13 +1,17 @@
+import { z } from "zod";
+
 import { PROFILE_RELAYS } from "../../api-helpers/utils";
 
 import { getCache } from "./cache";
 import { pool } from "./utils";
 
-export type Nip65Relays = {
-  readRelays: string[];
-  writeRelays: string[];
-  flatRelays: { relay: string; read: boolean; write: boolean }[];
-};
+export const Nip65RelaysSchema = z.object({
+  readRelays: z.array(z.string()),
+  writeRelays: z.array(z.string()),
+  flatRelays: z.array(z.object({ relay: z.string(), read: z.boolean(), write: z.boolean() })),
+});
+
+export type Nip65Relays = z.infer<typeof Nip65RelaysSchema>;
 
 function toReadWriteRelays(tags: string[][]): Nip65Relays {
   const relayTags = tags.filter((tag) => tag[0] === "r");
@@ -67,4 +71,31 @@ export async function fetchNip65Relays(
   const result = toReadWriteRelays(nip65Event.tags);
 
   onUpdate(result);
+}
+
+// this function is for server side rendering
+export async function fetchNip65RelaysForProfiles(
+  relays: string[],
+  profilePubkeys: string[],
+): Promise<Map<string, Nip65Relays>> {
+  // fetch the latest event for each profile
+  const events = await pool.querySync(relays, {
+    kinds: [10002],
+    authors: profilePubkeys,
+    limit: 1,
+  });
+
+  const nip65Map = new Map<string, Nip65Relays>();
+
+  events.forEach((event) => {
+    const pubkey = profilePubkeys.find((p) => p === event.pubkey);
+
+    if (!pubkey) {
+      return;
+    }
+
+    nip65Map.set(pubkey, toReadWriteRelays(event.tags));
+  });
+
+  return nip65Map;
 }

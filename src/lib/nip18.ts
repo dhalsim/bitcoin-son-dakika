@@ -71,15 +71,25 @@ export function getReposts(
   };
 }
 
-export async function postRepost(
-  event: EventItem,
-  author: ProfileItem,
-  publishRelays: string[],
-  getPublicKey: GetPublicKey,
-  signEvent: SignEvent,
-  onSuccess: () => void,
-  onError: (reason: string) => void,
-) {
+export type PostRepostParams = {
+  event: EventItem;
+  author: ProfileItem;
+  publishRelays: string[];
+  getPublicKey: GetPublicKey;
+  signEvent: SignEvent;
+  onSuccess: () => void;
+  onError: (reason: string) => void;
+};
+
+export async function postRepost({
+  event,
+  author,
+  publishRelays,
+  getPublicKey,
+  signEvent,
+  onSuccess,
+  onError,
+}: PostRepostParams) {
   if (publishRelays.length === 0) {
     return onError("Relayler bulunamadı");
   }
@@ -194,15 +204,25 @@ export function getKind1Quotes(
   };
 }
 
-export async function postQuoteRepost(
-  event: EventItem,
-  content: string,
-  publishRelays: string[],
-  getPublicKey: GetPublicKey,
-  signEvent: SignEvent,
-  onSuccess: () => void,
-  onError: (reason: string) => void,
-) {
+export type PostQuoteRepostParams = {
+  event: EventItem;
+  content: string;
+  publishRelays: string[];
+  getPublicKey: GetPublicKey;
+  signEvent: SignEvent;
+  onSuccess: () => void;
+  onError: (reason: string) => void;
+};
+
+export async function postQuoteRepost({
+  event,
+  content,
+  publishRelays,
+  getPublicKey,
+  signEvent,
+  onSuccess,
+  onError,
+}: PostQuoteRepostParams) {
   if (publishRelays.length === 0) {
     return onError("Relayler bulunamadı");
   }

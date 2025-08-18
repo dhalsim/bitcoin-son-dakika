@@ -82,7 +82,7 @@ function ThreadNode({ node, depth, onReply, profiles }: ThreadNodeProps) {
             onClick={handleReply}
             className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
           >
-            Reply
+            Yanıtla
           </button>
         </div>
       </div>

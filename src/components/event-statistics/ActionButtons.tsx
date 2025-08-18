@@ -25,7 +25,7 @@ import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { createNip10Thread, postKind1Reply, ReplyNode } from "@/lib/nip10";
 import { postQuoteRepost, postRepost } from "@/lib/nip18";
-import { createNip22Thread } from "@/lib/nip22";
+import { createNip22Thread, postNip22Reply } from "@/lib/nip22";
 
 import { EmojiBoard } from "../EmojiBoard";
 import { ZapDialog } from "../ZapDialog";
@@ -35,14 +35,7 @@ import { QuotesSection } from "./QuotesSection";
 import { ReplyComposer } from "./ReplyComposer";
 import { ThreadViewWrapper } from "./ThreadViewWrapper";
 import type { ActionButtonsProps, ReactionGroup } from "./types";
-import {
-  getMostUsedEmojis,
-  isContainerAtBottom,
-  loadDraft,
-  saveDraft,
-  saveEmojiUsage,
-} from "./utils";
-import { fetchNip65Relays } from "@/lib/nip65";
+import { getMostUsedEmojis, loadDraft, saveDraft, saveEmojiUsage } from "./utils";
 import { postReaction } from "@/lib/nip25";
 
 export function ActionButtons({
@@ -59,17 +52,16 @@ export function ActionButtons({
   const [showEmojiModal, setShowEmojiModal] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [showPreview, setShowPreview] = useState(false);
-  const [showOnlyCompose, setShowOnlyCompose] = useState(false);
   const [thread, setThread] = useState<ReplyNode[]>([]);
   const [loadingThread, setLoadingThread] = useState(false);
   const [quoteContent, setQuoteContent] = useState("");
   const [showQuotePreview, setShowQuotePreview] = useState(false);
   const [showZapDialog, setShowZapDialog] = useState(false);
-  const [authorReadRelays, setAuthorReadRelays] = useState<string[]>([]);
   const { userProfile } = useUserContext();
   const { getPublicKey, signEvent } = useNostrAuth();
 
   const writeRelays = useUserWriteRelays();
+  const publishRelays = [...new Set([...(author.nip65?.readRelays ?? []), ...writeRelays])];
   const { toast } = useToast();
 
   // Load drafts for reply and quote
@@ -114,7 +106,8 @@ export function ActionButtons({
     reactionGroups,
   } = useMemo(() => {
     const zaps = Array.from(statistics?.zaps?.values() || []);
-    const _repliesCount = statistics?.replies?.size || 0;
+    const _repliesCount =
+      event.kind === 30023 ? statistics?.nip22Replies?.size || 0 : statistics?.replies?.size || 0;
     const _quotesCount = statistics?.quotes?.size || 0;
     const _repostsCount = statistics?.reposts?.size || 0;
     const _likesCount = statistics?.likes?.size || 0;
@@ -234,16 +227,6 @@ export function ActionButtons({
     };
   }, [statistics]);
 
-  useEffect(() => {
-    if (!author) {
-      return;
-    }
-
-    fetchNip65Relays(author.pubkey, true, (relays) => {
-      setAuthorReadRelays(relays?.readRelays || []);
-    });
-  }, [author]);
-
   const { hasUserReposted, hasUserZapped, hasUserReacted, hasUserReplied, hasUserQuoted } =
     useMemo(() => {
       if (!userProfile?.pubkey) {
@@ -288,10 +271,12 @@ export function ActionButtons({
         )
       );
 
+      const replies = event.kind === 30023 ? statistics?.nip22Replies : statistics?.replies;
+
       const userReplied = !!(
         userProfile?.pubkey &&
-        statistics?.replies &&
-        Array.from(statistics.replies.values()).some((reply) => reply.pubkey === userProfile.pubkey)
+        replies &&
+        Array.from(replies.values()).some((reply) => reply.pubkey === userProfile.pubkey)
       );
 
       const userQuoted = !!(
@@ -335,7 +320,7 @@ export function ActionButtons({
       setShowQuotes(false);
     }
 
-    if (next && statistics?.replies) {
+    if (next && (statistics?.replies || statistics?.nip22Replies)) {
       setLoadingThread(true);
 
       let threadData: ReplyNode[] = [];
@@ -343,7 +328,7 @@ export function ActionButtons({
       if (event.kind === 1) {
         threadData = createNip10Thread(statistics.replies, event.id);
       } else if (event.kind === 30023) {
-        threadData = createNip22Thread(statistics.replies, event.id);
+        threadData = createNip22Thread(statistics.nip22Replies, event);
       }
 
       setThread(threadData);
@@ -354,44 +339,44 @@ export function ActionButtons({
   const onReactionClick = (emoji: string, emojiUrl: string | null) => {
     saveEmojiUsage(emoji, emojiUrl);
 
-    const publishRelays = new Set([...authorReadRelays, ...writeRelays]);
-
-    postReaction(
+    postReaction({
       event,
       author,
-      emoji,
+      content: emoji,
       emojiUrl,
-      Array.from(publishRelays),
-      () => getPublicKey({ reason: "Reaksiyon gönderme" }),
-      (event) => signEvent(event, { reason: "Reaksiyon gönderme" }),
-      () => {
+      publishRelays: Array.from(publishRelays),
+      getPublicKey: () => getPublicKey({ options: { reason: "Reaksiyon gönderme" } }),
+      signEvent: ({ event: reactionEvent }) =>
+        signEvent({ event: reactionEvent, options: { reason: "Reaksiyon gönderme" } }),
+      onSuccess: () => {
         toast({
           title: "Başarılı",
           description: "Reaksiyon başarıyla gönderildi",
           variant: "success",
         });
       },
-      (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
-    );
+      onError: (error) => {
+        toast({ title: "Hata", description: error, variant: "destructive" });
+      },
+    });
   };
 
   const onRepostClick = () => {
-    const publishRelays = new Set([...authorReadRelays, ...writeRelays]);
-
-    postRepost(
+    postRepost({
       event,
       author,
-      Array.from(publishRelays),
-      () => getPublicKey({ reason: "Repost gönderme" }),
-      (event) => signEvent(event, { reason: "Repost gönderme" }),
-      () =>
+      publishRelays: Array.from(publishRelays),
+      getPublicKey: () => getPublicKey({ options: { reason: "Repost gönderme" } }),
+      signEvent: ({ event: repostEvent }) =>
+        signEvent({ event: repostEvent, options: { reason: "Repost gönderme" } }),
+      onSuccess: () =>
         toast({
           title: "Başarılı",
           description: "Repost başarıyla gönderildi",
           variant: "success",
         }),
-      (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
-    );
+      onError: (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
+    });
   };
 
   const onQuoteClick = () => {
@@ -415,17 +400,16 @@ export function ActionButtons({
       return;
     }
 
-    const publishRelays = new Set([...authorReadRelays, ...writeRelays]);
-
     if (event.kind === 1) {
-      postKind1Reply(
+      postKind1Reply({
         event,
         author,
-        replyContent,
-        Array.from(publishRelays),
-        () => getPublicKey({ reason: "Yanıt gönderme" }),
-        (event) => signEvent(event, { reason: "Yanıt gönderme" }),
-        () => {
+        content: replyContent,
+        publishRelays: Array.from(publishRelays),
+        getPublicKey: () => getPublicKey({ options: { reason: "Yanıt gönderme" } }),
+        signEvent: ({ event: replyEvent }) =>
+          signEvent({ event: replyEvent, options: { reason: "Yanıt gönderme" } }),
+        onSuccess: () => {
           toast({
             title: "Başarılı",
             description: "Yanıt başarıyla gönderildi",
@@ -434,12 +418,30 @@ export function ActionButtons({
 
           clear();
         },
-        (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
-      );
+        onError: (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
+      });
     } else if (event.kind === 30023) {
-      // TODO: postKind23Reply
-      console.log("TODO: postKind23Reply");
+      postNip22Reply({
+        root: { event, author },
+        parent: null,
+        content: replyContent,
+        publishRelays: Array.from(publishRelays),
+        getPublicKey: () => getPublicKey({ options: { reason: "Yanıt gönderme" } }),
+        signEvent: ({ event: replyEvent }) =>
+          signEvent({ event: replyEvent, options: { reason: "Yanıt gönderme" } }),
+        onSuccess: () => {
+          toast({
+            title: "Başarılı",
+            description: "Yanıt başarıyla gönderildi",
+            variant: "success",
+          });
+
+          clear();
+        },
+        onError: (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
+      });
     }
+
     const clear = () => {
       setReplyContent("");
       saveDraft(event.id, "");
@@ -461,15 +463,14 @@ export function ActionButtons({
 
     setShowQuotes(false);
 
-    const publishRelays = new Set([...authorReadRelays, ...writeRelays]);
-
-    postQuoteRepost(
+    postQuoteRepost({
       event,
-      quoteContent,
-      Array.from(publishRelays),
-      () => getPublicKey({ reason: "Alıntı gönderme" }),
-      (event) => signEvent(event, { reason: "Alıntı gönderme" }),
-      () => {
+      content: quoteContent,
+      publishRelays: Array.from(publishRelays),
+      getPublicKey: () => getPublicKey({ options: { reason: "Alıntı gönderme" } }),
+      signEvent: ({ event: quoteEvent }) =>
+        signEvent({ event: quoteEvent, options: { reason: "Alıntı gönderme" } }),
+      onSuccess: () => {
         toast({
           title: "Başarılı",
           description: "Alıntı başarıyla gönderildi",
@@ -478,8 +479,8 @@ export function ActionButtons({
         setQuoteContent("");
         saveDraft(`quote-${event.id}`, "");
       },
-      (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
-    );
+      onError: (error) => toast({ title: "Hata", description: error, variant: "destructive" }),
+    });
   };
 
   const handleQuoteKeyDown = (e: React.KeyboardEvent) => {
@@ -623,19 +624,16 @@ export function ActionButtons({
           <ThreadViewWrapper
             thread={thread}
             loadingThread={loadingThread}
-            showOnlyCompose={showOnlyCompose}
             profiles={profiles}
+            // TODO: onThreadReply
             onThreadReply={() => {}}
           />
 
           <ReplyComposer
             replyContent={replyContent}
             showPreview={showPreview}
-            showOnlyCompose={showOnlyCompose}
             onReplyContentChange={setReplyContent}
             onShowPreviewToggle={() => setShowPreview((v) => !v)}
-            onFocus={() => setShowOnlyCompose(true)}
-            onBlur={() => setShowOnlyCompose(false)}
             onPostReply={handlePostReply}
             onKeyDown={handleKeyDown}
           />

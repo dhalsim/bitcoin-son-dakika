@@ -106,15 +106,24 @@ export async function createZap({
 
 const cache = getCache();
 
+type ListenForZapReceiptParams = {
+  event: NostrEvent;
+  invoice: string;
+  lnurlData: LnUrlpResponse;
+  relays: string[];
+  onReceipt: (zapReceipt: ZapReceipt | null) => void;
+  provider: NostrProvider;
+};
+
 // Listen for zap receipt for a specific invoice
-export async function listenForZapReceipt(
-  event: NostrEvent,
-  invoice: string,
-  lnurlData: LnUrlpResponse,
-  relays: string[],
-  onReceipt: (zapReceipt: ZapReceipt | null) => void,
-  provider: NostrProvider,
-) {
+export async function listenForZapReceipt({
+  event,
+  invoice,
+  lnurlData,
+  relays,
+  onReceipt,
+  provider,
+}: ListenForZapReceiptParams) {
   const userPubkey = await provider.getPublicKey({ options: { reason: "Zap makbuzu dinleme" } });
 
   if (!userPubkey) {

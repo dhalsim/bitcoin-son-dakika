@@ -1,5 +1,5 @@
 import { getCache } from "./cache";
-import type { EventItem } from "./nip01";
+import type { EventItem, ProfileItem } from "./nip01";
 import { getKind1Replies } from "./nip10";
 import { getReposts, getKind1Quotes } from "./nip18";
 import { getArticleReplies } from "./nip22";
@@ -123,6 +123,7 @@ const cache = getCache();
 // Updated reaction processing
 export function getEventStatistics(
   event: EventItem,
+  author: ProfileItem,
   onUpdate: (statistics: EventStatistics) => void,
 ) {
   // Initialize statistics object with the cache directly
@@ -161,9 +162,13 @@ export function getEventStatistics(
 
   const cleanupFunctions: (() => void)[] = [];
 
+  // we expect people send events to relays that the author is reading.
+  const authorReadRelays = author.nip65?.readRelays ?? [];
+  const relays = [...new Set([...STATISTICS_RELAYS, ...authorReadRelays])];
+
   // Get reposts (NIP-18) - only for kind 1 events
   if (event.kind === 1) {
-    const repostCleanup = getReposts(event, STATISTICS_RELAYS, stats.reposts, (reposts) => {
+    const repostCleanup = getReposts(event, relays, stats.reposts, (reposts) => {
       // merge the reposts with the cache
       stats.reposts = new Map([...stats.reposts, ...reposts]);
 
@@ -176,7 +181,7 @@ export function getEventStatistics(
   }
 
   // Get reactions (NIP-25) - works for all event types
-  const reactionCleanup = getReactions(event, STATISTICS_RELAYS, stats.reactions, (reactions) => {
+  const reactionCleanup = getReactions(event, relays, stats.reactions, (reactions) => {
     // merge the reactions with the cache
     stats.reactions = new Map([...stats.reactions, ...reactions]);
 
@@ -194,7 +199,7 @@ export function getEventStatistics(
   }
 
   // Get zaps (NIP-57) - works for all event types
-  const zapsCleanup = getZaps(event, STATISTICS_RELAYS, stats.zaps, (zaps) => {
+  const zapsCleanup = getZaps(event, relays, stats.zaps, (zaps) => {
     // merge the zaps with the cache
     stats.zaps = new Map([...stats.zaps, ...zaps]);
 
@@ -205,7 +210,7 @@ export function getEventStatistics(
     cleanupFunctions.push(zapsCleanup);
   }
 
-  const quotesCleanup = getKind1Quotes(event, STATISTICS_RELAYS, stats.quotes, (quotes) => {
+  const quotesCleanup = getKind1Quotes(event, relays, stats.quotes, (quotes) => {
     // merge the quotes with the cache
     stats.quotes = new Map([...stats.quotes, ...quotes]);
 
@@ -219,18 +224,22 @@ export function getEventStatistics(
   // Handle different event types
   if (event.kind === 1) {
     // Kind 1 (notes) - use NIP-10
-    const repliesCleanup = getKind1Replies(event, STATISTICS_RELAYS, stats.replies, (replies) => {
-      // merge the replies with the cache
-      stats.replies = new Map([...stats.replies, ...replies]);
+    const repliesCleanup = getKind1Replies({
+      event,
+      relays,
+      cachedReplies: stats.replies,
+      onUpdate: (replies) => {
+        // merge the replies with the cache
+        stats.replies = new Map([...stats.replies, ...replies]);
 
-      onUpdate({ ...stats });
+        onUpdate({ ...stats });
+      },
     });
 
     if (repliesCleanup) {
       cleanupFunctions.push(repliesCleanup);
     }
   } else if (event.kind === 30023) {
-    // Kind 30023 (articles) - use NIP-22
     const d = event.tags.find((tag) => tag[0] === "d")?.[1];
 
     if (!d) {
@@ -239,24 +248,18 @@ export function getEventStatistics(
 
     const aTag = `30023:${event.pubkey}:${d}`;
 
-    const cachedReplies = cache.getNip22ArticleReplies(aTag);
-
-    if (cachedReplies) {
-      stats.replies = new Map([...stats.replies, ...cachedReplies]);
-    }
-
-    const repliesCleanup = getArticleReplies(
-      event,
+    const repliesCleanup = getArticleReplies({
+      rootEvent: event,
       aTag,
-      STATISTICS_RELAYS,
-      stats.nip22Replies,
-      (replies) => {
+      relays,
+      cachedReplies: stats.nip22Replies,
+      onUpdate: (replies) => {
         // merge the replies with the cache
         stats.nip22Replies = new Map([...stats.nip22Replies, ...replies]);
 
         onUpdate({ ...stats });
       },
-    );
+    });
 
     if (repliesCleanup) {
       cleanupFunctions.push(repliesCleanup);

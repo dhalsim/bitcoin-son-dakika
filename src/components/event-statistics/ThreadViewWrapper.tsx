@@ -8,7 +8,6 @@ import { isContainerAtBottom } from "./utils";
 export function ThreadViewWrapper({
   thread,
   loadingThread,
-  showOnlyCompose,
   profiles,
   onThreadReply,
 }: ThreadViewProps) {
@@ -24,7 +23,7 @@ export function ThreadViewWrapper({
   }, [threadContainerRef]);
 
   return (
-    <div className={`space-y-2 relative ${showOnlyCompose ? "hidden" : ""}`}>
+    <div className="space-y-2 relative">
       <div
         ref={threadContainerRef}
         data-thread-container

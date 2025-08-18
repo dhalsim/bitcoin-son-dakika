@@ -49,11 +49,8 @@ export interface ExpandedReactionsProps {
 export interface ReplyComposerProps {
   replyContent: string;
   showPreview: boolean;
-  showOnlyCompose: boolean;
   onReplyContentChange: (content: string) => void;
   onShowPreviewToggle: () => void;
-  onFocus: () => void;
-  onBlur: () => void;
   onPostReply: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
 }
@@ -77,7 +74,6 @@ export interface RichTextPreviewProps {
 export interface ThreadViewProps {
   thread: ReplyNode[];
   loadingThread: boolean;
-  showOnlyCompose: boolean;
   profiles: Map<string, ProfileItem>;
   onThreadReply: (replyEvent: EventItem) => void;
 }

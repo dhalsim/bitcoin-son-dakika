@@ -10,11 +10,8 @@ import type { ReplyComposerProps } from "./types";
 export function ReplyComposer({
   replyContent,
   showPreview,
-  showOnlyCompose,
   onReplyContentChange,
   onShowPreviewToggle,
-  onFocus,
-  onBlur,
   onPostReply,
   onKeyDown,
 }: ReplyComposerProps) {
@@ -26,8 +23,6 @@ export function ReplyComposer({
         ref={textareaRef}
         value={replyContent}
         onChange={(e) => onReplyContentChange(e.target.value)}
-        onFocus={onFocus}
-        onBlur={onBlur}
         onKeyDown={onKeyDown}
         placeholder="Yorumunuzu yazın..."
         className="min-h-[80px] resize-none"

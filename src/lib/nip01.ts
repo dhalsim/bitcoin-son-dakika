@@ -4,9 +4,15 @@ import { z } from "zod";
 import { PROFILE_RELAYS } from "../../api-helpers/utils";
 
 import { getCache } from "./cache";
+import type { Nip65Relays } from "./nip65";
+import { Nip65RelaysSchema } from "./nip65";
 import { logCloseReasons, pool } from "./utils";
 
-export const parseProfileEvent = (event: NostrEvent, relay: string): ProfileItem | null => {
+export const parseProfileEvent = (
+  event: NostrEvent,
+  relay: string,
+  nip65: Nip65Relays | null,
+): ProfileItem | null => {
   try {
     const content = JSON.parse(event.content);
 
@@ -15,6 +21,7 @@ export const parseProfileEvent = (event: NostrEvent, relay: string): ProfileItem
       created_at: event.created_at,
       pubkey: event.pubkey,
       relay,
+      nip65,
     });
 
     return profile;
@@ -29,6 +36,7 @@ export const ProfileItemSchema = z.object({
   pubkey: z.string(),
   relay: z.string(),
   created_at: z.number(),
+  nip65: Nip65RelaysSchema.nullable(),
   name: z.string().optional().nullable(),
   display_name: z.string().optional().nullable(),
   picture: z.string().optional().nullable(),
@@ -48,13 +56,14 @@ export type EventItem = NostrEvent & {
 export type GetProfilesParams = {
   authors: string[];
   relayHints?: string[];
+  nip65Map?: Map<string, Nip65Relays>;
   onUpdate: (profiles: Map<string, ProfileItem> | null) => void;
 };
 
 const cache = getCache();
 
 // New optimized function that works with ProfileItem cache
-export function getProfiles({ authors, relayHints, onUpdate }: GetProfilesParams) {
+export function getProfiles({ authors, relayHints, nip65Map, onUpdate }: GetProfilesParams) {
   const cachedProfiles = getCache().getProfileItems();
   const receivedEventRelayMap = new Map<string, string>();
   const newProfiles = new Map<string, ProfileItem>();
@@ -97,8 +106,10 @@ export function getProfiles({ authors, relayHints, onUpdate }: GetProfilesParams
           return;
         }
 
+        const nip65 = nip65Map?.get(event.pubkey) ?? null;
+
         // Parse the new event
-        const newProfile = parseProfileEvent(event, relay);
+        const newProfile = parseProfileEvent(event, relay, nip65);
 
         // Skip invalid profiles
         if (!newProfile) {

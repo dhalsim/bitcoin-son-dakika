@@ -93,7 +93,7 @@ export function UserProvider({ children }: UserProviderProps) {
       try {
         // getPublicKey will handle login modal internally if needed
 
-        const pubkey = await getPublicKey({ reason: "Profil yükleme" });
+        const pubkey = await getPublicKey({ options: { reason: "Profil yükleme" } });
 
         if (!pubkey) {
           setUserProfile({
@@ -155,7 +155,7 @@ export function UserProvider({ children }: UserProviderProps) {
       try {
         // getPublicKey will handle login modal internally if needed
 
-        const pubkey = await getPublicKey({ reason: "Relay yapılandırması" });
+        const pubkey = await getPublicKey({ options: { reason: "Relay yapılandırması" } });
 
         if (!pubkey) {
           // If no user pubkey, just use default relays
@@ -238,7 +238,7 @@ export function UserProvider({ children }: UserProviderProps) {
       try {
         // getPublicKey will handle login modal internally if needed
 
-        const pubkey = await getPublicKey({ reason: "Takip listesi yükleme" });
+        const pubkey = await getPublicKey({ options: { reason: "Takip listesi yükleme" } });
 
         if (!pubkey) {
           setUserFollowings({
