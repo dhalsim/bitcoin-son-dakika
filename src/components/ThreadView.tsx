@@ -1,4 +1,3 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
 import { useState } from "react";
 
@@ -25,7 +24,6 @@ interface ThreadNodeProps {
 }
 
 function ThreadNode({ node, depth, onReply, profiles, replyingTo }: ThreadNodeProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children.length > 0;
   const profile = profiles.get(node.event.pubkey);
   const displayName = getDisplayName(profile, node.event.pubkey);
@@ -52,17 +50,6 @@ function ThreadNode({ node, depth, onReply, profiles, replyingTo }: ThreadNodePr
         }`}
         style={{ marginLeft: `${depth * 20}px` }}
       >
-        {/* Expand/Collapse button */}
-        {hasChildren && (
-          <button onClick={() => setIsExpanded(!isExpanded)} className="flex-shrink-0 mt-1">
-            {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-gray-500" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-gray-500" />
-            )}
-          </button>
-        )}
-
         {/* User avatar */}
         <ProfileAvatar
           pubkey={node.event.pubkey}
@@ -104,8 +91,8 @@ function ThreadNode({ node, depth, onReply, profiles, replyingTo }: ThreadNodePr
         </div>
       </div>
 
-      {/* Children */}
-      {isExpanded && hasChildren && (
+      {/* Children - always show them */}
+      {hasChildren && (
         <div>
           {node.children.map((child) => (
             <ThreadNode

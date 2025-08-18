@@ -142,13 +142,27 @@ export function createNip22Thread(
   // Recursive function to build the tree
   function buildNode(eventId: string, depth: number): ReplyNode | null {
     const event = events.get(eventId);
-
     if (!event) {
       return null;
     }
 
     const children = childrenMap.get(eventId) || [];
-    const childNodes = children
+
+    // Sort children by date (newest first), then by child count (fewer children first)
+    const sortedChildren = children.sort((a, b) => {
+      // First sort by date (newest first)
+      if (a.created_at !== b.created_at) {
+        return b.created_at - a.created_at;
+      }
+
+      // Then sort by child count (fewer children first) to maintain visual hierarchy
+      const aChildren = childrenMap.get(a.id)?.length || 0;
+      const bChildren = childrenMap.get(b.id)?.length || 0;
+
+      return aChildren - bChildren;
+    });
+
+    const childNodes = sortedChildren
       .map((child) => buildNode(child.id, depth + 1))
       .filter((node): node is ReplyNode => node !== null);
 
@@ -167,8 +181,22 @@ export function createNip22Thread(
     return parentEventId === rootEventId;
   });
 
+  // Sort root-level replies by date (newest first), then by child count (fewer children first)
+  const sortedRootReplies = rootLevelReplies.sort((a, b) => {
+    // First sort by date (newest first)
+    if (a.created_at !== b.created_at) {
+      return b.created_at - a.created_at;
+    }
+
+    // Then sort by child count (fewer children first) to maintain visual hierarchy
+    const aChildren = childrenMap.get(a.id)?.length || 0;
+    const bChildren = childrenMap.get(b.id)?.length || 0;
+
+    return aChildren - bChildren;
+  });
+
   // Build the thread structure
-  const thread = rootLevelReplies
+  const thread = sortedRootReplies
     .map((event) => buildNode(event.id, 0))
     .filter((node): node is ReplyNode => node !== null);
 

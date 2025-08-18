@@ -97,6 +97,24 @@ export function ActionButtons({
     }
   }, [event?.id, quoteContent]);
 
+  // Auto-refresh thread when statistics change and replies are being shown
+  useEffect(() => {
+    if (showReplies && (statistics?.replies || statistics?.nip22Replies)) {
+      setLoadingThread(true);
+
+      let threadData: ReplyNode[] = [];
+
+      if (event.kind === 1) {
+        threadData = createNip10Thread(statistics.replies, event.id);
+      } else if (event.kind === 30023) {
+        threadData = createNip22Thread(statistics.nip22Replies, event);
+      }
+
+      setThread(threadData);
+      setLoadingThread(false);
+    }
+  }, [showReplies, statistics?.replies, statistics?.nip22Replies, event.kind, event.id]);
+
   // Derived counts and groups
   const {
     repliesCount,
