@@ -71,7 +71,7 @@ export function ShareButton({ event }: ShareButtonProps) {
         size="sm"
         onClick={handleShare}
         disabled={isSharing}
-        className="hover:text-green-600"
+        className="hover:text-green-600 p-2 gap-0 !transition-none"
         title="Paylaş"
       >
         <Share className="h-4 w-4" />
@@ -79,7 +79,7 @@ export function ShareButton({ event }: ShareButtonProps) {
 
       {/* Tooltip */}
       {showCopiedTooltip && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded shadow-lg whitespace-nowrap z-50">
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded shadow-lg whitespace-nowrap z-tooltip">
           Kopyalandı
           {/* Arrow pointing down */}
           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>

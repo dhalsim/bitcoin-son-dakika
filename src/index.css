@@ -152,14 +152,16 @@
     --z-base: 0;
     --z-content: 10;
     --z-sidebar: 20;
+    --z-sheet: 50;
+    --z-sheet-overlay: 50;
     --z-header: 200;
     --z-pricebar: 110;
     --z-pricebar-ctrl: 300;
     --z-indicator: 1;
     --z-dropdown: 300;
     --z-popover: 500;
-    --z-tooltip: 600;
     --z-dialog: 900;
+    --z-tooltip: 920;
     --z-search: 950;
     --z-toast: 9999;
   }
@@ -303,6 +305,12 @@
   .z-sidebar {
     z-index: var(--z-sidebar);
   }
+  .z-sheet {
+    z-index: var(--z-sheet);
+  }
+  .z-sheet-overlay {
+    z-index: var(--z-sheet-overlay);
+  }
   .z-header {
     z-index: var(--z-header);
   }
@@ -321,11 +329,11 @@
   .z-popover {
     z-index: var(--z-popover);
   }
-  .z-tooltip {
-    z-index: var(--z-tooltip);
-  }
   .z-dialog {
     z-index: var(--z-dialog);
+  }
+  .z-tooltip {
+    z-index: var(--z-tooltip);
   }
   .z-search {
     z-index: var(--z-search);

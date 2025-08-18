@@ -30,6 +30,7 @@ import { createNip22Thread } from "@/lib/nip22";
 import { EmojiBoard } from "../EmojiBoard";
 import { ZapDialog } from "../ZapDialog";
 import { ShareButton } from "../ui/ShareButton";
+import { MoreOptionsButton } from "../ui/MoreOptionsButton";
 
 import { ExpandedReactions } from "./ExpandedReactions";
 import { QuotesSection } from "./QuotesSection";
@@ -574,7 +575,8 @@ export function ActionButtons({
           <Zap className={`h-4 w-4 ${hasUserZapped ? "fill-current" : ""}`} />
           <span>{zapAmount}</span>
         </button>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center">
+          <MoreOptionsButton event={event} />
           <ShareButton event={event} />
         </div>
       </div>
