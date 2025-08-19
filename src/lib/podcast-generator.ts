@@ -4,12 +4,14 @@ import type { PodcastItem } from "./ssg-data";
 
 const generatePodcastItemXml = (podcast: PodcastItem) => {
   const pubDate = new Date(podcast.publishedAt * 1000).toUTCString();
-  const episodeNumber = podcast.episodeNumber || 1;
-  const duration = podcast.duration || "";
   const imageUrl = podcast.image || "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png";
+  const transcriptUrl = podcast.transcriptUrl;
+  const chaptersUrl = podcast.chaptersUrl;
+  const episodeNumber = podcast.episodeNumber;
+  const duration = podcast.duration;
 
   // Determine audio type based on URL extension
-  const audioType = podcast.audioUrl?.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg";
+  const audioType = podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg";
 
   // Create tags string for description
   const tagsString = podcast.tags.length > 0 ? `Tags: ${podcast.tags.join(", ")}` : "";
@@ -40,6 +42,8 @@ const generatePodcastItemXml = (podcast: PodcastItem) => {
       <podcast:season>1</podcast:season>
       <podcast:medium>podcast</podcast:medium>
       <podcast:duration>${duration}</podcast:duration>
+      ${transcriptUrl ? `<podcast:transcript url="${transcriptUrl}" type="text/vtt" language="tr" rel="captions"/>` : ""}
+      ${chaptersUrl ? `<podcast:chapters url="${chaptersUrl}" type="application/json+chapters"/>` : ""}
     </item>`;
 };
 

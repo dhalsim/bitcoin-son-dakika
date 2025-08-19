@@ -140,7 +140,7 @@ export default function ArticleComposer({ performAction }: ArticleComposerProps)
             <div>
               <Label className="text-base font-medium">English Content (Markdown)</Label>
               <Textarea
-                placeholder="Paste original content here..."
+                placeholder="Orijinal içeriği buraya yazın..."
                 value={enContent}
                 onChange={(e) => setEnContent(e.target.value)}
                 className="min-h-[240px]"

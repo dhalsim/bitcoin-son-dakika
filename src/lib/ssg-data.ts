@@ -42,12 +42,14 @@ export interface PodcastItem {
   event: EventItem;
   author: ProfileItem;
   publishedAt: number;
-  summary?: string;
-  identifier?: string;
+  summary: string;
+  identifier: string;
+  audioUrl: string;
+  duration: string;
+  episodeNumber: number;
   image?: string;
-  audioUrl?: string;
-  duration?: string;
-  episodeNumber?: number;
+  transcriptUrl?: string;
+  chaptersUrl?: string;
 }
 
 export interface SSGData {
@@ -105,6 +107,8 @@ function processPodcastEvent(event: EventItem, author: ProfileItem): PodcastItem
   const audioUrlTag = event.tags.find((tag) => tag[0] === "audio");
   const durationTag = event.tags.find((tag) => tag[0] === "duration");
   const episodeNumberTag = event.tags.find((tag) => tag[0] === "episode");
+  const transcriptUrlTag = event.tags.find((tag) => tag[0] === "transcript");
+  const chaptersUrlTag = event.tags.find((tag) => tag[0] === "chapters");
 
   return {
     type: "podcast",
@@ -121,6 +125,8 @@ function processPodcastEvent(event: EventItem, author: ProfileItem): PodcastItem
     audioUrl: audioUrlTag?.[1],
     duration: durationTag?.[1],
     episodeNumber: episodeNumberTag?.[1] ? parseInt(episodeNumberTag[1]) : undefined,
+    transcriptUrl: transcriptUrlTag?.[1],
+    chaptersUrl: chaptersUrlTag?.[1],
   };
 }
 

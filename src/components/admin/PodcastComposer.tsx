@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { AlertCircle, Loader2, Mic, Plus, X } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, Mic, Plus, X } from "lucide-react";
+import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
 
 interface PodcastComposerProps {
   performAction: (data: any) => Promise<void>;
@@ -21,8 +23,12 @@ export default function PodcastComposer({ performAction }: PodcastComposerProps)
   const [audioUrl, setAudioUrl] = useState("");
   const [duration, setDuration] = useState("");
   const [episodeNumber, setEpisodeNumber] = useState("");
+  const [transcriptUrl, setTranscriptUrl] = useState("");
+  const [chaptersUrl, setChaptersUrl] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
+
+  const preview = useMemo(() => content, [content]);
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -48,7 +54,9 @@ export default function PodcastComposer({ performAction }: PodcastComposerProps)
         image,
         audioUrl,
         duration,
-        episodeNumber: episodeNumber ? parseInt(episodeNumber) : undefined,
+        episodeNumber,
+        transcriptUrl,
+        chaptersUrl,
         tags,
       });
 
@@ -60,6 +68,8 @@ export default function PodcastComposer({ performAction }: PodcastComposerProps)
       setAudioUrl("");
       setDuration("");
       setEpisodeNumber("");
+      setTranscriptUrl("");
+      setChaptersUrl("");
       setTags([]);
     } finally {
       setLoading(false);
@@ -121,16 +131,30 @@ export default function PodcastComposer({ performAction }: PodcastComposerProps)
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="content">İçerik *</Label>
+              <Label htmlFor="content">İçerik (Markdown) *</Label>
               <Textarea
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Podcast bölümünün detaylı açıklaması"
+                placeholder="Podcast bölümünün detaylı açıklaması (Markdown formatında)"
                 rows={6}
                 required
               />
+              <p className="text-sm text-gray-500 mt-1">
+                Markdown formatı desteklenir. Başlık için #, kalın için **metin**, italik için
+                *metin* kullanın.
+              </p>
             </div>
+
+            {/* Markdown preview */}
+            {content && (
+              <div className="space-y-2">
+                <Label className="text-base font-medium">Önizleme</Label>
+                <div className="border rounded-md p-3 bg-gray-50 dark:bg-gray-900">
+                  <ArticleMarkdownRenderer content={preview || "Önizleme yok"} />
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -165,6 +189,30 @@ export default function PodcastComposer({ performAction }: PodcastComposerProps)
                 onChange={(e) => setDuration(e.target.value)}
                 placeholder="1:23:45"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="transcriptUrl">Transcript URL</Label>
+                <Input
+                  id="transcriptUrl"
+                  value={transcriptUrl}
+                  onChange={(e) => setTranscriptUrl(e.target.value)}
+                  placeholder="https://example.com/transcript.vtt"
+                  type="url"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="chaptersUrl">Chapters URL</Label>
+                <Input
+                  id="chaptersUrl"
+                  value={chaptersUrl}
+                  onChange={(e) => setChaptersUrl(e.target.value)}
+                  placeholder="https://example.com/chapters.json"
+                  type="url"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
