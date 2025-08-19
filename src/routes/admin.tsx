@@ -10,6 +10,8 @@ import DeployTrigger from "@/components/admin/DeployTrigger";
 import NewsComposer from "@/components/admin/NewsComposer";
 import NewsCuration from "@/components/admin/NewsCuration";
 import ArticleComposer from "@/components/admin/ArticleComposer";
+import PodcastComposer from "@/components/admin/PodcastComposer";
+import PodcastCuration from "@/components/admin/PodcastCuration";
 import NewsSources from "@/components/admin/NewsSources";
 import UserManagement from "@/components/admin/UserManagement";
 import { createNIP98Auth } from "@/components/admin/utils";
@@ -18,8 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { UserMenu } from "@/components/UserMenu";
 import { pool } from "@/lib/utils";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
-import type { ArticleTag, NewsTag } from "../../api-helpers/utils";
-import type { PublishArticlePayload } from "../../api-helpers/admin/types";
+import type { ArticleTag, NewsTag, PodcastTag } from "../../api-helpers/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ADMIN_RELAYS, type PublishEventResponse } from "../../api-helpers/utils";
@@ -88,6 +89,33 @@ type PublishNewsPayload = {
   tags: string[];
 };
 
+type PublishArticlePayload = {
+  action: "publish-article";
+  title: string;
+  content: string;
+  summary?: string;
+  image?: string;
+  tags: string[];
+};
+
+type PublishPodcastPayload = {
+  action: "publish-podcast";
+  title: string;
+  content: string;
+  summary?: string;
+  image?: string;
+  audioUrl: string;
+  duration?: string;
+  episodeNumber?: number;
+  tags: string[];
+};
+
+type RemovePodcastPayload = {
+  action: "remove-podcast";
+  aTag: string;
+  relay: string;
+};
+
 type Payload =
   | AddNewsPayload
   | RemoveNewsPayload
@@ -98,7 +126,9 @@ type Payload =
   | RemoveEditorPayload
   | AddEditorPayload
   | PublishNewsPayload
-  | PublishArticlePayload;
+  | PublishArticlePayload
+  | PublishPodcastPayload
+  | RemovePodcastPayload;
 
 const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
@@ -111,6 +141,8 @@ interface AdminData {
   newsLastTimeUpdated: number;
   articles: ArticleTag[];
   articlesLastTimeUpdated: number;
+  podcasts: PodcastTag[];
+  podcastsLastTimeUpdated: number;
 }
 
 interface UserInfo {
@@ -187,6 +219,12 @@ export default function AdminPanel() {
             "#d": ["articles"],
             limit: 1,
           },
+          {
+            authors: [MASTER_ADMIN_PUBKEY],
+            kinds: [30004],
+            "#d": ["podcasts"],
+            limit: 1,
+          },
         ],
         {
           onevent(evt) {
@@ -243,6 +281,15 @@ export default function AdminPanel() {
               return;
             }
 
+            const podcastsEvent = events.get("podcasts");
+
+            if (!podcastsEvent) {
+              setError("Podcastleri yüklerken hata oluştu, logları kontrol ediniz");
+              setLoading(false);
+
+              return;
+            }
+
             const adminUsers = adminUsersEvent.tags
               .filter((tag) => tag[0] === "p")
               .map((tag) => tag[1])
@@ -277,6 +324,16 @@ export default function AdminPanel() {
 
             const articlesLastTimeUpdated = articlesEvent.created_at * 1000;
 
+            const podcasts = podcastsEvent.tags
+              .filter((tag) => tag[0] === "a")
+              .map((tag) => ({
+                aTag: tag[1],
+                relay: tag[2],
+              }))
+              .filter((item) => item.aTag);
+
+            const podcastsLastTimeUpdated = podcastsEvent.created_at * 1000;
+
             setAdminData({
               adminUsers,
               adminsLastTimeUpdated,
@@ -286,6 +343,8 @@ export default function AdminPanel() {
               newsLastTimeUpdated,
               articles,
               articlesLastTimeUpdated,
+              podcasts,
+              podcastsLastTimeUpdated,
             });
 
             setLoading(false);
@@ -362,7 +421,11 @@ export default function AdminPanel() {
         setPublishSuccess(result);
 
         // Show reminder toast after publish actions
-        if (data.action === "publish-news" || data.action === "publish-article") {
+        if (
+          data.action === "publish-news" ||
+          data.action === "publish-article" ||
+          data.action === "publish-podcast"
+        ) {
           toast({
             title: "Yayın başarılı",
             description: "İşiniz bittiyse deploy etmeyi unutmayın.",
@@ -493,11 +556,15 @@ export default function AdminPanel() {
             <TabsTrigger value="stats">İstatistikler</TabsTrigger>
             {userIsEditor && <TabsTrigger value="compose">Haber Yayınla</TabsTrigger>}
             {userIsEditor && <TabsTrigger value="compose-article">Makale Yayınla</TabsTrigger>}
+            {userIsEditor && <TabsTrigger value="compose-podcast">Podcast Yayınla</TabsTrigger>}
             {(userIsEditor || userIsAdmin) && (
               <TabsTrigger value="news">Haber Kürasyonu</TabsTrigger>
             )}
             {(userIsEditor || userIsAdmin) && (
               <TabsTrigger value="articles">Makale Kürasyonu</TabsTrigger>
+            )}
+            {(userIsEditor || userIsAdmin) && (
+              <TabsTrigger value="podcasts">Podcast Kürasyonu</TabsTrigger>
             )}
             {userIsEditor && <TabsTrigger value="sources">Haber Kaynakları</TabsTrigger>}
             {userIsAdmin && <TabsTrigger value="users">Kullanıcılar</TabsTrigger>}
@@ -524,11 +591,19 @@ export default function AdminPanel() {
                   return;
                 }
 
+                if (tab === "compose-article" && !userIsEditor) {
+                  return;
+                }
+
+                if (tab === "compose-podcast" && !userIsEditor) {
+                  return;
+                }
+
                 if (tab === "sources" && !userIsEditor) {
                   return;
                 }
 
-                if (tab === "compose-article" && !userIsEditor) {
+                if (tab === "podcasts" && !(userIsEditor || userIsAdmin)) {
                   return;
                 }
 
@@ -553,6 +628,12 @@ export default function AdminPanel() {
             </TabsContent>
           )}
 
+          {userIsEditor && (
+            <TabsContent value="compose-podcast">
+              <PodcastComposer performAction={performAction} />
+            </TabsContent>
+          )}
+
           {(userIsEditor || userIsAdmin) && (
             <TabsContent value="news">
               <NewsCuration
@@ -572,6 +653,17 @@ export default function AdminPanel() {
                 performAction={performAction}
                 reload={loadAdminData}
                 userNpub={userInfo.pubkey ? nip19.npubEncode(userInfo.pubkey) : undefined}
+              />
+            </TabsContent>
+          )}
+
+          {(userIsEditor || userIsAdmin) && (
+            <TabsContent value="podcasts">
+              <PodcastCuration
+                podcasts={adminData?.podcasts || []}
+                lastUpdated={adminData?.podcastsLastTimeUpdated || 0}
+                performAction={performAction}
+                reload={loadAdminData}
               />
             </TabsContent>
           )}

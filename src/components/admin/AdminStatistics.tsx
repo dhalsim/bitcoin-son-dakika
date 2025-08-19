@@ -1,4 +1,4 @@
-import { AlertCircle, RefreshCw, Shield, Users } from "lucide-react";
+import { AlertCircle, RefreshCw, Shield, Users, Mic } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -7,6 +7,7 @@ type AdminData = {
   editorUsers: string[];
   news: { eTag: string; relay: string }[];
   articles: { aTag: string; relay: string }[];
+  podcasts: { aTag: string; relay: string }[];
 };
 
 type AdminStatisticsProps = {
@@ -18,15 +19,17 @@ export type AdminTab =
   | "stats"
   | "news"
   | "articles"
+  | "podcasts"
   | "users"
   | "compose"
   | "compose-article"
+  | "compose-podcast"
   | "deploy"
   | "sources";
 
 export default function AdminStatistics({ adminData, onOpenTab }: AdminStatisticsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
       <Card
         role="button"
         tabIndex={0}
@@ -110,6 +113,28 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
             <div>
               <p className="text-2xl font-bold">{adminData?.articles.length || 0}</p>
               <p className="text-gray-600 dark:text-gray-400">Makaleler</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpenTab?.("podcasts")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            onOpenTab?.("podcasts");
+          }
+        }}
+        className="cursor-pointer hover:ring-1 hover:ring-border"
+      >
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <Mic className="h-8 w-8 text-red-500" />
+            <div>
+              <p className="text-2xl font-bold">{adminData?.podcasts.length || 0}</p>
+              <p className="text-gray-600 dark:text-gray-400">Podcastler</p>
             </div>
           </div>
         </CardContent>

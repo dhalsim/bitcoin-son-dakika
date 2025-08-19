@@ -4,11 +4,12 @@ import { ErrorResponse, SuccessResponse, fetchNostrSets } from "../api-helpers/u
 // Vercel Edge Function handler for GET requests
 export async function GET(_request: Request) {
   try {
-    const { adminUsers, editorUsers, articleTags, newsTags } = await fetchNostrSets([
+    const { adminUsers, editorUsers, articleTags, newsTags, podcastTags } = await fetchNostrSets([
       "admin-users",
       "editor-users",
       "articles",
       "news",
+      "podcasts",
     ]);
 
     return SuccessResponse({
@@ -16,6 +17,7 @@ export async function GET(_request: Request) {
       editorUsers,
       articles: articleTags,
       news: newsTags,
+      podcasts: podcastTags,
     });
   } catch (error) {
     return ErrorResponse(error);

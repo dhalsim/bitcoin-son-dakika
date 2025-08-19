@@ -64,8 +64,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return { articleItem };
 }
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  const articleItem = data?.articleItem;
+export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
+  const articleItem = loaderData?.articleItem;
 
   if (!articleItem) {
     return [

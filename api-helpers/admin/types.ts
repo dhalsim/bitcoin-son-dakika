@@ -55,6 +55,30 @@ export type PublishArticlePayload = {
   tags: string[];
 };
 
+export type PublishPodcastPayload = {
+  action: "publish-podcast";
+  title: string;
+  content: string;
+  summary?: string;
+  image?: string;
+  audioUrl: string;
+  duration?: string;
+  episodeNumber?: number;
+  tags: string[];
+};
+
+export type AddPodcastResolvedPayload = {
+  aTag: string;
+  relayTag: string;
+  action: "add-podcast";
+};
+
+export type RemovePodcastPayload = {
+  action: "remove-podcast";
+  aTag: string;
+  relay: string;
+};
+
 export type UploadToXPayload = {
   action: "upload-to-x";
   formData: FormData;

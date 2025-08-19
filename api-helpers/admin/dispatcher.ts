@@ -3,6 +3,7 @@ import { authenticateNIP98, ErrorResponse, fetchNostrSets } from "../utils.js";
 import { handleAddArticle, handleRemoveArticle, handlePublishArticle } from "./articles.js";
 import { handleTriggerDeploy } from "./deploy.js";
 import { handleAddNews, handlePublishNews, handleRemoveNews } from "./news.js";
+import { handlePublishPodcast, handleRemovePodcast } from "./podcasts.js";
 import { handleGetScrapes, handleRefreshScrapes } from "./scrapes.js";
 import { handleTranslateNews } from "./translate.js";
 import { handleUploadToX } from "./twitter.js";
@@ -10,11 +11,12 @@ import { handleAddAdmin, handleAddEditor, handleRemoveAdmin, handleRemoveEditor 
 
 export async function handleAdminPost(request: Request): Promise<Response> {
   try {
-    const { adminUsers, editorUsers, articleTags, newsTags } = await fetchNostrSets([
+    const { adminUsers, editorUsers, articleTags, newsTags, podcastTags } = await fetchNostrSets([
       "admin-users",
       "editor-users",
       "articles",
       "news",
+      "podcasts",
     ]);
 
     const authResult = await authenticateNIP98(
@@ -100,6 +102,10 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         return handlePublishNews(masterAdminPrivateKey, newsTags, authResult, requestBody);
       case "publish-article":
         return handlePublishArticle(masterAdminPrivateKey, articleTags, authResult, requestBody);
+      case "publish-podcast":
+        return handlePublishPodcast(masterAdminPrivateKey, podcastTags, authResult, requestBody);
+      case "remove-podcast":
+        return handleRemovePodcast(masterAdminPrivateKey, podcastTags, authResult, requestBody);
       case "translate-news":
         return handleTranslateNews(authResult, requestBody);
       default:

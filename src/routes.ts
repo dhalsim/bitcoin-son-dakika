@@ -9,6 +9,9 @@ export default [
   route("news/:slug", "routes/news-detail.tsx"),
   route("article/:slug", "routes/article-detail.tsx"),
   route("articles", "routes/articles.tsx"),
+  route("podcasts", "routes/podcasts.tsx"),
+  // TODO: add podcast detail page
+  // route("podcast/:slug", "routes/podcast-detail.tsx"),
   route("son-dakika", "routes/latest.tsx"), // both news and articles
   route("tag/:slug", "routes/tags.tsx"),
   route("profile/:slug", "routes/profile.tsx"),

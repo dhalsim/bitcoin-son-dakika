@@ -1,9 +1,11 @@
+import { createTitleSlug } from "api-helpers/utils";
+
 import { WEBSITE_URL, WEBSITE_NAME, WEBSITE_DESCRIPTION, LOGO_URL } from "./constants";
-import type { SSGData } from "./ssg-data";
+import type { ArticleItem, NewsItem, SSGData } from "./ssg-data";
 
 export function generateRSSFeed(ssgData: SSGData): string {
   // Combine and sort news and articles by publish date
-  const allContent = [...ssgData.news, ...ssgData.articles].sort(
+  const allContent: (NewsItem | ArticleItem)[] = [...ssgData.news, ...ssgData.articles].sort(
     (a, b) => b.publishedAt - a.publishedAt,
   );
 
@@ -27,12 +29,15 @@ export function generateRSSFeed(ssgData: SSGData): string {
         const isArticle = "identifier" in item;
         const prefix = isArticle ? "Makale: " : "Haber - ";
         const title = `${prefix}${item.title}`;
+        const slug = createTitleSlug(item.title);
+        const urlPostfix = isArticle ? `article/${slug}` : `news/${slug}`;
+        const url = `${WEBSITE_URL}/${urlPostfix}`;
 
         return `
     <item>
       <title><![CDATA[${title}]]></title>
-      <link>${WEBSITE_URL}/news/${item.id}</link>
-      <guid>${WEBSITE_URL}/news/${item.id}</guid>
+      <link>${url}</link>
+      <guid>${url}</guid>
       <pubDate>${new Date(item.publishedAt * 1000).toUTCString()}</pubDate>
       <description><![CDATA[${item.summary || item.content.substring(0, 300) + "..."}]]></description>
       <author>${item.author.display_name || item.author.pubkey}</author>

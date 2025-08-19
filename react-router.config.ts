@@ -1,4 +1,4 @@
-import { writeFile, mkdir } from "fs/promises";
+import { mkdir, writeFile } from "fs/promises";
 import { join } from "path";
 
 import type { Config } from "@react-router/dev/config";
@@ -6,18 +6,9 @@ import { vercelPreset } from "@vercel/react-router/vite";
 
 import { createTitleSlug } from "./api-helpers/utils";
 import { generateFeeds } from "./src/lib/feed-generator";
-import {
-  fetchSSGData,
-  type SSGData,
-  getUniqueProfiles,
-  createProfileSlug,
-  getUniqueTags,
-} from "./src/lib/ssg-data";
-
-// Type declaration for global SSG data
-declare global {
-  var __SSG_DATA__: SSGData;
-}
+import { generatePodcastRssXml } from "./src/lib/podcast-generator";
+import { fetchSSGData } from "./src/lib/ssg-data";
+import { getUniqueProfiles, getUniqueTags, createProfileSlug } from "./src/lib/ssg-data";
 
 export default {
   // Use src directory instead of app
@@ -52,11 +43,14 @@ export default {
     }
 
     console.log(
-      `Prerendering with ${ssgData.news.length} news items and ${ssgData.articles.length} articles`,
+      `Prerendering with ${ssgData.news.length} news items, ${ssgData.articles.length} articles, and ${ssgData.podcasts.length} podcasts`,
     );
 
     // Generate RSS and Atom feeds
     const { rssFeed, atomFeed } = generateFeeds(ssgData);
+
+    // Generate Podcast RSS feed
+    const podcastRssFeed = generatePodcastRssXml(ssgData.podcasts);
 
     // Write feed files to build directory
     const buildDir = join(process.cwd(), "build", "client");
@@ -69,8 +63,9 @@ export default {
       // Write files
       await writeFile(join(feedDir, "rss.xml"), rssFeed);
       await writeFile(join(feedDir, "atom.xml"), atomFeed);
+      await writeFile(join(feedDir, "podcast-rss.xml"), podcastRssFeed);
 
-      console.log("✅ RSS and Atom feeds generated successfully");
+      console.log("✅ RSS, Atom, and Podcast RSS feeds generated successfully");
     } catch (error) {
       console.error("❌ Error generating feeds:", error);
     }
@@ -102,16 +97,24 @@ export default {
 
     console.log(`Generated ${newsRoutes.length} news routes`);
 
+    const podcastRoutes = ssgData.podcasts
+      .filter((p): p is typeof p & { title: string } => !!p.title && !!p.summary)
+      .map((p) => `/podcast/${createTitleSlug(p.title)}`);
+
+    console.log(`Generated ${podcastRoutes.length} podcast routes`);
+
     return [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
       "/admin", // Admin paneli - static
       "/news", // Haberler sayfası - static
       "/articles", // Makaleler sayfası - static
+      "/podcasts", // Podcastler sayfası - static
       "/son-dakika", // Son dakika sayfası - static
       ...profileRoutes, // Profile pages - static
       ...tagRoutes, // Tag pages - static
       ...articlesRoutes, // Article detail pages - static
       ...newsRoutes, // News detail pages - static
+      ...podcastRoutes, // Podcast detail pages - static
     ];
   },
 } satisfies Config;

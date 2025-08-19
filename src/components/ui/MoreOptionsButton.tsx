@@ -33,6 +33,9 @@ export function MoreOptionsButton({ event }: MoreOptionsButtonProps) {
     relays: [event.relay],
   });
 
+  const { id, pubkey, created_at, content, kind, tags, sig } = event;
+  const justEvent = { id, pubkey, created_at, content, kind, tags, sig };
+
   const handleCopyToClipboard = async (
     text: string,
     label: string,
@@ -171,7 +174,7 @@ export function MoreOptionsButton({ event }: MoreOptionsButtonProps) {
             </div>
 
             <pre className="text-sm font-mono whitespace-pre-wrap">
-              {JSON.stringify(event, null, 2)}
+              {JSON.stringify(justEvent, null, 2)}
             </pre>
           </div>
         </DialogContent>

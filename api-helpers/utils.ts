@@ -226,11 +226,17 @@ export type NewsTag = {
   relay: string;
 };
 
+export type PodcastTag = {
+  aTag: string;
+  relay: string;
+};
+
 export type FetchNostrSetsResult = {
   adminUsers: string[];
   editorUsers: string[];
   articleTags: ArticleTag[];
   newsTags: NewsTag[];
+  podcastTags: PodcastTag[];
 };
 
 /**
@@ -242,6 +248,7 @@ export async function fetchNostrSets(sets: EventSet[]): Promise<FetchNostrSetsRe
     let editorUsers: string[] = [];
     let articleTags: ArticleTag[] = [];
     let newsTags: NewsTag[] = [];
+    let podcastTags: PodcastTag[] = [];
 
     // Fetch admin users set
     const eventResults: Map<EventSet, EventItem> = await fetchSets(sets);
@@ -273,6 +280,15 @@ export async function fetchNostrSets(sets: EventSet[]): Promise<FetchNostrSetsRe
             pubkey: event.pubkey,
           }));
       }
+
+      if (set === "podcasts") {
+        podcastTags = event.tags
+          .filter((tag) => tag[0] === "a" && tag[1] && tag[2])
+          .map((tag) => ({
+            aTag: tag[1],
+            relay: tag[2],
+          }));
+      }
     }
 
     return {
@@ -280,6 +296,7 @@ export async function fetchNostrSets(sets: EventSet[]): Promise<FetchNostrSetsRe
       editorUsers,
       articleTags: articleTags,
       newsTags: newsTags,
+      podcastTags: podcastTags,
     };
   } catch (error) {
     console.error("Error fetching Nostr sets:", error);
@@ -292,7 +309,7 @@ function getEventSetType(set: EventSet, type: "follow" | "curation"): boolean {
   return set === "admin-users" || set === "editor-users" ? type === "follow" : type === "curation";
 }
 
-export type EventSet = "admin-users" | "editor-users" | "articles" | "news";
+export type EventSet = "admin-users" | "editor-users" | "articles" | "news" | "podcasts";
 
 const fetchSets = async (sets: EventSet[]): Promise<Map<EventSet, EventItem>> => {
   const hasFollowSet = sets.some((set) => getEventSetType(set, "follow"));

@@ -1,5 +1,5 @@
-import { Search, Menu, Moon, Sun, Rss, Atom, X, ChevronDown } from "lucide-react";
-import React, { useState } from "react";
+import { Search, Menu, Moon, Sun, Rss, Atom, ChevronDown, Mic } from "lucide-react";
+import { useState } from "react";
 
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -94,6 +94,15 @@ const Header = () => {
                 className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
               >
                 <Rss className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+              </a>
+              <a
+                href="/feed/podcast-rss.xml"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300"
+                title="Podcast RSS Feed"
+              >
+                <Mic className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
               </a>
             </div>
 
@@ -200,7 +209,7 @@ const Header = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <a href="/podcast" className="text-foreground font-medium px-2 py-1 rounded">
+              <a href="/podcasts" className="text-foreground font-medium px-2 py-1 rounded">
                 Podcast
               </a>
             </nav>
@@ -298,7 +307,7 @@ const Header = () => {
                     </div>
                   </div>
 
-                  <a href="/podcast" className="text-left-menu-accent">
+                  <a href="/podcasts" className="text-left-menu-accent">
                     Podcast
                   </a>
                 </div>

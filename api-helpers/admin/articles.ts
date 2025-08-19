@@ -110,7 +110,16 @@ export async function addArticle(
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
     const result = await publishToRelays(event, ADMIN_RELAYS);
 
-    return PublishEventResponse({ message: "Article added successfully", result }, data);
+    if (result.some((r) => r.success)) {
+      return PublishEventResponse({ message: "Article added successfully", result }, data);
+    }
+
+    const failedRelays = result
+      .filter((r) => !r.success)
+      .map((r) => r.relay)
+      .join(", ");
+
+    return ErrorResponse(`Failed to add article to relays: ${failedRelays}`, 500);
   } catch (error) {
     return ErrorResponse(error || "Failed to add article");
   }

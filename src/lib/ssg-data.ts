@@ -1,3 +1,5 @@
+import type { NostrEvent } from "nostr-tools";
+
 import { fetchNostrSets, pool, PROFILE_RELAYS } from "../../api-helpers/utils";
 
 import type { EventItem, ProfileItem } from "./nip01";
@@ -5,6 +7,7 @@ import { getProfiles } from "./nip01";
 import { fetchNip65RelaysForProfiles, type Nip65Relays } from "./nip65";
 
 export interface NewsItem {
+  type: "news";
   id: string;
   content: string;
   event: EventItem;
@@ -17,6 +20,7 @@ export interface NewsItem {
 }
 
 export interface ArticleItem {
+  type: "article";
   id: string;
   title: string;
   content: string;
@@ -29,9 +33,27 @@ export interface ArticleItem {
   image?: string;
 }
 
+export interface PodcastItem {
+  type: "podcast";
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  event: EventItem;
+  author: ProfileItem;
+  publishedAt: number;
+  summary?: string;
+  identifier?: string;
+  image?: string;
+  audioUrl?: string;
+  duration?: string;
+  episodeNumber?: number;
+}
+
 export interface SSGData {
   news: NewsItem[];
   articles: ArticleItem[];
+  podcasts: PodcastItem[];
   lastUpdated: number;
 }
 
@@ -41,6 +63,7 @@ function processNewsEvent(event: EventItem, author: ProfileItem): NewsItem {
   const imageTag = event.tags.find((tag) => tag[0] === "image");
 
   return {
+    type: "news",
     id: event.id,
     title: titleTag?.[1],
     content: event.content,
@@ -60,6 +83,7 @@ function processArticleEvent(event: EventItem, author: ProfileItem): ArticleItem
   const imageTag = event.tags.find((tag) => tag[0] === "image");
 
   return {
+    type: "article",
     id: event.id,
     title: titleTag?.[1],
     content: event.content,
@@ -73,18 +97,41 @@ function processArticleEvent(event: EventItem, author: ProfileItem): ArticleItem
   };
 }
 
+function processPodcastEvent(event: EventItem, author: ProfileItem): PodcastItem {
+  const titleTag = event.tags.find((tag) => tag[0] === "title");
+  const summaryTag = event.tags.find((tag) => tag[0] === "summary");
+  const dTag = event.tags.find((tag) => tag[0] === "d");
+  const imageTag = event.tags.find((tag) => tag[0] === "image");
+  const audioUrlTag = event.tags.find((tag) => tag[0] === "audio");
+  const durationTag = event.tags.find((tag) => tag[0] === "duration");
+  const episodeNumberTag = event.tags.find((tag) => tag[0] === "episode");
+
+  return {
+    type: "podcast",
+    id: event.id,
+    title: titleTag?.[1],
+    content: event.content,
+    event,
+    summary: summaryTag?.[1],
+    publishedAt: event.created_at,
+    author,
+    tags: event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1]),
+    identifier: dTag?.[1],
+    image: imageTag?.[1],
+    audioUrl: audioUrlTag?.[1],
+    duration: durationTag?.[1],
+    episodeNumber: episodeNumberTag?.[1] ? parseInt(episodeNumberTag[1]) : undefined,
+  };
+}
+
 export async function fetchSSGData(): Promise<SSGData> {
   console.log("Fetching SSG data from Nostr relays...");
 
-  const { newsTags, articleTags } = await fetchNostrSets(["news", "articles"]);
-
-  if (newsTags.length === 0) {
-    throw new Error("News tags not found");
-  }
-
-  if (articleTags.length === 0) {
-    throw new Error("Article tags not found");
-  }
+  const { newsTags, articleTags, podcastTags } = await fetchNostrSets([
+    "news",
+    "articles",
+    "podcasts",
+  ]);
 
   const newsRelays = newsTags.map((tag) => tag.relay);
   const articleResults = articleTags.map((tag) => {
@@ -96,25 +143,66 @@ export async function fetchSSGData(): Promise<SSGData> {
       relay: tag.relay,
     };
   });
+  const podcastResults = podcastTags.map((tag) => {
+    const [_kind, pubkey, dTag] = tag.aTag.split(":");
 
-  const [newsEvents, articlesEvents] = await Promise.all([
-    pool.querySync(newsRelays, {
-      ids: newsTags.map((tag) => tag.eTag),
-      kinds: [1],
-    }),
-    pool.querySync(
-      articleResults.map((result) => result.relay),
-      {
-        "#d": articleResults.map((result) => result.dTag),
-        authors: articleResults.map((result) => result.pubkey),
-        kinds: [30023],
-      },
-    ),
-  ]);
+    return {
+      dTag,
+      pubkey,
+      relay: tag.relay,
+    };
+  });
+
+  const tasks: Promise<NostrEvent[]>[] = [];
+
+  if (newsTags.length > 0) {
+    tasks.push(
+      pool.querySync(newsRelays, {
+        ids: newsTags.map((tag) => tag.eTag),
+        kinds: [1],
+      }),
+    );
+  }
+
+  if (articleTags.length > 0) {
+    tasks.push(
+      pool.querySync(
+        articleResults.map((result) => result.relay),
+        {
+          "#d": articleResults.map((result) => result.dTag),
+          authors: articleResults.map((result) => result.pubkey),
+          kinds: [30023],
+        },
+      ),
+    );
+  }
+
+  if (podcastTags.length > 0) {
+    tasks.push(
+      pool.querySync(
+        podcastResults.map((result) => result.relay),
+        {
+          "#d": podcastResults.map((result) => result.dTag),
+          authors: podcastResults.map((result) => result.pubkey),
+          kinds: [30023],
+        },
+      ),
+    );
+  }
+
+  const [newsEvents = [], articlesEvents = [], podcastsEvents = []] = await Promise.all(tasks);
+
+  console.log("fetched events", {
+    newsEvents: newsEvents.length,
+    articlesEvents: articlesEvents.length,
+    podcastsEvents: podcastsEvents.length,
+  });
 
   const profilePubkeys = [
-    ...new Set([...newsEvents, ...articlesEvents].map((item) => item.pubkey)),
+    ...new Set([...newsEvents, ...articlesEvents, ...podcastsEvents].map((item) => item.pubkey)),
   ];
+
+  console.log("profilePubkeys", profilePubkeys.length);
 
   const nip65Map = await fetchNip65RelaysForProfiles(PROFILE_RELAYS, profilePubkeys);
   console.log(`Fetched ${nip65Map.size} nip65 relays for profiles...`);
@@ -162,15 +250,43 @@ export async function fetchSSGData(): Promise<SSGData> {
     return processArticleEvent({ ...ae, relay: relayHintTag.relay }, profile);
   });
 
+  const podcastItems: PodcastItem[] = podcastsEvents.map((pe) => {
+    const profile = profileEvents.get(pe.pubkey);
+
+    if (!profile) {
+      throw new Error(`Author not found or profile can't be parsed: ${pe.pubkey}`);
+    }
+
+    const dTag = pe.tags.find((tag) => tag[0] === "d");
+
+    if (!dTag) {
+      throw new Error(`D tag not found: ${pe.id}`);
+    }
+
+    const aTag = `30023:${pe.pubkey}:${dTag[1]}`;
+
+    const relayHintTag = podcastTags.find((tag) => tag.aTag === aTag);
+
+    if (!relayHintTag) {
+      throw new Error(`Relay hint not found: ${pe.id}`);
+    }
+
+    return processPodcastEvent({ ...pe, relay: relayHintTag.relay }, profile);
+  });
+
   // Sort by publication date (newest first)
   newsItems.sort((a, b) => b.publishedAt - a.publishedAt);
   articleItems.sort((a, b) => b.publishedAt - a.publishedAt);
+  podcastItems.sort((a, b) => b.publishedAt - a.publishedAt);
 
-  console.log(`Fetched ${newsItems.length} news items and ${articleItems.length} articles`);
+  console.log(
+    `Fetched ${newsItems.length} news items, ${articleItems.length} articles, and ${podcastItems.length} podcasts`,
+  );
 
   return {
     news: newsItems,
     articles: articleItems,
+    podcasts: podcastItems,
     lastUpdated: Date.now(), // Use actual build time for SSG
   };
 }
@@ -203,6 +319,10 @@ export function getUniqueTags(ssgData: SSGData): string[] {
     item.tags.forEach((tag) => tagSet.add(tag));
   });
 
+  ssgData.podcasts.forEach((item) => {
+    item.tags.forEach((tag) => tagSet.add(tag));
+  });
+
   return Array.from(tagSet);
 }
 
@@ -219,6 +339,13 @@ export function getUniqueProfiles(ssgData: SSGData): ProfileItem[] {
 
   // Collect profiles from articles
   ssgData.articles.forEach((item) => {
+    if (getDisplayName(item.author, item.author.pubkey)) {
+      profileMap.set(item.author.pubkey, item.author);
+    }
+  });
+
+  // Collect profiles from podcasts
+  ssgData.podcasts.forEach((item) => {
     if (getDisplayName(item.author, item.author.pubkey)) {
       profileMap.set(item.author.pubkey, item.author);
     }
