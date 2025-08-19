@@ -65,17 +65,19 @@ export async function postAdminAction(
   return res.json();
 }
 
+export type PublishToXParams = {
+  blob: Blob;
+  title: string;
+  getPublicKey: GetPublicKey;
+  signEvent: SignEvent;
+};
+
 export async function publishToX({
   blob,
   title,
   getPublicKey,
   signEvent,
-}: {
-  blob: Blob;
-  title: string;
-  getPublicKey: () => Promise<string | null>;
-  signEvent: (event: any) => Promise<any>;
-}): Promise<Response> {
+}: PublishToXParams): Promise<Response> {
   const form = new FormData();
   form.append("action", "upload-to-x");
   form.append("title", title);

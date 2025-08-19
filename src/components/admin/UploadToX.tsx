@@ -15,12 +15,15 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { EventItem } from "@/lib/nip01";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
+
+import { PublishToXParams } from "./utils";
 
 type UploadToXProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   eventItem: EventItem;
-  publishToX: ({ blob, title }: { blob: Blob; title: string }) => Promise<Response>;
+  publishToX: (params: PublishToXParams) => Promise<Response>;
   width?: number;
   height?: number;
 };
@@ -52,6 +55,7 @@ export default function UploadToX({
   const [loading, setLoading] = useState(true); // initializing
   const [overlayText, setOverlayText] = useState<string>("");
   const [xPublishData, setXPublishData] = useState<XPublishData | null>(null);
+  const { getPublicKey, signEvent } = useNostrAuth();
   const [overlayTextConfig, setOverlayTextConfig] = useState<{
     text: string;
     fontSize: number;
@@ -132,7 +136,7 @@ export default function UploadToX({
                     throw new Error("Görsel oluşturulamadı");
                   }
 
-                  const res = await publishToX({ blob, title });
+                  const res = await publishToX({ blob, title, getPublicKey, signEvent });
 
                   const data = await res.json();
 
