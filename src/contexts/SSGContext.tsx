@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
 import React, { createContext, useContext, useMemo } from "react";
 
-import { type SSGData, type NewsItem, type ArticleItem } from "../lib/ssg-data";
+import {
+  type SSGData,
+  type NewsItem,
+  type ArticleItem,
+  PodcastItem,
+  ContentItem,
+} from "../lib/ssg-data";
 
 // Type declaration for global SSG data (only available during prerendering)
 declare global {
@@ -12,6 +18,7 @@ interface SSGContextType {
   data: SSGData;
   news: NewsItem[];
   articles: ArticleItem[];
+  podcasts: PodcastItem[];
   lastUpdated: number;
 }
 
@@ -25,6 +32,7 @@ interface SSGProviderProps {
 const createFallbackData = (): SSGData => ({
   news: [],
   articles: [],
+  podcasts: [],
   lastUpdated: Date.now(),
 });
 
@@ -61,6 +69,7 @@ export function SSGProvider({ children }: SSGProviderProps) {
       data: ssgData,
       news: ssgData.news,
       articles: ssgData.articles,
+      podcasts: ssgData.podcasts,
       lastUpdated: ssgData.lastUpdated,
     };
   }, []);
@@ -90,6 +99,10 @@ export function useArticleItems(): ArticleItem[] {
   return useSSGContext().articles;
 }
 
+export function usePodcastItems(): PodcastItem[] {
+  return useSSGContext().podcasts;
+}
+
 export function useLatestNews(limit: number = 10): NewsItem[] {
   const news = useNewsItems();
 
@@ -100,6 +113,12 @@ export function useLatestArticles(limit: number = 10): ArticleItem[] {
   const articles = useArticleItems();
 
   return useMemo(() => articles.slice(0, limit), [articles, limit]);
+}
+
+export function useLatestPodcasts(limit: number = 10): PodcastItem[] {
+  const podcasts = usePodcastItems();
+
+  return useMemo(() => podcasts.slice(0, limit), [podcasts, limit]);
 }
 
 export function useNewsItem(id: string): NewsItem | undefined {
@@ -127,14 +146,15 @@ export function useArticlesByTag(tag: string): ArticleItem[] {
 }
 
 // Additional utility hooks
-export function useAllContent(): (NewsItem | ArticleItem)[] {
+export function useAllContent(): ContentItem[] {
   const news = useNewsItems();
   const articles = useArticleItems();
+  const podcasts = usePodcastItems();
 
-  return useMemo(() => [...news, ...articles], [news, articles]);
+  return useMemo(() => [...news, ...articles, ...podcasts], [news, articles, podcasts]);
 }
 
-export function useLatestContent(limit: number = 10): (NewsItem | ArticleItem)[] {
+export function useLatestContent(limit: number = 10): ContentItem[] {
   const allContent = useAllContent();
 
   return useMemo(
@@ -143,7 +163,7 @@ export function useLatestContent(limit: number = 10): (NewsItem | ArticleItem)[]
   );
 }
 
-export function useContentByAuthor(pubkey: string): (NewsItem | ArticleItem)[] {
+export function useContentByAuthor(pubkey: string): ContentItem[] {
   const allContent = useAllContent();
 
   return useMemo(

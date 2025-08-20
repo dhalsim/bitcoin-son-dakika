@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AlertCircle, Loader2, Mic, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -9,26 +9,55 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
+import type { PodcastItem } from "@/lib/ssg-data";
+
+type PodcastEditData = Omit<PodcastItem, "author"> & {
+  dTag: string;
+  pubkey: string;
+  relay: string;
+};
 
 interface PodcastComposerProps {
   performAction: (data: any) => Promise<void>;
+  editData?: PodcastEditData;
+  onCancelEdit: () => void;
 }
 
-export default function PodcastComposer({ performAction }: PodcastComposerProps) {
+export default function PodcastComposer({
+  performAction,
+  editData,
+  onCancelEdit,
+}: PodcastComposerProps) {
   const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [summary, setSummary] = useState("");
-  const [image, setImage] = useState("");
-  const [audioUrl, setAudioUrl] = useState("");
-  const [duration, setDuration] = useState("");
-  const [episodeNumber, setEpisodeNumber] = useState("");
-  const [transcriptUrl, setTranscriptUrl] = useState("");
-  const [chaptersUrl, setChaptersUrl] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [title, setTitle] = useState(editData?.title || "");
+  const [content, setContent] = useState(editData?.content || "");
+  const [summary, setSummary] = useState(editData?.summary || "");
+  const [image, setImage] = useState(editData?.image || "");
+  const [audioUrl, setAudioUrl] = useState(editData?.audioUrl || "");
+  const [duration, setDuration] = useState(editData?.duration || "");
+  const [episodeNumber, setEpisodeNumber] = useState(editData?.episodeNumber || "");
+  const [transcriptUrl, setTranscriptUrl] = useState(editData?.transcriptUrl || "");
+  const [chaptersUrl, setChaptersUrl] = useState(editData?.chaptersUrl || "");
+  const [tags, setTags] = useState<string[]>(editData?.tags || []);
   const [newTag, setNewTag] = useState("");
 
   const preview = useMemo(() => content, [content]);
+
+  // Reset form when editData changes
+  useEffect(() => {
+    if (editData) {
+      setTitle(editData.title || "");
+      setContent(editData.content || "");
+      setSummary(editData.summary || "");
+      setImage(editData.image || "");
+      setAudioUrl(editData.audioUrl || "");
+      setDuration(editData.duration || "");
+      setEpisodeNumber(editData.episodeNumber || "");
+      setTranscriptUrl(editData.transcriptUrl || "");
+      setChaptersUrl(editData.chaptersUrl || "");
+      setTags(editData.tags || []);
+    }
+  }, [editData]);
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -46,7 +75,7 @@ export default function PodcastComposer({ performAction }: PodcastComposerProps)
     setLoading(true);
 
     try {
-      await performAction({
+      const payload: any = {
         action: "publish-podcast",
         title,
         content,
@@ -58,7 +87,14 @@ export default function PodcastComposer({ performAction }: PodcastComposerProps)
         transcriptUrl,
         chaptersUrl,
         tags,
-      });
+      };
+
+      // If editing, include the original dTag to update the existing podcast
+      if (editData?.dTag) {
+        payload.dTag = editData.dTag;
+      }
+
+      await performAction(payload);
 
       // Reset form
       setTitle("");
@@ -71,6 +107,11 @@ export default function PodcastComposer({ performAction }: PodcastComposerProps)
       setTranscriptUrl("");
       setChaptersUrl("");
       setTags([]);
+
+      // Clear edit mode after successful publish
+      if (editData) {
+        onCancelEdit();
+      }
     } finally {
       setLoading(false);
     }
@@ -249,19 +290,26 @@ export default function PodcastComposer({ performAction }: PodcastComposerProps)
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={loading || !title || !content || !audioUrl}>
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Yayınlanıyor...
-              </>
-            ) : (
-              <>
-                <Mic className="h-4 w-4 mr-2" />
-                Podcast Yayınla
-              </>
+          <div className="flex gap-2">
+            {editData && (
+              <Button type="button" variant="outline" onClick={onCancelEdit}>
+                İptal
+              </Button>
             )}
-          </Button>
+            <Button type="submit" disabled={loading || !title || !content || !audioUrl}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {editData ? "Güncelleniyor..." : "Yayınlanıyor..."}
+                </>
+              ) : (
+                <>
+                  <Mic className="h-4 w-4 mr-2" />
+                  {editData ? "Podcast'i Güncelle" : "Podcast Yayınla"}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </form>
 

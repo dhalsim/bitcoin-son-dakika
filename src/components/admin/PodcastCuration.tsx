@@ -1,14 +1,12 @@
-import { Trash2, ExternalLink, User, Tag } from "lucide-react";
+import { Trash2, ExternalLink, User, Tag, Edit } from "lucide-react";
 import { nip19 } from "nostr-tools";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 
 import type { PodcastTag } from "../../../api-helpers/utils";
+import { extractPodcastDataFromEvent } from "../../../api-helpers/utils";
 import { EventItem } from "@/lib/nip01";
 import { getKind30023Events } from "@/lib/nip23";
 import { Skeleton } from "../ui/skeleton";
@@ -18,6 +16,7 @@ interface PodcastCurationProps {
   lastUpdated: number;
   performAction: (data: any) => Promise<void>;
   reload: () => void;
+  onEditPodcast?: (podcastData: any) => void;
 }
 
 export default function PodcastCuration({
@@ -25,6 +24,7 @@ export default function PodcastCuration({
   lastUpdated,
   performAction,
   reload,
+  onEditPodcast,
 }: PodcastCurationProps) {
   const [removing, setRemoving] = useState<string | null>(null);
   const [podcastEvents, setPodcastEvents] = useState<Map<string, EventItem>>(new Map());
@@ -137,21 +137,36 @@ export default function PodcastCuration({
                           Podcast: {display || "Başlıksız"}
                         </span>
                       </div>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleRemovePodcast(aTag, event.relay)}
-                        disabled={removing === aTag}
-                      >
-                        {removing === aTag ? (
-                          "Kaldırılıyor..."
-                        ) : (
-                          <>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Kaldır
-                          </>
+                      <div className="flex items-center gap-2">
+                        {onEditPodcast && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              onEditPodcast(extractPodcastDataFromEvent(event));
+                            }}
+                            title="Düzenle"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Düzenle
+                          </Button>
                         )}
-                      </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleRemovePodcast(aTag, event.relay)}
+                          disabled={removing === aTag}
+                        >
+                          {removing === aTag ? (
+                            "Kaldırılıyor..."
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Kaldır
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

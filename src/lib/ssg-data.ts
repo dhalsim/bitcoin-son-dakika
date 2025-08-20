@@ -1,10 +1,18 @@
 import type { NostrEvent } from "nostr-tools";
 
-import { fetchNostrSets, pool, PROFILE_RELAYS } from "../../api-helpers/utils";
+import {
+  extractArticleDataFromEvent,
+  extractPodcastDataFromEvent,
+  fetchNostrSets,
+  pool,
+  PROFILE_RELAYS,
+} from "../../api-helpers/utils";
 
 import type { EventItem, ProfileItem } from "./nip01";
 import { getProfiles } from "./nip01";
 import { fetchNip65RelaysForProfiles, type Nip65Relays } from "./nip65";
+
+export type ContentItem = NewsItem | ArticleItem | PodcastItem;
 
 export interface NewsItem {
   type: "news";
@@ -79,55 +87,11 @@ function processNewsEvent(event: EventItem, author: ProfileItem): NewsItem {
 }
 
 function processArticleEvent(event: EventItem, author: ProfileItem): ArticleItem {
-  const titleTag = event.tags.find((tag) => tag[0] === "title");
-  const summaryTag = event.tags.find((tag) => tag[0] === "summary");
-  const dTag = event.tags.find((tag) => tag[0] === "d");
-  const imageTag = event.tags.find((tag) => tag[0] === "image");
-
-  return {
-    type: "article",
-    id: event.id,
-    title: titleTag?.[1],
-    content: event.content,
-    event,
-    summary: summaryTag?.[1],
-    publishedAt: event.created_at,
-    author,
-    tags: event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1]),
-    identifier: dTag?.[1],
-    image: imageTag?.[1],
-  };
+  return { author, ...extractArticleDataFromEvent(event) };
 }
 
 function processPodcastEvent(event: EventItem, author: ProfileItem): PodcastItem {
-  const titleTag = event.tags.find((tag) => tag[0] === "title");
-  const summaryTag = event.tags.find((tag) => tag[0] === "summary");
-  const dTag = event.tags.find((tag) => tag[0] === "d");
-  const imageTag = event.tags.find((tag) => tag[0] === "image");
-  const audioUrlTag = event.tags.find((tag) => tag[0] === "audio");
-  const durationTag = event.tags.find((tag) => tag[0] === "duration");
-  const episodeNumberTag = event.tags.find((tag) => tag[0] === "episode");
-  const transcriptUrlTag = event.tags.find((tag) => tag[0] === "transcript");
-  const chaptersUrlTag = event.tags.find((tag) => tag[0] === "chapters");
-
-  return {
-    type: "podcast",
-    id: event.id,
-    title: titleTag?.[1],
-    content: event.content,
-    event,
-    summary: summaryTag?.[1],
-    publishedAt: event.created_at,
-    author,
-    tags: event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1]),
-    identifier: dTag?.[1],
-    image: imageTag?.[1],
-    audioUrl: audioUrlTag?.[1],
-    duration: durationTag?.[1],
-    episodeNumber: episodeNumberTag?.[1] ? parseInt(episodeNumberTag[1]) : undefined,
-    transcriptUrl: transcriptUrlTag?.[1],
-    chaptersUrl: chaptersUrlTag?.[1],
-  };
+  return { author, ...extractPodcastDataFromEvent(event) };
 }
 
 export async function fetchSSGData(): Promise<SSGData> {

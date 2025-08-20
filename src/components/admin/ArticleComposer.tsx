@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createNIP98Auth } from "./utils";
 import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import type { ArticleItem } from "@/lib/ssg-data";
 
 const CATEGORY_OPTIONS = [
   "bitcoin",
@@ -37,16 +38,28 @@ const CATEGORY_OPTIONS = [
   "geliştirme",
 ];
 
-type ArticleComposerProps = {
-  performAction: (data: any) => Promise<any>;
+type ArticleEditData = Omit<ArticleItem, "author"> & {
+  dTag: string;
+  pubkey: string;
+  relay: string;
 };
 
-export default function ArticleComposer({ performAction }: ArticleComposerProps) {
-  const [title, setTitle] = useState("");
-  const [summary, setSummary] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [content, setContent] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+type ArticleComposerProps = {
+  performAction: (data: any) => Promise<any>;
+  editData?: ArticleEditData;
+  onCancelEdit: () => void;
+};
+
+export default function ArticleComposer({
+  performAction,
+  editData,
+  onCancelEdit,
+}: ArticleComposerProps) {
+  const [title, setTitle] = useState(editData?.title || "");
+  const [summary, setSummary] = useState(editData?.summary || "");
+  const [imageUrl, setImageUrl] = useState(editData?.image || "");
+  const [content, setContent] = useState(editData?.content || "");
+  const [tags, setTags] = useState<string[]>(editData?.tags || []);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -57,6 +70,17 @@ export default function ArticleComposer({ performAction }: ArticleComposerProps)
   const { getPublicKey, signEvent } = useNostrAuth();
 
   const preview = useMemo(() => content, [content]);
+
+  // Reset form when editData changes
+  useEffect(() => {
+    if (editData) {
+      setTitle(editData.title || "");
+      setSummary(editData.summary || "");
+      setImageUrl(editData.image || "");
+      setContent(editData.content || "");
+      setTags(editData.tags || []);
+    }
+  }, [editData]);
 
   const addTag = (tag: string) => {
     if (tag.trim() && !tags.includes(tag.trim())) {
@@ -230,40 +254,58 @@ export default function ArticleComposer({ performAction }: ArticleComposerProps)
 
             {/* Publish */}
             <div className="pt-2">
-              <Button
-                onClick={async () => {
-                  if (!canPublish) return;
-                  try {
-                    setIsPublishing(true);
-                    const payload: any = {
-                      action: "publish-article",
-                      content: content.trim(),
-                      title: title.trim(),
-                      tags,
-                    };
-                    if (summary.trim()) payload.summary = summary.trim();
-                    if (imageUrl.trim()) payload.image = imageUrl.trim();
-                    await performAction(payload);
-                  } finally {
-                    setIsPublishing(false);
-                  }
-                }}
-                disabled={isPublishing || !canPublish}
-                className="w-full"
-                size="lg"
-              >
-                {isPublishing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Yayınlanıyor...
-                  </>
-                ) : (
-                  <>
-                    <Rocket className="h-4 w-4 mr-2" />
-                    Makaleyi Yayınla
-                  </>
+              <div className="flex gap-2">
+                {editData && (
+                  <Button onClick={onCancelEdit} variant="outline" className="flex-1" size="lg">
+                    İptal
+                  </Button>
                 )}
-              </Button>
+                <Button
+                  onClick={async () => {
+                    if (!canPublish) return;
+                    try {
+                      setIsPublishing(true);
+                      const payload: any = {
+                        action: "publish-article",
+                        content: content.trim(),
+                        title: title.trim(),
+                        tags,
+                      };
+                      if (summary.trim()) payload.summary = summary.trim();
+                      if (imageUrl.trim()) payload.image = imageUrl.trim();
+
+                      // If editing, include the original dTag to update the existing article
+                      if (editData?.dTag) {
+                        payload.dTag = editData.dTag;
+                      }
+
+                      await performAction(payload);
+
+                      // Clear edit mode after successful publish
+                      if (editData) {
+                        onCancelEdit();
+                      }
+                    } finally {
+                      setIsPublishing(false);
+                    }
+                  }}
+                  disabled={isPublishing || !canPublish}
+                  className={editData ? "flex-1" : "w-full"}
+                  size="lg"
+                >
+                  {isPublishing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {editData ? "Güncelleniyor..." : "Yayınlanıyor..."}
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="h-4 w-4 mr-2" />
+                      {editData ? "Makaleyi Güncelle" : "Makaleyi Yayınla"}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

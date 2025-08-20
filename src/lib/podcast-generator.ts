@@ -1,9 +1,10 @@
 import { createTitleSlug } from "../../api-helpers/utils";
 
 import type { PodcastItem } from "./ssg-data";
+import { formatNostrDate } from "./utils";
 
 const generatePodcastItemXml = (podcast: PodcastItem) => {
-  const pubDate = new Date(podcast.publishedAt * 1000).toUTCString();
+  const pubDate = formatNostrDate(podcast.publishedAt);
   const imageUrl = podcast.image || "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png";
   const transcriptUrl = podcast.transcriptUrl;
   const chaptersUrl = podcast.chaptersUrl;

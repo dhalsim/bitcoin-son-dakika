@@ -168,6 +168,10 @@ export default function AdminPanel() {
   const [composerPrefill, setComposerPrefill] = useState<any | null>(null);
   const [composerPrefillToken, setComposerPrefillToken] = useState<string>("");
 
+  // Edit state for articles and podcasts
+  const [editingArticle, setEditingArticle] = useState<any | null>(null);
+  const [editingPodcast, setEditingPodcast] = useState<any | null>(null);
+
   // Sync from URL on back/forward
   useEffect(() => {
     const urlTab = (searchParams.get("tab") as AdminTab) || "stats";
@@ -243,8 +247,6 @@ export default function AdminPanel() {
             events.set(dTag, evt);
           },
           oneose() {
-            console.log(events);
-
             const adminUsersEvent = events.get("admin-users");
 
             if (!adminUsersEvent) {
@@ -624,13 +626,21 @@ export default function AdminPanel() {
 
           {userIsEditor && (
             <TabsContent value="compose-article">
-              <ArticleComposer performAction={performAction} />
+              <ArticleComposer
+                performAction={performAction}
+                editData={editingArticle}
+                onCancelEdit={() => setEditingArticle(null)}
+              />
             </TabsContent>
           )}
 
           {userIsEditor && (
             <TabsContent value="compose-podcast">
-              <PodcastComposer performAction={performAction} />
+              <PodcastComposer
+                performAction={performAction}
+                editData={editingPodcast}
+                onCancelEdit={() => setEditingPodcast(null)}
+              />
             </TabsContent>
           )}
 
@@ -653,6 +663,10 @@ export default function AdminPanel() {
                 performAction={performAction}
                 reload={loadAdminData}
                 userNpub={userInfo.pubkey ? nip19.npubEncode(userInfo.pubkey) : undefined}
+                onEditArticle={(articleData) => {
+                  setEditingArticle(articleData);
+                  changeTab("compose-article");
+                }}
               />
             </TabsContent>
           )}
@@ -664,6 +678,10 @@ export default function AdminPanel() {
                 lastUpdated={adminData?.podcastsLastTimeUpdated || 0}
                 performAction={performAction}
                 reload={loadAdminData}
+                onEditPodcast={(podcastData) => {
+                  setEditingPodcast(podcastData);
+                  changeTab("compose-podcast");
+                }}
               />
             </TabsContent>
           )}

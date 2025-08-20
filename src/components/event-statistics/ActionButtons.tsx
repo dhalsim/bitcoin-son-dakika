@@ -415,18 +415,6 @@ export function ActionButtons({
 
   const onZapClick = () => setShowZapDialog(true);
 
-  const onThreadReply = (parentEvent: EventItem) => {
-    console.log("onThreadReply", parentEvent);
-  };
-
-  const handlePostReply = () => {
-    // This function is now handled by ThreadViewWrapper
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // This function is now handled by ThreadViewWrapper
-  };
-
   const handlePostQuote = () => {
     if (!quoteContent.trim()) {
       return;
@@ -600,7 +588,6 @@ export function ActionButtons({
             thread={thread}
             loadingThread={loadingThread}
             profiles={profiles}
-            onThreadReply={onThreadReply}
             rootEvent={event}
             rootAuthor={author}
             publishRelays={publishRelays}

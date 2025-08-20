@@ -2,6 +2,7 @@ import { createTitleSlug } from "api-helpers/utils";
 
 import { WEBSITE_URL, WEBSITE_NAME, WEBSITE_DESCRIPTION, LOGO_URL } from "./constants";
 import type { ArticleItem, NewsItem, SSGData } from "./ssg-data";
+import { formatNostrDate } from "./utils";
 
 export function generateRSSFeed(ssgData: SSGData): string {
   // Combine and sort news and articles by publish date
@@ -26,7 +27,7 @@ export function generateRSSFeed(ssgData: SSGData): string {
     </image>
     ${allContent
       .map((item) => {
-        const isArticle = "identifier" in item;
+        const isArticle = item.type === "article";
         const prefix = isArticle ? "Makale: " : "Haber - ";
         const title = `${prefix}${item.title}`;
         const slug = createTitleSlug(item.title);
@@ -38,7 +39,7 @@ export function generateRSSFeed(ssgData: SSGData): string {
       <title><![CDATA[${title}]]></title>
       <link>${url}</link>
       <guid>${url}</guid>
-      <pubDate>${new Date(item.publishedAt * 1000).toUTCString()}</pubDate>
+      <pubDate>${formatNostrDate(item.publishedAt)}</pubDate>
       <description><![CDATA[${item.summary || item.content.substring(0, 300) + "..."}]]></description>
       <author>${item.author.display_name || item.author.pubkey}</author>
       <category>${item.tags && item.tags.length > 0 ? item.tags[0] : "Bitcoin"}</category>
@@ -69,7 +70,7 @@ export function generateAtomFeed(ssgData: SSGData): string {
   <logo>${WEBSITE_URL}${LOGO_URL}</logo>
   ${allContent
     .map((item) => {
-      const isArticle = "identifier" in item;
+      const isArticle = item.type === "article";
       const prefix = isArticle ? "Makale: " : "Haber - ";
       const title = `${prefix}${item.title}`;
 
@@ -78,8 +79,8 @@ export function generateAtomFeed(ssgData: SSGData): string {
     <title>${title}</title>
     <link href="${WEBSITE_URL}/news/${item.id}" />
     <id>${WEBSITE_URL}/news/${item.id}</id>
-    <updated>${new Date(item.publishedAt * 1000).toISOString()}</updated>
-    <published>${new Date(item.publishedAt * 1000).toISOString()}</published>
+    <updated>${formatNostrDate(item.publishedAt)}</updated>
+    <published>${formatNostrDate(item.publishedAt)}</published>
     <summary type="html">${item.summary || item.content.substring(0, 300) + "..."}</summary>
     <author>
       <name>${item.author.display_name || item.author.pubkey}</name>
@@ -94,8 +95,6 @@ export function generateAtomFeed(ssgData: SSGData): string {
 }
 
 export function generateFeeds(ssgData: SSGData) {
-  console.log(ssgData);
-
   return {
     rssFeed: generateRSSFeed(ssgData),
     atomFeed: generateAtomFeed(ssgData),

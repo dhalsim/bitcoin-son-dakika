@@ -75,7 +75,12 @@ export interface ThreadViewProps {
   thread: ReplyNode[];
   loadingThread: boolean;
   profiles: Map<string, ProfileItem>;
-  onThreadReply: (parentEvent: EventItem) => void;
+  rootEvent: EventItem;
+  rootAuthor: ProfileItem;
+  publishRelays: string[];
+}
+
+export interface ThreadViewWrapperProps extends ThreadViewProps {
   rootEvent: EventItem;
   rootAuthor: ProfileItem;
   publishRelays: string[];

@@ -1,12 +1,19 @@
-import { TrendingUp, PenTool, Info } from "lucide-react";
+import { TrendingUp, PenTool, Info, Mic } from "lucide-react";
 
-import type { ArticleItem, NewsItem } from "@/lib/ssg-data";
+import type { ArticleItem, NewsItem, PodcastItem } from "@/lib/ssg-data";
 
 import { useBitcoinStats } from "../hooks/useBitcoinStats.js";
 
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { formatNostrDate } from "@/lib/utils.js";
 
-const Sidebar = ({ news, articles }: { news: NewsItem[]; articles: ArticleItem[] }) => {
+type SidebarProps = {
+  news: NewsItem[];
+  articles: ArticleItem[];
+  podcasts: PodcastItem[];
+};
+
+const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
   const { stats, loading, error } = useBitcoinStats();
 
   return (
@@ -27,7 +34,7 @@ const Sidebar = ({ news, articles }: { news: NewsItem[]; articles: ArticleItem[]
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">{article.author.display_name}</span>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(article.publishedAt).toLocaleDateString()}
+                  {formatNostrDate(article.publishedAt)}
                 </span>
               </div>
             </div>
@@ -55,7 +62,7 @@ const Sidebar = ({ news, articles }: { news: NewsItem[]; articles: ArticleItem[]
                 {n.title}
               </h4>
               <span className="text-xs text-muted-foreground">
-                {new Date(n.publishedAt).toLocaleDateString()}
+                {formatNostrDate(n.publishedAt)}
               </span>
             </div>
           ))}
@@ -64,6 +71,33 @@ const Sidebar = ({ news, articles }: { news: NewsItem[]; articles: ArticleItem[]
             className="flex items-center text-foreground hover:text-main-accent transition-colors"
           >
             <span className="text-sm font-medium">Tüm Haberler →</span>
+          </a>
+        </div>
+      </div>
+
+      {/* Podcasts */}
+      <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
+        <div className="flex items-center mb-4">
+          <Mic className="h-5 w-5 text-main-accent mr-2" />
+          <h3 className="text-lg font-bold text-foreground">Podcastler</h3>
+        </div>
+
+        <div className="space-y-4">
+          {podcasts.map((p, index) => (
+            <div key={index} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
+              <h4 className="font-medium text-foreground hover:text-main-accent cursor-pointer text-sm leading-snug mb-1">
+                {p.title}
+              </h4>
+              <span className="text-xs text-muted-foreground">
+                {formatNostrDate(p.publishedAt)}
+              </span>
+            </div>
+          ))}
+          <a
+            href="/podcasts"
+            className="flex items-center text-foreground hover:text-main-accent transition-colors"
+          >
+            <span className="text-sm font-medium">Tüm Podcastler →</span>
           </a>
         </div>
       </div>

@@ -35,7 +35,7 @@ const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
-                  href="#"
+                  href="/news"
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Haberler
@@ -43,7 +43,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="/articles"
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Köşe Yazıları
@@ -59,7 +59,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="/podcasts"
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Podcast
@@ -111,6 +111,16 @@ const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
+                  href="/feed/podcast-rss.xml"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-main-accent transition-colors"
+                >
+                  Podcast RSS Feed
+                </a>
+              </li>
+              <li>
+                <a
                   href="/feed/rss.xml"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -131,7 +141,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="https://nstart.me/_@bitcoinsondakika.com"
+                  href="https://njump.me/_@bitcoinsondakika.com"
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Nostr
@@ -139,7 +149,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="https://x.com/bitcoin_son_dk"
+                  href="https://x.com/sondakikabtc"
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   X (Twitter)

@@ -142,8 +142,9 @@ export function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            // Navigate to settings page
+            // TODO: Navigate to settings page, not implemented yet
             console.log("Settings clicked");
+
             setIsOpen(false);
           }}
         >

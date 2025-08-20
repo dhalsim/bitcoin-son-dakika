@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Search, X, FileText, Newspaper, Tag, Clock } from "lucide-react";
+
+import { formatNostrDate } from "@/lib/utils";
+
+import { createTitleSlug } from "../../api-helpers/utils";
+
 import { useSSGData } from "../contexts/SSGContext";
 import type { NewsItem, ArticleItem } from "../lib/ssg-data";
+
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Badge } from "./ui/badge";
-import { createTitleSlug } from "../../api-helpers/utils";
 
 interface SearchResult {
   type: "news" | "article" | "tag";
@@ -201,15 +205,6 @@ export function SearchBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Format date
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString("tr-TR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
   // Get display name for profile
   const getDisplayName = (profile: any) => {
     return profile.display_name || profile.name || `${profile.pubkey.slice(0, 8)}...`;
@@ -297,7 +292,7 @@ export function SearchBar() {
                         <div className="flex items-center gap-2 mt-2">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            {formatDate((result.item as NewsItem | ArticleItem).publishedAt)}
+                            {formatNostrDate((result.item as NewsItem | ArticleItem).publishedAt)}
                           </div>
 
                           <div className="text-xs text-muted-foreground">

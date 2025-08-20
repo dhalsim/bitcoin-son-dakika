@@ -65,7 +65,7 @@ const Header = () => {
                 <img src="/nostr-icon.png" alt="Nostr" className="h-6 w-6" />
               </a>
               <a
-                href="https://x.com/bitcoin_son_dk"
+                href="https://x.com/sondakikabtc"
                 className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300"
               >
                 <svg

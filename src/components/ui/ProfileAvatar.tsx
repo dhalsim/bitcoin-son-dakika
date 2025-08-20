@@ -6,7 +6,7 @@ interface ProfileAvatarProps {
   pubkey: string;
   disablePopup?: boolean;
   profile?: ProfileItem;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   className?: string;
   fallbackSrc?: string;
   badge?: React.ReactNode;
@@ -19,8 +19,10 @@ export const getDisplayName = (profile: ProfileItem | undefined, pubkey: string)
 };
 
 // Helper function to get size classes
-const getSizeClasses = (size: "sm" | "md" | "lg") => {
+const getSizeClasses = (size: "xs" | "sm" | "md" | "lg") => {
   switch (size) {
+    case "xs":
+      return "h-4 w-4";
     case "sm":
       return "h-6 w-6";
     case "md":

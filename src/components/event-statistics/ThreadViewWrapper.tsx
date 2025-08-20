@@ -5,9 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { RichTextPreview } from "./RichTextPreview";
 import { ThreadView } from "../ThreadView";
-import type { ThreadViewProps } from "./types";
+import type { ThreadViewWrapperProps } from "./types";
 import { isContainerAtBottom } from "./utils";
-import type { EventItem, ProfileItem } from "@/lib/nip01";
+import type { EventItem } from "@/lib/nip01";
 import { postNip22Reply } from "@/lib/nip22";
 import { postKind1Reply } from "@/lib/nip10";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
@@ -17,15 +17,10 @@ export function ThreadViewWrapper({
   thread,
   loadingThread,
   profiles,
-  onThreadReply,
   rootEvent,
   rootAuthor,
   publishRelays,
-}: ThreadViewProps & {
-  rootEvent: EventItem;
-  rootAuthor: ProfileItem;
-  publishRelays: string[];
-}) {
+}: ThreadViewWrapperProps) {
   const threadContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const [replyContent, setReplyContent] = useState("");

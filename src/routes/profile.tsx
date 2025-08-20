@@ -10,10 +10,11 @@ import { NIP05Badge } from "@/components/ui/NIP05Badge";
 import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
 import MainContent from "../components/MainContent";
 import NewsCard from "../components/NewsCard";
+import PodcastCard from "../components/PodcastCard";
 import { useContentByAuthor } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 import { findProfileBySlug } from "../lib/ssg-data";
-import type { NewsItem, ArticleItem } from "../lib/ssg-data";
+import type { NewsItem, ArticleItem, PodcastItem } from "../lib/ssg-data";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const profile = data?.profile;
@@ -77,12 +78,14 @@ export default function ProfilePage() {
     return b.publishedAt - a.publishedAt;
   });
 
-  const newsItems = authorContentSorted.filter(
-    (item): item is NewsItem => "identifier" in item === false,
-  );
+  const newsItems = authorContentSorted.filter((item): item is NewsItem => item.type === "news");
 
   const articleItems = authorContentSorted.filter(
-    (item): item is ArticleItem => "identifier" in item === true,
+    (item): item is ArticleItem => item.type === "article",
+  );
+
+  const podcastItems = authorContentSorted.filter(
+    (item): item is PodcastItem => item.type === "podcast",
   );
 
   return (
@@ -186,6 +189,7 @@ export default function ProfilePage() {
           <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
             <span>{newsItems.length} haber</span>
             <span>{articleItems.length} makale</span>
+            <span>{podcastItems.length} podcast</span>
             <span>Toplam {authorContentSorted.length} içerik</span>
           </div>
         </div>
@@ -207,16 +211,22 @@ export default function ProfilePage() {
             </h2>
 
             <div className="grid gap-6">
-              {authorContentSorted.map((item, index) => (
-                <NewsCard
-                  key={`${item.title}-${index}`}
-                  title={item.title}
-                  summary={item.summary}
-                  publishedAt={item.publishedAt}
-                  event={item.event}
-                  author={item.author}
-                />
-              ))}
+              {authorContentSorted.map((item, index) => {
+                if (item.type === "podcast") {
+                  return <PodcastCard key={`${item.id}-${index}`} podcast={item} />;
+                }
+
+                return (
+                  <NewsCard
+                    key={`${item.title}-${index}`}
+                    title={item.title}
+                    summary={item.summary}
+                    publishedAt={item.publishedAt}
+                    event={item.event}
+                    author={item.author}
+                  />
+                );
+              })}
             </div>
           </div>
         )}

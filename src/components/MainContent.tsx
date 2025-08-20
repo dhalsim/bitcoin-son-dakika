@@ -5,14 +5,16 @@ import Footer from "./Footer";
 import Header from "./Header";
 import PriceBar from "./PriceBar";
 import Sidebar from "./Sidebar";
-import { useSSGData } from "../contexts/SSGContext";
+import { useLatestArticles, useLatestNews, useLatestPodcasts } from "../contexts/SSGContext";
 
 interface MainContentProps {
   children: ReactNode;
 }
 
 export default function MainContent({ children }: MainContentProps) {
-  const ssgData = useSSGData();
+  const news = useLatestNews(5);
+  const articles = useLatestArticles(2);
+  const podcasts = useLatestPodcasts(2);
 
   return (
     <div className="min-h-screen">
@@ -30,7 +32,7 @@ export default function MainContent({ children }: MainContentProps) {
 
           {/* Sidebar */}
           <div className="lg:w-80 mt-6 lg:mt-0">
-            <Sidebar news={ssgData.news} articles={ssgData.articles} />
+            <Sidebar news={news} articles={articles} podcasts={podcasts} />
           </div>
         </div>
       </div>

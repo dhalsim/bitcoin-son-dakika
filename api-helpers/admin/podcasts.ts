@@ -32,7 +32,19 @@ async function publishPodcast(
   data: PublishPodcastPayload,
 ): Promise<Response> {
   try {
-    const { title, content, summary, image, audioUrl, duration, episodeNumber, tags } = data;
+    const {
+      title,
+      content,
+      summary,
+      image,
+      audioUrl,
+      duration,
+      episodeNumber,
+      tags,
+      transcriptUrl,
+      chaptersUrl,
+      dTag,
+    } = data;
 
     if (!title || !content || !audioUrl) {
       return ErrorResponse("Title, content, and audioUrl are required", 400);
@@ -41,7 +53,8 @@ async function publishPodcast(
     const privateKeyBytes = hexToBytes(masterAdminPrivateKey);
 
     // Create the podcast event
-    const dIdentifier = createTitleSlug(title);
+    // Use existing dTag for updates, or create new one for new podcasts
+    const dIdentifier = dTag || createTitleSlug(title);
     const url = `https://bitcoinsondakika.com/podcast/${dIdentifier}`;
 
     const event = {
@@ -50,21 +63,16 @@ async function publishPodcast(
       tags: [
         ["d", dIdentifier],
         ["r", url],
-        // Add proxy tag for RSS protocol bridging
-        [
-          "proxy",
-          `https://bitcoinsondakika.com/feed/podcast-rss.xml#${encodeURIComponent(url)}`,
-          "rss",
-        ],
         ["i", `podcast:item:guid:${url}`],
         ["editor", pubkey],
         ["title", title],
-        ["content", content],
         ["audio", audioUrl],
         ...(summary ? [["summary", summary]] : []),
         ...(image ? [["image", image]] : []),
         ...(duration ? [["duration", duration]] : []),
         ...(episodeNumber ? [["episode", episodeNumber.toString()]] : []),
+        ...(transcriptUrl ? [["transcript", transcriptUrl]] : []),
+        ...(chaptersUrl ? [["chapters", chaptersUrl]] : []),
         ...tags.map((tag: string) => ["t", tag]),
       ],
       content,
@@ -82,23 +90,32 @@ async function publishPodcast(
       return ErrorResponse("Failed to publish article", 500);
     }
 
-    // add podcast to curated set
-    const addResult = await addPodcast(masterAdminPrivateKey, podcastTags, {
-      action: "add-podcast",
-      aTag: `30023:${signedEvent.pubkey}:${dIdentifier}`,
-      relayTag: relay,
-    });
+    // For updates, we don't need to add to curated set since it already exists
+    // For new podcasts, add to curated set
+    if (!dTag) {
+      const addResult = await addPodcast(masterAdminPrivateKey, podcastTags, {
+        action: "add-podcast",
+        aTag: `30023:${signedEvent.pubkey}:${dIdentifier}`,
+        relayTag: relay,
+      });
 
-    if (Array.isArray(addResult) ? addResult.some((r) => r.success) : true) {
+      if (Array.isArray(addResult) ? addResult.some((r) => r.success) : true) {
+        return PublishEventResponse(
+          { message: "Podcast published successfully", result },
+          { eventId: signedEvent.id, relay, addPodcastResult: addResult },
+        );
+      }
+    } else {
+      // Update case - just return success
       return PublishEventResponse(
-        { message: "Podcast published successfully", result },
-        { eventId: signedEvent.id, relay, addPodcastResult: addResult },
+        { message: "Podcast updated successfully", result },
+        { eventId: signedEvent.id, relay },
       );
     }
 
     return ErrorResponse("Failed to publish podcast", 500);
   } catch (error) {
-    return ErrorResponse(error);
+    return ErrorResponse(error || "Failed to publish podcast");
   }
 }
 

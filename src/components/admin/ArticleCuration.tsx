@@ -1,4 +1,4 @@
-import { Loader2, RefreshCw, Trash2 } from "lucide-react";
+import { Loader2, RefreshCw, Trash2, Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,21 @@ import { Label } from "@/components/ui/label";
 import type { EventItem } from "@/lib/nip01";
 import { getKind30023Events } from "@/lib/nip23";
 import type { ArticleTag } from "api-helpers/utils";
+import { extractArticleDataFromEvent } from "api-helpers/utils";
 
-import UploadToX from "./UploadToX";
 import { publishToX } from "./utils";
 import { Skeleton } from "../ui/skeleton";
+
+import UploadToX from "./UploadToX";
+
+interface ArticleCurationProps {
+  articles: ArticleTag[];
+  lastUpdated: number;
+  performAction: (data: any) => Promise<any>;
+  reload: () => Promise<void> | void;
+  userNpub?: string;
+  onEditArticle: (articleData: any) => void;
+}
 
 export default function ArticleCuration({
   articles,
@@ -19,13 +30,8 @@ export default function ArticleCuration({
   performAction,
   reload,
   userNpub,
-}: {
-  articles: ArticleTag[];
-  lastUpdated: number;
-  performAction: (data: any) => Promise<any>;
-  reload: () => Promise<void> | void;
-  userNpub?: string;
-}) {
+  onEditArticle,
+}: ArticleCurationProps) {
   const [articleInputMethod, setArticleInputMethod] = useState<"naddr" | "fields">("naddr");
   const [articleNaddr, setArticleNaddr] = useState("");
   const [articleNpub, setArticleNpub] = useState(userNpub || "");
@@ -189,6 +195,16 @@ export default function ArticleCuration({
                         >
                           <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
                         </svg>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          onEditArticle(extractArticleDataFromEvent(event));
+                        }}
+                        title="Düzenle"
+                      >
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="destructive"

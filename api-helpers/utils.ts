@@ -1,6 +1,7 @@
 import { verifyEvent, SimplePool } from "nostr-tools";
 
 import type { EventItem } from "@/lib/nip01.js";
+import type { ArticleItem, PodcastItem } from "@/lib/ssg-data.js";
 import type { PublishToRelaysResult } from "@/lib/utils.js";
 
 import type { AuthResult, UserRole } from "./types.js";
@@ -426,4 +427,70 @@ export function createTitleSlug(title: string): string {
       .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
       .trim()
   );
+}
+
+export function extractArticleDataFromEvent(event: EventItem): Omit<ArticleItem, "author"> & {
+  dTag: string;
+  pubkey: string;
+  relay: string;
+} {
+  const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
+  const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
+  const imageTag = event.tags.find((t) => t[0] === "image")?.[1];
+  const dTag = event.tags.find((t) => t[0] === "d")?.[1];
+  const tags = event.tags.filter((t) => t[0] === "t").map((t) => t[1]);
+
+  return {
+    type: "article",
+    id: event.id,
+    event,
+    publishedAt: event.created_at,
+    title: titleTag || "",
+    summary: summaryTag || "",
+    content: event.content,
+    image: imageTag || "",
+    tags: tags || [],
+    identifier: dTag || "",
+    dTag: dTag || "",
+    pubkey: event.pubkey,
+    relay: event.relay,
+  };
+}
+
+export function extractPodcastDataFromEvent(event: EventItem): Omit<PodcastItem, "author"> & {
+  dTag: string;
+  pubkey: string;
+  relay: string;
+} {
+  const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
+  const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
+  const imageTag = event.tags.find((t) => t[0] === "image")?.[1];
+  const audioTag = event.tags.find((t) => t[0] === "audio")?.[1];
+  const durationTag = event.tags.find((t) => t[0] === "duration")?.[1];
+  const episodeTag = event.tags.find((t) => t[0] === "episode")?.[1];
+  const transcriptTag = event.tags.find((t) => t[0] === "transcript")?.[1];
+  const chaptersTag = event.tags.find((t) => t[0] === "chapters")?.[1];
+  const dTag = event.tags.find((t) => t[0] === "d")?.[1];
+  const tags = event.tags.filter((t) => t[0] === "t").map((t) => t[1]);
+
+  return {
+    type: "podcast",
+    id: event.id,
+    event,
+    publishedAt: event.created_at,
+    title: titleTag || "",
+    summary: summaryTag || "",
+    content: event.content,
+    image: imageTag || "",
+    audioUrl: audioTag || "",
+    duration: durationTag || "",
+    episodeNumber: episodeTag ? parseInt(episodeTag) : 0,
+    transcriptUrl: transcriptTag || "",
+    chaptersUrl: chaptersTag || "",
+    tags: tags || [],
+    identifier: dTag || "",
+    dTag: dTag || "",
+    pubkey: event.pubkey,
+    relay: event.relay,
+  };
 }

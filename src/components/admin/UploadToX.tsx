@@ -183,7 +183,7 @@ export default function UploadToX({
                       <>
                         {tweetId ? (
                           <a
-                            href={`https://x.com/bitcoin_son_dk/status/${tweetId}`}
+                            href={`https://x.com/sondakikabtc/status/${tweetId}`}
                             target="_blank"
                             rel="noreferrer"
                             className="underline"

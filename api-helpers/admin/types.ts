@@ -53,6 +53,7 @@ export type PublishArticlePayload = {
   summary?: string;
   image?: string;
   tags: string[];
+  dTag?: string; // For updates, use existing dTag
 };
 
 export type PublishPodcastPayload = {
@@ -65,6 +66,9 @@ export type PublishPodcastPayload = {
   duration?: string;
   episodeNumber?: number;
   tags: string[];
+  transcriptUrl?: string;
+  chaptersUrl?: string;
+  dTag?: string; // For updates, use existing dTag
 };
 
 export type AddPodcastResolvedPayload = {

@@ -123,3 +123,11 @@ export async function shareContent(url: string, title: string, text: string): Pr
     return false;
   }
 }
+
+export function formatNostrDate(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleDateString("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}

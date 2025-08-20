@@ -189,7 +189,8 @@ async function publishArticle(
     const privateKeyBytes = hexToBytes(masterPrivateKey);
     const currentTime = Math.floor(Date.now() / 1000);
 
-    const dIdentifier = createTitleSlug(data.title);
+    // Use existing dTag for updates, or create new one for new articles
+    const dIdentifier = data.dTag || createTitleSlug(data.title);
 
     const eventTags: string[][] = [
       ["d", dIdentifier],
@@ -223,17 +224,26 @@ async function publishArticle(
       return ErrorResponse("Failed to publish article", 500);
     }
 
-    // add article to curated set
-    const addResult = await addArticle(masterPrivateKey, currentArticles, {
-      action: "add-article",
-      aTag: `30023:${event.pubkey}:${dIdentifier}`,
-      relayTag: relay,
-    });
+    // For updates, we don't need to add to curated set since it already exists
+    // For new articles, add to curated set
+    if (!data.dTag) {
+      const addResult = await addArticle(masterPrivateKey, currentArticles, {
+        action: "add-article",
+        aTag: `30023:${event.pubkey}:${dIdentifier}`,
+        relayTag: relay,
+      });
 
-    if (Array.isArray(addResult) ? addResult.some((r) => r.success) : true) {
+      if (Array.isArray(addResult) ? addResult.some((r) => r.success) : true) {
+        return PublishEventResponse(
+          { message: "Article published successfully", result },
+          { eventId: event.id, relay, addArticleResult: addResult },
+        );
+      }
+    } else {
+      // Update case - just return success
       return PublishEventResponse(
-        { message: "Article published successfully", result },
-        { eventId: event.id, relay, addArticleResult: addResult },
+        { message: "Article updated successfully", result },
+        { eventId: event.id, relay },
       );
     }
 
