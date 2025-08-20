@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { EventItem } from "@/lib/nip01";
 import { getKind30023Events } from "@/lib/nip23";
-import type { ArticleTag } from "api-helpers/utils";
-import { extractArticleDataFromEvent } from "api-helpers/utils";
 
-import { publishToX } from "./utils";
+import type { ArticleTag } from "../../../api-helpers/utils";
+import { extractArticleDataFromEvent } from "../../../api-helpers/utils";
+
 import { Skeleton } from "../ui/skeleton";
 
+import { publishToX } from "./utils";
 import UploadToX from "./UploadToX";
 
 interface ArticleCurationProps {
