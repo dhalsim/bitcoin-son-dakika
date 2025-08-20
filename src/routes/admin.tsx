@@ -426,7 +426,10 @@ export default function AdminPanel() {
         if (
           data.action === "publish-news" ||
           data.action === "publish-article" ||
-          data.action === "publish-podcast"
+          data.action === "publish-podcast" ||
+          data.action === "remove-article" ||
+          data.action === "remove-podcast" ||
+          data.action === "remove-news"
         ) {
           toast({
             title: "Yayın başarılı",

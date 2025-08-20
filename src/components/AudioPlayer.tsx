@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -26,7 +27,7 @@ interface Chapter {
 
 interface TranscriptEntry {
   startTime: number;
-  endTime: number;
+  endTime?: number;
   text: string;
 }
 
@@ -54,6 +55,7 @@ export default function AudioPlayer({
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [showTranscript, setShowTranscript] = useState(false);
   const [showChapters, setShowChapters] = useState(false);
+  const [syncTranscript, setSyncTranscript] = useState(true);
   const [currentChapter, setCurrentChapter] = useState<Chapter | null>(null);
   const [currentTranscriptEntry, setCurrentTranscriptEntry] = useState<TranscriptEntry | null>(
     null,
@@ -118,6 +120,7 @@ export default function AudioPlayer({
       const line = lines[i].trim();
       if (line.includes("-->")) {
         const timeMatch = line.match(/(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
+
         if (timeMatch) {
           const startTime = parseTimeToSeconds(timeMatch[1]);
           const endTime = parseTimeToSeconds(timeMatch[2]);
@@ -174,13 +177,30 @@ export default function AudioPlayer({
       const current = audioRef.current.currentTime;
       setCurrentTime(current);
 
-      // Update current chapter
-      const chapter = chapters.find((ch) => current >= ch.startTime && current <= ch.endTime);
-      setCurrentChapter(chapter || null);
+      // Update current chapter (chapters are sorted by startTime)
+      if (chapters.length > 0) {
+        let currentChapter = null;
 
-      // Update current transcript entry
-      const entry = transcript.find((tr) => current >= tr.startTime && current <= tr.endTime);
-      setCurrentTranscriptEntry(entry || null);
+        // Find the chapter where current time is >= startTime
+        for (let i = 0; i < chapters.length; i++) {
+          const chapter = chapters[i];
+          const nextChapter = chapters[i + 1];
+
+          // If we're within this chapter's time range
+          if (current >= chapter.startTime && (!nextChapter || current < nextChapter.startTime)) {
+            currentChapter = chapter;
+            break;
+          }
+        }
+
+        setCurrentChapter(currentChapter);
+      }
+
+      // Update current transcript entry (only if transcript is loaded)
+      if (transcript.length > 0) {
+        const entry = transcript.find((tr) => current >= tr.startTime && current <= tr.endTime);
+        setCurrentTranscriptEntry(entry || null);
+      }
     }
   };
 
@@ -376,7 +396,7 @@ export default function AudioPlayer({
             <Button
               variant="outline"
               onClick={() => setShowChapters(!showChapters)}
-              className="flex items-center gap-2"
+              className={`flex items-center gap-2 ${showChapters ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}
             >
               <List className="h-4 w-4" />
               Bölümler ({chapters.length})
@@ -387,7 +407,7 @@ export default function AudioPlayer({
             <Button
               variant="outline"
               onClick={() => setShowTranscript(!showTranscript)}
-              className="flex items-center gap-2"
+              className={`flex items-center gap-2 ${showTranscript ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}
             >
               <FileText className="h-4 w-4" />
               Transcript
@@ -408,57 +428,50 @@ export default function AudioPlayer({
           atla), ↑↓ (ses), M (sessiz)
         </div>
 
-        {/* Current chapter and transcript indicator */}
-        {(currentChapter || currentTranscriptEntry) && (
-          <div className="space-y-2">
-            {currentChapter && (
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium">Şu anki bölüm:</span>
-                  <Badge variant="secondary">{currentChapter.title}</Badge>
-                </div>
-              </div>
-            )}
-
-            {currentTranscriptEntry && (
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                <div className="flex items-start gap-2">
-                  <FileText className="h-4 w-4 text-green-600 mt-0.5" />
-                  <div className="flex-1">
-                    <div className="font-medium text-sm mb-1">Şu anki transcript:</div>
-                    <div className="text-sm text-gray-700 dark:text-gray-300">
-                      {currentTranscriptEntry.text}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Chapters dropdown */}
         {showChapters && chapters.length > 0 && (
           <Collapsible open={showChapters} onOpenChange={setShowChapters}>
             <CollapsibleContent>
-              <div className="border rounded-lg p-3 space-y-2 max-h-60 overflow-y-auto">
+              <div className="border rounded-lg p-3 space-y-3">
                 <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Bölümler</h4>
-                {chapters.map((chapter, index) => (
-                  <button
-                    key={index}
-                    onClick={() => jumpToTime(chapter.startTime)}
-                    className={`w-full text-left p-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
-                      currentChapter?.title === chapter.title
-                        ? "bg-blue-100 dark:bg-blue-900/30"
-                        : ""
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <span className="truncate">{chapter.title}</span>
-                      <span className="text-gray-500 text-xs">{formatTime(chapter.startTime)}</span>
+
+                {/* Chapters list with current chapter at top */}
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {/* Current chapter at top */}
+                  {currentChapter && (
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded border-l-4 border-l-blue-500">
+                      <div className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                        {currentChapter.title}
+                      </div>
                     </div>
-                  </button>
-                ))}
+                  )}
+
+                  {/* All chapters */}
+                  {chapters.map((chapter, index) => (
+                    <button
+                      key={index}
+                      onClick={() => jumpToTime(chapter.startTime)}
+                      className={`w-full text-left p-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
+                        currentChapter?.title === chapter.title
+                          ? "bg-blue-100 dark:bg-blue-900/30 border-l-4 border-l-blue-500"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span
+                          className={`truncate ${currentChapter?.title === chapter.title ? "font-medium text-blue-700 dark:text-blue-300" : ""}`}
+                        >
+                          {chapter.title}
+                        </span>
+                        <span
+                          className={`text-xs ${currentChapter?.title === chapter.title ? "text-blue-600 dark:text-blue-400" : "text-gray-500"}`}
+                        >
+                          {formatTime(chapter.startTime)}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -469,17 +482,38 @@ export default function AudioPlayer({
           <Collapsible open={showTranscript} onOpenChange={setShowTranscript}>
             <CollapsibleContent>
               <div className="border rounded-lg p-3">
-                <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-3">
-                  Transcript
-                </h4>
-                <ScrollArea className="h-60">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">
+                    Transcript
+                  </h4>
+                  <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                    <Checkbox
+                      checked={syncTranscript}
+                      onCheckedChange={(checked) => setSyncTranscript(checked as boolean)}
+                    />
+                    Transkripti ses ile senkron yap
+                  </label>
+                </div>
+
+                {/* Transcript list with current text at top */}
+                <ScrollArea className="h-48">
                   <div className="space-y-2">
+                    {/* Current transcript entry at top */}
+                    {syncTranscript && currentTranscriptEntry && (
+                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded border-l-4 border-l-green-500">
+                        <div className="text-sm text-green-800 dark:text-green-200 font-medium">
+                          {currentTranscriptEntry.text}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* All transcript entries */}
                     {transcript.map((entry, index) => (
                       <div
                         key={index}
                         onClick={() => jumpToTime(entry.startTime)}
                         className={`p-2 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
-                          currentTranscriptEntry?.text === entry.text
+                          syncTranscript && currentTranscriptEntry?.text === entry.text
                             ? "bg-blue-100 dark:bg-blue-900/30"
                             : ""
                         }`}
