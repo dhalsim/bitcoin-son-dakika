@@ -11,7 +11,7 @@ import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";
 import MainContent from "../components/MainContent";
 import { getDisplayName, ProfileAvatar } from "../components/ui/ProfileAvatar";
-import { WEBSITE_NAME, WEBSITE_DESCRIPTION, WEBSITE_URL, LOGO_URL } from "../lib/constants";
+import { WEBSITE_NAME, WEBSITE_URL, LOGO_URL } from "../lib/constants";
 
 import NotFound from "./$";
 
@@ -77,14 +77,11 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
     ];
   }
 
-  const title = `${articleItem.title} - ${WEBSITE_NAME}`;
-  const description = articleItem.summary || WEBSITE_DESCRIPTION;
+  const title = `Makale - ${articleItem.title} - ${WEBSITE_NAME}`;
+  const description =
+    articleItem.summary?.substring(0, 200) || articleItem.content.substring(0, 160);
   const canonicalUrl = `${WEBSITE_URL}/article/${createTitleSlug(articleItem.title!)}`;
-  const imageUrl = articleItem.image
-    ? articleItem.image.startsWith("http")
-      ? articleItem.image
-      : `${WEBSITE_URL}${articleItem.image}`
-    : `${WEBSITE_URL}${LOGO_URL}`;
+  const imageUrl = articleItem.image ? articleItem.image : `${WEBSITE_URL}/${LOGO_URL}`;
 
   // Add tags for better SEO
   const tags = articleItem.tags?.length > 0 ? articleItem.tags.join(", ") : undefined;

@@ -41,7 +41,7 @@ export function ShareButton({ event, isPodcast = false }: ShareButtonProps) {
       const urlCategory = isPodcast ? "podcast" : isArticle ? "article" : "news";
       const url = `${WEBSITE_URL}/${urlCategory}/${slug}`;
 
-      const success = await shareContent(url, eventTitle, eventSummary);
+      const success = await shareContent(url, eventTitle);
 
       if (success) {
         setShowCopiedTooltip(true);

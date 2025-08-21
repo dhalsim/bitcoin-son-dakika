@@ -9,7 +9,7 @@ export const meta: MetaFunction = () => {
   const title = `${WEBSITE_NAME} - Güncel Bitcoin Haberleri ve Analizler`;
   const description = WEBSITE_DESCRIPTION;
   const siteUrl = `${WEBSITE_URL}`;
-  const imageUrl = `${WEBSITE_URL}${LOGO_URL}`;
+  const imageUrl = `${WEBSITE_URL}/${LOGO_URL}`;
 
   return [
     { title },

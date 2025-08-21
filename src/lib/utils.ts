@@ -91,7 +91,7 @@ export const isMobile = () =>
  * @param text - The text description
  * @returns Promise<boolean> - true if shared successfully, false otherwise
  */
-export async function shareContent(url: string, title: string, text: string): Promise<boolean> {
+export async function shareContent(url: string, title: string, text?: string): Promise<boolean> {
   // Check if Web Share API is available AND if it's a mobile device
   if (navigator.share && isMobile()) {
     try {

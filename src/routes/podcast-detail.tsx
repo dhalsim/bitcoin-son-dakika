@@ -9,6 +9,7 @@ import { Mic, Clock } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { createTitleSlug } from "../../api-helpers/utils";
+
 import { createProfileSlug, fetchSSGData, getDisplayName } from "@/lib/ssg-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,36 +20,41 @@ import { EventStatistics } from "@/components/EventStatistics";
 import { CategoryTags } from "@/components/CategoryTags";
 import { getTimeAgo } from "@/components/NewsCard";
 import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
+import { LOGO_URL, WEBSITE_NAME, WEBSITE_URL } from "@/lib/constants";
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const podcast = loaderData?.podcast;
 
   if (!podcast) {
     return [
-      { title: "Podcast Bulunamadı - Bitcoin Son Dakika" },
+      { title: `Podcast Bulunamadı - ${WEBSITE_NAME}` },
       { name: "description", content: "Aradığınız podcast bulunamadı." },
     ];
   }
 
+  const title = `Podcast - ${podcast.title} - ${WEBSITE_NAME}`;
+  const description = podcast.summary?.substring(0, 200) || podcast.content?.substring(0, 160);
+  const imageUrl = podcast.image ? podcast.image : `${WEBSITE_URL}/${LOGO_URL}`;
+
   return [
-    { title: `${podcast.title} - Bitcoin Son Dakika` },
+    { title: title },
     {
       name: "description",
-      content: podcast.summary || podcast.content.substring(0, 160),
+      content: description,
     },
-    { property: "og:title", content: `${podcast.title} - Bitcoin Son Dakika` },
+    { property: "og:title", content: title },
     {
       property: "og:description",
-      content: podcast.summary || podcast.content.substring(0, 160),
+      content: description,
     },
     { property: "og:type", content: "article" },
     { property: "og:url", content: `https://bitcoinsondakika.com/podcast/${podcast.id}` },
     { property: "og:image", content: podcast.image },
     { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: `${podcast.title} - Bitcoin Son Dakika` },
+    { name: "twitter:title", content: title },
     {
       name: "twitter:description",
-      content: podcast.summary || podcast.content.substring(0, 160),
+      content: description,
     },
     { property: "twitter:image", content: podcast.image },
     { property: "og:audio", content: podcast.audioUrl },

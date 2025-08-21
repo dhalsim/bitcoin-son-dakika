@@ -11,7 +11,7 @@ import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";
 import MainContent from "../components/MainContent";
 import { getDisplayName, ProfileAvatar } from "../components/ui/ProfileAvatar";
-import { WEBSITE_NAME, WEBSITE_DESCRIPTION, WEBSITE_URL, LOGO_URL } from "../lib/constants";
+import { WEBSITE_NAME, WEBSITE_URL, LOGO_URL } from "../lib/constants";
 
 import NotFound from "./$";
 
@@ -69,7 +69,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 
   if (!newsItem) {
     return [
-      { title: "Haber Bulunamadı - Bitcoin Son Dakika" },
+      { title: `Haber Bulunamadı - ${WEBSITE_NAME}` },
       {
         name: "description",
         content: "Aradığınız haber bulunamadı. Ana sayfaya geri dönebilirsiniz.",
@@ -77,14 +77,10 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     ];
   }
 
-  const title = `${newsItem.title} - ${WEBSITE_NAME}`;
-  const description = newsItem.summary || WEBSITE_DESCRIPTION;
+  const title = `Haber - ${newsItem.title} - ${WEBSITE_NAME}`;
+  const description = newsItem.summary?.substring(0, 200) || newsItem.content.substring(0, 160);
   const canonicalUrl = `${WEBSITE_URL}/news/${createTitleSlug(newsItem.title!)}`;
-  const imageUrl = newsItem.image
-    ? newsItem.image.startsWith("http")
-      ? newsItem.image
-      : `${WEBSITE_URL}${newsItem.image}`
-    : `${WEBSITE_URL}${LOGO_URL}`;
+  const imageUrl = newsItem.image ? newsItem.image : `${WEBSITE_URL}/${LOGO_URL}`;
 
   // Add tags for better SEO
   const tags = newsItem.tags?.length > 0 ? newsItem.tags.join(", ") : undefined;

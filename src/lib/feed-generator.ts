@@ -21,7 +21,7 @@ export function generateRSSFeed(ssgData: SSGData): string {
     <lastBuildDate>${new Date(ssgData.lastUpdated).toUTCString()}</lastBuildDate>
     <atom:link href="${WEBSITE_URL}/feed/rss.xml" rel="self" type="application/rss+xml" />
     <image>
-      <url>${WEBSITE_URL}${LOGO_URL}</url>
+      <url>${WEBSITE_URL}/${LOGO_URL}</url>
       <title>${WEBSITE_NAME}</title>
       <link>${WEBSITE_URL}</link>
     </image>
@@ -66,8 +66,8 @@ export function generateAtomFeed(ssgData: SSGData): string {
   <id>${WEBSITE_URL}/</id>
   <updated>${new Date(ssgData.lastUpdated).toISOString()}</updated>
   <subtitle>${WEBSITE_DESCRIPTION}</subtitle>
-  <icon>${WEBSITE_URL}${LOGO_URL}</icon>
-  <logo>${WEBSITE_URL}${LOGO_URL}</logo>
+  <icon>${WEBSITE_URL}/${LOGO_URL}</icon>
+  <logo>${WEBSITE_URL}/${LOGO_URL}</logo>
   ${allContent
     .map((item) => {
       const isArticle = item.type === "article";
