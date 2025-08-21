@@ -50,7 +50,7 @@ export default {
     const { rssFeed, atomFeed } = generateFeeds(ssgData);
 
     // Generate Podcast RSS feed
-    const podcastRssFeed = generatePodcastRssXml(ssgData.podcasts);
+    const podcastRssFeed = await generatePodcastRssXml(ssgData.podcasts);
 
     // Write feed files to build directory
     const buildDir = join(process.cwd(), "build", "client");
