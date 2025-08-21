@@ -3,6 +3,7 @@ export const WEBSITE_NAME = "Bitcoin Son Dakika";
 export const WEBSITE_DESCRIPTION =
   "Bitcoin dünyasından son dakika haberleri, güncel gelişmeler, analizler ve uzman yorumları";
 export const LOGO_URL = "bitcoin-son-dakika-logo.png";
+export const LOGO_FOR_PODCAST_URL = "logo-for-podcast.png";
 
 const zero = {
   count: 0,

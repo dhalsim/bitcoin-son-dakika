@@ -1,11 +1,12 @@
 import { createTitleSlug } from "../../api-helpers/utils";
 
+import { LOGO_FOR_PODCAST_URL, WEBSITE_URL } from "./constants";
 import type { PodcastItem } from "./ssg-data";
 import { formatNostrDate } from "./utils";
 
 const generatePodcastItemXml = (podcast: PodcastItem) => {
   const pubDate = formatNostrDate(podcast.publishedAt);
-  const imageUrl = podcast.image || "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png";
+  const imageUrl = podcast.image || `${WEBSITE_URL}/${LOGO_FOR_PODCAST_URL}`;
   const transcriptUrl = podcast.transcriptUrl;
   const chaptersUrl = podcast.chaptersUrl;
   const episodeNumber = podcast.episodeNumber;
@@ -54,6 +55,8 @@ export const generatePodcastRssXml = (podcasts: PodcastItem[]) => {
 
   const podcastItemsXml = sortedPodcasts.map(generatePodcastItemXml).join("");
 
+  const logoUrl = `${WEBSITE_URL}/${LOGO_FOR_PODCAST_URL}`;
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
 	xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
@@ -74,12 +77,12 @@ export const generatePodcastRssXml = (podcasts: PodcastItem[]) => {
       <itunes:category text="Tech News"/>
     </itunes:category>
     <image>
-      <url>https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png</url>
+      <url>${logoUrl}</url>
       <title>Bitcoinsondakika.com</title>
       <link>https://bitcoinsondakika.com/podcasts</link>
     </image>
-    <itunes:image href="https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png"/>
-    <podcast:image href="https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png"/>
+    <itunes:image href="${logoUrl}"/>
+    <podcast:image href="${logoUrl}"/>
     <podcast:medium>podcast</podcast:medium>
     <atom:link href="https://bitcoinsondakika.com/podcasts/podcast-rss.xml" rel="self" type="application/rss+xml"/>
     
