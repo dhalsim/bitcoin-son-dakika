@@ -10,9 +10,10 @@ import { EventItem } from "@/lib/nip01";
 
 interface ShareButtonProps {
   event: EventItem;
+  isPodcast: boolean;
 }
 
-export function ShareButton({ event }: ShareButtonProps) {
+export function ShareButton({ event, isPodcast = false }: ShareButtonProps) {
   const [isSharing, setIsSharing] = useState(false);
   const [showCopiedTooltip, setShowCopiedTooltip] = useState(false);
   const { toast } = useToast();
@@ -37,7 +38,8 @@ export function ShareButton({ event }: ShareButtonProps) {
       // Create the slug and URL
       const slug = createTitleSlug(eventTitle);
       const isArticle = event.kind === 30023;
-      const url = `${WEBSITE_URL}${isArticle ? "/article" : "/news"}/${slug}`;
+      const urlCategory = isPodcast ? "podcast" : isArticle ? "article" : "news";
+      const url = `${WEBSITE_URL}/${urlCategory}/${slug}`;
 
       const success = await shareContent(url, eventTitle, eventSummary);
 

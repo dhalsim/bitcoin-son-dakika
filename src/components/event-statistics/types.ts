@@ -9,6 +9,7 @@ export interface EventStatisticsProps {
   event: EventItem;
   author: ProfileItem;
   className: string;
+  isPodcast?: boolean;
 }
 
 export type ReactionGroup =
@@ -35,6 +36,7 @@ export interface ActionButtonsProps {
   statistics: EventStatistics | null;
   setStatistics: React.Dispatch<React.SetStateAction<EventStatistics | null>>;
   profiles: Map<string, ProfileItem>;
+  isPodcast: boolean;
 }
 
 export interface ExpandedReactionsProps {

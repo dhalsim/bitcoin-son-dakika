@@ -150,14 +150,14 @@
 
     /* Z-index scale (single source of truth) */
     --z-base: 0;
+    --z-indicator: 1;
+    --z-pricebar: 5;
+    --z-pricebar-ctrl: 6;
     --z-content: 10;
     --z-sidebar: 20;
+    --z-header: 40;
     --z-sheet: 50;
     --z-sheet-overlay: 50;
-    --z-header: 200;
-    --z-pricebar: 110;
-    --z-pricebar-ctrl: 300;
-    --z-indicator: 1;
     --z-dropdown: 300;
     --z-popover: 500;
     --z-dialog: 900;

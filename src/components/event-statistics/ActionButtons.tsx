@@ -38,7 +38,6 @@ import { ThreadViewWrapper } from "./ThreadViewWrapper";
 import type { ActionButtonsProps, ReactionGroup } from "./types";
 import { getMostUsedEmojis, loadDraft, saveDraft, saveEmojiUsage } from "./utils";
 import { postReaction } from "@/lib/nip25";
-import { EventItem } from "@/lib/nip01";
 
 export function ActionButtons({
   event,
@@ -46,6 +45,7 @@ export function ActionButtons({
   statistics,
   setStatistics,
   profiles,
+  isPodcast = false,
 }: ActionButtonsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
@@ -565,7 +565,7 @@ export function ActionButtons({
         </button>
         <div className="ml-auto flex items-center">
           <MoreOptionsButton event={event} />
-          <ShareButton event={event} />
+          <ShareButton event={event} isPodcast={isPodcast} />
         </div>
       </div>
 

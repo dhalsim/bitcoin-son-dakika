@@ -240,7 +240,7 @@ const Header = () => {
               </SheetTrigger>
               <SheetContent
                 side="right"
-                className="w-80 text-left-menu bg-left-menu border-left-menu"
+                className="w-80 text-left-menu bg-left-menu border-left-menu overflow-y-auto"
               >
                 <div className="flex flex-col space-y-6 mt-6">
                   <a href="/" className="font-medium text-lg pb-2">
@@ -307,9 +307,11 @@ const Header = () => {
                     </div>
                   </div>
 
-                  <a href="/podcasts" className="text-left-menu-accent">
-                    Podcast
-                  </a>
+                  <div className="space-y-4">
+                    <h3 className="text-left-menu-primary font-semibold">
+                      <a href="/podcasts">Podcast</a>
+                    </h3>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

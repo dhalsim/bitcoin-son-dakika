@@ -107,7 +107,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
             <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
               <CategoryTags
                 tags={event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1])}
-                tagClassName="text-xs"
+                size="xs"
               />
             </div>
           </div>

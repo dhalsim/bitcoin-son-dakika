@@ -81,6 +81,9 @@ export function extractEmojiInfo(reaction: EventItem): {
   };
 }
 
+export const isMobile = () =>
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
 /**
  * Share content using Web Share API on mobile or copy to clipboard on desktop
  * @param url - The URL to share
@@ -90,11 +93,7 @@ export function extractEmojiInfo(reaction: EventItem): {
  */
 export async function shareContent(url: string, title: string, text: string): Promise<boolean> {
   // Check if Web Share API is available AND if it's a mobile device
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent,
-  );
-
-  if (navigator.share && isMobile) {
+  if (navigator.share && isMobile()) {
     try {
       await navigator.share({
         title: title,

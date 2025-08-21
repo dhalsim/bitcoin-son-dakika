@@ -1,11 +1,14 @@
 import { TrendingUp, PenTool, Info, Mic } from "lucide-react";
+import { Link } from "react-router";
 
 import type { ArticleItem, NewsItem, PodcastItem } from "@/lib/ssg-data";
+import { formatNostrDate } from "@/lib/utils";
 
-import { useBitcoinStats } from "../hooks/useBitcoinStats.js";
+import { createTitleSlug } from "../../api-helpers/utils";
+
+import { useBitcoinStats } from "../hooks/useBitcoinStats";
 
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { formatNostrDate } from "@/lib/utils.js";
 
 type SidebarProps = {
   news: NewsItem[];
@@ -28,8 +31,8 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
         <div className="space-y-4">
           {articles.map((article, index) => (
             <div key={index} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
-              <h4 className="font-medium text-foreground hover:text-main-accent cursor-pointer text-sm leading-snug mb-1">
-                {article.title}
+              <h4 className="font-medium text-foreground hover:text-main-accent text-sm leading-snug mb-1">
+                <Link to={`/article/${createTitleSlug(article.title)}`}>{article.title}</Link>
               </h4>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">{article.author.display_name}</span>
@@ -58,8 +61,8 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
         <div className="space-y-4">
           {news.map((n, index) => (
             <div key={index} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
-              <h4 className="font-medium text-foreground hover:text-main-accent cursor-pointer text-sm leading-snug mb-1">
-                {n.title}
+              <h4 className="font-medium text-foreground hover:text-main-accent text-sm leading-snug mb-1">
+                <Link to={`/news/${createTitleSlug(n.title)}`}>{n.title}</Link>
               </h4>
               <span className="text-xs text-muted-foreground">
                 {formatNostrDate(n.publishedAt)}
@@ -85,8 +88,8 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
         <div className="space-y-4">
           {podcasts.map((p, index) => (
             <div key={index} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
-              <h4 className="font-medium text-foreground hover:text-main-accent cursor-pointer text-sm leading-snug mb-1">
-                {p.title}
+              <h4 className="font-medium text-foreground hover:text-main-accent text-sm leading-snug mb-1">
+                <Link to={`/podcast/${createTitleSlug(p.title)}`}>{p.title}</Link>
               </h4>
               <span className="text-xs text-muted-foreground">
                 {formatNostrDate(p.publishedAt)}

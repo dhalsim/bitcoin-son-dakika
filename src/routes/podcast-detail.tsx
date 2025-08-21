@@ -1,16 +1,24 @@
-import { LoaderFunctionArgs, MetaFunction, useParams, useLoaderData } from "react-router-dom";
-import { Mic, Play, Clock, Calendar, User, ExternalLink, Download } from "lucide-react";
+import {
+  LoaderFunctionArgs,
+  MetaFunction,
+  useLoaderData,
+  Link,
+  useSearchParams,
+} from "react-router-dom";
+import { Mic, Clock } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import { createTitleSlug } from "../../api-helpers/utils";
-
-import { fetchSSGData } from "@/lib/ssg-data";
+import { createProfileSlug, fetchSSGData, getDisplayName } from "@/lib/ssg-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import MainContent from "@/components/MainContent";
 import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
-import AudioPlayer from "@/components/AudioPlayer";
-import { formatNostrDate } from "@/lib/utils";
+import AudioPlayer, { AudioPlayerRef } from "@/components/AudioPlayer";
+import { EventStatistics } from "@/components/EventStatistics";
+import { CategoryTags } from "@/components/CategoryTags";
+import { getTimeAgo } from "@/components/NewsCard";
+import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const podcast = loaderData?.podcast;
@@ -85,6 +93,21 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function PodcastDetailPage() {
   const { podcast } = useLoaderData<typeof loader>();
+  const [searchParams] = useSearchParams();
+  const audioPlayerRef = useRef<AudioPlayerRef>(null);
+
+  // Auto-play when autoplay query param is present
+  useEffect(() => {
+    const shouldAutoplay = searchParams.get("autoplay") === "true";
+    if (shouldAutoplay && audioPlayerRef.current && podcast.audioUrl) {
+      // Small delay to ensure AudioPlayer is fully mounted
+      const timer = setTimeout(() => {
+        audioPlayerRef.current?.play();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, podcast.audioUrl]);
 
   if (!podcast) {
     return (
@@ -107,6 +130,9 @@ export default function PodcastDetailPage() {
     if (!duration) return "";
     return duration;
   };
+
+  const time = getTimeAgo(podcast.publishedAt);
+  const displayName = getDisplayName(podcast.author, podcast.event.pubkey);
 
   return (
     <MainContent>
@@ -137,26 +163,28 @@ export default function PodcastDetailPage() {
               {podcast.title}
             </h1>
 
-            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span>{podcast.author.display_name || podcast.author.name || "Anonim"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>{formatNostrDate(podcast.publishedAt)}</span>
+            {/* Author and Time */}
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
+              <div className="flex flex-col">{time}</div>
+              <div className="text-xs text-muted-foreground">
+                <Link
+                  to={`/profile/${createProfileSlug(displayName)}`}
+                  className="text-foreground font-medium hover:text-main-accent transition-colors"
+                >
+                  <div className="flex items-center gap-1">
+                    <ProfileAvatar
+                      pubkey={podcast.author.pubkey}
+                      profile={podcast.author}
+                      disablePopup={true}
+                      size="md"
+                    />
+                    <div className="font-medium text-foreground">{displayName}</div>
+                  </div>
+                </Link>
               </div>
             </div>
 
-            {podcast.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {podcast.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            )}
+            <CategoryTags tags={podcast.tags} className="mb-4" />
           </div>
 
           {/* Image and Audio Player */}
@@ -173,6 +201,7 @@ export default function PodcastDetailPage() {
 
             {podcast.audioUrl && (
               <AudioPlayer
+                ref={audioPlayerRef}
                 audioUrl={podcast.audioUrl}
                 title={podcast.title}
                 chaptersUrl={podcast.chaptersUrl}
@@ -184,8 +213,11 @@ export default function PodcastDetailPage() {
 
           {/* Summary */}
           {podcast.summary && (
-            <div className="mb-8">
-              <p className="text-lg leading-relaxed">{podcast.summary}</p>
+            <div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-r-lg shadow-sm">
+              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-3">Özet</h3>
+              <p className="text-lg leading-relaxed text-blue-800 dark:text-blue-200">
+                {podcast.summary}
+              </p>
             </div>
           )}
 
@@ -194,76 +226,14 @@ export default function PodcastDetailPage() {
             <ArticleMarkdownRenderer content={podcast.content} className="mb-8" />
           </div>
 
-          {/* Author Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Yazar Hakkında</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                {podcast.author.picture && (
-                  <img
-                    src={podcast.author.picture}
-                    alt={podcast.author.display_name || podcast.author.name || "Yazar"}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                )}
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {podcast.author.display_name || podcast.author.name || "Anonim"}
-                  </h3>
-                  {podcast.author.about && (
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-                      {podcast.author.about}
-                    </p>
-                  )}
-                  <div className="flex gap-2 mt-2">
-                    <Button asChild variant="outline" size="sm">
-                      <a href={`/profile/${podcast.author.pubkey}`}>Profili Gör</a>
-                    </Button>
-                    <Button asChild variant="outline" size="sm">
-                      <a
-                        href={`https://nostr.band/${podcast.author.pubkey}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-1" />
-                        Nostr.band
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Share */}
-          <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold mb-4">Paylaş</h3>
-            <div className="flex gap-3">
-              <Button asChild variant="outline">
-                <a
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    `${podcast.title} - Bitcoin Son Dakika Podcast`,
-                  )}&url=${encodeURIComponent(window.location.href)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Twitter'da Paylaş
-                </a>
-              </Button>
-              <Button asChild variant="outline">
-                <a
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                    window.location.href,
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Facebook'ta Paylaş
-                </a>
-              </Button>
-            </div>
+          {/* Event Statistics */}
+          <div className="border-t border-border pt-6">
+            <EventStatistics
+              event={podcast.event}
+              author={podcast.author}
+              isPodcast={true}
+              className="justify-start"
+            />
           </div>
         </div>
       </div>

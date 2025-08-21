@@ -12,8 +12,13 @@ import type { EventStatisticsProps } from "./event-statistics/types";
 
 const cache = getCache();
 
-export function EventStatistics({ event, author, className = "" }: EventStatisticsProps) {
-  // State management
+export function EventStatistics({
+  event,
+  author,
+  className = "",
+  isPodcast = false,
+}: EventStatisticsProps) {
+  // State mana gement
   const [statistics, setStatistics] = useState<EventStatistics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,6 +142,7 @@ export function EventStatistics({ event, author, className = "" }: EventStatisti
           statistics={statistics}
           setStatistics={setStatistics}
           profiles={profiles}
+          isPodcast={isPodcast}
         />
       </div>
     </TooltipProvider>

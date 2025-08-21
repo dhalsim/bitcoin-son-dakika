@@ -6,12 +6,34 @@ interface CategoryTagsProps {
   tags?: string[];
   className?: string;
   tagClassName?: string;
+  size?: "xs" | "sm" | "md" | "lg";
 }
 
-export function CategoryTags({ tags, className = "", tagClassName = "" }: CategoryTagsProps) {
+export function CategoryTags({
+  tags,
+  className = "",
+  tagClassName = "",
+  size = "xs",
+}: CategoryTagsProps) {
   if (!tags || tags.length === 0) {
     return null;
   }
+
+  // Size classes
+  const getSizeClasses = () => {
+    switch (size) {
+      case "xs":
+        return "px-2 py-1 text-xs";
+      case "sm":
+        return "px-3 py-1.5 text-sm";
+      case "md":
+        return "px-4 py-2 text-sm";
+      case "lg":
+        return "px-6 py-3 text-base";
+      default:
+        return "px-4 py-2 text-sm";
+    }
+  };
 
   return (
     <div className={cn("flex flex-wrap gap-2", className)}>
@@ -24,6 +46,7 @@ export function CategoryTags({ tags, className = "", tagClassName = "" }: Catego
               to={`/tag/${tag}`}
               className={cn(
                 "bg-main-accent text-white px-3 py-1 rounded-full text-sm font-medium hover:bg-main-accent-dark transition-colors",
+                getSizeClasses(),
                 tagClassName,
               )}
             >
