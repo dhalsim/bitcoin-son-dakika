@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
-import type { NostrEvent } from "nostr-tools";
+import type { EventTemplate, NostrEvent } from "nostr-tools";
 
 import { getCache } from "@/lib/cache";
 import { LoginModal } from "@/components/auth/LoginModal";
@@ -32,7 +32,7 @@ export type AuthIntent = "log_in" | "read_pubkey" | "sign_event";
 
 export type SignEventResult = { signedEvent: NostrEvent; provider: NostrProvider };
 export type SignEventParams = {
-  event: Omit<NostrEvent, "id" | "sig" | "pubkey">;
+  event: EventTemplate;
   options?: { reason?: string };
 };
 export type SignEvent = (params: SignEventParams) => Promise<SignEventResult>;

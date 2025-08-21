@@ -2,8 +2,14 @@ import { verifyEvent, SimplePool } from "nostr-tools";
 
 import type { EventItem } from "@/lib/nip01.js";
 import type { ArticleItem, PodcastItem } from "@/lib/ssg-data.js";
-import type { PublishToRelaysResult } from "@/lib/utils.js";
 
+import type {
+  ErrorResponse,
+  MultiPublishEventResponse,
+  MultiPublishResponse,
+  PublishEventResponse,
+  PublishResponse,
+} from "./schemas.js";
 import type { AuthResult, UserRole } from "./types.js";
 
 export const pool = new SimplePool();
@@ -32,49 +38,64 @@ export const PROFILE_RELAYS = [
 export const MASTER_ADMIN_PUBKEY =
   "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
-export function ErrorResponse(e: Error | string | undefined, status: number = 500) {
+export function ErrorResponseCreator(e: Error | string | undefined, status: number = 500) {
   const message = e instanceof Error ? e.message : typeof e === "string" ? e : "Unknown error";
 
-  return new Response(
-    JSON.stringify({
-      success: false,
-      message: message,
-      error: e instanceof Error ? e : undefined,
-    }),
-    {
-      status,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+  const send: ErrorResponse = {
+    success: false,
+    message: message,
+    error: e instanceof Error ? e : undefined,
+  };
+
+  return new Response(JSON.stringify(send), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
     },
-  );
+  });
 }
 
-export type PublishEventResponse = {
-  message: string;
-  result: PublishToRelaysResult[];
-};
+export function MultiPublishEventResponseCreator(
+  response: MultiPublishEventResponse,
+  data: Record<string, unknown> = {},
+  status: number = 200,
+) {
+  const resultArray = Object.values(response.result);
 
-export function PublishEventResponse(
+  const success = resultArray.some((r) => r.result.some((r) => r.success));
+  const message = resultArray.map((r, i) => `${i + 1}. ${r.message}`).join(", ");
+
+  const send: MultiPublishResponse = {
+    success,
+    type: "multi-publish",
+    message,
+    ...response,
+    ...data,
+  };
+
+  return new Response(JSON.stringify(send), { status });
+}
+
+export function PublishEventResponseCreator(
   response: PublishEventResponse,
   data: Record<string, unknown> = {},
   status: number = 200,
 ) {
-  return new Response(
-    JSON.stringify({
-      success: response.result.some((r) => r.success),
-      ...response,
-      ...data,
-    }),
-    {
-      status,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+  const send: PublishResponse = {
+    success: response.result.some((r) => r.success),
+    type: "single-publish",
+    ...response,
+    ...data,
+  };
+
+  return new Response(JSON.stringify(send), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
     },
-  );
+  });
 }
 
 export function SuccessResponse(data: Record<string, unknown>, status: number = 200) {

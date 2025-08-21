@@ -2,7 +2,7 @@ import type { AuthResult } from "../types.js";
 import type {
   ArticleTag,
   NewsTag,
-  PublishEventResponse as PublishEventResponseType,
+  PublishEventResponseCreator as PublishEventResponseType,
 } from "../utils.js";
 
 export interface AdminActionData {
@@ -29,6 +29,7 @@ export type RemoveNewsPayload = {
   action: "remove-news";
   eventId: string;
   relay: string;
+  requestDeletion?: boolean;
 };
 
 export type RemoveArticlePayload = {

@@ -3,6 +3,8 @@ import type { NostrEvent } from "nostr-tools";
 import { Relay, SimplePool } from "nostr-tools";
 import { twMerge } from "tailwind-merge";
 
+import type { PublishToRelayResult } from "../../api-helpers/schemas";
+
 import type { EventItem } from "./nip01";
 
 export function cn(...inputs: ClassValue[]) {
@@ -11,14 +13,10 @@ export function cn(...inputs: ClassValue[]) {
 
 export const pool = new SimplePool();
 
-export type PublishToRelaysResult =
-  | { success: true; relay: string }
-  | { success: false; relay: string; error: string };
-
 export function publishToRelays(
   event: NostrEvent,
   relayStrings: string[],
-): Promise<PublishToRelaysResult[]> {
+): Promise<PublishToRelayResult[]> {
   return Promise.all(
     relayStrings.map(async (r) => {
       try {

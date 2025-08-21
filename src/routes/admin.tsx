@@ -1,4 +1,4 @@
-import { Key, AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
 import { nip19 } from "nostr-tools";
 import { useState, useEffect, useCallback } from "react";
@@ -22,9 +22,19 @@ import { pool } from "@/lib/utils";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import type { ArticleTag, NewsTag, PodcastTag } from "../../api-helpers/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-import { ADMIN_RELAYS, type PublishEventResponse } from "../../api-helpers/utils";
 import { toast } from "@/hooks/use-toast";
+
+import { ADMIN_RELAYS } from "../../api-helpers/utils";
+import {
+  isMultiPublishResponse,
+  isPublishResponseError,
+  isPublishResponseSuccess,
+  isSinglePublishResponse,
+  MultiPublishResponse,
+  PublishResponse,
+  PublishResponseSchema,
+  SinglePublishResponse,
+} from "../../api-helpers/schemas";
 
 // Displayed while the route hydrates on initial load
 export function HydrateFallback() {
@@ -52,6 +62,7 @@ type RemoveNewsPayload = {
   action: "remove-news";
   eventId: string;
   relay: string;
+  requestDeletion?: boolean;
 };
 
 type RemoveArticlePayload = {
@@ -164,7 +175,9 @@ export default function AdminPanel() {
   const initialTab = (searchParams.get("tab") as AdminTab) || "stats";
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
 
-  const [publishSuccess, setPublishSuccess] = useState<PublishEventResponse | null>(null);
+  const [publishSuccess, setPublishSuccess] = useState<
+    (SinglePublishResponse | MultiPublishResponse)[]
+  >([]);
   const [composerPrefill, setComposerPrefill] = useState<any | null>(null);
   const [composerPrefillToken, setComposerPrefillToken] = useState<string>("");
 
@@ -393,8 +406,6 @@ export default function AdminPanel() {
 
     setError("");
 
-    setPublishSuccess(null);
-
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const url = `${origin}/api/admin-panel`;
@@ -415,30 +426,34 @@ export default function AdminPanel() {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result: PublishResponse = await response.json();
 
-      if (result.success) {
-        await loadAdminData();
+      PublishResponseSchema.parse(result);
 
-        setPublishSuccess(result);
+      if (isPublishResponseError(result)) {
+        setError(result.message);
 
-        // Show reminder toast after publish actions
-        if (
-          data.action === "publish-news" ||
-          data.action === "publish-article" ||
-          data.action === "publish-podcast" ||
-          data.action === "remove-article" ||
-          data.action === "remove-podcast" ||
-          data.action === "remove-news"
-        ) {
-          toast({
-            title: "Yayın başarılı",
-            description: "İşiniz bittiyse deploy etmeyi unutmayın.",
-            variant: "success",
-          });
-        }
-      } else {
-        setError(result.error || "İşlem başarısız");
+        return;
+      }
+
+      await loadAdminData();
+
+      setPublishSuccess((prev) => [...prev, result]);
+
+      // Show reminder toast after publish actions
+      if (
+        data.action === "publish-news" ||
+        data.action === "publish-article" ||
+        data.action === "publish-podcast" ||
+        data.action === "remove-article" ||
+        data.action === "remove-podcast" ||
+        data.action === "remove-news"
+      ) {
+        toast({
+          title: "Yayın başarılı",
+          description: "İşiniz bittiyse deploy etmeyi unutmayın.",
+          variant: "success",
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bilinmeyen hata");
@@ -478,45 +493,72 @@ export default function AdminPanel() {
             <UserMenu />
           </div>
 
-          {publishSuccess && (
-            <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
-                  <AlertDescription className="text-green-800 dark:text-green-300">
-                    {publishSuccess.message}
+          {publishSuccess &&
+            publishSuccess.length > 0 &&
+            publishSuccess.map((ps) => {
+              if (isSinglePublishResponse(ps)) {
+                return (
+                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
+                        <AlertDescription className="text-green-800 dark:text-green-300">
+                          {ps.message}
 
-                    <p>Gönderilen eventler:</p>
-                    {publishSuccess.result.map((result) => {
-                      if (result.success) {
-                        return <p key={result.relay}>"Başarılı" ({result.relay})</p>;
-                      } else {
-                        return (
-                          <p key={result.relay} className="text-red-500">
-                            "Başarısız" ({result.relay}) {(result as any).error}
-                          </p>
-                        );
-                      }
-                    })}
-                  </AlertDescription>
-                </div>
-                <button
-                  onClick={() => setPublishSuccess(null)}
-                  className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 transition-colors"
-                  aria-label="Close alert"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </Alert>
-          )}
+                          <p>Gönderilen eventler:</p>
+                          {ps.result.map((result) => {
+                            if (result.success) {
+                              return <p key={result.relay}>"Başarılı" ({result.relay})</p>;
+                            } else {
+                              return (
+                                <p key={result.relay} className="text-red-500">
+                                  "Başarısız" ({result.relay}) {(result as any).error}
+                                </p>
+                              );
+                            }
+                          })}
+                        </AlertDescription>
+                      </div>
+                    </div>
+                  </Alert>
+                );
+              } else if (isMultiPublishResponse(ps)) {
+                return (
+                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
+                        <AlertDescription className="text-green-800 dark:text-green-300">
+                          {Object.values(ps.result).map((result, index) => {
+                            return (
+                              <>
+                                <p key={index}>{result.message}</p>
+                                <p>Gönderilen eventler:</p>
+                                {result.result.map((result) => {
+                                  if (result.success) {
+                                    return <p key={result.relay}>"Başarılı" ({result.relay})</p>;
+                                  } else {
+                                    return (
+                                      <p key={result.relay} className="text-red-500">
+                                        "Başarısız" ({result.relay}) {(result as any).error}
+                                      </p>
+                                    );
+                                  }
+                                })}
+
+                                <br />
+                              </>
+                            );
+                          })}
+                        </AlertDescription>
+                      </div>
+                    </div>
+                  </Alert>
+                );
+              } else {
+                return null;
+              }
+            })}
 
           {userInfo.pubkey && (
             <div className="flex items-center gap-2">
@@ -654,6 +696,7 @@ export default function AdminPanel() {
                 lastUpdated={adminData?.newsLastTimeUpdated || 0}
                 performAction={performAction}
                 reload={loadAdminData}
+                setPublishSuccess={setPublishSuccess}
               />
             </TabsContent>
           )}

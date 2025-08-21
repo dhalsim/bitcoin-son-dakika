@@ -1,29 +1,55 @@
-import { AlertCircle, Loader2, Trash2, Share2 } from "lucide-react";
+import { AlertCircle, Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { EventTemplate, nip19 } from "nostr-tools";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { EventItem } from "@/lib/nip01";
 import { getKind1Events } from "@/lib/nip01";
-import type { NewsTag } from "api-helpers/utils";
+import { useUserContext } from "@/contexts/UserContext";
+import { SignEventResult, useNostrAuth } from "@/contexts/NostrAuthContext";
+import { publishToRelays } from "@/lib/utils";
+
+import type {
+  MultiPublishResponse,
+  PublishEventResponse,
+  SinglePublishResponse,
+} from "../../../api-helpers/schemas";
+import { ADMIN_RELAYS, MASTER_ADMIN_PUBKEY, type NewsTag } from "../../../api-helpers/utils";
 
 import UploadToX from "./UploadToX";
 import { publishToX } from "./utils";
+
+type NewsCurationProps = {
+  news: NewsTag[];
+  lastUpdated: number;
+  performAction: (data: any) => Promise<any>;
+  setPublishSuccess: React.Dispatch<
+    React.SetStateAction<(SinglePublishResponse | MultiPublishResponse)[]>
+  >;
+  reload: () => Promise<void> | void;
+};
 
 export default function NewsCuration({
   news,
   lastUpdated,
   performAction,
+  setPublishSuccess,
   reload,
-}: {
-  news: NewsTag[];
-  lastUpdated: number;
-  performAction: (data: any) => Promise<any>;
-  reload: () => Promise<void> | void;
-}) {
+}: NewsCurationProps) {
+  const { userProfile } = useUserContext();
   const [newsEventId, setNewsEventId] = useState("");
   const [newsRelay, setNewsRelay] = useState("");
   const [adding, setAdding] = useState(false);
@@ -31,6 +57,9 @@ export default function NewsCuration({
   const [shareOpen, setShareOpen] = useState(false);
   const [newsEvents, setNewsEvents] = useState<Map<string, EventItem>>(new Map());
   const [shareData, setShareData] = useState<EventItem | null>(null);
+  const [deletionDialogOpen, setDeletionDialogOpen] = useState(false);
+  const [pendingDeletionEvent, setPendingDeletionEvent] = useState<EventItem | null>(null);
+  const { signEvent } = useNostrAuth();
 
   useEffect(() => {
     if (news.length > 0) {
@@ -66,18 +95,108 @@ export default function NewsCuration({
     }
   };
 
-  const onRemoveNews = async (eventId: string, relay: string) => {
+  const onRemoveNews = async (eventId: string, relay: string, requestDeletion: boolean = false) => {
     const key = `${eventId}-${relay}`;
 
     try {
       setRemovingKey(key);
 
-      await performAction({ action: "remove-news", eventId, relay });
+      await performAction({
+        action: "remove-news",
+        eventId,
+        relay,
+        requestDeletion,
+      });
 
-      await reload();
+      if (!requestDeletion) {
+        await reload();
+      }
     } finally {
       setRemovingKey(null);
     }
+  };
+
+  const handleRemoveNewsClick = (event: EventItem) => {
+    const userPubkey = userProfile?.pubkey;
+    const isOwner = userPubkey === event.pubkey;
+    const isMasterAccount = event.pubkey === MASTER_ADMIN_PUBKEY;
+
+    if (isOwner || isMasterAccount) {
+      // Show deletion confirmation dialog
+      setPendingDeletionEvent(event);
+      setDeletionDialogOpen(true);
+    } else {
+      // Show info about owner
+      const ownerNpub = nip19.npubEncode(event.pubkey);
+
+      alert(
+        `Bu event ${ownerNpub} kullanıcısına ait. Silme talebinde bulunmak için onlarla iletişime geçebilirsiniz.`,
+      );
+    }
+  };
+
+  const confirmDeletion = async () => {
+    if (!pendingDeletionEvent) return;
+
+    const userPubkey = userProfile?.pubkey;
+    const isOwner = userPubkey === pendingDeletionEvent.pubkey;
+    const isMasterAccount = pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY;
+
+    if (isOwner) {
+      await onRemoveNews(pendingDeletionEvent.id, pendingDeletionEvent.relay, false);
+
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      const eventTemplate: EventTemplate = {
+        kind: 5,
+        created_at: currentTime,
+        tags: [
+          ["e", pendingDeletionEvent.id],
+          ["k", String(pendingDeletionEvent.kind)],
+        ],
+        content: "This post was published by accident",
+      };
+
+      let requestDeletionSignedResult: SignEventResult | null = null;
+
+      try {
+        requestDeletionSignedResult = await signEvent({
+          event: eventTemplate,
+          options: { reason: "Haber silme" },
+        });
+      } catch (error) {
+        alert("Yerel imzalama hatası: " + error);
+
+        return;
+      }
+
+      if (requestDeletionSignedResult) {
+        const requestDeletionResult = await publishToRelays(
+          requestDeletionSignedResult.signedEvent,
+          ADMIN_RELAYS,
+        );
+
+        setPublishSuccess((prev) => [
+          ...prev,
+          {
+            type: "single-publish",
+            success: requestDeletionResult.some((r) => r.success),
+            message: "Silme talebi gönderildi.",
+            result: requestDeletionResult,
+          },
+        ]);
+      } else {
+        alert("Yerel imzalama hatası: Yerel imzalama yapılamadı.");
+
+        return;
+      }
+    } else if (isMasterAccount) {
+      // Master account event, use backend deletion
+      await onRemoveNews(pendingDeletionEvent.id, pendingDeletionEvent.relay, true);
+    }
+
+    setDeletionDialogOpen(false);
+    setPendingDeletionEvent(null);
   };
 
   return (
@@ -157,7 +276,7 @@ export default function NewsCuration({
                         variant="destructive"
                         size="sm"
                         disabled={removingKey === `${event.id}-${event.relay}`}
-                        onClick={() => onRemoveNews(event.id, event.relay)}
+                        onClick={() => handleRemoveNewsClick(event)}
                       >
                         {removingKey === `${event.id}-${event.relay}` ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -204,6 +323,66 @@ export default function NewsCuration({
         width={800}
         height={600}
       />
+
+      <Dialog open={deletionDialogOpen} onOpenChange={setDeletionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Haber Silme Onayı</DialogTitle>
+            <DialogDescription>
+              Bu haberi hem listeden kaldırmak hem de ağdan silmek istiyor musunuz?
+            </DialogDescription>
+          </DialogHeader>
+
+          {pendingDeletionEvent && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  <strong>Event ID:</strong> {pendingDeletionEvent.id.substring(0, 8)}...
+                  {pendingDeletionEvent.id.substring(pendingDeletionEvent.id.length - 8)}
+                </p>
+                <p>
+                  <strong>Sahip:</strong> {pendingDeletionEvent.pubkey.substring(0, 8)}...
+                  {pendingDeletionEvent.pubkey.substring(pendingDeletionEvent.pubkey.length - 8)}
+                </p>
+              </div>
+
+              {userProfile?.pubkey === pendingDeletionEvent.pubkey ? (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Bu event size ait. Listeden kaldiriltan sonra silme talebi gönderilecek.
+                  </AlertDescription>
+                </Alert>
+              ) : pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY ? (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Bu event ana hesaba ait. Backend üzerinden silme talebi gönderilecek.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Bu event size ait değil. Silme talebinde bulunmak için onlarla iletişime
+                    geçebilirsiniz.
+                    <p>Sahip: {nip19.npubEncode(pendingDeletionEvent.pubkey)}</p>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletionDialogOpen(false)}>
+              İptal
+            </Button>
+            <Button variant="destructive" onClick={confirmDeletion}>
+              Sil
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
