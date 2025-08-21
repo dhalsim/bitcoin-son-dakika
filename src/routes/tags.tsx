@@ -1,12 +1,13 @@
 import type { MetaFunction } from "react-router";
 import { useParams } from "react-router";
 
-import type { ArticleItem, NewsItem } from "@/lib/ssg-data";
+import type { ArticleItem, NewsItem, PodcastItem } from "@/lib/ssg-data";
 
 import MainContent from "../components/MainContent";
 import NewsCard from "../components/NewsCard";
 import { useSSGData } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
+import PodcastCard from "@/components/PodcastCard";
 
 export const meta: MetaFunction = ({ params }) => {
   const { slug } = params;
@@ -16,19 +17,19 @@ export const meta: MetaFunction = ({ params }) => {
       { title: `Etiket - ${WEBSITE_NAME}` },
       {
         name: "description",
-        content: `${WEBSITE_DESCRIPTION} - Etiket bazlı Bitcoin içerikleri`,
+        content: `${WEBSITE_DESCRIPTION}`,
       },
       {
         name: "keywords",
         content:
-          "bitcoin etiketleri, bitcoin kategorileri, bitcoin tag, bitcoin içerik filtreleme, kripto para etiketleri, nostr etiketleri, bitcoin analiz etiketleri",
+          "bitcoin, nostr, bitcoin analiz, bitcoin haberleri, bitcoin makaleleri, bitcoin podcastleri",
       },
     ];
   }
 
   const title = `#${slug} Etiketi - ${WEBSITE_NAME}`;
   const description = `${WEBSITE_DESCRIPTION} - #${slug} etiketi ile ilgili Bitcoin haberleri ve makaleleri`;
-  const keywords = `${slug}, bitcoin ${slug}, kripto para ${slug}, nostr ${slug}, bitcoin etiketleri, bitcoin kategorileri, bitcoin içerik filtreleme`;
+  const keywords = `${slug}, bitcoin ${slug}, nostr ${slug}, bitcoin`;
 
   return [
     { title },
@@ -49,12 +50,14 @@ export default function TagsPage() {
   const ssgData = useSSGData();
 
   // If type is not provided, show all items
-  const selectedItems: (NewsItem | ArticleItem)[] =
+  const selectedItems: (NewsItem | ArticleItem | PodcastItem)[] =
     type == null
-      ? [...ssgData.news, ...ssgData.articles]
+      ? [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts]
       : type === "news"
         ? ssgData.news
-        : ssgData.articles;
+        : type === "articles"
+          ? ssgData.articles
+          : ssgData.podcasts;
 
   // Filter items by the specified tag
   const filteredItems = selectedItems
@@ -90,9 +93,13 @@ export default function TagsPage() {
 
       {/* Filtered Content List - Single Column */}
       <div className="max-w-4xl mx-auto space-y-6">
-        {filteredItems.map((item, index) => (
-          <NewsCard key={index} {...item} />
-        ))}
+        {filteredItems.map((item, index) =>
+          item.type === "news" || item.type === "article" ? (
+            <NewsCard key={index} {...item} />
+          ) : (
+            <PodcastCard key={index} podcast={item} />
+          ),
+        )}
       </div>
     </MainContent>
   );

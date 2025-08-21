@@ -45,7 +45,7 @@ export function CategoryTags({
               key={index}
               to={`/tag/${tag}`}
               className={cn(
-                "bg-main-accent text-white px-3 py-1 rounded-full text-sm font-medium hover:bg-main-accent-dark transition-colors",
+                "bg-main-accent px-3 py-1 rounded-full text-sm font-medium hover:bg-main-accent-dark transition-colors",
                 getSizeClasses(),
                 tagClassName,
               )}

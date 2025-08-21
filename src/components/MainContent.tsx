@@ -47,7 +47,7 @@ export default function MainContent({ children }: MainContentProps) {
           <div className="flex-1 min-w-0">{children}</div>
 
           {/* Sidebar */}
-          <div className="lg:w-80 mt-6 lg:mt-0">
+          <div className="lg:w-80 mt-6 lg:mt-0 max-lg:bg-blue-50 max-lg:dark:bg-blue-900/20 max-lg:p-4 max-lg:rounded-lg">
             <Sidebar news={news} articles={articles} podcasts={podcasts} />
           </div>
         </div>
