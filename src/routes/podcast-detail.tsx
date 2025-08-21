@@ -35,6 +35,7 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const title = `Podcast - ${podcast.title} - ${WEBSITE_NAME}`;
   const description = podcast.summary?.substring(0, 200) || podcast.content?.substring(0, 160);
   const imageUrl = podcast.image ? podcast.image : `${WEBSITE_URL}/${LOGO_URL}`;
+  const canonicalUrl = `${WEBSITE_URL}/podcast/${createTitleSlug(podcast.title!)}`;
 
   return [
     { title: title },
@@ -47,16 +48,17 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
       property: "og:description",
       content: description,
     },
+    { property: "og:site_name", content: WEBSITE_NAME },
     { property: "og:type", content: "article" },
-    { property: "og:url", content: `https://bitcoinsondakika.com/podcast/${podcast.id}` },
-    { property: "og:image", content: podcast.image },
+    { property: "og:url", content: canonicalUrl },
+    { property: "og:image", content: imageUrl },
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     {
       name: "twitter:description",
       content: description,
     },
-    { property: "twitter:image", content: podcast.image },
+    { property: "twitter:image", content: imageUrl },
     { property: "og:audio", content: podcast.audioUrl },
     {
       rel: "enclosure",
