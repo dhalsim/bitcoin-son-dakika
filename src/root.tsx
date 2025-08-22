@@ -10,6 +10,8 @@ import { NostrAuthProvider } from "./contexts/NostrAuthContext";
 
 import "./index.css";
 
+// Global meta function - Sets fallback/default meta tags for all pages
+// Page-specific meta tags (like in podcast-detail.tsx) will override these
 export const meta: MetaFunction = () => {
   const title = "Bitcoin Son Dakika - Güncel Bitcoin Haberleri";
   const description =
@@ -19,24 +21,31 @@ export const meta: MetaFunction = () => {
   const imageUrl = `${siteUrl}/bitcoin-son-dakika-logo.png`;
 
   return [
+    // Browser tab title - This will be overridden by page-specific meta tags
     { title },
+
+    // Meta description - This will be overridden by page-specific meta tags
     { name: "description", content: description },
+
+    // Keywords - This can stay as a fallback
     {
       name: "keywords",
       content:
         "bitcoin, btc, bitcoin haberleri, bitcoin son dakika, kripto para, nostr, bitcoin analiz, bitcoin piyasa, bitcoin teknoloji, bitcoin ekonomi, bitcoin regülasyon, bitcoin güvenlik, bitcoin eğitim, bitcoin geliştirme, lightning network, bitcoin mining, bitcoin madenciliği, bitcoin podcast",
     },
-    // Open Graph
+
+    // Open Graph - Only set non-conflicting properties
     { property: "og:site_name", content: siteName },
-    { property: "og:title", content: title },
-    { property: "og:description", content: description },
+    { property: "og:type", content: "website" },
     { property: "og:image", content: imageUrl },
     { property: "og:url", content: siteUrl },
-    // Twitter Card
-    { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: title },
-    { name: "twitter:description", content: description },
+
+    // Twitter Card - Only set non-conflicting properties
+    { name: "twitter:site", content: "bitcoinsondakika.com" },
     { name: "twitter:image", content: imageUrl },
+
+    // Note: We DON'T set og:title, og:description, twitter:title, twitter:description
+    // These will be set by page-specific meta tags to avoid conflicts
   ];
 };
 

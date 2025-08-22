@@ -3,7 +3,6 @@ import {
   MetaFunction,
   useLoaderData,
   Link,
-  Navigate,
   useLocation,
 } from "react-router-dom";
 import { Mic, Clock } from "lucide-react";
@@ -30,20 +29,52 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
     return [
       { title: `Podcast Bulunamadı - ${WEBSITE_NAME}` },
       { name: "description", content: "Aradığınız podcast bulunamadı." },
+      { property: "og:title", content: `Podcast Bulunamadı - ${WEBSITE_NAME}` },
+      { property: "og:description", content: "Aradığınız podcast bulunamadı." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:title", content: `Podcast Bulunamadı - ${WEBSITE_NAME}` },
+      { name: "twitter:description", content: "Aradığınız podcast bulunamadı." },
+      { name: "twitter:card", content: "summary" },
+    ];
+  }
+
+  // Add null checks for required podcast properties
+  if (!podcast.title || !podcast.audioUrl) {
+    console.error("Podcast data is incomplete:", podcast);
+    return [
+      { title: `Podcast Hatası - ${WEBSITE_NAME}` },
+      { name: "description", content: "Podcast bilgileri eksik." },
+      { property: "og:title", content: `Podcast Hatası - ${WEBSITE_NAME}` },
+      { property: "og:description", content: "Podcast bilgileri eksik." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:title", content: `Podcast Hatası - ${WEBSITE_NAME}` },
+      { name: "twitter:description", content: "Podcast bilgileri eksik." },
+      { name: "twitter:card", content: "summary" },
     ];
   }
 
   const title = `Podcast - ${podcast.title} - ${WEBSITE_NAME}`;
-  const description = podcast.summary?.substring(0, 200) || podcast.content?.substring(0, 160);
+
+  // Debug: Log the title construction
+  console.log("Podcast title construction:", {
+    podcastTitle: podcast.title,
+    websiteName: WEBSITE_NAME,
+    finalTitle: title,
+  });
+
+  const description =
+    podcast.summary?.substring(0, 200) || podcast.content?.substring(0, 160) || "Bitcoin podcast";
   const imageUrl = podcast.image ? podcast.image : `${WEBSITE_URL}/${LOGO_URL}`;
-  const canonicalUrl = `${WEBSITE_URL}/podcast/${createTitleSlug(podcast.title!)}`;
+  const canonicalUrl = `${WEBSITE_URL}/podcast/${createTitleSlug(podcast.title)}`;
 
   // Add tags for better SEO
   const tags =
     podcast.tags?.length > 0 ? `bitcoin, btc, ${podcast.tags.join(", ")}` : "bitcoin, btc";
 
   return [
+    // Browser tab title - This is what shows in the browser tab
     { title: title },
+    // Meta description - This is what shows in search results
     {
       name: "description",
       content: description,
@@ -52,27 +83,111 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
       name: "keywords",
       content: tags,
     },
+    // Open Graph tags - These are the most important for social media previews
     { property: "og:title", content: title },
     {
       property: "og:description",
       content: description,
     },
     { property: "og:site_name", content: WEBSITE_NAME },
-    { property: "og:type", content: "article" },
+    { property: "og:type", content: "music.radio_station" },
     { property: "og:url", content: canonicalUrl },
     { property: "og:image", content: imageUrl },
-    { name: "twitter:card", content: "summary_large_image" },
+    { property: "og:audio", content: podcast.audioUrl },
+    {
+      property: "og:audio:type",
+      content: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg",
+    },
+    { property: "og:audio:title", content: title },
+    { property: "og:audio:artist", content: WEBSITE_NAME },
+    { property: "og:audio:duration", content: podcast.duration || "" },
+    { property: "og:audio:album", content: `${WEBSITE_NAME} Podcast` },
+    { property: "og:audio:track", content: podcast.episodeNumber?.toString() || "1" },
+
+    // Twitter Card tags - These are important for Twitter and other platforms
+    { name: "twitter:card", content: "player" },
     { name: "twitter:title", content: title },
     {
       name: "twitter:description",
       content: description,
     },
     { property: "twitter:image", content: imageUrl },
-    { property: "og:audio", content: podcast.audioUrl },
+    { name: "twitter:player", content: canonicalUrl },
+    { name: "twitter:player:width", content: "435" },
+    { name: "twitter:player:height", content: "251" },
+
+    // Podcast-specific meta tags
+    { name: "medium", content: "audio" },
+    { name: "content-type", content: "podcast" },
+    { name: "audio", content: podcast.audioUrl },
+    { name: "audio:type", content: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg" },
+    { name: "podcast:episode", content: podcast.episodeNumber?.toString() || "1" },
+    { name: "podcast:season", content: "1" },
+    { name: "podcast:duration", content: podcast.duration || "" },
+    { name: "podcast:explicit", content: "false" },
+    { name: "podcast:type", content: "episodic" },
+    { name: "format", content: "audio" },
+    { name: "content-format", content: "podcast" },
+    { name: "media-type", content: "audio" },
+    { name: "content-category", content: "podcast" },
+    { name: "content-subcategory", content: "bitcoin" },
+    { name: "application-name", content: `${WEBSITE_NAME} Podcast` },
+    { name: "category", content: "podcast" },
+    { name: "subject", content: "Bitcoin Podcast" },
+    { name: "classification", content: "podcast" },
+    { name: "content-classification", content: "podcast" },
+    { name: "content-genre", content: "bitcoin" },
+    { name: "content-language", content: "tr-TR" },
+    { name: "content-locale", content: "tr_TR" },
+    { name: "content-encoding", content: "UTF-8" },
+    { name: "content-charset", content: "UTF-8" },
+    { name: "content-version", content: "1.0" },
+    { name: "content-status", content: "published" },
+
+    // Enclosure for RSS compatibility
     {
       rel: "enclosure",
       type: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg",
       href: podcast.audioUrl,
+    },
+
+    // Structured data for search engines - using script tag instead of meta
+    {
+      tagName: "script",
+      type: "application/ld+json",
+      children: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "PodcastEpisode",
+        name: podcast.title,
+        description: description,
+        image: imageUrl,
+        url: canonicalUrl,
+        audio: {
+          "@type": "AudioObject",
+          contentUrl: podcast.audioUrl,
+          encodingFormat: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg",
+          duration: podcast.duration,
+        },
+        author: {
+          "@type": "Person",
+          name: podcast.author || WEBSITE_NAME,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: WEBSITE_NAME,
+          url: WEBSITE_URL,
+        },
+        datePublished: podcast.publishedAt * 1000,
+        duration: podcast.duration,
+        keywords: tags,
+        episodeNumber: podcast.episodeNumber,
+        seasonNumber: 1,
+        partOfSeries: {
+          "@type": "PodcastSeries",
+          name: `${WEBSITE_NAME} Podcast`,
+          url: `${WEBSITE_URL}/podcasts`,
+        },
+      }),
     },
   ];
 };
@@ -205,6 +320,22 @@ export default function PodcastDetailPage() {
             </div>
 
             <CategoryTags tags={podcast.tags} className="mb-4" />
+
+            {/* Podcast RSS Feed Link */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+              <a
+                href="/feed/podcast-rss.xml"
+                className="flex items-center gap-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                title="Podcast RSS Feed'e Abone Ol"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M5 3a1 1 0 000 2c5.523 0 10 4.477 10 10a1 1 0 102 0C17 8.373 11.627 3 5 3z" />
+                  <path d="M4 9a1 1 0 011-1 7 7 0 017 7 1 1 0 11-2 0 5 5 0 00-5-5 1 1 0 01-1-1z" />
+                  <path d="M3 15a2.998 2.998 0 012.83 2H11a1 1 0 100-2H5.829A2.998 2.998 0 003 15z" />
+                </svg>
+                RSS Feed'e Abone Ol
+              </a>
+            </div>
           </div>
 
           {/* Image and Audio Player */}
