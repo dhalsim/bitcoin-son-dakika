@@ -5,8 +5,9 @@ import type { Config } from "@react-router/dev/config";
 import { vercelPreset } from "@vercel/react-router/vite";
 
 import { createTitleSlug } from "./api-helpers/utils";
-import { generateFeeds } from "./src/lib/feed-generator";
-import { generatePodcastRssXml } from "./src/lib/podcast-generator";
+import { generateFeeds } from "./src/lib/generators/feed-generator";
+import { generatePodcastRssXml } from "./src/lib/generators/podcast-generator";
+import { generateSitemapXml } from "./src/lib/generators/sitemap-generator";
 import { fetchSSGData } from "./src/lib/ssg-data";
 import { getUniqueProfiles, getUniqueTags, createProfileSlug } from "./src/lib/ssg-data";
 
@@ -80,7 +81,7 @@ export default {
 
     // Generate tag routes for all unique tags
     const tags = getUniqueTags(ssgData);
-    const tagRoutes = tags.map((tag) => `/tag/${tag}`);
+    const tagRoutes = tags.map((tag) => `/tag/${createTitleSlug(tag)}`);
 
     console.log(`Generated ${tagRoutes.length} tag routes`);
 
@@ -103,7 +104,7 @@ export default {
 
     console.log(`Generated ${podcastRoutes.length} podcast routes`);
 
-    return [
+    const allRoutes = [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
       "/admin", // Admin paneli - static
       "/news", // Haberler sayfası - static
@@ -116,5 +117,15 @@ export default {
       ...newsRoutes, // News detail pages - static
       ...podcastRoutes, // Podcast detail pages - static
     ];
+
+    // Generate and write sitemap.xml
+    console.log("Generating sitemap.xml...");
+    const sitemapXml = generateSitemapXml(allRoutes, ssgData);
+
+    await writeFile(join(buildDir, "sitemap.xml"), sitemapXml);
+
+    console.log("✅ Sitemap.xml generated successfully");
+
+    return allRoutes;
   },
 } satisfies Config;

@@ -1,8 +1,8 @@
 import { createTitleSlug } from "api-helpers/utils";
 
-import { WEBSITE_URL, WEBSITE_NAME, WEBSITE_DESCRIPTION, LOGO_URL } from "./constants";
-import type { ArticleItem, NewsItem, SSGData } from "./ssg-data";
-import { formatNostrDate } from "./utils";
+import { WEBSITE_URL, WEBSITE_NAME, WEBSITE_DESCRIPTION, LOGO_URL } from "../constants";
+import type { ArticleItem, NewsItem, SSGData } from "../ssg-data";
+import { formatNostrDate } from "../utils";
 
 export function generateRSSFeed(ssgData: SSGData): string {
   // Combine and sort news and articles by publish date

@@ -60,6 +60,10 @@ export interface PodcastItem {
   chaptersUrl?: string;
 }
 
+export interface EducationItem {
+  type: "education";
+}
+
 export interface SSGData {
   news: NewsItem[];
   articles: ArticleItem[];

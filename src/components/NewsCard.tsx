@@ -101,18 +101,17 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   return (
     <Card className="h-full">
       {imageElement && (
-        <CardHeader>
-          <div className={`relative ${featured ? "h-48 sm:h-64" : "h-40 sm:h-48"}`}>
-            {imageElement}
-            <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
-              <CategoryTags
-                tags={event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1])}
-                size="xs"
-              />
-            </div>
+        <div className="relative aspect-video overflow-hidden rounded-t-lg mb-4">
+          {imageElement}
+          <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
+            <CategoryTags
+              tags={event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1])}
+              size="xs"
+            />
           </div>
-        </CardHeader>
+        </div>
       )}
+
       <CardContent className="flex-1">
         <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground mb-2">
           <span>{time}</span>

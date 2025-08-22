@@ -324,7 +324,7 @@ const PriceBar = () => {
         <X size={16} />
       </button>
 
-      <div className="container mx-auto px-4 pr-12 relative z-pricebar">
+      <div className="container mx-auto relative z-pricebar">
         <div className="flex flex-col space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex flex-row items-center">

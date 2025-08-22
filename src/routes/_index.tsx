@@ -2,8 +2,16 @@ import type { MetaFunction } from "react-router";
 
 import MainContent from "../components/MainContent";
 import NewsCard from "../components/NewsCard";
-import { useLatestNews, useLatestArticles, useSSGData } from "../contexts/SSGContext";
+import {
+  useLatestNews,
+  useLatestArticles,
+  useSSGData,
+  useLatestPodcasts,
+} from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION, WEBSITE_URL, LOGO_URL } from "../lib/constants";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { EducationItem } from "@/lib/ssg-data";
+import PodcastCard from "@/components/PodcastCard";
 
 export const meta: MetaFunction = () => {
   const title = `${WEBSITE_NAME} - Güncel Bitcoin Haberleri ve Analizler`;
@@ -33,10 +41,160 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+type CategoryValue = "all" | "news" | "articles" | "podcast" | "education";
+
+type Category = {
+  label: string;
+  value: CategoryValue;
+};
+
 export default function Index() {
   const ssgData = useSSGData();
   const latestNews = useLatestNews(6); // Get latest 6 news items
   const latestArticles = useLatestArticles(2); // Get latest 2 articles for the articles row
+  const latestPodcasts = useLatestPodcasts(2); // Get latest 2 podcasts for the podcasts row
+
+  const [category, setCategory] = useState<CategoryValue>("all");
+
+  // Define categories array first
+  const categories: Category[] = [
+    {
+      label: "Tümü",
+      value: "all",
+    },
+    {
+      label: "Haberler",
+      value: "news",
+    },
+    {
+      label: "Köşe Yazıları",
+      value: "articles",
+    },
+    {
+      label: "Podcast",
+      value: "podcast",
+    },
+    {
+      label: "Eğitim",
+      value: "education",
+    },
+  ];
+
+  // Handle category change - now instant!
+  const handleCategoryChange = useCallback(
+    (newCategory: CategoryValue) => {
+      if (newCategory === category) return;
+      setCategory(newCategory);
+    },
+    [category],
+  );
+
+  // Memoize all content combinations to avoid recalculating on every render
+  const allContent = useMemo(() => {
+    const educationContent: EducationItem[] = [];
+    return [...latestNews, ...latestArticles, ...latestPodcasts, ...educationContent];
+  }, [latestNews, latestArticles, latestPodcasts]);
+
+  // Pre-calculate all category filters for instant switching
+  const categoryContent = useMemo(() => {
+    const contentMap = {
+      all: allContent,
+      news: allContent.filter((content) => content.type === "news"),
+      articles: allContent.filter((content) => content.type === "article"),
+      podcast: allContent.filter((content) => content.type === "podcast"),
+      education: allContent.filter((content) => content.type === "education"),
+    };
+    return contentMap;
+  }, [allContent]);
+
+  // Pre-render all category content as React nodes for instant switching
+  const categoryNodes = useMemo(() => {
+    const renderContent = (content: any, index: number) => {
+      const uniqueKey = `${content.type}-${index}`;
+
+      if (content.type === "news") {
+        return <NewsCard key={uniqueKey} {...content} />;
+      } else if (content.type === "article") {
+        return <NewsCard key={uniqueKey} {...content} />;
+      } else if (content.type === "podcast") {
+        return <PodcastCard key={uniqueKey} podcast={content} />;
+      } else if (content.type === "education") {
+        return null;
+      }
+      return null;
+    };
+
+    const createGrid = (content: any[], categoryName: string) => {
+      if (content.length === 0) {
+        return (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground text-lg">
+              {categoryName === "all"
+                ? "Henüz içerik bulunmuyor."
+                : `Bu kategoride henüz içerik bulunmuyor.`}
+            </p>
+            {categoryName !== "all" && (
+              <p className="text-muted-foreground text-sm mt-2">
+                Diğer kategorileri kontrol etmeyi deneyin.
+              </p>
+            )}
+          </div>
+        );
+      }
+
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8 transition-all duration-200 ease-in-out rounded-lg p-2">
+          {content.map((item, index) => renderContent(item, index))}
+        </div>
+      );
+    };
+
+    const nodesMap = {
+      all: createGrid(categoryContent.all, "all"),
+      news: createGrid(categoryContent.news, "news"),
+      articles: createGrid(categoryContent.articles, "articles"),
+      podcast: createGrid(categoryContent.podcast, "podcast"),
+      education: createGrid(categoryContent.education, "education"),
+    };
+    return nodesMap;
+  }, [categoryContent]);
+
+  // Memoize category tabs to prevent unnecessary re-renders
+  const categoryTabs = useMemo(() => {
+    return categories.map(({ label, value }) => {
+      const contentCount = categoryContent[value].length;
+      const isActive = value === category;
+      return (
+        <button
+          key={value}
+          onClick={() => handleCategoryChange(value)}
+          disabled={false}
+          className={`pb-2 px-1 text-xs sm:text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap relative group ${
+            isActive
+              ? "border-main-accent text-main-accent"
+              : "border-transparent text-muted-foreground hover:text-main-accent hover:border-muted-foreground"
+          }`}
+        >
+          {label}
+          {contentCount > 0 && (
+            <span
+              className={`ml-1 text-xs transition-colors duration-200 ${
+                isActive ? "text-main-accent" : "text-muted-foreground group-hover:text-main-accent"
+              }`}
+            >
+              ({contentCount})
+            </span>
+          )}
+          {isActive && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-main-accent rounded-full animate-pulse"></div>
+          )}
+        </button>
+      );
+    });
+  }, [categories, categoryContent, category, handleCategoryChange]);
+
+  // Get current filtered content instantly
+  const filteredContent = categoryContent[category];
 
   // If no content is available, show empty state
   if (latestNews.length === 0 && latestArticles.length === 0) {
@@ -53,9 +211,7 @@ export default function Index() {
   }
 
   // Get featured content (latest news item) and main content
-  const featuredContent = latestNews[0];
-  const mainNews = latestNews.slice(1, 5); // Next 4 news items
-  const sideNews = latestNews.slice(5, 7); // Next 2 news items
+  const [featuredContent, ...mainNews] = latestNews;
 
   return (
     <MainContent>
@@ -68,60 +224,16 @@ export default function Index() {
 
       {/* Category Tabs */}
       <div className="flex space-x-2 sm:space-x-4 mb-4 sm:mb-6 border-b border-border overflow-x-auto">
-        {["Tümü", "Haberler", "Köşe Yazıları", "Eğitim", "Podcast"].map((tab) => (
-          <button
-            key={tab}
-            className={`pb-2 px-1 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              tab === "Tümü"
-                ? "border-main-accent text-main-accent"
-                : "border-transparent text-muted-foreground hover:text-main-accent"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        {categoryTabs}
       </div>
 
+      {/* Loading State */}
+      {/* Removed isLoading state and loading message */}
+
       {/* Main News Grid */}
-      {mainNews.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {mainNews.map((news, index) => (
-            <NewsCard key={index} {...news} />
-          ))}
-        </div>
-      )}
-
-      {/* Articles Row - Only show if we have articles */}
-      {latestArticles.length > 0 && (
-        <div className="mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-foreground border-l-4 border-main-accent pl-4 mb-4 sm:mb-6">
-            Köşe Yazıları
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {latestArticles.map((article, index) => (
-              <NewsCard key={index} {...article} />
-            ))}
-            {/* If we only have 1 article, keep the second column empty */}
-            {latestArticles.length === 1 && (
-              <div className="hidden lg:block">{/* Empty space to maintain grid layout */}</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Additional News */}
-      {sideNews.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-lg sm:text-xl font-bold text-foreground border-l-4 border-main-accent pl-4">
-            Diğer Haberler
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {sideNews.map((news, index) => (
-              <NewsCard key={index} {...news} />
-            ))}
-          </div>
-        </div>
-      )}
+      <div key={category} className="animate-in fade-in-50 duration-200 scale-in-95">
+        {categoryNodes[category]}
+      </div>
 
       {/* Debug Info - Only show in development */}
       {process.env.NODE_ENV === "development" && (
