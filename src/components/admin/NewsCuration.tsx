@@ -31,6 +31,7 @@ import { ADMIN_RELAYS, MASTER_ADMIN_PUBKEY, type NewsTag } from "../../../api-he
 
 import UploadToX from "./UploadToX";
 import { publishToX } from "./utils";
+import { boolean } from "zod";
 
 type NewsCurationProps = {
   news: NewsTag[];
@@ -135,7 +136,7 @@ export default function NewsCuration({
     }
   };
 
-  const confirmDeletion = async () => {
+  const confirmDeletion = async (sendDeleteRequest: boolean = false) => {
     if (!pendingDeletionEvent) return;
 
     const userPubkey = userProfile?.pubkey;
@@ -145,54 +146,56 @@ export default function NewsCuration({
     if (isOwner) {
       await onRemoveNews(pendingDeletionEvent.id, pendingDeletionEvent.relay, false);
 
-      const currentTime = Math.floor(Date.now() / 1000);
+      if (sendDeleteRequest) {
+        const currentTime = Math.floor(Date.now() / 1000);
 
-      const eventTemplate: EventTemplate = {
-        kind: 5,
-        created_at: currentTime,
-        tags: [
-          ["e", pendingDeletionEvent.id],
-          ["k", String(pendingDeletionEvent.kind)],
-        ],
-        content: "This post was published by accident",
-      };
+        const eventTemplate: EventTemplate = {
+          kind: 5,
+          created_at: currentTime,
+          tags: [
+            ["e", pendingDeletionEvent.id],
+            ["k", String(pendingDeletionEvent.kind)],
+          ],
+          content: "This post was published by accident",
+        };
 
-      let requestDeletionSignedResult: SignEventResult | null = null;
+        let requestDeletionSignedResult: SignEventResult | null = null;
 
-      try {
-        requestDeletionSignedResult = await signEvent({
-          event: eventTemplate,
-          options: { reason: "Haber silme" },
-        });
-      } catch (error) {
-        alert("Yerel imzalama hatası: " + error);
+        try {
+          requestDeletionSignedResult = await signEvent({
+            event: eventTemplate,
+            options: { reason: "Haber silme" },
+          });
+        } catch (error) {
+          alert("Yerel imzalama hatası: " + error);
 
-        return;
-      }
+          return;
+        }
 
-      if (requestDeletionSignedResult) {
-        const requestDeletionResult = await publishToRelays(
-          requestDeletionSignedResult.signedEvent,
-          ADMIN_RELAYS,
-        );
+        if (requestDeletionSignedResult) {
+          const requestDeletionResult = await publishToRelays(
+            requestDeletionSignedResult.signedEvent,
+            ADMIN_RELAYS,
+          );
 
-        setPublishSuccess((prev) => [
-          ...prev,
-          {
-            type: "single-publish",
-            success: requestDeletionResult.some((r) => r.success),
-            message: "Silme talebi gönderildi.",
-            result: requestDeletionResult,
-          },
-        ]);
-      } else {
-        alert("Yerel imzalama hatası: Yerel imzalama yapılamadı.");
+          setPublishSuccess((prev) => [
+            ...prev,
+            {
+              type: "single-publish",
+              success: requestDeletionResult.some((r) => r.success),
+              message: "Silme talebi gönderildi.",
+              result: requestDeletionResult,
+            },
+          ]);
+        } else {
+          alert("Yerel imzalama hatası: Yerel imzalama yapılamadı.");
 
-        return;
+          return;
+        }
       }
     } else if (isMasterAccount) {
       // Master account event, use backend deletion
-      await onRemoveNews(pendingDeletionEvent.id, pendingDeletionEvent.relay, true);
+      await onRemoveNews(pendingDeletionEvent.id, pendingDeletionEvent.relay, sendDeleteRequest);
     }
 
     setDeletionDialogOpen(false);
@@ -377,8 +380,14 @@ export default function NewsCuration({
             <Button variant="outline" onClick={() => setDeletionDialogOpen(false)}>
               İptal
             </Button>
-            <Button variant="destructive" onClick={confirmDeletion}>
-              Sil
+            {(userProfile?.pubkey === pendingDeletionEvent.pubkey ||
+              pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY) && (
+              <Button variant="outline" onClick={() => confirmDeletion(true)}>
+                Kaldır ve Sil
+              </Button>
+            )}
+            <Button variant="destructive" onClick={() => confirmDeletion(false)}>
+              Sadece Kaldır
             </Button>
           </DialogFooter>
         </DialogContent>
