@@ -81,29 +81,29 @@ export async function handleRemoveNews(
   data: RemoveNewsPayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponseCreator("Authentication failed", 401);
+    return ErrorResponseCreator("Kimlik doğrulama hatası", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponseCreator("Only editors can remove news", 403);
+    return ErrorResponseCreator("Yalnızca editörler haber kaldırabilir", 403);
   }
 
   const { eventId, relay, requestDeletion } = data;
   if (!eventId || !relay) {
-    return ErrorResponseCreator("Event ID and relay are required", 400);
+    return ErrorResponseCreator("Event ID ve relay gereklidir", 400);
   }
 
   const toBeRemoved = currentNews.find((news) => news.eTag === data.eventId);
 
   if (!toBeRemoved) {
-    return ErrorResponseCreator("News item not found", 404);
+    return ErrorResponseCreator("Haber bulunamadı", 404);
   }
 
   try {
     const removeNewsResult = await removeNews(masterAdminPrivateKey, currentNews, data);
 
     if (!removeNewsResult.some((r) => r.success)) {
-      return ErrorResponseCreator("Failed to remove news", 500);
+      return ErrorResponseCreator("Haber kaldırılırken hata oluştu", 500);
     }
 
     if (requestDeletion) {
@@ -111,7 +111,7 @@ export async function handleRemoveNews(
 
       if (!deletionResult.some((r) => r.success)) {
         return ErrorResponseCreator(
-          "Failed to publish deletion event, but removed from the set",
+          "Silme eventi yayınlanırken hata oluştu, ancak setten kaldırıldı",
           500,
         );
       }
@@ -120,11 +120,11 @@ export async function handleRemoveNews(
         {
           result: {
             removeNewsResult: {
-              message: "News removed successfully",
+              message: "Haber başarıyla kaldırıldı",
               result: removeNewsResult,
             },
             deletionResult: {
-              message: "Deletion event published successfully",
+              message: "Silme eventi başarıyla yayınlandı",
               result: deletionResult,
             },
           },
@@ -134,11 +134,11 @@ export async function handleRemoveNews(
     }
 
     return PublishEventResponseCreator(
-      { message: "News removed successfully", result: removeNewsResult },
+      { message: "Haber başarıyla kaldırıldı", result: removeNewsResult },
       data,
     );
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to remove news");
+    return ErrorResponseCreator(error || "Haber kaldırılırken hata oluştu");
   }
 }
 
@@ -149,11 +149,11 @@ export async function handlePublishNews(
   data: PublishNewsPayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponseCreator("Authentication failed", 401);
+    return ErrorResponseCreator("Kimlik doğrulama hatası", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponseCreator("Only editors can publish news", 403);
+    return ErrorResponseCreator("Yalnızca editörler haber yayınlayabilir", 403);
   }
 
   return await publishNews(masterAdminPrivateKey, currentNews, authResult.pubkey, data);
@@ -246,7 +246,7 @@ export async function publishNews(
     const relay = eventPublishResult.find((r) => r.success)?.relay;
 
     if (!relay) {
-      return ErrorResponseCreator("Failed to publish news", 500);
+      return ErrorResponseCreator("Haber yayınlanırken hata oluştu", 500);
     }
 
     const addNewsResult = await addNews(masterPrivateKey, currentNews, {
@@ -260,11 +260,11 @@ export async function publishNews(
         {
           result: {
             eventPublishResult: {
-              message: "News published successfully",
+              message: "Haber başarıyla yayınlandı",
               result: eventPublishResult,
             },
             addNewsResult: {
-              message: "News added successfully",
+              message: "Haber setine eklendi",
               result: addNewsResult,
             },
           },
@@ -273,8 +273,8 @@ export async function publishNews(
       );
     }
 
-    return ErrorResponseCreator("News published successfully, but failed to add to the set", 500);
+    return ErrorResponseCreator("Haber başarıyla yayınlandı, ancak sete eklenemedi", 500);
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to publish news");
+    return ErrorResponseCreator(error || "Haber yayınlanırken hata oluştu");
   }
 }

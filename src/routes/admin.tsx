@@ -1,4 +1,4 @@
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, X } from "lucide-react";
 import type { NostrEvent } from "nostr-tools";
 import { nip19 } from "nostr-tools";
 import { useState, useEffect, useCallback } from "react";
@@ -498,76 +498,70 @@ export default function AdminPanel() {
             publishSuccess.map((ps) => {
               if (isSinglePublishResponse(ps)) {
                 return (
-                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
-                        <AlertDescription className="text-green-800 dark:text-green-300">
-                          <button
-                            onClick={() => setPublishSuccess([])}
-                            className="text-green-600 dark:text-green-400"
-                          >
-                            Temizle
-                          </button>
+                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 relative">
+                    <button
+                      onClick={() => setPublishSuccess([])}
+                      className="absolute top-2 right-2 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 cursor-pointer text-lg font-bold"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
+                      <AlertDescription className="text-green-800 dark:text-green-300">
+                        <span className="font-bold">{ps.message}</span>
 
-                          <span className="font-bold">{ps.message}</span>
-
-                          <p>Gönderilen eventler:</p>
-                          {ps.result.map((result) => {
-                            if (result.success) {
-                              return <p key={result.relay}>"Başarılı" ({result.relay})</p>;
-                            } else {
-                              return (
-                                <p key={result.relay} className="text-red-500">
-                                  "Başarısız" ({result.relay}) {(result as any).error}
-                                </p>
-                              );
-                            }
-                          })}
-                        </AlertDescription>
-                      </div>
+                        <p>Gönderilen eventler:</p>
+                        {ps.result.map((result) => {
+                          if (result.success) {
+                            return <p key={result.relay}>"Başarılı" ({result.relay})</p>;
+                          } else {
+                            return (
+                              <p key={result.relay} className="text-red-500">
+                                "Başarısız" ({result.relay}) {(result as any).error}
+                              </p>
+                            );
+                          }
+                        })}
+                      </AlertDescription>
                     </div>
                   </Alert>
                 );
               } else if (isMultiPublishResponse(ps)) {
                 return (
-                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
-                        <AlertDescription className="text-green-800 dark:text-green-300">
-                          <button
-                            onClick={() => setPublishSuccess([])}
-                            className="text-green-600 dark:text-green-400"
-                          >
-                            Temizle
-                          </button>
+                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 relative">
+                    <button
+                      onClick={() => setPublishSuccess([])}
+                      className="absolute top-2 right-2 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 cursor-pointer text-lg font-bold"
+                    >
+                      ×
+                    </button>
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
+                      <AlertDescription className="text-green-800 dark:text-green-300">
+                        {Object.values(ps.result).map((result, index) => {
+                          return (
+                            <>
+                              <p key={index}>
+                                <span className="font-bold">{result.message}</span>
+                              </p>
+                              <p>Gönderilen eventler:</p>
+                              {result.result.map((result) => {
+                                if (result.success) {
+                                  return <p key={result.relay}>"Başarılı" ({result.relay})</p>;
+                                } else {
+                                  return (
+                                    <p key={result.relay} className="text-red-500">
+                                      "Başarısız" ({result.relay}) {(result as any).error}
+                                    </p>
+                                  );
+                                }
+                              })}
 
-                          {Object.values(ps.result).map((result, index) => {
-                            return (
-                              <>
-                                <p key={index}>
-                                  <span className="font-bold">{result.message}</span>
-                                </p>
-                                <p>Gönderilen eventler:</p>
-                                {result.result.map((result) => {
-                                  if (result.success) {
-                                    return <p key={result.relay}>"Başarılı" ({result.relay})</p>;
-                                  } else {
-                                    return (
-                                      <p key={result.relay} className="text-red-500">
-                                        "Başarısız" ({result.relay}) {(result as any).error}
-                                      </p>
-                                    );
-                                  }
-                                })}
-
-                                <br />
-                              </>
-                            );
-                          })}
-                        </AlertDescription>
-                      </div>
+                              <br />
+                            </>
+                          );
+                        })}
+                      </AlertDescription>
                     </div>
                   </Alert>
                 );

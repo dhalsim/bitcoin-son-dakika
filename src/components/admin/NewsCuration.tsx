@@ -20,18 +20,24 @@ import type { EventItem } from "@/lib/nip01";
 import { getKind1Events } from "@/lib/nip01";
 import { useUserContext } from "@/contexts/UserContext";
 import { SignEventResult, useNostrAuth } from "@/contexts/NostrAuthContext";
-import { publishToRelays } from "@/lib/utils";
+import { formatNostrDate, publishToRelays } from "@/lib/utils";
 
 import type {
   MultiPublishResponse,
   PublishEventResponse,
   SinglePublishResponse,
 } from "../../../api-helpers/schemas";
-import { ADMIN_RELAYS, MASTER_ADMIN_PUBKEY, type NewsTag } from "../../../api-helpers/utils";
+import {
+  ADMIN_RELAYS,
+  createTitleSlug,
+  MASTER_ADMIN_PUBKEY,
+  type NewsTag,
+} from "../../../api-helpers/utils";
 
 import UploadToX from "./UploadToX";
 import { publishToX } from "./utils";
 import { boolean } from "zod";
+import { WEBSITE_URL } from "@/lib/constants";
 
 type NewsCurationProps = {
   news: NewsTag[];
@@ -137,6 +143,10 @@ export default function NewsCuration({
   };
 
   const confirmDeletion = async (sendDeleteRequest: boolean = false) => {
+    const confirmation = prompt("Silme talebinde bulunmak istediğinize emin misiniz? (e/h)");
+
+    if (confirmation !== "e") return;
+
     if (!pendingDeletionEvent) return;
 
     const userPubkey = userProfile?.pubkey;
@@ -242,6 +252,14 @@ export default function NewsCuration({
                 const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
                 const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
                 const display = titleTag || summaryTag || content;
+                const slug = createTitleSlug(titleTag);
+                const url = `${WEBSITE_URL}/news/${slug}`;
+                const nevent = nip19.neventEncode({
+                  id: event.id,
+                  relays: [event.relay],
+                  author: event.pubkey,
+                  kind: event.kind,
+                });
 
                 return (
                   <div
@@ -249,10 +267,29 @@ export default function NewsCuration({
                     className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                   >
                     <div className="min-w-0">
-                      <div className="font-mono text-xs text-muted-foreground">
-                        {event.id.substring(0, 6)}...{event.id.substring(event.id.length - 6)}
+                      <div className="text-sm truncate max-w-[48ch]">
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:text-blue-600 font-bold"
+                        >
+                          {display}
+                        </a>
                       </div>
-                      <div className="text-sm truncate max-w-[48ch]">{display}</div>
+                      <div className="font-mono text-xs text-muted-foreground">
+                        <a
+                          href={`https://njump.me/${nevent}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:text-blue-600"
+                        >
+                          {event.id.substring(0, 6)}...{event.id.substring(event.id.length - 6)}
+                        </a>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {event.relay} {formatNostrDate(event.created_at)}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
                       <Button
@@ -381,11 +418,19 @@ export default function NewsCuration({
                 </Button>
                 {(userProfile?.pubkey === pendingDeletionEvent.pubkey ||
                   pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY) && (
-                  <Button variant="outline" onClick={() => confirmDeletion(true)}>
+                  <Button
+                    variant="destructive"
+                    className="bg-red-600 text-black"
+                    onClick={() => confirmDeletion(true)}
+                  >
                     Kaldır ve Sil
                   </Button>
                 )}
-                <Button variant="destructive" onClick={() => confirmDeletion(false)}>
+                <Button
+                  variant="destructive"
+                  className="bg-red-600 text-black"
+                  onClick={() => confirmDeletion(false)}
+                >
                   Sadece Kaldır
                 </Button>
               </DialogFooter>

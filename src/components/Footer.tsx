@@ -1,5 +1,3 @@
-import React from "react";
-
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 
 const Footer = () => {
