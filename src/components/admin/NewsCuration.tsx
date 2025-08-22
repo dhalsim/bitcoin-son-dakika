@@ -337,59 +337,60 @@ export default function NewsCuration({
           </DialogHeader>
 
           {pendingDeletionEvent && (
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                <p>
-                  <strong>Event ID:</strong> {pendingDeletionEvent.id.substring(0, 8)}...
-                  {pendingDeletionEvent.id.substring(pendingDeletionEvent.id.length - 8)}
-                </p>
-                <p>
-                  <strong>Sahip:</strong> {pendingDeletionEvent.pubkey.substring(0, 8)}...
-                  {pendingDeletionEvent.pubkey.substring(pendingDeletionEvent.pubkey.length - 8)}
-                </p>
+            <>
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  <p>
+                    <strong>Event ID:</strong> {pendingDeletionEvent.id.substring(0, 8)}...
+                    {pendingDeletionEvent.id.substring(pendingDeletionEvent.id.length - 8)}
+                  </p>
+                  <p>
+                    <strong>Sahip:</strong> {pendingDeletionEvent.pubkey.substring(0, 8)}...
+                    {pendingDeletionEvent.pubkey.substring(pendingDeletionEvent.pubkey.length - 8)}
+                  </p>
+                </div>
+
+                {userProfile && userProfile.pubkey === pendingDeletionEvent.pubkey ? (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Bu event size ait. Listeden kaldiriltan sonra silme talebi gönderilecek.
+                    </AlertDescription>
+                  </Alert>
+                ) : pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY ? (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Bu event ana hesaba ait. Backend üzerinden silme talebi gönderilecek.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Bu event size ait değil. Silme talebinde bulunmak için onlarla iletişime
+                      geçebilirsiniz.
+                      <p>Sahip: {nip19.npubEncode(pendingDeletionEvent.pubkey)}</p>
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
-
-              {userProfile?.pubkey === pendingDeletionEvent.pubkey ? (
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    Bu event size ait. Listeden kaldiriltan sonra silme talebi gönderilecek.
-                  </AlertDescription>
-                </Alert>
-              ) : pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY ? (
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    Bu event ana hesaba ait. Backend üzerinden silme talebi gönderilecek.
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <Alert>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    Bu event size ait değil. Silme talebinde bulunmak için onlarla iletişime
-                    geçebilirsiniz.
-                    <p>Sahip: {nip19.npubEncode(pendingDeletionEvent.pubkey)}</p>
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeletionDialogOpen(false)}>
+                  İptal
+                </Button>
+                {(userProfile?.pubkey === pendingDeletionEvent.pubkey ||
+                  pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY) && (
+                  <Button variant="outline" onClick={() => confirmDeletion(true)}>
+                    Kaldır ve Sil
+                  </Button>
+                )}
+                <Button variant="destructive" onClick={() => confirmDeletion(false)}>
+                  Sadece Kaldır
+                </Button>
+              </DialogFooter>
+            </>
           )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletionDialogOpen(false)}>
-              İptal
-            </Button>
-            {(userProfile?.pubkey === pendingDeletionEvent.pubkey ||
-              pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY) && (
-              <Button variant="outline" onClick={() => confirmDeletion(true)}>
-                Kaldır ve Sil
-              </Button>
-            )}
-            <Button variant="destructive" onClick={() => confirmDeletion(false)}>
-              Sadece Kaldır
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
