@@ -5,7 +5,11 @@ import {
   MempoolMempoolSchema,
   MempoolHashrateSchema,
 } from "../../api-helpers/bitcoin-stats/schemas.js";
-import { applyCacheHeaders, ErrorResponse, SuccessResponse } from "../../api-helpers/utils.js";
+import {
+  applyCacheHeaders,
+  ErrorResponseCreator,
+  SuccessResponse,
+} from "../../api-helpers/utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {
@@ -44,7 +48,7 @@ export async function GET() {
     }
 
     if (failedEndpoints.length > 0) {
-      const errorResponse = ErrorResponse(
+      const errorResponse = ErrorResponseCreator(
         `Failed to fetch Bitcoin stats: ${failedEndpoints.join(", ")}`,
         500,
       );
@@ -164,7 +168,7 @@ export async function GET() {
       cdnMaxAge: 120,
     });
   } catch (error) {
-    const errorResponse = ErrorResponse(error || "Failed to fetch Bitcoin statistics", 500);
+    const errorResponse = ErrorResponseCreator(error || "Failed to fetch Bitcoin statistics", 500);
 
     // Apply error caching strategy
     return applyCacheHeaders(errorResponse, {

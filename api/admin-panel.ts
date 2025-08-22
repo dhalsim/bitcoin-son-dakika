@@ -1,5 +1,5 @@
 import { handleAdminPost } from "../api-helpers/admin/dispatcher.js";
-import { ErrorResponse, SuccessResponse, fetchNostrSets } from "../api-helpers/utils.js";
+import { ErrorResponseCreator, SuccessResponse, fetchNostrSets } from "../api-helpers/utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET(_request: Request) {
@@ -20,7 +20,7 @@ export async function GET(_request: Request) {
       podcasts: podcastTags,
     });
   } catch (error) {
-    return ErrorResponse(error);
+    return ErrorResponseCreator(error);
   }
 }
 

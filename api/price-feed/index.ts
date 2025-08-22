@@ -1,7 +1,11 @@
 import TradingView from "@mathieuc/tradingview";
 import { createClient } from "redis";
 
-import { applyCacheHeaders, ErrorResponse, SuccessResponse } from "../../api-helpers/utils.js";
+import {
+  applyCacheHeaders,
+  ErrorResponseCreator,
+  SuccessResponse,
+} from "../../api-helpers/utils.js";
 import { type BaseEndpointResponse, type PriceData } from "../../src/types/api.js";
 
 const redis = await createClient({
@@ -60,7 +64,7 @@ export async function GET() {
   } catch (error) {
     console.error("New Price Feed API error:", error);
 
-    const errorResponse = ErrorResponse(error || "Failed to fetch new price feed data", 500);
+    const errorResponse = ErrorResponseCreator(error || "Failed to fetch new price feed data", 500);
 
     return applyCacheHeaders(errorResponse, {
       maxAge: 60,
