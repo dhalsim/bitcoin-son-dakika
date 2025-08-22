@@ -503,7 +503,14 @@ export default function AdminPanel() {
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
                         <AlertDescription className="text-green-800 dark:text-green-300">
-                          {ps.message}
+                          <button
+                            onClick={() => setPublishSuccess([])}
+                            className="text-green-600 dark:text-green-400"
+                          >
+                            Temizle
+                          </button>
+
+                          <span className="font-bold">{ps.message}</span>
 
                           <p>Gönderilen eventler:</p>
                           {ps.result.map((result) => {
@@ -529,10 +536,19 @@ export default function AdminPanel() {
                       <div className="flex items-start gap-2">
                         <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
                         <AlertDescription className="text-green-800 dark:text-green-300">
+                          <button
+                            onClick={() => setPublishSuccess([])}
+                            className="text-green-600 dark:text-green-400"
+                          >
+                            Temizle
+                          </button>
+
                           {Object.values(ps.result).map((result, index) => {
                             return (
                               <>
-                                <p key={index}>{result.message}</p>
+                                <p key={index}>
+                                  <span className="font-bold">{result.message}</span>
+                                </p>
                                 <p>Gönderilen eventler:</p>
                                 {result.result.map((result) => {
                                   if (result.success) {
