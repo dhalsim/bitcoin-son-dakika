@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { Clock, Play } from "lucide-react";
 
 import type { PodcastItem } from "@/lib/ssg-data";
@@ -17,10 +17,16 @@ export interface PodcastCardProps {
 
 export const PodcastCard: React.FC<PodcastCardProps> = ({ podcast }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
 
   const url = `/podcast/${createTitleSlug(podcast.title)}`;
+  const titleText = `Podcast - ${podcast.title}`;
 
   const summaryToRender = isExpanded ? podcast.summary : podcast.summary?.slice(0, 200) + "…";
+
+  const handlePlayClick = () => {
+    navigate(url, { state: { autoplay: true } });
+  };
 
   const wrapInLink = (element: React.ReactNode, className?: string) => {
     return url ? (
@@ -33,7 +39,7 @@ export const PodcastCard: React.FC<PodcastCardProps> = ({ podcast }) => {
   };
 
   const titleElement = wrapInLink(
-    <>{podcast.title}</>,
+    <>{titleText}</>,
     "hover:text-main-accent decoration-main-accent",
   );
 
@@ -68,7 +74,7 @@ export const PodcastCard: React.FC<PodcastCardProps> = ({ podcast }) => {
           </div>
         </div>
 
-        <CardTitle className="text-lg text-main-accent line-clamp-2 mb-2">{titleElement}</CardTitle>
+        <CardTitle className="text-lg line-clamp-2 mb-2">{titleElement}</CardTitle>
 
         <p className="text-sm mb-4 text-muted-foreground">
           <Link to={url}>{summaryToRender}</Link>
@@ -84,11 +90,9 @@ export const PodcastCard: React.FC<PodcastCardProps> = ({ podcast }) => {
 
       <CardContent className="flex-1 flex flex-col">
         <div className="mt-auto space-y-2">
-          <Button asChild className="w-full">
-            <Link to={`/podcast/${createTitleSlug(podcast.title)}?autoplay=true`}>
-              <Play className="h-4 w-4 mr-2" />
-              Dinle
-            </Link>
+          <Button onClick={handlePlayClick} className="w-full">
+            <Play className="h-4 w-4 mr-2" />
+            Dinle
           </Button>
         </div>
 

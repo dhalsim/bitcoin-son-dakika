@@ -48,6 +48,30 @@ type Category = {
   value: CategoryValue;
 };
 
+// Define categories array first
+const categories: Category[] = [
+  {
+    label: "Tümü",
+    value: "all",
+  },
+  {
+    label: "Haberler",
+    value: "news",
+  },
+  {
+    label: "Köşe Yazıları",
+    value: "articles",
+  },
+  {
+    label: "Podcast",
+    value: "podcast",
+  },
+  {
+    label: "Eğitim",
+    value: "education",
+  },
+];
+
 export default function Index() {
   const ssgData = useSSGData();
   const latestNews = useLatestNews(6); // Get latest 6 news items
@@ -55,30 +79,6 @@ export default function Index() {
   const latestPodcasts = useLatestPodcasts(2); // Get latest 2 podcasts for the podcasts row
 
   const [category, setCategory] = useState<CategoryValue>("all");
-
-  // Define categories array first
-  const categories: Category[] = [
-    {
-      label: "Tümü",
-      value: "all",
-    },
-    {
-      label: "Haberler",
-      value: "news",
-    },
-    {
-      label: "Köşe Yazıları",
-      value: "articles",
-    },
-    {
-      label: "Podcast",
-      value: "podcast",
-    },
-    {
-      label: "Eğitim",
-      value: "education",
-    },
-  ];
 
   // Handle category change - now instant!
   const handleCategoryChange = useCallback(
@@ -89,11 +89,15 @@ export default function Index() {
     [category],
   );
 
+  // Get featured content (latest news item) and main content
+  const [featuredContent, ...mainNews] = latestNews;
+
   // Memoize all content combinations to avoid recalculating on every render
   const allContent = useMemo(() => {
     const educationContent: EducationItem[] = [];
-    return [...latestNews, ...latestArticles, ...latestPodcasts, ...educationContent];
-  }, [latestNews, latestArticles, latestPodcasts]);
+
+    return [...mainNews, ...latestArticles, ...latestPodcasts, ...educationContent];
+  }, [mainNews, latestArticles, latestPodcasts]);
 
   // Pre-calculate all category filters for instant switching
   const categoryContent = useMemo(() => {
@@ -193,9 +197,6 @@ export default function Index() {
     });
   }, [categories, categoryContent, category, handleCategoryChange]);
 
-  // Get current filtered content instantly
-  const filteredContent = categoryContent[category];
-
   // If no content is available, show empty state
   if (latestNews.length === 0 && latestArticles.length === 0) {
     return (
@@ -209,9 +210,6 @@ export default function Index() {
       </MainContent>
     );
   }
-
-  // Get featured content (latest news item) and main content
-  const [featuredContent, ...mainNews] = latestNews;
 
   return (
     <MainContent>

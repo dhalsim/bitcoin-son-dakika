@@ -3,10 +3,11 @@ import {
   MetaFunction,
   useLoaderData,
   Link,
-  useSearchParams,
+  Navigate,
+  useLocation,
 } from "react-router-dom";
 import { Mic, Clock } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createTitleSlug } from "../../api-helpers/utils";
 
@@ -109,21 +110,24 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export default function PodcastDetailPage() {
   const { podcast } = useLoaderData<typeof loader>();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const audioPlayerRef = useRef<AudioPlayerRef>(null);
+  const [hasAutoplayAttempted, setHasAutoplayAttempted] = useState(false);
 
-  // Auto-play when autoplay query param is present
+  // Auto-play when autoplay is in location state
   useEffect(() => {
-    const shouldAutoplay = searchParams.get("autoplay") === "true";
+    const shouldAutoplay = location.state?.autoplay === true && !hasAutoplayAttempted;
+
     if (shouldAutoplay && audioPlayerRef.current && podcast.audioUrl) {
       // Small delay to ensure AudioPlayer is fully mounted
       const timer = setTimeout(() => {
         audioPlayerRef.current?.play();
+        setHasAutoplayAttempted(true);
       }, 500);
 
       return () => clearTimeout(timer);
     }
-  }, [searchParams, podcast.audioUrl]);
+  }, [location.state, podcast.audioUrl, hasAutoplayAttempted]);
 
   if (!podcast) {
     return (
@@ -230,8 +234,10 @@ export default function PodcastDetailPage() {
           {/* Summary */}
           {podcast.summary && (
             <div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-r-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-3">Özet</h3>
-              <p className="text-lg leading-relaxed text-blue-800 dark:text-blue-200">
+              <h3 className="text-lg font-semibold text-orange-800 dark:text-orange-700 mb-3">
+                Özet
+              </h3>
+              <p className="text-lg leading-relaxed text-orange-900 dark:text-orange-600 ">
                 {podcast.summary}
               </p>
             </div>

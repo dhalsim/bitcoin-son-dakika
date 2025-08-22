@@ -21,15 +21,17 @@ export default function ArticleMarkdownRenderer({
               <h1 className="text-3xl font-bold text-foreground mb-4">{children}</h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-2xl font-bold text-foreground mb-3 mt-6">{children}</h2>
+              <h2 className="text-2xl font-bold text-foreground/80 mb-3 mt-6">{children}</h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-xl font-bold text-foreground mb-2 mt-5">{children}</h3>
+              <h3 className="text-xl font-bold text-foreground/70 mb-2 mt-5">{children}</h3>
             ),
             h4: ({ children }) => (
-              <h4 className="text-lg font-bold text-foreground mb-2 mt-4">{children}</h4>
+              <h4 className="text-lg font-bold text-foreground/70 mb-2 mt-4">{children}</h4>
             ),
-            p: ({ children }) => <p className="mb-4 text-foreground leading-relaxed">{children}</p>,
+            p: ({ children }) => (
+              <p className="mb-4 text-foreground/70 leading-relaxed">{children}</p>
+            ),
             ul: ({ children }) => (
               <ul className="list-disc list-inside mb-4 space-y-1 text-foreground">{children}</ul>
             ),

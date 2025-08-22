@@ -542,7 +542,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
             <Collapsible open={showChapters} onOpenChange={setShowChapters}>
               <CollapsibleContent>
                 <div className="border rounded-lg p-2 space-y-2">
-                  <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">Bölümler</h4>
+                  <h4 className="font-medium text-sm text-main-accent">Bölümler</h4>
 
                   {/* Chapters list */}
                   <div className="max-h-48 overflow-y-auto space-y-2">
@@ -583,15 +583,13 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
               <CollapsibleContent>
                 <div className="border rounded-lg p-2">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">
-                      Transcript
-                    </h4>
+                    <h4 className="font-medium text-sm text-main-accent">Transkript</h4>
                     <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                       <Checkbox
                         checked={syncTranscript}
                         onCheckedChange={(checked) => setSyncTranscript(checked as boolean)}
                       />
-                      Transkripti ses ile senkron yap
+                      Senkronize et
                     </label>
                   </div>
 

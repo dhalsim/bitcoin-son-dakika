@@ -103,20 +103,20 @@
     /* Other common colors */
     --black: 0 0% 0%;
     --white: 0 0% 100%;
+
+    /* Red shades */
     --red-500: 0 84.2% 60.2%;
     --red-600: 0 72.2% 50.6%;
-    --green-500: 142.1 76.2% 36.3%;
-    --green-600: 142.1 70.6% 45.3%;
-    --blue-500: 217.2 91.2% 59.8%;
-    --blue-600: 215.4 16.3% 46.9%;
-    --orange-500: 24.6 95% 53.1%;
-    --orange-600: 20.5 90.2% 48.2%;
+
+    /* Purple shades */
     --purple-500: 262.1 83.3% 57.8%;
     --purple-600: 263.4 70% 50.4%;
 
     /* Additional blue shades */
     --blue-300: 214.3 31.8% 91.4%;
     --blue-400: 213.1 93.9% 67.8%;
+    --blue-500: 217.2 91.2% 59.8%;
+    --blue-600: 215.4 16.3% 46.9%;
     --blue-700: 215.4 16.3% 46.9%;
     --blue-800: 215.4 16.3% 46.9%;
     --blue-900: 215.4 16.3% 46.9%;
@@ -125,13 +125,25 @@
     /* Additional green shades */
     --green-300: 142.1 76.2% 36.3%;
     --green-400: 142.1 70.6% 45.3%;
+    --green-500: 142.1 76.2% 36.3%;
+    --green-600: 142.1 70.6% 45.3%;
     --green-700: 142.1 76.2% 36.3%;
     --green-800: 142.1 76.2% 36.3%;
     --green-900: 142.1 76.2% 36.3%;
     --green-950: 142.1 76.2% 36.3%;
 
     /* Additional orange shades */
+    --orange-50: 33 100% 95%;
+    --orange-100: 34 100% 89%;
+    --orange-200: 32 98% 77%;
+    --orange-300: 31 97.4% 64.5%;
     --orange-400: 24.6 95% 53.1%;
+    --orange-500: 24.6 95% 53.1%;
+    --orange-600: 20.5 90.2% 48.2%;
+    --orange-700: 17.5 88.7% 41.4%;
+    --orange-800: 15 79% 34.5%;
+    --orange-900: 15 60% 25.1%;
+    --orange-950: 15 91% 14.1%;
 
     /* Yellow shades */
     --yellow-400: 48 96% 89%;
@@ -540,8 +552,35 @@
   }
 
   /* Additional orange shades */
+  .text-orange-50 {
+    color: hsl(var(--orange-50));
+  }
+  .text-orange-100 {
+    color: hsl(var(--orange-100));
+  }
+  .text-orange-200 {
+    color: hsl(var(--orange-200));
+  }
+  .text-orange-300 {
+    color: hsl(var(--orange-300));
+  }
   .text-orange-400 {
     color: hsl(var(--orange-400));
+  }
+  .text-orange-600 {
+    color: hsl(var(--orange-600));
+  }
+  .text-orange-700 {
+    color: hsl(var(--orange-700));
+  }
+  .text-orange-800 {
+    color: hsl(var(--orange-800));
+  }
+  .text-orange-900 {
+    color: hsl(var(--orange-900));
+  }
+  .text-orange-950 {
+    color: hsl(var(--orange-950));
   }
 
   /* Yellow shades */
