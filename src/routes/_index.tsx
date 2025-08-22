@@ -25,7 +25,7 @@ export const meta: MetaFunction = () => {
     {
       name: "keywords",
       content:
-        "bitcoin, kripto para, lightning network, madencilik, bitcoin haberleri, nostr, analiz, piyasa, teknoloji, ekonomi, regülasyon, defi, nft, ethereum, altcoin, güvenlik, eğitim, geliştirme",
+        "bitcoin, btc, kripto para, lightning network, madencilik, bitcoin haberleri, nostr, analiz, piyasa, teknoloji, ekonomi, regülasyon, defi, nft, ethereum, altcoin, güvenlik, eğitim, geliştirme, podcast",
     },
     // Open Graph
     { property: "og:site_name", content: WEBSITE_NAME },

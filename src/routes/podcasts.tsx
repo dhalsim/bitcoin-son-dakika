@@ -16,6 +16,11 @@ export const meta: MetaFunction = () => {
       name: "description",
       content: description,
     },
+    {
+      name: "keywords",
+      content:
+        "bitcoin, btc, bitcoin podcast, bitcoin haberleri, bitcoin analiz, bitcoin uzman görüşleri, kripto para podcast, nostr podcast, bitcoin eğitim",
+    },
     { property: "og:title", content: "Podcastler - Bitcoin Son Dakika" },
     {
       property: "og:description",

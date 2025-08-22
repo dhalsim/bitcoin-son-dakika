@@ -83,13 +83,14 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   const imageUrl = newsItem.image ? newsItem.image : `${WEBSITE_URL}/${LOGO_URL}`;
 
   // Add tags for better SEO
-  const tags = newsItem.tags?.length > 0 ? newsItem.tags.join(", ") : undefined;
+  const tags =
+    newsItem.tags?.length > 0 ? `bitcoin, btc, ${newsItem.tags.join(", ")}` : "bitcoin, btc";
 
   return [
     { title },
     { name: "description", content: description },
     // Keywords (tags)
-    ...(tags ? [{ name: "keywords", content: tags }] : []),
+    { name: "keywords", content: tags },
     // Open Graph
     { property: "og:site_name", content: WEBSITE_NAME },
     { property: "og:title", content: title },

@@ -22,14 +22,14 @@ export const meta: MetaFunction = ({ params }) => {
       {
         name: "keywords",
         content:
-          "bitcoin, nostr, bitcoin analiz, bitcoin haberleri, bitcoin makaleleri, bitcoin podcastleri",
+          "bitcoin, btc, nostr, bitcoin analiz, bitcoin haberleri, bitcoin makaleleri, bitcoin podcastleri",
       },
     ];
   }
 
   const title = `#${slug} Etiketi - ${WEBSITE_NAME}`;
   const description = `${WEBSITE_DESCRIPTION} - #${slug} etiketi ile ilgili Bitcoin haberleri ve makaleleri`;
-  const keywords = `${slug}, bitcoin ${slug}, nostr ${slug}, bitcoin`;
+  const keywords = `${slug}, bitcoin ${slug}, btc ${slug}, nostr ${slug}, bitcoin`;
 
   return [
     { title },

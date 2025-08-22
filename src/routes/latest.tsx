@@ -1,5 +1,7 @@
 import type { MetaFunction } from "react-router";
 
+import PodcastCard from "@/components/PodcastCard";
+
 import MainContent from "../components/MainContent";
 import NewsCard from "../components/NewsCard";
 import { useSSGData } from "../contexts/SSGContext";
@@ -15,7 +17,7 @@ export const meta: MetaFunction = () => {
     {
       name: "keywords",
       content:
-        "bitcoin son dakika, bitcoin güncel, bitcoin haberleri, bitcoin makaleleri, bitcoin analiz, kripto para güncel, nostr güncel, bitcoin piyasa, bitcoin teknoloji",
+        "bitcoin, btc, bitcoin son dakika, bitcoin güncel, bitcoin haberleri, bitcoin makaleleri, bitcoin analiz, kripto para güncel, nostr güncel, bitcoin piyasa, bitcoin teknoloji",
     },
     // Open Graph
     { property: "og:title", content: `En Son İçerikler - ${WEBSITE_NAME}` },
@@ -39,7 +41,7 @@ export default function LatestPage() {
   const ssgData = useSSGData();
 
   // Combine news and articles, sort by publish date
-  const allItems = [...ssgData.news, ...ssgData.articles].sort(
+  const allItems = [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts].sort(
     (a, b) => b.publishedAt - a.publishedAt,
   );
 
@@ -72,9 +74,13 @@ export default function LatestPage() {
 
       {/* Combined Content List - Single Column */}
       <div className="max-w-4xl mx-auto space-y-6">
-        {allItems.map((item, index) => (
-          <NewsCard key={index} {...item} />
-        ))}
+        {allItems.map((item, index) =>
+          item.type === "news" || item.type === "article" ? (
+            <NewsCard key={index} {...item} />
+          ) : (
+            <PodcastCard key={index} podcast={item} />
+          ),
+        )}
       </div>
     </MainContent>
   );

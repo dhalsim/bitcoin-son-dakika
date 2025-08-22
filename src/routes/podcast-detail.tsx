@@ -37,11 +37,19 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const imageUrl = podcast.image ? podcast.image : `${WEBSITE_URL}/${LOGO_URL}`;
   const canonicalUrl = `${WEBSITE_URL}/podcast/${createTitleSlug(podcast.title!)}`;
 
+  // Add tags for better SEO
+  const tags =
+    podcast.tags?.length > 0 ? `bitcoin, btc, ${podcast.tags.join(", ")}` : "bitcoin, btc";
+
   return [
     { title: title },
     {
       name: "description",
       content: description,
+    },
+    {
+      name: "keywords",
+      content: tags,
     },
     { property: "og:title", content: title },
     {

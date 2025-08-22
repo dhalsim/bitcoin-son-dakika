@@ -35,6 +35,11 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
       name: "description",
       content: `${profile.display_name} tarafından yazılan Bitcoin haberleri ve makaleleri. ${WEBSITE_DESCRIPTION}`,
     },
+    {
+      name: "keywords",
+      content:
+        "bitcoin, btc, ${profile.display_name}, bitcoin haberleri, bitcoin makaleleri, bitcoin analiz, nostr, kripto para",
+    },
   ];
 };
 

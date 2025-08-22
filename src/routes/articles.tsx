@@ -15,7 +15,7 @@ export const meta: MetaFunction = () => {
     {
       name: "keywords",
       content:
-        "bitcoin makaleleri, bitcoin analiz, bitcoin köşe yazıları, kripto para analiz, bitcoin eğitim, bitcoin teknoloji, bitcoin ekonomi, bitcoin regülasyon, bitcoin güvenlik",
+        "bitcoin, btc, bitcoin makaleleri, bitcoin analiz, bitcoin köşe yazıları, kripto para analiz, bitcoin eğitim, bitcoin teknoloji, bitcoin ekonomi, bitcoin regülasyon, bitcoin güvenlik, podcast",
     },
     // Open Graph
     { property: "og:title", content: `Tüm Makaleler - ${WEBSITE_NAME}` },
