@@ -1,7 +1,7 @@
 import { TranslationServiceClient } from "@google-cloud/translate";
 
 import type { AuthResult } from "../types.js";
-import { ErrorResponse, SuccessResponse } from "../utils.js";
+import { ErrorResponseCreator, SuccessResponse } from "../utils.js";
 
 import type { TranslateNewsPayload } from "./types.js";
 
@@ -10,19 +10,19 @@ export async function handleTranslateNews(
   requestBody: TranslateNewsPayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse("Authentication failed", 401);
+    return ErrorResponseCreator("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse("Only editors can translate news", 403);
+    return ErrorResponseCreator("Only editors can translate news", 403);
   }
 
   if (!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-    return ErrorResponse("Google application credentials not configured", 500);
+    return ErrorResponseCreator("Google application credentials not configured", 500);
   }
 
   if (!process.env.GOOGLE_PROJECT_ID) {
-    return ErrorResponse("Google project ID not configured", 500);
+    return ErrorResponseCreator("Google project ID not configured", 500);
   }
 
   try {
@@ -41,6 +41,6 @@ export async function handleTranslateNews(
 
     return SuccessResponse({ translations });
   } catch (error) {
-    return ErrorResponse(error || "Failed to translate news");
+    return ErrorResponseCreator(error || "Failed to translate news");
   }
 }

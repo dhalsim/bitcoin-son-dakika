@@ -3,7 +3,12 @@ import { nip19, finalizeEvent } from "nostr-tools";
 
 import { publishToRelays } from "../../src/lib/utils.js";
 import type { AuthResult } from "../types.js";
-import { ADMIN_RELAYS, ErrorResponse, PublishEventResponse, createTitleSlug } from "../utils.js";
+import {
+  ADMIN_RELAYS,
+  createTitleSlug,
+  ErrorResponseCreator,
+  PublishEventResponseCreator,
+} from "../utils.js";
 import type { ArticleTag } from "../utils.js";
 
 import type {
@@ -20,11 +25,11 @@ export async function handleAddArticle(
   data: AddArticlePayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse("Authentication failed", 401);
+    return ErrorResponseCreator("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse("Only editors can add articles", 403);
+    return ErrorResponseCreator("Only editors can add articles", 403);
   }
 
   let aTag: string;
@@ -34,13 +39,13 @@ export async function handleAddArticle(
     try {
       const decoded = nip19.decode(data.naddr);
       if (decoded.type !== "naddr") {
-        return ErrorResponse("Invalid naddr format", 400);
+        return ErrorResponseCreator("Invalid naddr format", 400);
       }
 
       aTag = `${decoded.data.kind}:${decoded.data.pubkey}:${decoded.data.identifier}`;
       relayTag = decoded.data.relays?.[0] || "wss://relay.damus.io";
     } catch {
-      return ErrorResponse("Invalid naddr", 400);
+      return ErrorResponseCreator("Invalid naddr", 400);
     }
   } else {
     aTag = data.a;
@@ -48,7 +53,7 @@ export async function handleAddArticle(
   }
 
   if (!aTag || !relayTag) {
-    return ErrorResponse("Article data is required", 400);
+    return ErrorResponseCreator("Article data is required", 400);
   }
 
   return await addArticle(masterAdminPrivateKey, currentArticles, {
@@ -65,16 +70,16 @@ export async function handleRemoveArticle(
   data: RemoveArticlePayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse("Authentication failed", 401);
+    return ErrorResponseCreator("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse("Only editors can remove articles", 403);
+    return ErrorResponseCreator("Only editors can remove articles", 403);
   }
 
   const { aTag, relay } = data;
   if (!aTag || !relay) {
-    return ErrorResponse("Article data is required", 400);
+    return ErrorResponseCreator("Article data is required", 400);
   }
 
   return await removeArticle(masterAdminPrivateKey, currentArticles, data);
@@ -93,7 +98,7 @@ export async function addArticle(
       (article) => article.aTag === data.aTag && article.relay === data.relayTag,
     );
     if (existingArticle) {
-      return ErrorResponse("Article already exists", 409);
+      return ErrorResponseCreator("Article already exists", 409);
     }
 
     const eventTemplate = {
@@ -111,7 +116,7 @@ export async function addArticle(
     const result = await publishToRelays(event, ADMIN_RELAYS);
 
     if (result.some((r) => r.success)) {
-      return PublishEventResponse({ message: "Article added successfully", result }, data);
+      return PublishEventResponseCreator({ message: "Article added successfully", result }, data);
     }
 
     const failedRelays = result
@@ -119,9 +124,9 @@ export async function addArticle(
       .map((r) => r.relay)
       .join(", ");
 
-    return ErrorResponse(`Failed to add article to relays: ${failedRelays}`, 500);
+    return ErrorResponseCreator(`Failed to add article to relays: ${failedRelays}`, 500);
   } catch (error) {
-    return ErrorResponse(error || "Failed to add article");
+    return ErrorResponseCreator(error || "Failed to add article");
   }
 }
 
@@ -138,7 +143,7 @@ export async function removeArticle(
       (article) => article.aTag === data.aTag && article.relay === data.relay,
     );
     if (!toBeRemoved) {
-      return ErrorResponse("Article not found", 404);
+      return ErrorResponseCreator("Article not found", 404);
     }
 
     const eventTemplate = {
@@ -156,9 +161,9 @@ export async function removeArticle(
     const event = finalizeEvent(eventTemplate, privateKeyBytes);
     const result = await publishToRelays(event, ADMIN_RELAYS);
 
-    return PublishEventResponse({ message: "Article removed successfully", result }, data);
+    return PublishEventResponseCreator({ message: "Article removed successfully", result }, data);
   } catch (error) {
-    return ErrorResponse(error || "Failed to remove article");
+    return ErrorResponseCreator(error || "Failed to remove article");
   }
 }
 
@@ -169,11 +174,11 @@ export async function handlePublishArticle(
   data: PublishArticlePayload,
 ) {
   if (!authResult.success) {
-    return ErrorResponse("Authentication failed", 401);
+    return ErrorResponseCreator("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse("Only editors can publish articles", 403);
+    return ErrorResponseCreator("Only editors can publish articles", 403);
   }
 
   return await publishArticle(masterAdminPrivateKey, currentArticles, authResult.pubkey, data);
@@ -221,7 +226,7 @@ async function publishArticle(
     const relay = result.find((r) => r.success)?.relay;
 
     if (!relay) {
-      return ErrorResponse("Failed to publish article", 500);
+      return ErrorResponseCreator("Failed to publish article", 500);
     }
 
     // For updates, we don't need to add to curated set since it already exists
@@ -234,21 +239,21 @@ async function publishArticle(
       });
 
       if (Array.isArray(addResult) ? addResult.some((r) => r.success) : true) {
-        return PublishEventResponse(
+        return PublishEventResponseCreator(
           { message: "Article published successfully", result },
           { eventId: event.id, relay, addArticleResult: addResult },
         );
       }
     } else {
       // Update case - just return success
-      return PublishEventResponse(
+      return PublishEventResponseCreator(
         { message: "Article updated successfully", result },
         { eventId: event.id, relay },
       );
     }
 
-    return ErrorResponse("Failed to publish article", 500);
+    return ErrorResponseCreator("Failed to publish article", 500);
   } catch (error) {
-    return ErrorResponse(error || "Failed to publish article");
+    return ErrorResponseCreator(error || "Failed to publish article");
   }
 }

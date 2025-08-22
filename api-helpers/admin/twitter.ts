@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-import { ErrorResponse, createTitleSlug } from "../utils.js";
+import { ErrorResponseCreator, createTitleSlug } from "../utils.js";
 
 import type { HandleUploadToXParams, XAuthHeaderParams } from "./types.js";
 
@@ -57,21 +57,21 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
   } = params;
 
   if (!authResult.success) {
-    return ErrorResponse("Authentication failed", 401);
+    return ErrorResponseCreator("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse("Only editors can publish news", 403);
+    return ErrorResponseCreator("Only editors can publish news", 403);
   }
 
   const { formData, title } = paramsData;
   if (!formData) {
-    return ErrorResponse("File is required", 400);
+    return ErrorResponseCreator("File is required", 400);
   }
 
   const media = formData.get("media") as File | null;
   if (!media) {
-    return ErrorResponse("Media file missing", 400);
+    return ErrorResponseCreator("Media file missing", 400);
   }
 
   const xForm = new FormData();
@@ -97,7 +97,7 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
   if (!uploadResponse.ok) {
     const text = await uploadResponse.text().catch(() => "");
 
-    return ErrorResponse(
+    return ErrorResponseCreator(
       `X upload failed: ${uploadResponse.status} ${text}`,
       uploadResponse.status,
     );
@@ -106,12 +106,12 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
   try {
     const uploadJson = await uploadResponse.json();
     if (uploadJson.errors) {
-      return ErrorResponse(uploadJson.errors.map((e: any) => e.message).join(", "), 400);
+      return ErrorResponseCreator(uploadJson.errors.map((e: any) => e.message).join(", "), 400);
     }
 
     const { media_id_string: mediaId } = uploadJson;
     if (!mediaId) {
-      return ErrorResponse("Media ID not found", 400);
+      return ErrorResponseCreator("Media ID not found", 400);
     }
 
     const tweetUrl = "https://api.x.com/2/tweets";
@@ -134,11 +134,11 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
     const mediaTweetId = mediaTweetJson?.data?.id;
     const mediaTweetErrors = mediaTweetJson?.errors;
     if (mediaTweetErrors) {
-      return ErrorResponse(mediaTweetErrors.map((e: any) => e.message).join(", "), 400);
+      return ErrorResponseCreator(mediaTweetErrors.map((e: any) => e.message).join(", "), 400);
     }
 
     if (!mediaTweetId) {
-      return ErrorResponse("Reply to ID not found", 400);
+      return ErrorResponseCreator("Reply to ID not found", 400);
     }
 
     const newsUrl = `https://bitcoinsondakika.com/news/${createTitleSlug(title)}`;
@@ -159,7 +159,7 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
     const replyTweetId = replyTweetData?.id;
 
     if (replyTweetErrors) {
-      return ErrorResponse(replyTweetErrors.map((e: any) => e.message).join(", "), 400);
+      return ErrorResponseCreator(replyTweetErrors.map((e: any) => e.message).join(", "), 400);
     }
 
     return new Response(
@@ -171,6 +171,6 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
       { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } },
     );
   } catch (error) {
-    return ErrorResponse(error || "Failed to upload to X");
+    return ErrorResponseCreator(error || "Failed to upload to X");
   }
 }

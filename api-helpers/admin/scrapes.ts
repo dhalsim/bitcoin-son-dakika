@@ -2,7 +2,7 @@ import { createClient } from "redis";
 
 import { fetchAllSources, type ScrapedItem } from "../scrapers/index.js";
 import type { AuthResult } from "../types.js";
-import { ErrorResponse, SuccessResponse } from "../utils.js";
+import { ErrorResponseCreator, SuccessResponse } from "../utils.js";
 
 const SCRAPES_CACHE_KEY = "scrapes:all";
 const SCRAPES_CACHE_TTL_SECONDS = 15 * 60; // 15 minutes
@@ -58,11 +58,11 @@ async function fetchAndCacheScrapes() {
 
 export async function handleGetScrapes(authResult: AuthResult) {
   if (!authResult.success) {
-    return ErrorResponse("Authentication failed", 401);
+    return ErrorResponseCreator("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse("Only editors can access scrapes", 403);
+    return ErrorResponseCreator("Only editors can access scrapes", 403);
   }
 
   const cached = await getCachedScrapes();
@@ -84,17 +84,17 @@ export async function handleGetScrapes(authResult: AuthResult) {
       total: items.length,
     });
   } catch (error) {
-    return ErrorResponse(error || "Failed to get scrapes");
+    return ErrorResponseCreator(error || "Failed to get scrapes");
   }
 }
 
 export async function handleRefreshScrapes(authResult: AuthResult) {
   if (!authResult.success) {
-    return ErrorResponse("Authentication failed", 401);
+    return ErrorResponseCreator("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse("Only editors can refresh scrapes", 403);
+    return ErrorResponseCreator("Only editors can refresh scrapes", 403);
   }
 
   try {
@@ -107,6 +107,6 @@ export async function handleRefreshScrapes(authResult: AuthResult) {
       total: items.length,
     });
   } catch (error) {
-    return ErrorResponse(error || "Failed to refresh scrapes");
+    return ErrorResponseCreator(error || "Failed to refresh scrapes");
   }
 }

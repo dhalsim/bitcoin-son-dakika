@@ -4,7 +4,12 @@ import { hexToBytes } from "nostr-tools/utils";
 import { publishToRelays } from "../../src/lib/utils.js";
 import type { AuthResult } from "../types.js";
 import type { PodcastTag } from "../utils.js";
-import { ADMIN_RELAYS, ErrorResponse, PublishEventResponse, createTitleSlug } from "../utils.js";
+import {
+  ADMIN_RELAYS,
+  ErrorResponseCreator,
+  PublishEventResponseCreator,
+  createTitleSlug,
+} from "../utils.js";
 
 import type { AddPodcastResolvedPayload, PublishPodcastPayload } from "./types.js";
 
@@ -15,11 +20,11 @@ export async function handlePublishPodcast(
   data: PublishPodcastPayload,
 ): Promise<Response> {
   if (!authResult.success) {
-    return ErrorResponse("Authentication failed", 401);
+    return ErrorResponseCreator("Authentication failed", 401);
   }
 
   if (!authResult.roles.includes("editor")) {
-    return ErrorResponse("Only editors can publish podcasts", 403);
+    return ErrorResponseCreator("Only editors can publish podcasts", 403);
   }
 
   return await publishPodcast(masterAdminPrivateKey, podcastTags, authResult.pubkey, data);
@@ -47,7 +52,7 @@ async function publishPodcast(
     } = data;
 
     if (!title || !content || !audioUrl) {
-      return ErrorResponse("Title, content, and audioUrl are required", 400);
+      return ErrorResponseCreator("Title, content, and audioUrl are required", 400);
     }
 
     const privateKeyBytes = hexToBytes(masterAdminPrivateKey);
@@ -87,7 +92,7 @@ async function publishPodcast(
     const relay = result.find((r) => r.success)?.relay;
 
     if (!relay) {
-      return ErrorResponse("Failed to publish article", 500);
+      return ErrorResponseCreator("Failed to publish article", 500);
     }
 
     // For updates, we don't need to add to curated set since it already exists
@@ -100,22 +105,22 @@ async function publishPodcast(
       });
 
       if (Array.isArray(addResult) ? addResult.some((r) => r.success) : true) {
-        return PublishEventResponse(
+        return PublishEventResponseCreator(
           { message: "Podcast published successfully", result },
           { eventId: signedEvent.id, relay, addPodcastResult: addResult },
         );
       }
     } else {
       // Update case - just return success
-      return PublishEventResponse(
+      return PublishEventResponseCreator(
         { message: "Podcast updated successfully", result },
         { eventId: signedEvent.id, relay },
       );
     }
 
-    return ErrorResponse("Failed to publish podcast", 500);
+    return ErrorResponseCreator("Failed to publish podcast", 500);
   } catch (error) {
-    return ErrorResponse(error || "Failed to publish podcast");
+    return ErrorResponseCreator(error || "Failed to publish podcast");
   }
 }
 
@@ -128,7 +133,7 @@ async function addPodcast(
     const { aTag, relayTag } = data;
 
     if (!aTag || !relayTag) {
-      return ErrorResponse("aTag and relayTag are required", 400);
+      return ErrorResponseCreator("aTag and relayTag are required", 400);
     }
 
     const privateKeyBytes = hexToBytes(masterPrivateKey);
@@ -149,7 +154,7 @@ async function addPodcast(
     const result = await publishToRelays(signedEvent, ADMIN_RELAYS);
 
     if (result.some((r) => r.success)) {
-      return PublishEventResponse({ message: "Podcast added successfully", result }, data);
+      return PublishEventResponseCreator({ message: "Podcast added successfully", result }, data);
     }
 
     const failedRelays = result
@@ -157,9 +162,9 @@ async function addPodcast(
       .map((r) => r.relay)
       .join(", ");
 
-    return ErrorResponse(`Failed to add podcast to relays: ${failedRelays}`, 500);
+    return ErrorResponseCreator(`Failed to add podcast to relays: ${failedRelays}`, 500);
   } catch (error) {
-    return ErrorResponse(error);
+    return ErrorResponseCreator(error);
   }
 }
 
@@ -173,7 +178,7 @@ export async function handleRemovePodcast(
     const { aTag, relay } = data;
 
     if (!aTag || !relay) {
-      return ErrorResponse("aTag and relay are required", 400);
+      return ErrorResponseCreator("aTag and relay are required", 400);
     }
 
     const privateKeyBytes = hexToBytes(masterAdminPrivateKey);
@@ -194,7 +199,7 @@ export async function handleRemovePodcast(
     const result = await publishToRelays(signedSetEvent, ADMIN_RELAYS);
 
     if (result.some((r) => r.success)) {
-      return PublishEventResponse({ message: "Podcast removed successfully", result }, data);
+      return PublishEventResponseCreator({ message: "Podcast removed successfully", result }, data);
     }
 
     const failedRelays = result
@@ -202,8 +207,8 @@ export async function handleRemovePodcast(
       .map((r) => r.relay)
       .join(", ");
 
-    return ErrorResponse(`Failed to remove podcast from relays: ${failedRelays}`, 500);
+    return ErrorResponseCreator(`Failed to remove podcast from relays: ${failedRelays}`, 500);
   } catch (error) {
-    return ErrorResponse(error);
+    return ErrorResponseCreator(error);
   }
 }

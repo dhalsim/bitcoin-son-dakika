@@ -1,4 +1,4 @@
-import { ErrorResponse, SuccessResponse } from "../utils.js";
+import { ErrorResponseCreator, SuccessResponse } from "../utils.js";
 import { authenticateNIP98, fetchNostrSets } from "../utils.js";
 
 export async function handleTriggerDeploy(request: Request) {
@@ -13,7 +13,7 @@ export async function handleTriggerDeploy(request: Request) {
     );
 
     if (authResult.success === false) {
-      return ErrorResponse(authResult.error, authResult.status);
+      return ErrorResponseCreator(authResult.error, authResult.status);
     }
 
     const deployHookUrl =
@@ -32,9 +32,9 @@ export async function handleTriggerDeploy(request: Request) {
         userRoles: authResult.roles,
       });
     } else {
-      return ErrorResponse("Failed to trigger deploy hook", response.status);
+      return ErrorResponseCreator("Failed to trigger deploy hook", response.status);
     }
   } catch (error) {
-    return ErrorResponse(error || "Failed to trigger deploy hook");
+    return ErrorResponseCreator(error || "Failed to trigger deploy hook");
   }
 }
