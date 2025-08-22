@@ -143,7 +143,11 @@ export default function NewsCuration({
   };
 
   const confirmDeletion = async (sendDeleteRequest: boolean = false) => {
-    const confirmation = prompt("Silme talebinde bulunmak istediğinize emin misiniz? (e/h)");
+    const confirmationMessage = sendDeleteRequest
+      ? "Haberi hem listeden kaldırıp, hem de ağdan silme talebinde bulunmak istediğinize emin misiniz? (e/h)"
+      : "Haberi listeden kaldırmak istediğinize emin misiniz? (e/h)";
+
+    const confirmation = prompt(confirmationMessage);
 
     if (confirmation !== "e") return;
 
@@ -420,18 +424,32 @@ export default function NewsCuration({
                   pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY) && (
                   <Button
                     variant="destructive"
-                    className="bg-red-600 text-black"
+                    className="bg-red-600"
                     onClick={() => confirmDeletion(true)}
+                    disabled={
+                      removingKey === `${pendingDeletionEvent.id}-${pendingDeletionEvent.relay}`
+                    }
                   >
-                    Kaldır ve Sil
+                    {removingKey === `${pendingDeletionEvent.id}-${pendingDeletionEvent.relay}` ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Kaldır ve Sil"
+                    )}
                   </Button>
                 )}
                 <Button
                   variant="destructive"
-                  className="bg-red-600 text-black"
+                  className="bg-orange-600"
                   onClick={() => confirmDeletion(false)}
+                  disabled={
+                    removingKey === `${pendingDeletionEvent.id}-${pendingDeletionEvent.relay}`
+                  }
                 >
-                  Sadece Kaldır
+                  {removingKey === `${pendingDeletionEvent.id}-${pendingDeletionEvent.relay}` ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Sadece Kaldır"
+                  )}
                 </Button>
               </DialogFooter>
             </>
