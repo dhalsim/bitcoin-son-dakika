@@ -1,7 +1,7 @@
 import { createTitleSlug } from "../../../api-helpers/utils";
-import { LOGO_FOR_PODCAST_URL, WEBSITE_URL } from "../constants";
+import { WEBSITE_URL, LOGO_FOR_PODCAST_URL } from "../constants";
 import type { PodcastItem } from "../ssg-data";
-import { formatNostrDate } from "../utils";
+import { formatRssDate } from "../utils";
 
 // Function to get file size from URL (returns 0 if unable to determine)
 const getAudioFileSize = async (audioUrl: string): Promise<number> => {
@@ -37,7 +37,7 @@ const getAudioFileSize = async (audioUrl: string): Promise<number> => {
 };
 
 const generatePodcastItemXml = async (podcast: PodcastItem) => {
-  const pubDate = formatNostrDate(podcast.publishedAt);
+  const pubDate = formatRssDate(podcast.publishedAt);
   const imageUrl = podcast.image || `${WEBSITE_URL}/${LOGO_FOR_PODCAST_URL}`;
   const transcriptUrl = podcast.transcriptUrl;
   const chaptersUrl = podcast.chaptersUrl;

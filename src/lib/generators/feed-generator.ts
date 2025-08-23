@@ -2,7 +2,7 @@ import { createTitleSlug } from "api-helpers/utils";
 
 import { WEBSITE_URL, WEBSITE_NAME, WEBSITE_DESCRIPTION, LOGO_URL } from "../constants";
 import type { ArticleItem, NewsItem, SSGData } from "../ssg-data";
-import { formatNostrDate } from "../utils";
+import { formatRssDate, formatAtomDate } from "../utils";
 
 export function generateRSSFeed(ssgData: SSGData): string {
   // Combine and sort news and articles by publish date
@@ -39,7 +39,7 @@ export function generateRSSFeed(ssgData: SSGData): string {
       <title><![CDATA[${title}]]></title>
       <link>${url}</link>
       <guid>${url}</guid>
-      <pubDate>${formatNostrDate(item.publishedAt)}</pubDate>
+      <pubDate>${formatRssDate(item.publishedAt)}</pubDate>
       <description><![CDATA[${item.summary || item.content.substring(0, 300) + "..."}]]></description>
       <author>${item.author.display_name || item.author.pubkey}</author>
       <category>${item.tags && item.tags.length > 0 ? item.tags[0] : "Bitcoin"}</category>
@@ -79,8 +79,8 @@ export function generateAtomFeed(ssgData: SSGData): string {
     <title>${title}</title>
     <link href="${WEBSITE_URL}/news/${item.id}" />
     <id>${WEBSITE_URL}/news/${item.id}</id>
-    <updated>${formatNostrDate(item.publishedAt)}</updated>
-    <published>${formatNostrDate(item.publishedAt)}</published>
+    <updated>${formatAtomDate(item.publishedAt)}</updated>
+    <published>${formatAtomDate(item.publishedAt)}</published>
     <summary type="html">${item.summary || item.content.substring(0, 300) + "..."}</summary>
     <author>
       <name>${item.author.display_name || item.author.pubkey}</name>

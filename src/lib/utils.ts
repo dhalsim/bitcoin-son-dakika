@@ -128,3 +128,25 @@ export function formatNostrDate(timestamp: number): string {
     year: "numeric",
   });
 }
+
+/**
+ * Format timestamp for RSS feeds in RFC 2822/RFC 822 format
+ * @param timestamp - Unix timestamp in seconds
+ * @returns Date string in RFC 2822 format (e.g., "Wed, 15 Dec 2023 00:00:00 +0000")
+ */
+export function formatRssDate(timestamp: number): string {
+  const date = new Date(timestamp * 1000);
+
+  return date.toUTCString();
+}
+
+/**
+ * Format timestamp for Atom feeds in ISO 8601 format
+ * @param timestamp - Unix timestamp in seconds
+ * @returns Date string in ISO 8601 format (e.g., "2023-12-15T00:00:00.000Z")
+ */
+export function formatAtomDate(timestamp: number): string {
+  const date = new Date(timestamp * 1000);
+
+  return date.toISOString();
+}
