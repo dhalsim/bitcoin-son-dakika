@@ -144,7 +144,7 @@ export default function PodcastsPage() {
 
               {/* Spotify */}
               <a
-                href="https://open.spotify.com/show/your-podcast-id"
+                href="https://open.spotify.com/show/5kWYATMmIOa8hTWmu5Q3Q9"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors duration-200"

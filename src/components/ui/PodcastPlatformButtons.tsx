@@ -85,7 +85,7 @@ export function PodcastPlatformButtons({
         title="Spotify'da Dinle"
       >
         <a
-          href="https://open.spotify.com/show/your-podcast-id"
+          href="https://open.spotify.com/show/5kWYATMmIOa8hTWmu5Q3Q9"
           target="_blank"
           rel="noopener noreferrer"
         >
