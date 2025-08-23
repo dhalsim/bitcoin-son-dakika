@@ -5,6 +5,7 @@ import { useState } from "react";
 import { fetchSSGData } from "@/lib/ssg-data";
 import MainContent from "@/components/MainContent";
 import PodcastCard from "@/components/PodcastCard";
+import { formatNostrDate } from "@/lib/utils";
 
 export const meta: MetaFunction = () => {
   const description =
@@ -41,7 +42,12 @@ export async function loader({}: LoaderFunctionArgs) {
   try {
     const ssgData = await fetchSSGData();
 
-    return { podcasts: ssgData.podcasts, lastUpdated: ssgData.lastUpdated };
+    const podcasts = ssgData.podcasts.sort((a, b) => a.publishedAt - b.publishedAt);
+
+    return {
+      podcasts,
+      lastUpdated: podcasts[0].publishedAt,
+    };
   } catch (error) {
     console.error("Error loading podcast data:", error);
 
@@ -50,7 +56,7 @@ export async function loader({}: LoaderFunctionArgs) {
 }
 
 export default function PodcastsPage() {
-  const { podcasts } = useLoaderData<typeof loader>();
+  const { podcasts, lastUpdated } = useLoaderData<typeof loader>();
   const [copiedRss, setCopiedRss] = useState(false);
 
   const handleCopyRss = async () => {
@@ -73,7 +79,7 @@ export default function PodcastsPage() {
           <div className="text-center mb-12">
             <div className="flex items-center justify-center mb-4">
               <Mic className="h-12 w-12 text-red-500 mr-3" />
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-foreground">Podcastler</h1>
+              <h1 className="text-4xl font-bold text-foreground">Podcastler</h1>
             </div>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Bitcoin dünyasından en güncel podcast bölümleri. Uzman görüşleri, analizler ve detaylı
@@ -176,7 +182,9 @@ export default function PodcastsPage() {
 
           {/* Results count */}
           <div className="mb-6">
-            <p className="text-gray-600 dark:text-gray-400">{podcasts.length} podcast bulundu</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              {podcasts.length} podcast bulundu. Son güncelleme: {formatNostrDate(lastUpdated)}
+            </p>
           </div>
 
           {/* Podcasts Grid */}
