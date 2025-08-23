@@ -300,7 +300,7 @@ export default function PodcastDetailPage() {
               </div>
             </div>
 
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-foreground mb-4">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
               {podcast.title}
             </h1>
 
