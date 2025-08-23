@@ -281,6 +281,20 @@ const PriceBar = () => {
       passive: true,
     });
 
+    // Add hover event listeners to pause/resume autoscroll
+    const handleMouseEnter = () => {
+      isUserInteractingRef.current = true;
+      stopAutoscroll();
+    };
+
+    const handleMouseLeave = () => {
+      isUserInteractingRef.current = false;
+      startAutoscroll();
+    };
+
+    container.addEventListener("mouseenter", handleMouseEnter);
+    container.addEventListener("mouseleave", handleMouseLeave);
+
     return () => {
       stopAutoscroll();
       if (resumeTimeoutRef.current !== null) {
@@ -291,6 +305,8 @@ const PriceBar = () => {
       container.removeEventListener("mousedown", handleUserInteraction);
       container.removeEventListener("touchstart", handleUserInteraction);
       container.removeEventListener("wheel", handleUserInteraction);
+      container.removeEventListener("mouseenter", handleMouseEnter);
+      container.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [prices]);
 
