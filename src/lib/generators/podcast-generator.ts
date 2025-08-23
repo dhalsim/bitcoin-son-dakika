@@ -45,7 +45,7 @@ const generatePodcastItemXml = async (podcast: PodcastItem) => {
   const duration = podcast.duration;
 
   // Determine audio type based on URL extension
-  const audioType = podcast.audioUrl.endsWith(".m4a") ? "audio/m4a" : "audio/mpeg";
+  const audioType = podcast.audioUrl.endsWith(".mp3") ? "audio/mp3" : "audio/mpeg";
 
   // Get file size for the audio file
   const fileSize = await getAudioFileSize(podcast.audioUrl);

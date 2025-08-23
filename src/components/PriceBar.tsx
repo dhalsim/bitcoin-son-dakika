@@ -432,8 +432,8 @@ const PriceBar = () => {
                       <span
                         className={`text-xs font-semibold px-2 py-0.5 ml-2 rounded-full ${
                           parseFloat(btcChange) >= 0
-                            ? "text-green-100 bg-green-600/80"
-                            : "text-red-100 bg-red-600/80"
+                            ? "text-white/80 bg-green-600/80"
+                            : "text-white/80 bg-red-600/80"
                         }`}
                       >
                         {parseFloat(btcChange) >= 0 ? "+" : ""}
@@ -533,8 +533,8 @@ const PriceBar = () => {
                         <span
                           className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                             parseFloat(price.change) >= 0
-                              ? "text-green-100 bg-green-600/80"
-                              : "text-red-100 bg-red-600/80"
+                              ? "text-white/80 bg-green-600/80"
+                              : "text-white/80 bg-red-600/80"
                           }`}
                         >
                           {parseFloat(price.change) >= 0 ? "+" : ""}

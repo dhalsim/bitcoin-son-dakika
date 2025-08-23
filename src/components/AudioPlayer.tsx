@@ -17,6 +17,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isMobile } from "@/lib/utils";
+import { ShareButton } from "@/components/ui/ShareButton";
+import { PodcastPlatformButtons } from "@/components/ui/PodcastPlatformButtons";
+import { RssButton } from "@/components/ui/RssButton";
+import { EventItem } from "@/lib/nip01";
 
 interface Chapter {
   startTime: number;
@@ -36,6 +40,7 @@ interface AudioPlayerProps {
   chaptersUrl?: string;
   transcriptUrl?: string;
   duration?: string;
+  event?: EventItem;
 }
 
 export interface AudioPlayerRef {
@@ -43,7 +48,7 @@ export interface AudioPlayerRef {
 }
 
 const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
-  ({ audioUrl, title, chaptersUrl, transcriptUrl, duration }, ref) => {
+  ({ audioUrl, title, chaptersUrl, transcriptUrl, duration, event }, ref) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [durationSeconds, setDurationSeconds] = useState(0);
@@ -521,12 +526,12 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 flex-wrap items-center">
             {chapters.length > 0 && (
               <Button
                 variant="outline"
                 onClick={() => setShowChapters(!showChapters)}
-                className={`flex items-center gap-2 ${showChapters ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}
+                className={`flex items-center gap-2 ${showChapters ? "bg-blue-500 dark:bg-blue-900" : ""}`}
               >
                 <List className="h-4 w-4" />
                 <span className="hidden sm:block">Bölümler ({chapters.length})</span>
@@ -537,10 +542,10 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
               <Button
                 variant="outline"
                 onClick={() => setShowTranscript(!showTranscript)}
-                className={`flex items-center gap-2 ${showTranscript ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}
+                className={`flex items-center gap-2 ${showTranscript ? "bg-blue-500 dark:bg-blue-900" : ""}`}
               >
                 <FileText className="h-4 w-4" />
-                <span className="hidden sm:block">Transcript</span>
+                <span className="hidden sm:block">Transkript</span>
               </Button>
             )}
 
@@ -550,6 +555,17 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
                 <span className="hidden sm:block">İndir</span>
               </a>
             </Button>
+
+            {/* Podcast platform buttons and RSS - inline with other buttons */}
+            <PodcastPlatformButtons variant="ghost" size="sm" showText={false} />
+            <RssButton
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors duration-200"
+            />
+
+            {/* Share button - only show if event is provided */}
+            {event && <ShareButton event={event} isPodcast={true} />}
           </div>
 
           {/* Keyboard shortcuts help */}
@@ -574,7 +590,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
                       <button
                         key={index}
                         onClick={() => jumpToTime(chapter.startTime)}
-                        className={`w-full text-left p-2 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
+                        className={`group w-full text-left p-2 rounded text-sm hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-500 dark:hover:text-white ${
                           currentChapter?.title === chapter.title
                             ? "bg-blue-100 dark:bg-blue-900/30 border-l-4 border-l-blue-500"
                             : ""
@@ -587,7 +603,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
                             {chapter.title}
                           </span>
                           <span
-                            className={`text-xs ${currentChapter?.title === chapter.title ? "text-blue-600 dark:text-blue-400" : "text-gray-500"}`}
+                            className={`text-xs group-hover:text-gray-700 dark:group-hover:text-gray-300 ${currentChapter?.title === chapter.title ? "text-blue-600 dark:text-blue-400" : "text-gray-500"}`}
                           >
                             {formatTime(chapter.startTime)}
                           </span>
@@ -625,7 +641,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
                           key={index}
                           data-transcript-text={entry.text}
                           onClick={() => jumpToTime(entry.startTime)}
-                          className={`p-2 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
+                          className={`group p-2 rounded cursor-pointer hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-500 dark:hover:text-white ${
                             syncTranscript && currentTranscriptEntry?.text === entry.text
                               ? "bg-green-100 dark:bg-green-900/30 border-l-4 border-l-green-500"
                               : ""
@@ -634,7 +650,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
                         >
                           <div className="flex justify-between items-start gap-2">
                             <span className="text-sm leading-relaxed">{entry.text}</span>
-                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                            <span className="text-xs text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 whitespace-nowrap">
                               {formatTime(entry.startTime)}
                             </span>
                           </div>

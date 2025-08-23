@@ -21,6 +21,7 @@ import { CategoryTags } from "@/components/CategoryTags";
 import { getTimeAgo } from "@/components/NewsCard";
 import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
 import { LOGO_URL, WEBSITE_NAME, WEBSITE_URL } from "@/lib/constants";
+import { RssButton } from "@/components/ui/RssButton";
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const podcast = loaderData?.podcast;
@@ -151,44 +152,7 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
       href: podcast.audioUrl,
     },
 
-    // Structured data for search engines - using script tag instead of meta
-    {
-      tagName: "script",
-      type: "application/ld+json",
-      children: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "PodcastEpisode",
-        name: podcast.title,
-        description: description,
-        image: imageUrl,
-        url: canonicalUrl,
-        audio: {
-          "@type": "AudioObject",
-          contentUrl: podcast.audioUrl,
-          encodingFormat: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg",
-          duration: podcast.duration,
-        },
-        author: {
-          "@type": "Person",
-          name: podcast.author || WEBSITE_NAME,
-        },
-        publisher: {
-          "@type": "Organization",
-          name: WEBSITE_NAME,
-          url: WEBSITE_URL,
-        },
-        datePublished: podcast.publishedAt * 1000,
-        duration: podcast.duration,
-        keywords: tags,
-        episodeNumber: podcast.episodeNumber,
-        seasonNumber: 1,
-        partOfSeries: {
-          "@type": "PodcastSeries",
-          name: `${WEBSITE_NAME} Podcast`,
-          url: `${WEBSITE_URL}/podcasts`,
-        },
-      }),
-    },
+    // Note: Structured data (JSON-LD) should be added in the component's JSX, not in meta tags
   ];
 };
 
@@ -271,6 +235,48 @@ export default function PodcastDetailPage() {
 
   return (
     <MainContent>
+      {/* Structured data for search engines */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "PodcastEpisode",
+            name: podcast.title,
+            description: podcast.summary || podcast.title,
+            image: podcast.image || `${WEBSITE_URL}/logo-for-podcast.png`,
+            url: `${WEBSITE_URL}/podcast/${createTitleSlug(podcast.title)}`,
+            audio: {
+              "@type": "AudioObject",
+              contentUrl: podcast.audioUrl,
+              encodingFormat: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg",
+              duration: podcast.duration,
+            },
+            author: {
+              "@type": "Person",
+              name: podcast.author?.name || WEBSITE_NAME,
+            },
+            publisher: {
+              "@type": "Organization",
+              name: WEBSITE_NAME,
+              url: WEBSITE_URL,
+            },
+            datePublished: podcast.publishedAt * 1000,
+            duration: podcast.duration,
+            keywords:
+              podcast.tags?.length > 0
+                ? `bitcoin, btc, ${podcast.tags.join(", ")}`
+                : "bitcoin, btc",
+            episodeNumber: podcast.episodeNumber,
+            seasonNumber: 1,
+            partOfSeries: {
+              "@type": "PodcastSeries",
+              name: `${WEBSITE_NAME} Podcast`,
+              url: `${WEBSITE_URL}/podcasts`,
+            },
+          }),
+        }}
+      />
       <div className="min-h-screen">
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Back button */}
@@ -323,18 +329,7 @@ export default function PodcastDetailPage() {
 
             {/* Podcast RSS Feed Link */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <a
-                href="/feed/podcast-rss.xml"
-                className="flex items-center gap-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                title="Podcast RSS Feed'e Abone Ol"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M5 3a1 1 0 000 2c5.523 0 10 4.477 10 10a1 1 0 102 0C17 8.373 11.627 3 5 3z" />
-                  <path d="M4 9a1 1 0 011-1 7 7 0 017 7 1 1 0 11-2 0 5 5 0 00-5-5 1 1 0 01-1-1z" />
-                  <path d="M3 15a2.998 2.998 0 012.83 2H11a1 1 0 100-2H5.829A2.998 2.998 0 003 15z" />
-                </svg>
-                RSS Feed'e Abone Ol
-              </a>
+              <RssButton text="RSS Feed'e Abone Ol" variant="ghost" className="text-blue-600" />
             </div>
           </div>
 
@@ -358,6 +353,7 @@ export default function PodcastDetailPage() {
                 chaptersUrl={podcast.chaptersUrl}
                 transcriptUrl={podcast.transcriptUrl}
                 duration={podcast.duration}
+                event={podcast.event}
               />
             )}
           </div>
@@ -365,10 +361,10 @@ export default function PodcastDetailPage() {
           {/* Summary */}
           {podcast.summary && (
             <div className="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-r-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-orange-800 dark:text-orange-700 mb-3">
+              <h3 className="text-lg font-semibold text-orange-800 dark:text-blue-300 mb-3">
                 Özet
               </h3>
-              <p className="text-lg leading-relaxed text-orange-900 dark:text-orange-600 ">
+              <p className="text-lg leading-relaxed text-orange-900 dark:text-blue-400 ">
                 {podcast.summary}
               </p>
             </div>
