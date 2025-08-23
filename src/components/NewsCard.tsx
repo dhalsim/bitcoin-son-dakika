@@ -101,9 +101,9 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   return (
     <Card className="h-full">
       {imageElement && (
-        <div className="relative aspect-video overflow-hidden rounded-t-lg mb-4">
+        <div className="relative aspect-video overflow-hidden rounded-t-lg mb-4 group">
           {imageElement}
-          <div className="absolute top-2 sm:top-4 left-2 sm:left-4">
+          <div className="absolute top-2 sm:top-4 left-2 sm:left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 sm:block hidden">
             <CategoryTags
               tags={event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1])}
               size="xs"
