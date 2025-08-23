@@ -177,13 +177,36 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
+
+        // Skip empty lines and numbered entries
+        if (!line || /^\d+$/.test(line)) {
+          continue;
+        }
+
         if (line.includes("-->")) {
           const timeMatch = line.match(/(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})/);
 
           if (timeMatch) {
             const startTime = parseTimeToSeconds(timeMatch[1]);
             const endTime = parseTimeToSeconds(timeMatch[2]);
-            const text = lines[i + 1]?.trim() || "";
+
+            // Collect all text lines until we hit another timestamp or number
+            let textLines: string[] = [];
+            let j = i + 1;
+
+            while (j < lines.length) {
+              const nextLine = lines[j].trim();
+
+              // Stop if we hit another timestamp, number, or empty line
+              if (nextLine.includes("-->") || /^\d+$/.test(nextLine) || !nextLine) {
+                break;
+              }
+
+              textLines.push(nextLine);
+              j++;
+            }
+
+            const text = textLines.join(" ");
 
             if (text) {
               entries.push({ startTime, endTime, text });
