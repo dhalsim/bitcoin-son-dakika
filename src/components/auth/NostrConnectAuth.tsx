@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Relay } from "nostr-tools";
-import { QrCode, Copy, RefreshCw, Smartphone } from "lucide-react";
+import { QrCode, Copy, RefreshCw, Smartphone, Hand, Info, Settings } from "lucide-react";
 import { toString as toSvgString } from "qrcode/lib/browser.js";
 
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import {
   NostrConnectData,
 } from "@/lib/providers/NostrConnectProvider";
 import { hexToBytes } from "nostr-tools/utils";
+import { isMobile } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface NostrConnectAuthProps {
   onSuccess: (result: any) => void;
@@ -29,6 +31,10 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
   const [showCopiedTooltip3, setShowCopiedTooltip3] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
+
+  // New state variables for UI control
+  const [showRelayInput, setShowRelayInput] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
 
   const { loginWithNostrConnect } = useNostrAuth();
   const { toast } = useToast();
@@ -105,7 +111,13 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
     }
   };
 
-  const copyUri = async (no: 1 | 2 | 3) => {
+  const copyOrOpenUri = async (no: 1 | 2 | 3) => {
+    if (isMobile()) {
+      window.open(generatedUri, "_blank");
+
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(generatedUri);
 
@@ -261,16 +273,10 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
   return (
     <div className="space-y-4 max-h-[70vh] overflow-y-auto">
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <QrCode className="h-4 w-4" />
-          NostrConnect URI ile cihaz eşleştirme
-        </div>
-
         {/* QR Code or Placeholder */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">QR Kod:</label>
           <div className="flex justify-center">
-            <div className="border border-gray-200 rounded-lg p-4 bg-white">
+            <div className="border border-2 border-gray-200 hover:border-red-700 rounded-lg p-4 bg-white mt-2">
               {isQrLoading ? (
                 <div className="w-[200px] h-[200px] flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -286,7 +292,7 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
                   <div
                     dangerouslySetInnerHTML={{ __html: qrSvg }}
                     className="w-[200px] h-[200px] flex justify-center items-center"
-                    onClick={() => copyUri(2)}
+                    onClick={() => copyOrOpenUri(2)}
                   />
                   {showCopiedTooltip2 && copyTooltip}
                 </div>
@@ -301,9 +307,12 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
           {/* Connection Status */}
           {isWaitingForConnection && !isTyping && (
             <div className="text-center py-2">
-              <div className="inline-flex items-center gap-2 text-sm text-orange-600">
+              <div className="flex flex-col items-center gap-2 text-sm text-orange-600">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
-                Bağlantı bekleniyor... QR kodu tarayın
+                <span>Bağlantı bekleniyor...</span>{" "}
+                <span className="flex items-center gap-2">
+                  QR kodu tarayın veya üzerine tıklayın <Hand className="h-4 w-4" />
+                </span>
               </div>
             </div>
           )}
@@ -318,70 +327,96 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
           )}
         </div>
 
-        {/* Relay Input */}
-        <div className="space-y-2">
-          <label htmlFor="nostrconnect-relay" className="text-sm font-medium">
-            Relay URL
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="nostrconnect-relay"
-              type="text"
-              placeholder="wss://relay.nsec.app"
-              value={relay}
-              onChange={(e) => handleRelayChange(e.target.value)}
-              className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-            />
-            <Button
-              onClick={handleRefresh}
-              variant={isTyping ? "default" : "outline"}
-              size="sm"
-              className={`px-3 ${isTyping ? "bg-primary hover:bg-primary/90 text-primary-foreground" : ""}`}
-            >
-              <RefreshCw className={`h-4 w-4 ${isTyping ? "animate-pulse" : ""}`} />
-              Yenile
-            </Button>
-          </div>
+        {/* Control Buttons */}
+        <div className="flex gap-2 justify-center">
+          <Button
+            onClick={() => setShowRelayInput(!showRelayInput)}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            {showRelayInput ? "Ayarları Gizle" : "Ayarlar"}
+          </Button>
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                Yardım
+              </Button>
+            </SheetTrigger>
+            <SheetContent style={{ zIndex: "var(--z-dialog-sheet)" }}>
+              <SheetHeader>
+                <SheetTitle>NostrConnect Kullanım Kılavuzu</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 space-y-4">
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">📱 Uygulama İndirme</h3>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>iOS:</strong> App Store'dan "NostrConnect" veya "Amethyst"
+                      uygulamasını indirin
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Android:</strong> Google Play'den "NostrConnect" veya "Amethyst"
+                      uygulamasını indirin
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Alternatif:</strong> F-Droid'dan "Amethyst" uygulamasını indirin
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">🔗 Bağlantı Kurma</h3>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>1. QR kodu mobil cihazınızla tarayın veya üzerine tıklayın</p>
+                    <p>2. Mobil cihazınızda NostrConnect uygulamasını açın</p>
+                    <p>3. İzin verin ve bağlantı otomatik olarak oluşturulacaktır</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-lg">⚙️ Gelişmiş Ayarlar</h3>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>• Relay URL'yi değiştirmek için "Ayarlar" butonuna tıklayın</p>
+                    <p>• Farklı relay'ler kullanarak bağlantı hızını artırabilirsiniz</p>
+                    <p>• Varsayılan relay: wss://relay.nsec.app</p>
+                  </div>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
 
-        {/* Action Buttons */}
-        {generatedUri && !isTyping && (
-          <div className="flex gap-2 justify-center">
-            <Button onClick={() => copyUri(1)} variant="outline" size="sm" className="relative">
-              <Copy className="h-4 w-4 mr-2" />
-              URI'yi Kopyala
-              {showCopiedTooltip && copyTooltip}
-            </Button>
-
-            <a
-              href={generatedUri}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
-            >
-              <Smartphone className="h-4 w-4 mr-2" />
-              Mobilde Aç
-            </a>
+        {/* Relay Input - Conditionally Shown */}
+        {showRelayInput && (
+          <div className="space-y-2">
+            <label htmlFor="nostrconnect-relay" className="text-sm font-medium">
+              Relay URL
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="nostrconnect-relay"
+                type="text"
+                placeholder="wss://relay.nsec.app"
+                value={relay}
+                onChange={(e) => handleRelayChange(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded-md bg-background text-sm focus:border-white"
+              />
+              <Button
+                onClick={handleRefresh}
+                variant={isTyping ? "default" : "outline"}
+                size="sm"
+                className={`px-3 ${isTyping ? "bg-primary hover:bg-primary/90 text-primary-foreground" : ""}`}
+              >
+                <RefreshCw className={`h-4 w-4 ${isTyping ? "animate-pulse" : ""}`} />
+                Yenile
+              </Button>
+            </div>
           </div>
         )}
-
-        {/* Instructions - Updated */}
-        <div className="text-xs text-muted-foreground text-center space-y-1">
-          <p>1. Relay URL'yi gerekirse değiştirin ve "Güncelle" butonuna tıklayın</p>
-          <p>2. QR kodu mobil cihazınızla tarayın veya "Mobilde Aç" butonuna tıklayın</p>
-          <p className="text-blue-600 font-medium">
-            💡 "Mobilde Aç" butonu nostrconnect:// URI'yi açar ve mobil uygulamayı başlatır
-          </p>
-          <p className="relative">
-            3. Veya{" "}
-            <button onClick={() => copyUri(3)} className="underline hover:text-foreground">
-              URI'yi kopyalayın
-            </button>
-            {showCopiedTooltip3 && copyTooltip}
-          </p>
-          <p>4. Mobil cihazınızda NostrConnect uygulamasını açın ve izin verin</p>
-          <p>5. Bağlantı otomatik olarak oluşturulacaktır</p>
-        </div>
       </div>
     </div>
   );

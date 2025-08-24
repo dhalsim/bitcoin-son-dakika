@@ -219,115 +219,122 @@ const Header: React.FC = () => {
           <div className="hidden lg:flex items-center space-x-6 relative z-header">
             {/* Desktop Search */}
             <SearchBar />
-
-            {/* User Menu - visible on lg and above */}
-            <UserMenu />
           </div>
 
-          {/* Mobile Elements - visible below lg, grouped together on the right */}
-          <div className="lg:hidden flex items-center space-x-2 sm:space-x-4">
-            {/* Mobile Search */}
-            {isSearchOpen && (
-              <div className="mr-2">
-                <SearchBar />
+          {/* Right Side Elements - always visible */}
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Mobile Search - visible below lg */}
+            <div className="lg:hidden flex items-center whitespace-nowrap">
+              <div className="flex mr-2">
+                <UserMenu />
               </div>
-            )}
 
-            <button
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded"
-            >
-              <Search className="h-5 w-5 text-muted-foreground" />
-            </button>
-
-            {/* User Menu - visible below lg */}
-            <UserMenu />
-
-            {/* Mobile Menu */}
-            {/* Mobile Menu */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <button className="hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded">
-                  <Menu className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600 dark:text-gray-400" />
-                </button>
-              </SheetTrigger>
-              <SheetContent
-                side="right"
-                className="w-80 text-left-menu bg-left-menu border-left-menu overflow-y-auto"
-              >
-                <div className="flex flex-col space-y-6 mt-6">
-                  <a href="/" className="font-medium text-lg pb-2">
-                    Ana Sayfa
-                  </a>
-
-                  <div className="space-y-4">
-                    <h3 className="text-left-menu-primary font-semibold">
-                      <a href="/news">Haberler</a>
-                    </h3>
-                    <div className="pl-4 space-y-2">
-                      <a href="/news" className="block text-left-menu-accent">
-                        Son Dakika
-                      </a>
-                      <a href="/tag/analiz?type=news" className="block text-left-menu-accent">
-                        Piyasa Analizi
-                      </a>
-                      <a href="/tag/teknoloji?type=news" className="block text-left-menu-accent">
-                        Teknoloji
-                      </a>
-                      <a href="/tag/duzenlemeler?type=news" className="block text-left-menu-accent">
-                        Düzenlemeler
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-left-menu-primary font-semibold">
-                      <a href="/articles">Köşe Yazıları</a>
-                    </h3>
-                    <div className="pl-4 space-y-2">
-                      <a href="/articles" className="block text-left-menu-accent">
-                        Güncel Yorumlar
-                      </a>
-                      <a href="/tag/analiz?type=article" className="block text-left-menu-accent">
-                        Teknik Analiz
-                      </a>
-                      <a href="/tag/ekonomi?type=article" className="block text-left-menu-accent">
-                        Ekonomi
-                      </a>
-                      <a href="/tag/teknoloji?type=article" className="block text-left-menu-accent">
-                        Teknoloji
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-left-menu-primary font-semibold">
-                      <a href="/egitim">Eğitim</a>
-                    </h3>
-                    <div className="pl-4 space-y-2">
-                      <a href="/egitim/bitcoin-temelleri" className="block text-left-menu-accent">
-                        Bitcoin Temelleri
-                      </a>
-                      <a href="/egitim/cuzdan-kullanimi" className="block text-left-menu-accent">
-                        Cüzdan Kullanımı
-                      </a>
-                      <a href="/egitim/guvenlik" className="block text-left-menu-accent">
-                        Güvenlik
-                      </a>
-                      <a href="/egitim/lightning-network" className="block text-left-menu-accent">
-                        Lightning Network
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="text-left-menu-primary font-semibold">
-                      <a href="/podcasts">Podcast</a>
-                    </h3>
-                  </div>
+              {isSearchOpen && (
+                <div className="mr-2">
+                  <SearchBar />
                 </div>
-              </SheetContent>
-            </Sheet>
+              )}
+
+              <button
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className="hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded"
+              >
+                <Search className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Mobile Menu - visible below lg */}
+            <div className="p-1">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <button className="hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded">
+                    <Menu className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600 dark:text-gray-400" />
+                  </button>
+                </SheetTrigger>
+                <SheetContent
+                  side="right"
+                  className="w-80 text-left-menu bg-left-menu border-left-menu overflow-y-auto"
+                >
+                  <div className="flex flex-col space-y-6 mt-6">
+                    <a href="/" className="font-medium text-lg pb-2">
+                      Ana Sayfa
+                    </a>
+
+                    <div className="space-y-4">
+                      <h3 className="text-left-menu-primary font-semibold">
+                        <a href="/news">Haberler</a>
+                      </h3>
+                      <div className="pl-4 space-y-2">
+                        <a href="/news" className="block text-left-menu-accent">
+                          Son Dakika
+                        </a>
+                        <a href="/tag/analiz?type=news" className="block text-left-menu-accent">
+                          Piyasa Analizi
+                        </a>
+                        <a href="/tag/teknoloji?type=news" className="block text-left-menu-accent">
+                          Teknoloji
+                        </a>
+                        <a
+                          href="/tag/duzenlemeler?type=news"
+                          className="block text-left-menu-accent"
+                        >
+                          Düzenlemeler
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-left-menu-primary font-semibold">
+                        <a href="/articles">Köşe Yazıları</a>
+                      </h3>
+                      <div className="pl-4 space-y-2">
+                        <a href="/articles" className="block text-left-menu-accent">
+                          Güncel Yorumlar
+                        </a>
+                        <a href="/tag/analiz?type=article" className="block text-left-menu-accent">
+                          Teknik Analiz
+                        </a>
+                        <a href="/tag/ekonomi?type=article" className="block text-left-menu-accent">
+                          Ekonomi
+                        </a>
+                        <a
+                          href="/tag/teknoloji?type=article"
+                          className="block text-left-menu-accent"
+                        >
+                          Teknoloji
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-left-menu-primary font-semibold">
+                        <a href="/egitim">Eğitim</a>
+                      </h3>
+                      <div className="pl-4 space-y-2">
+                        <a href="/egitim/bitcoin-temelleri" className="block text-left-menu-accent">
+                          Bitcoin Temelleri
+                        </a>
+                        <a href="/egitim/cuzdan-kullanimi" className="block text-left-menu-accent">
+                          Cüzdan Kullanımı
+                        </a>
+                        <a href="/egitim/guvenlik" className="block text-left-menu-accent">
+                          Güvenlik
+                        </a>
+                        <a href="/egitim/lightning-network" className="block text-left-menu-accent">
+                          Lightning Network
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-left-menu-primary font-semibold">
+                        <a href="/podcasts">Podcast</a>
+                      </h3>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </div>

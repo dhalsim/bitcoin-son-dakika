@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { getProfiles, type ProfileItem } from "@/lib/nip01";
 import { getFollowsEvent } from "@/lib/nip02";
 import { fetchNip65Relays } from "@/lib/nip65";
-import { useNostrAuth } from "./NostrAuthContext";
+import { GetPublicKeyParams, NostrAuthContextValue, useNostrAuth } from "./NostrAuthContext";
 
 export const DEFAULT_READ_RELAYS = [
   "wss://relay.nostr.band/",
@@ -65,10 +65,16 @@ interface UserProviderProps {
 // Use const function declaration for better HMR support
 const UserProvider = React.memo(({ children }: UserProviderProps) => {
   // Add safety check for NostrAuth context
-  let authContext;
+  let authContext: NostrAuthContextValue;
+  let getPublicKey = async (_params: GetPublicKeyParams) => null;
+  let provider = null;
+  let isInitialized = false;
 
   try {
     authContext = useNostrAuth();
+    getPublicKey = authContext.getPublicKey;
+    provider = authContext.provider;
+    isInitialized = authContext.isInitialized;
   } catch (error) {
     // If NostrAuth context is not available, use fallback values
     console.warn("NostrAuth context not available in UserProvider, using fallbacks");
@@ -89,9 +95,10 @@ const UserProvider = React.memo(({ children }: UserProviderProps) => {
       requestLogin: async () => ({ success: false, provider: null }),
       showLoginModal: async () => ({ success: false, provider: null }),
     };
+    getPublicKey = authContext.getPublicKey;
+    provider = authContext.provider;
+    isInitialized = authContext.isInitialized;
   }
-
-  const { getPublicKey, provider, isInitialized } = authContext;
 
   const [userRelays, setUserRelays] = useState<UserRelays>({
     readRelays: DEFAULT_READ_RELAYS,

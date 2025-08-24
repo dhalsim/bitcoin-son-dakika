@@ -89,6 +89,15 @@ const NostrAuthProvider = React.memo(({ children }: NostrAuthProviderProps) => {
   // Load persisted state on mount
   useEffect(() => {
     try {
+      // Add safety check for cache availability
+      if (!cache || typeof cache.getAuthLoginState !== "function") {
+        console.warn("NostrAuth: Cache not available, skipping state restoration");
+
+        setIsInitialized(true);
+
+        return;
+      }
+
       const loginState = cache.getAuthLoginState();
 
       if (loginState && loginState.loggedIn) {

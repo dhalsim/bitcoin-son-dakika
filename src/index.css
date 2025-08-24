@@ -189,6 +189,7 @@
     --z-dropdown: 300;
     --z-popover: 500;
     --z-dialog: 900;
+    --z-dialog-sheet: 910;
     --z-tooltip: 920;
     --z-search: 950;
     --z-toast: 9999;
@@ -266,6 +267,15 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+  }
+
+  /* Remove focus ring from all form elements */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus {
+    outline: none !important;
+    box-shadow: none !important;
   }
 }
 

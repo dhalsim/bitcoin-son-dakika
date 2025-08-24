@@ -11,11 +11,38 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { useUserProfile } from "@/contexts/UserContext";
-import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { AuthIntent, useNostrAuth } from "@/contexts/NostrAuthContext";
 
 export function UserMenu() {
-  const userProfile = useUserProfile();
-  const { isLoggedIn, showLoginModal, logout } = useNostrAuth();
+  // Add safety check for Context availability
+  let userProfile;
+  let isLoggedIn = false;
+  let showLoginModal = async (intent: AuthIntent, options?: { reason?: string }) => ({
+    success: false,
+    provider: null,
+  });
+  let logout = () => {};
+
+  try {
+    userProfile = useUserProfile();
+    const authContext = useNostrAuth();
+    isLoggedIn = authContext.isLoggedIn;
+    showLoginModal = authContext.showLoginModal;
+    logout = authContext.logout;
+  } catch (error) {
+    // If contexts are not available, use fallback values
+    console.warn("UserMenu: Contexts not available, using fallbacks");
+    userProfile = {
+      pubkey: null,
+      profile: null,
+      isLoading: false,
+      error: "Context not available",
+    };
+    isLoggedIn = false;
+    showLoginModal = async () => ({ success: false, provider: null });
+    logout = () => {};
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
@@ -24,8 +51,9 @@ export function UserMenu() {
     // Additional safety check for development hot reloads
     if (!userProfile || typeof userProfile !== "object") {
       console.warn("UserMenu: userProfile is invalid during development, showing fallback");
+
       return (
-        <Button variant="outline" size="sm" className="hidden sm:flex" disabled={true}>
+        <Button variant="outline" size="sm" className="flex" disabled={true}>
           <div className="animate-spin rounded-full h-4 w-4 border-b-current mr-2" />
           Yükleniyor...
         </Button>
@@ -64,7 +92,7 @@ export function UserMenu() {
           }
         }}
         disabled={isLoggingIn}
-        className="hidden sm:flex"
+        className="flex"
       >
         {isLoggingIn ? (
           <div className="animate-spin rounded-full h-4 w-4 border-b-current mr-2" />
@@ -100,7 +128,7 @@ export function UserMenu() {
           }
         }}
         disabled={isLoggingIn}
-        className="hidden sm:flex"
+        className="flex"
       >
         {isLoggingIn ? (
           <div className="animate-spin rounded-full h-4 w-4 border-b-current mr-2" />
@@ -115,7 +143,7 @@ export function UserMenu() {
   // Additional safety check - ensure we have a valid pubkey before rendering the menu
   if (!userProfile.pubkey) {
     return (
-      <Button variant="outline" size="sm" className="hidden sm:flex" disabled={true}>
+      <Button variant="outline" size="sm" className="flex" disabled={true}>
         <div className="animate-spin rounded-full h-4 w-4 border-b-current mr-2" />
         Yükleniyor...
       </Button>
@@ -125,7 +153,7 @@ export function UserMenu() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 sm:flex">
+        <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 flex">
           <ProfileAvatar
             pubkey={userProfile.pubkey}
             profile={userProfile.profile}
