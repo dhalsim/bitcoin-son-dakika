@@ -1,9 +1,12 @@
 import type {
   NostrProvider,
   NostrProviderMethod,
+  ProviderCapability,
   SignEventParams,
   SignEventResult,
 } from "@/contexts/NostrAuthContext";
+
+import { assertUnreachable } from "../utils";
 
 export class Nip07Provider implements NostrProvider {
   constructor() {
@@ -80,7 +83,7 @@ export class Nip07Provider implements NostrProvider {
     }
   }
 
-  hasCapability(cap: "getRelays" | "signEvent"): boolean {
+  hasCapability(cap: ProviderCapability): boolean {
     switch (cap) {
       case "signEvent":
         return (
@@ -94,8 +97,10 @@ export class Nip07Provider implements NostrProvider {
           !!window.nostr &&
           typeof window.nostr.getRelays === "function"
         );
+      case "getPublicKey":
+        return true;
       default:
-        return false;
+        assertUnreachable(cap);
     }
   }
 

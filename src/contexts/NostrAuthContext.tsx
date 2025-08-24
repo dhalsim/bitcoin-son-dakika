@@ -9,13 +9,15 @@ import { createNostrConnectProvider, NostrConnectData } from "@/lib/providers/No
 
 export type NostrProviderMethod = "nip07" | "nip46" | "nsec" | "nostrconnect" | "none";
 
+export type ProviderCapability = "getRelays" | "signEvent" | "getPublicKey";
+
 export type NostrProvider = {
   method: NostrProviderMethod;
   isReady(): Promise<boolean>;
   getPublicKey: GetPublicKey;
   signEvent: SignEvent;
   getRelays?(): Promise<Nip07Relays>;
-  hasCapability(cap: "getRelays" | "signEvent"): boolean;
+  hasCapability(cap: ProviderCapability): boolean;
   dispose?(): void;
 };
 
