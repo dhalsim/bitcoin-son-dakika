@@ -437,10 +437,12 @@ const PriceBar = () => {
                     </div>
                   </PopoverContent>
                 </Popover>
-                <span className="ml-2">Cinsinden Anlık Fiyatlar</span>
+                <span className="ml-2 truncate max-w-[150px] sm:max-w-[200px]">
+                  Cinsinden Anlık Fiyatlar
+                </span>
               </h3>
 
-              <p className="text-xs text-black/80 font-medium ml-2">
+              <p className="text-xs text-black/80 font-medium ml-2 mr-4 whitespace-nowrap">
                 {btcPrice && (
                   <span className="ml-2 text-md font-bold">
                     ₿ {btcPrice} <span className="">$</span>
@@ -462,8 +464,9 @@ const PriceBar = () => {
             </div>
             <div className="flex flex-row items-center space-x-4 text-xs font-normal">
               <div className="flex items-center space-x-2">
-                <span className="italic">"Her şey bitcoin karşısında sıfıra gidiyor"</span>
-                <span>- Max Keiser</span>
+                <span className="italic">
+                  "Her şey bitcoin karşısında sıfıra gidiyor" - Max Keiser
+                </span>
               </div>
               {hiddenPrices.size > 0 && (
                 <button

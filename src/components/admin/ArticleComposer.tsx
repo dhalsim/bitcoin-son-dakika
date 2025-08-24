@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createNIP98Auth } from "./utils";
-import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
+import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import type { ArticleItem } from "@/lib/ssg-data";
 

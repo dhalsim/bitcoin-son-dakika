@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { shareContent } from "@/lib/utils";
 import { WEBSITE_URL } from "@/lib/constants";
-import { createTitleSlug } from "../../../api-helpers/utils";
+import { createTitleSlug } from "../../api-helpers/utils";
 import { EventItem } from "@/lib/nip01";
 
 interface ShareButtonProps {

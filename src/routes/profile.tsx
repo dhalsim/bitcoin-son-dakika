@@ -4,8 +4,8 @@ import { useState } from "react";
 import type { MetaFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 
-import { FollowButton } from "@/components/ui/FollowButton.js";
-import { NIP05Badge } from "@/components/ui/NIP05Badge";
+import { FollowButton } from "@/components/FollowButton.js";
+import { NIP05Badge } from "@/components/NIP05Badge.js";
 
 import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
 import MainContent from "../components/MainContent";

@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import type { NostrEvent } from "nostr-tools";
-import { Relay, SimplePool } from "nostr-tools";
+import { generateSecretKey, getPublicKey, Relay, SimplePool } from "nostr-tools";
 import { twMerge } from "tailwind-merge";
 
 import type { PublishToRelayResult } from "../../api-helpers/schemas";
@@ -149,4 +149,25 @@ export function formatAtomDate(timestamp: number): string {
   const date = new Date(timestamp * 1000);
 
   return date.toISOString();
+}
+
+export function createKeyPair() {
+  const secret = generateSecretKey();
+  const pubkey = getPublicKey(secret);
+
+  return { secret, pubkey };
+}
+
+export function generateRandomHexString(length: number): string {
+  const byteLength = Math.ceil(length / 2);
+  const randomBytes = new Uint8Array(byteLength);
+  crypto.getRandomValues(randomBytes);
+
+  return Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, length);
+}
+
+export function assertUnreachable(value: never): never {
+  throw new Error(`Unreachable code: ${value}`);
 }

@@ -14,14 +14,14 @@ import { createProfileSlug, fetchSSGData, getDisplayName } from "@/lib/ssg-data"
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MainContent from "@/components/MainContent";
-import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
+import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import AudioPlayer, { AudioPlayerRef } from "@/components/AudioPlayer";
 import { EventStatistics } from "@/components/EventStatistics";
 import { CategoryTags } from "@/components/CategoryTags";
 import { getTimeAgo } from "@/components/NewsCard";
-import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { LOGO_URL, WEBSITE_NAME, WEBSITE_URL } from "@/lib/constants";
-import { RssButton } from "@/components/ui/RssButton";
+import { RssButton } from "@/components/RssButton";
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const podcast = loaderData?.podcast;
@@ -55,14 +55,6 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   }
 
   const title = `Podcast - ${podcast.title} - ${WEBSITE_NAME}`;
-
-  // Debug: Log the title construction
-  console.log("Podcast title construction:", {
-    podcastTitle: podcast.title,
-    websiteName: WEBSITE_NAME,
-    finalTitle: title,
-  });
-
   const description =
     podcast.summary?.substring(0, 200) || podcast.content?.substring(0, 160) || "Bitcoin podcast";
   const imageUrl = podcast.image ? podcast.image : `${WEBSITE_URL}/${LOGO_URL}`;

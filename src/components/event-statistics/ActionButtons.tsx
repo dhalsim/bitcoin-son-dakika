@@ -29,8 +29,8 @@ import { createNip22Thread } from "@/lib/nip22";
 
 import { EmojiBoard } from "../EmojiBoard";
 import { ZapDialog } from "../ZapDialog";
-import { ShareButton } from "../ui/ShareButton";
-import { MoreOptionsButton } from "../ui/MoreOptionsButton";
+import { ShareButton } from "../ShareButton";
+import { MoreOptionsButton } from "../MoreOptionsButton";
 
 import { ExpandedReactions } from "./ExpandedReactions";
 import { QuotesSection } from "./QuotesSection";

@@ -1,10 +1,11 @@
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import type { EventTemplate, NostrEvent } from "nostr-tools";
 
 import { getCache } from "@/lib/cache";
 import { LoginModal } from "@/components/auth/LoginModal";
 import { createNip07Provider, Nip07Relays } from "@/lib/providers/Nip07Provider";
+import { createNostrConnectProvider, NostrConnectData } from "@/lib/providers/NostrConnectProvider";
 
 export type NostrProviderMethod = "nip07" | "nip46" | "nsec" | "nostrconnect" | "none";
 
@@ -43,11 +44,13 @@ export type GetPublicKey = (params: GetPublicKeyParams) => Promise<string | null
 export interface NostrAuthContextValue {
   provider: NostrProvider;
   isLoggedIn: boolean;
+  isInitialized: boolean;
 
   // Provider lifecycle
   loginWithNip07(): Promise<LoginResult>;
   loginWithNsec(nsec: string): Promise<LoginResult>; // future
   loginWithNip46(uri: string): Promise<LoginResult>; // future
+  loginWithNostrConnect(data: NostrConnectData): Promise<LoginResult>; // future
   logout(): void;
 
   // Core actions (auto-triggers modal if needed)
@@ -67,9 +70,11 @@ interface NostrAuthProviderProps {
   children: ReactNode;
 }
 
-export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
+// Use const function declaration for better HMR support
+const NostrAuthProvider = React.memo(({ children }: NostrAuthProviderProps) => {
   const [provider, setProvider] = useState<NostrProvider | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [pendingAuthRequest, setPendingAuthRequest] = useState<{
     intent: AuthIntent;
     options?: { reason?: string };
@@ -87,17 +92,21 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
       if (loginState && loginState.loggedIn) {
         if (loginState.method === "nip07") {
           setProvider(createNip07Provider());
+        } else if (loginState.method === "nostrconnect") {
+          setProvider(createNostrConnectProvider(loginState.data));
         } else {
           throw new Error(`Unsupported provider method: ${loginState.method}`);
         }
       }
     } catch (error) {
       console.warn("Failed to load auth state from cache:", error);
+    } finally {
+      // Mark as initialized regardless of success/failure
+      setIsInitialized(true);
     }
   }, []);
 
-  // No need to persist suppress state changes - we read directly from cache
-
+  // Define these functions before the useEffect that uses them
   const persistLoginState = useCallback(
     (state: { method: NostrProviderMethod; loggedIn: boolean; data?: any }) => {
       try {
@@ -116,6 +125,36 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
       console.warn("Failed to clear login state from cache:", error);
     }
   }, []);
+
+  // Handle hot reload scenarios - re-initialize provider if needed
+  useEffect(() => {
+    if (isInitialized && provider) {
+      // Check if the provider is still valid
+      provider.isReady().catch(() => {
+        // Provider is no longer valid, clear it
+        console.warn("Provider no longer valid, clearing...");
+        setProvider(null);
+        clearLoginState();
+      });
+    }
+  }, [isInitialized, provider, clearLoginState]);
+
+  // Development environment: handle hot reload more gracefully
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+      const handleBeforeUnload = () => {
+        // Clear any pending state before page unload (hot reload)
+        if (provider?.dispose) {
+          provider.dispose();
+        }
+      };
+
+      window.addEventListener("beforeunload", handleBeforeUnload);
+      return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }
+  }, [provider]);
+
+  // No need to persist suppress state changes - we read directly from cache
 
   const loginWithNip07 = useCallback(async (): Promise<LoginResult> => {
     try {
@@ -151,6 +190,33 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
     return { success: false, provider: null };
   };
 
+  const loginWithNostrConnect = useCallback(
+    async (data: NostrConnectData): Promise<LoginResult> => {
+      try {
+        const nostrConnectProvider = createNostrConnectProvider(data);
+        const isReady = await nostrConnectProvider.isReady();
+
+        if (!isReady) {
+          throw new Error("NostrConnect provider not ready");
+        }
+
+        setProvider(nostrConnectProvider);
+
+        persistLoginState({
+          method: "nostrconnect",
+          loggedIn: true,
+          data: data,
+        });
+
+        return { success: true, provider: nostrConnectProvider };
+      } catch (error) {
+        console.error("Failed to login with NostrConnect:", error);
+        return { success: false, provider: null };
+      }
+    },
+    [],
+  );
+
   const logout = useCallback(() => {
     if (provider?.dispose) {
       provider.dispose();
@@ -159,7 +225,7 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
     setProvider(null);
 
     clearLoginState();
-  }, [provider]);
+  }, [provider, clearLoginState]);
 
   const getPublicKey = useCallback(
     async (params: GetPublicKeyParams): Promise<string | null> => {
@@ -255,9 +321,11 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
   const contextValue: NostrAuthContextValue = {
     provider,
     isLoggedIn,
+    isInitialized,
     loginWithNip07,
     loginWithNsec,
     loginWithNip46,
+    loginWithNostrConnect,
     logout,
     getPublicKey,
     signEvent,
@@ -276,12 +344,61 @@ export function NostrAuthProvider({ children }: NostrAuthProviderProps) {
       />
     </NostrAuthContext.Provider>
   );
-}
+});
+
+// Export the component for external use
+export { NostrAuthProvider };
+
+// Add display name for better debugging and HMR support
+NostrAuthProvider.displayName = "NostrAuthProvider";
 
 export function useNostrAuth(): NostrAuthContextValue {
   const context = useContext(NostrAuthContext);
+
+  // During SSG or when context is not yet available, provide a fallback
   if (!context) {
-    throw new Error("useNostrAuth must be used within a NostrAuthProvider");
+    // Check if we're in a browser environment and component has mounted
+    if (typeof window !== "undefined") {
+      // In browser but context not available - this shouldn't happen normally
+      // but can occur during hot reloading or context initialization
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "NostrAuth context not available in development mode, using fallback. This may indicate a provider setup issue or hot reload problem.",
+        );
+      } else {
+        console.warn(
+          "NostrAuth context not available, using fallback. This may indicate a provider setup issue.",
+        );
+      }
+    }
+
+    // Return a fallback context that won't crash the app
+    // This allows the app to render during SSG or context initialization
+    return {
+      provider: {
+        method: "none" as NostrProviderMethod,
+        isReady: async () => false,
+        getPublicKey: async () => null,
+        signEvent: async () => {
+          throw new Error("Provider not ready");
+        },
+        hasCapability: () => false,
+      },
+      isLoggedIn: false,
+      isInitialized: false,
+      loginWithNip07: async () => ({ success: false, provider: null }),
+      loginWithNip46: async () => ({ success: false, provider: null }),
+      loginWithNsec: async () => ({ success: false, provider: null }),
+      loginWithNostrConnect: async () => ({ success: false, provider: null }),
+      logout: () => {},
+      getPublicKey: async () => null,
+      signEvent: async () => {
+        throw new Error("Provider not ready");
+      },
+      requestLogin: async () => ({ success: false, provider: null }),
+      showLoginModal: async () => ({ success: false, provider: null }),
+    };
   }
+
   return context;
 }

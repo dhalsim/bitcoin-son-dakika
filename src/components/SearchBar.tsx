@@ -1,19 +1,19 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Search, X, FileText, Newspaper, Tag, Clock } from "lucide-react";
 
-import { formatNostrDate } from "@/lib/utils";
+import { assertUnreachable, formatNostrDate } from "@/lib/utils";
 
 import { createTitleSlug } from "../../api-helpers/utils";
 
 import { useSSGData } from "../contexts/SSGContext";
-import type { NewsItem, ArticleItem } from "../lib/ssg-data";
+import type { NewsItem, ArticleItem, PodcastItem } from "../lib/ssg-data";
 
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
 interface SearchResult {
-  type: "news" | "article" | "tag";
-  item: NewsItem | ArticleItem | string;
+  type: "news" | "article" | "podcast" | "tag";
+  item: NewsItem | ArticleItem | PodcastItem | string;
   relevance: number;
   matchedFields: string[];
 }
@@ -38,103 +38,60 @@ export function SearchBar() {
     const searchQuery = query.toLowerCase().trim();
     const results: SearchResult[] = [];
 
-    // Search through news
-    ssgData.news.forEach((newsItem) => {
+    const searchContentItem = (item: NewsItem | ArticleItem | PodcastItem) => {
       let relevance = 0;
       const matchedFields: string[] = [];
 
       // Check title (highest priority)
-      if (newsItem.title?.toLowerCase().includes(searchQuery)) {
+      if (item.title?.toLowerCase().includes(searchQuery)) {
         relevance += 100;
         matchedFields.push("title");
       }
 
       // Check summary
-      if (newsItem.summary?.toLowerCase().includes(searchQuery)) {
+      if (item.summary?.toLowerCase().includes(searchQuery)) {
         relevance += 50;
         matchedFields.push("summary");
       }
 
       // Check content
-      if (newsItem.content.toLowerCase().includes(searchQuery)) {
+      if (item.content.toLowerCase().includes(searchQuery)) {
         relevance += 25;
         matchedFields.push("content");
       }
 
-      // Check tags
-      const matchingTags = newsItem.tags.filter((tag) => tag.toLowerCase().includes(searchQuery));
-      if (matchingTags.length > 0) {
-        relevance += 30;
-        matchedFields.push("tags");
-      }
+      item.tags.forEach((tag) => {
+        if (tag.toLowerCase().includes(searchQuery)) {
+          relevance += 30;
+          matchedFields.push("tags");
+
+          results.push({
+            type: "tag",
+            item: tag,
+            relevance: 40,
+            matchedFields: ["tag"],
+          });
+        }
+      });
 
       if (relevance > 0) {
         results.push({
-          type: "news",
-          item: newsItem,
+          type: item.type,
+          item: item,
           relevance,
           matchedFields,
         });
       }
-    });
+    };
+
+    // Search through news
+    ssgData.news.forEach(searchContentItem);
 
     // Search through articles
-    ssgData.articles.forEach((articleItem) => {
-      let relevance = 0;
-      const matchedFields: string[] = [];
+    ssgData.articles.forEach(searchContentItem);
 
-      // Check title (highest priority)
-      if (articleItem.title?.toLowerCase().includes(searchQuery)) {
-        relevance += 100;
-        matchedFields.push("title");
-      }
-
-      // Check summary
-      if (articleItem.summary?.toLowerCase().includes(searchQuery)) {
-        relevance += 50;
-        matchedFields.push("summary");
-      }
-
-      // Check content
-      if (articleItem.content.toLowerCase().includes(searchQuery)) {
-        relevance += 25;
-        matchedFields.push("content");
-      }
-
-      // Check tags
-      const matchingTags = articleItem.tags.filter((tag) =>
-        tag.toLowerCase().includes(searchQuery),
-      );
-      if (matchingTags.length > 0) {
-        relevance += 30;
-        matchedFields.push("tags");
-      }
-
-      if (relevance > 0) {
-        results.push({
-          type: "article",
-          item: articleItem,
-          relevance,
-          matchedFields,
-        });
-      }
-    });
-
-    // Search through tags
-    const allTags = new Set<string>();
-    ssgData.news.forEach((item) => item.tags.forEach((tag) => allTags.add(tag)));
-    ssgData.articles.forEach((item) => item.tags.forEach((tag) => allTags.add(tag)));
-
-    allTags.forEach((tag) => {
-      if (tag.toLowerCase().includes(searchQuery)) {
-        results.push({
-          type: "tag",
-          item: tag,
-          relevance: 40,
-          matchedFields: ["tag"],
-        });
-      }
-    });
+    // Search through podcasts
+    ssgData.podcasts.forEach(searchContentItem);
 
     // Sort by relevance and return top 20 results
     return results.sort((a, b) => b.relevance - a.relevance).slice(0, 20);
@@ -177,6 +134,12 @@ export function SearchBar() {
     } else if (result.type === "tag") {
       const tag = result.item as string;
       window.location.href = `/tag/${tag}`;
+    } else if (result.type === "podcast") {
+      const podcastItem = result.item as PodcastItem;
+      const slug = podcastItem.title ? createTitleSlug(podcastItem.title) : podcastItem.id;
+      window.location.href = `/podcast/${slug}`;
+    } else {
+      return assertUnreachable(result.type);
     }
 
     setIsOpen(false);

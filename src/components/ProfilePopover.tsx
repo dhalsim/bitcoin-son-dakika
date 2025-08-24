@@ -4,12 +4,12 @@ import { useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { FollowButton } from "@/components/ui/FollowButton";
-import { NIP05Badge } from "@/components/ui/NIP05Badge";
+import { FollowButton } from "@/components/FollowButton";
+import { NIP05Badge } from "@/components/NIP05Badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { type ProfileItem } from "@/lib/nip01";
 
-import { PROFILE_RELAYS } from "../../../api-helpers/utils";
+import { PROFILE_RELAYS } from "../../api-helpers/utils";
 
 interface ProfilePopoverProps {
   pubkey: string;

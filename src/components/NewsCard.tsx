@@ -10,7 +10,7 @@ import { createTitleSlug } from "../../api-helpers/utils";
 import { CategoryTags } from "./CategoryTags";
 import { EventStatistics } from "./EventStatistics";
 import { Card, CardHeader, CardContent } from "./ui/card";
-import { getDisplayName, ProfileAvatar } from "./ui/ProfileAvatar";
+import { getDisplayName, ProfileAvatar } from "./ProfileAvatar";
 
 export interface NewsCardProps {
   event: EventItem;

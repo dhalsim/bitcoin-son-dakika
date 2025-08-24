@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { extractAmountFromBolt11 } from "@/lib/nip57";
 import type { ZapReceipt } from "@/lib/nip57";
 import type { ProfileItem } from "@/lib/nip01";

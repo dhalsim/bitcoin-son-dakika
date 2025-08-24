@@ -1,5 +1,5 @@
+import React, { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { createContext, useContext, useEffect, useState } from "react";
 
 import { getProfiles, type ProfileItem } from "@/lib/nip01";
 import { getFollowsEvent } from "@/lib/nip02";
@@ -51,6 +51,7 @@ interface UserContextType {
   userRelays: UserRelays;
   userFollowings: UserFollowings;
   userProfile: UserProfile;
+  isInitializing: boolean;
   refreshFollowings: () => void;
   refreshProfile: () => void;
 }
@@ -61,8 +62,36 @@ interface UserProviderProps {
   children: ReactNode;
 }
 
-export function UserProvider({ children }: UserProviderProps) {
-  const { getPublicKey, provider } = useNostrAuth();
+// Use const function declaration for better HMR support
+const UserProvider = React.memo(({ children }: UserProviderProps) => {
+  // Add safety check for NostrAuth context
+  let authContext;
+
+  try {
+    authContext = useNostrAuth();
+  } catch (error) {
+    // If NostrAuth context is not available, use fallback values
+    console.warn("NostrAuth context not available in UserProvider, using fallbacks");
+
+    authContext = {
+      provider: null,
+      isLoggedIn: false,
+      isInitialized: false,
+      getPublicKey: async () => null,
+      signEvent: async () => {
+        throw new Error("Provider not ready");
+      },
+      loginWithNip07: async () => ({ success: false, provider: null }),
+      loginWithNip46: async () => ({ success: false, provider: null }),
+      loginWithNsec: async () => ({ success: false, provider: null }),
+      loginWithNostrConnect: async () => ({ success: false, provider: null }),
+      logout: () => {},
+      requestLogin: async () => ({ success: false, provider: null }),
+      showLoginModal: async () => ({ success: false, provider: null }),
+    };
+  }
+
+  const { getPublicKey, provider, isInitialized } = authContext;
 
   const [userRelays, setUserRelays] = useState<UserRelays>({
     readRelays: DEFAULT_READ_RELAYS,
@@ -87,6 +116,11 @@ export function UserProvider({ children }: UserProviderProps) {
 
   // Load user profile
   useEffect(() => {
+    // Only proceed if auth context is initialized
+    if (!isInitialized) {
+      return;
+    }
+
     const loadUserProfile = async () => {
       setUserProfile((prev) => ({ ...prev, isLoading: true, error: null }));
 
@@ -145,10 +179,15 @@ export function UserProvider({ children }: UserProviderProps) {
         error: "Kullanıcı profili yüklenemedi - giriş yapılmadı",
       });
     }
-  }, [provider]); // Only depend on provider changes
+  }, [provider, isInitialized]); // Add isInitialized to dependencies
 
   // Load user relays
   useEffect(() => {
+    // Only proceed if auth context is initialized
+    if (!isInitialized) {
+      return;
+    }
+
     const loadUserRelays = async () => {
       setUserRelays((prev) => ({ ...prev, isLoading: true, error: null }));
 
@@ -223,10 +262,15 @@ export function UserProvider({ children }: UserProviderProps) {
         error: "Relay yapılandırması yüklenemedi - giriş yapılmadı",
       });
     }
-  }, [provider]); // Only depend on provider changes
+  }, [provider, isInitialized]); // Add isInitialized to dependencies
 
   // Load user followings when relays are loaded
   useEffect(() => {
+    // Only proceed if auth context is initialized
+    if (!isInitialized) {
+      return;
+    }
+
     const loadUserFollowings = async () => {
       // Only load followings if relays are loaded and not failed
       if (userRelays.isLoading || userRelays.error || userRelays.writeRelays.length === 0) {
@@ -302,7 +346,43 @@ export function UserProvider({ children }: UserProviderProps) {
         error: "Takip listesi yüklenemedi - giriş yapılmadı",
       });
     }
-  }, [provider, userRelays.isLoading, userRelays.error, userRelays.writeRelays]); // Depend on provider and relay state changes
+  }, [provider, userRelays.isLoading, userRelays.error, userRelays.writeRelays, isInitialized]); // Add isInitialized to dependencies
+
+  // Reset user data when auth context re-initializes
+  useEffect(() => {
+    if (!isInitialized) {
+      // Clear all user data when auth context is not initialized
+      setUserProfile({
+        pubkey: null,
+        profile: null,
+        isLoading: false,
+        error: null,
+      });
+      setUserRelays({
+        readRelays: DEFAULT_READ_RELAYS,
+        writeRelays: [],
+        isLoading: false,
+        error: null,
+      });
+      setUserFollowings({
+        eventTags: [],
+        pubkeys: [],
+        isLoading: false,
+        error: null,
+      });
+    }
+  }, [isInitialized]);
+
+  // Development environment: handle hot reload more gracefully
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+      // Mark component as ready for hot reload
+      if (provider && isInitialized) {
+        // Component is ready for hot reload
+        console.debug("UserProvider ready for hot reload");
+      }
+    }
+  }, [provider, isInitialized]);
 
   const refreshFollowings = () => {
     // Trigger a refresh by setting loading state
@@ -318,12 +398,19 @@ export function UserProvider({ children }: UserProviderProps) {
     userRelays,
     userFollowings,
     userProfile,
+    isInitializing: !isInitialized,
     refreshFollowings,
     refreshProfile,
   };
 
   return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>;
-}
+});
+
+// Export the component for external use
+export { UserProvider };
+
+// Add display name for better debugging and HMR support
+UserProvider.displayName = "UserProvider";
 
 export function useUserContext(): UserContextType {
   const context = useContext(UserContext);
@@ -351,6 +438,11 @@ export function useUserRelaysLoading(): boolean {
 // Hook for error state
 export function useUserRelaysError(): string | null {
   return useUserContext().userRelays.error;
+}
+
+// Hook for checking if user context is initializing
+export function useUserContextInitializing(): boolean {
+  return useUserContext().isInitializing;
 }
 
 // Hook for user followings

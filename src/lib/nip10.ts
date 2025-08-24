@@ -1,6 +1,6 @@
 import type { EventTemplate } from "nostr-tools";
 
-import { getDisplayName } from "@/components/ui/ProfileAvatar";
+import { getDisplayName } from "@/components/ProfileAvatar";
 import type { GetPublicKey, SignEvent } from "@/contexts/NostrAuthContext";
 
 import { getCache } from "./cache";

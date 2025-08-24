@@ -17,9 +17,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { isMobile } from "@/lib/utils";
-import { ShareButton } from "@/components/ui/ShareButton";
-import { PodcastPlatformButtons } from "@/components/ui/PodcastPlatformButtons";
-import { RssButton } from "@/components/ui/RssButton";
+import { ShareButton } from "@/components/ShareButton";
+import { PodcastPlatformButtons } from "@/components/PodcastPlatformButtons";
+import { RssButton } from "@/components/RssButton";
 import { EventItem } from "@/lib/nip01";
 
 interface Chapter {

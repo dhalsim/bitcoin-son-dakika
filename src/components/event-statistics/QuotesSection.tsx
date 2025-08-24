@@ -2,7 +2,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Textarea } from "@/components/ui/textarea";
 import { RenderedText } from "@/lib/text-renderer";
 

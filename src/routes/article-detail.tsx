@@ -1,6 +1,6 @@
 import type { MetaFunction, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
-import ArticleMarkdownRenderer from "@/components/ui/ArticleMarkdownRenderer";
+import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 
 import type { SSGData } from "@/lib/ssg-data";
 import { createProfileSlug } from "@/lib/ssg-data";
@@ -10,7 +10,7 @@ import { createTitleSlug } from "../../api-helpers/utils";
 import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";
 import MainContent from "../components/MainContent";
-import { getDisplayName, ProfileAvatar } from "../components/ui/ProfileAvatar";
+import { getDisplayName, ProfileAvatar } from "../components/ProfileAvatar";
 import { WEBSITE_NAME, WEBSITE_URL, LOGO_URL } from "../lib/constants";
 
 import NotFound from "./$";

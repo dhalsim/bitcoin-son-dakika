@@ -1,8 +1,8 @@
 import type { NostrEvent } from "nostr-tools";
 import { useState } from "react";
 
-import { NIP05Badge } from "@/components/ui/NIP05Badge";
-import { ProfileAvatar, getDisplayName } from "@/components/ui/ProfileAvatar";
+import { NIP05Badge } from "@/components/NIP05Badge";
+import { ProfileAvatar, getDisplayName } from "@/components/ProfileAvatar";
 import type { ProfileItem } from "@/lib/nip01";
 import type { ReplyNode } from "@/lib/nip10";
 import { RenderedText } from "@/lib/text-renderer";

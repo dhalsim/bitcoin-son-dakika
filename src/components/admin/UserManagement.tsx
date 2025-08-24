@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProfileAvatar, getDisplayName } from "@/components/ui/ProfileAvatar";
+import { ProfileAvatar, getDisplayName } from "@/components/ProfileAvatar";
 
 import { validateNpub } from "./utils";
 import { getProfiles, ProfileItem } from "@/lib/nip01";

@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { type ProfileItem } from "@/lib/nip01";
-import { ProfilePopover } from "@/components/ui/ProfilePopover";
+import { ProfilePopover } from "@/components/ProfilePopover";
 
 interface ProfileAvatarProps {
   pubkey: string;

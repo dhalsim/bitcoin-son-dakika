@@ -1,7 +1,7 @@
 import React from "react";
 
 import { LinkPreview } from "@/components/LinkPreview";
-import { ProfileMention } from "@/components/ui/ProfileMention";
+import { ProfileMention } from "@/components/ProfileMention";
 import { getCache } from "./cache";
 
 // Regular expressions for different content types

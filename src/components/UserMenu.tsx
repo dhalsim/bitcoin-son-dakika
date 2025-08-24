@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ProfileAvatar } from "@/components/ui/ProfileAvatar";
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { useUserProfile } from "@/contexts/UserContext";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
@@ -19,6 +19,20 @@ export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Development environment: add safety checks for hot reload scenarios
+  if (process.env.NODE_ENV === "development") {
+    // Additional safety check for development hot reloads
+    if (!userProfile || typeof userProfile !== "object") {
+      console.warn("UserMenu: userProfile is invalid during development, showing fallback");
+      return (
+        <Button variant="outline" size="sm" className="hidden sm:flex" disabled={true}>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-current mr-2" />
+          Yükleniyor...
+        </Button>
+      );
+    }
+  }
+
   // If profile is loading, show loading state
   if (userProfile.isLoading) {
     return (
@@ -27,7 +41,7 @@ export function UserMenu() {
   }
 
   // If no user is logged in, show login button
-  if (!isLoggedIn) {
+  if (!isLoggedIn || !userProfile.pubkey) {
     return (
       <Button
         variant="outline"
@@ -53,7 +67,7 @@ export function UserMenu() {
         className="hidden sm:flex"
       >
         {isLoggingIn ? (
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+          <div className="animate-spin rounded-full h-4 w-4 border-b-current mr-2" />
         ) : (
           <User className="h-4 w-4 mr-2" />
         )}
@@ -89,11 +103,21 @@ export function UserMenu() {
         className="hidden sm:flex"
       >
         {isLoggingIn ? (
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+          <div className="animate-spin rounded-full h-4 w-4 border-b-current mr-2" />
         ) : (
           <User className="h-4 w-4 mr-2" />
         )}
         {isLoggingIn ? "Giriş Yapılıyor..." : "Yeniden Dene"}
+      </Button>
+    );
+  }
+
+  // Additional safety check - ensure we have a valid pubkey before rendering the menu
+  if (!userProfile.pubkey) {
+    return (
+      <Button variant="outline" size="sm" className="hidden sm:flex" disabled={true}>
+        <div className="animate-spin rounded-full h-4 w-4 border-b-current mr-2" />
+        Yükleniyor...
       </Button>
     );
   }
@@ -122,10 +146,10 @@ export function UserMenu() {
             <p className="text-sm font-medium truncate">
               {userProfile.profile?.display_name ||
                 userProfile.profile?.name ||
-                `${userProfile.pubkey.slice(0, 8)}...`}
+                (userProfile.pubkey ? `${userProfile.pubkey.slice(0, 8)}...` : "Unknown User")}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-              {userProfile.pubkey.slice(0, 16)}...
+              {userProfile.pubkey ? `${userProfile.pubkey.slice(0, 16)}...` : "No public key"}
             </p>
           </div>
         </div>
@@ -133,12 +157,36 @@ export function UserMenu() {
         <DropdownMenuItem
           onClick={() => {
             // Navigate to user profile page
-            window.open(`/profile/${userProfile.pubkey}`, "_blank");
+            if (userProfile.pubkey) {
+              window.open(`/profile/${userProfile.pubkey}`, "_blank");
+            }
             setIsOpen(false);
           }}
         >
           <User className="h-4 w-4 mr-2" />
           Profilim
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            // TODO: Navigate to settings page, not implemented yet
+            console.log("Settings clicked");
+
+            // TODO: Implement notification seen event
+            // {
+            //   "kind": 30078,
+            //   "content": "Records read time to sync notification status across devices.",
+            //   "tags": [["d", "seen_notifications_at"]],
+            //   "created_at": 1755948190,
+            //   "pubkey": "6e64b83c1f674fb00a5f19816c297b6414bf67f015894e04dd4c657e94102ee8",
+            //   "id": "33cd025a4158a7079909908ba5ea1c26bcb1ff9b81f84c801fd264bc45cd173c",
+            //   "sig": "f0a095b5591cac9108aeb25f64ed755c3fb190a3e9a65879500ce8d754c1dd021ff081d107f7af7a80c4d6def86e5970391874acf51ffbdefea046377b88a66d"
+            // }
+
+            setIsOpen(false);
+          }}
+        >
+          <Settings className="h-4 w-4 mr-2" />
+          Bildirimler
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {

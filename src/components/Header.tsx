@@ -1,5 +1,5 @@
 import { Search, Menu, Moon, Sun, Rss, Atom, ChevronDown, Mic } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -26,7 +26,7 @@ const getCurrentDateInTurkish = () => {
   return now.toLocaleDateString("tr-TR", options);
 };
 
-const Header = () => {
+const Header: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -45,12 +45,12 @@ const Header = () => {
 
       <div className="container mx-auto px-4 relative z-content">
         {/* Top bar */}
-        <div className="flex items-center justify-between py-2 border-b border-border">
-          <div className="text-xs sm:text-sm text-muted-foreground truncate">
+        <div className="flex items-center py-2 border-b border-border">
+          <div className="text-xs sm:text-sm text-muted-foreground truncate flex-shrink-0 max-w-[200px] sm:max-w-[300px]">
             Bitcoinci Perspektiften Dünyanın Nabzı
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm">
-            <span className="hidden sm:block text-muted-foreground">
+          <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm ml-auto flex-shrink-0">
+            <span className="hidden md:block text-muted-foreground">
               {getCurrentDateInTurkish()}
             </span>
 
@@ -60,9 +60,9 @@ const Header = () => {
                 href="https://njump.me/_@bitcoinsondakika.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-1 hover:bg-accent hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
+                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
               >
-                <img src="/nostr-icon.png" alt="Nostr" className="h-6 w-6" />
+                <img src="/nostr-icon.png" alt="Nostr" className="h-5 w-5 sm:h-6 sm:w-6" />
               </a>
               <a
                 href="https://x.com/sondakikabtc"
@@ -121,8 +121,11 @@ const Header = () => {
 
         {/* Main header */}
         <div className="flex items-center justify-between py-4">
-          <div className="flex items-center space-x-4 sm:space-x-8 mr-2">
-            <a href="/" className="flex items-center">
+          {/* Logo */}
+          <div
+            className={`flex items-center space-x-4 sm:space-x-8 mr-2 transition-all duration-300 ${isSearchOpen ? "lg:hidden" : ""}`}
+          >
+            <a href="/" className="flex items-center flex-shrink-0">
               {/* Light mode logo (black) */}
               {theme === "light" ? (
                 <img
@@ -142,99 +145,109 @@ const Header = () => {
             </a>
           </div>
 
-          {/* Desktop View */}
+          {/* Desktop Navigation - visible on lg and above */}
+          <nav className="hidden lg:flex items-center space-x-6">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
+                <a href="/news">Haberler</a>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-popover border border-border">
+                <DropdownMenuItem>
+                  <a href="/news">Son Dakika</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href="/tag/analiz?type=news">Piyasa Analizi</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href="/tag/teknoloji?type=news">Teknoloji</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href="/tag/duzenlemeler?type=news">Düzenlemeler</a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
+                <a href="/articles">Köşe Yazıları</a>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-popover border border-border">
+                <DropdownMenuItem>
+                  <a href="/tag/yorum?type=article">Güncel Yorumlar</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href="/tag/analiz?type=article">Teknik Analiz</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href="/tag/ekonomi?type=article">Ekonomi</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href="/tag/teknoloji?type=article">Teknoloji</a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
+                <a href="/egitim">Eğitim</a>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-popover border border-border">
+                <DropdownMenuItem>
+                  <a href="/egitim/bitcoin-temelleri">Bitcoin Temelleri</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href="/egitim/cuzdan-kullanimi">Cüzdan Kullanımı</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href="/egitim/guvenlik">Güvenlik</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href="/egitim/lightning-network">Lightning Network</a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <a href="/podcasts" className="text-foreground font-medium px-2 py-1 rounded">
+              Podcast
+            </a>
+          </nav>
+
+          {/* Desktop Search Bar - visible on lg and above */}
           <div className="hidden lg:flex items-center space-x-6 relative z-header">
-            {/* Desktop Navigation */}
-            <nav className="flex items-center space-x-6">
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
-                  <a href="/news">Haberler</a>
-                  <ChevronDown className="ml-1 h-4 w-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-popover border border-border">
-                  <DropdownMenuItem>
-                    <a href="/news">Son Dakika</a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <a href="/tag/analiz?type=news">Piyasa Analizi</a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <a href="/tag/teknoloji?type=news">Teknoloji</a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <a href="/tag/duzenlemeler?type=news">Düzenlemeler</a>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
-                  <a href="/articles">Köşe Yazıları</a>
-                  <ChevronDown className="ml-1 h-4 w-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-popover border border-border">
-                  <DropdownMenuItem>
-                    <a href="/tag/yorum?type=article">Güncel Yorumlar</a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <a href="/tag/analiz?type=article">Teknik Analiz</a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <a href="/tag/ekonomi?type=article">Ekonomi</a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <a href="/tag/teknoloji?type=article">Teknoloji</a>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
-                  <a href="/egitim">Eğitim</a>
-                  <ChevronDown className="ml-1 h-4 w-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-popover border border-border">
-                  <DropdownMenuItem>
-                    <a href="/egitim/bitcoin-temelleri">Bitcoin Temelleri</a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <a href="/egitim/cuzdan-kullanimi">Cüzdan Kullanımı</a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <a href="/egitim/guvenlik">Güvenlik</a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <a href="/egitim/lightning-network">Lightning Network</a>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <a href="/podcasts" className="text-foreground font-medium px-2 py-1 rounded">
-                Podcast
-              </a>
-            </nav>
-
             {/* Desktop Search */}
             <SearchBar />
 
-            {/* User Menu */}
+            {/* User Menu - visible on lg and above */}
             <UserMenu />
           </div>
 
-          {/* Mobile View */}
+          {/* Mobile Elements - visible below lg, grouped together on the right */}
           <div className="lg:hidden flex items-center space-x-2 sm:space-x-4">
-            {/* Mobile Search Toggle */}
+            {/* Mobile Search */}
+            {isSearchOpen && (
+              <div className="mr-2">
+                <SearchBar />
+              </div>
+            )}
+
             <button
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="md:hidden hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded"
+              className="hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded"
             >
               <Search className="h-5 w-5 text-muted-foreground" />
             </button>
 
+            {/* User Menu - visible below lg */}
+            <UserMenu />
+
+            {/* Mobile Menu */}
             {/* Mobile Menu */}
             <Sheet>
               <SheetTrigger asChild>
-                <button className="lg:hidden hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded">
+                <button className="hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded">
                   <Menu className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600 dark:text-gray-400" />
                 </button>
               </SheetTrigger>
@@ -315,13 +328,6 @@ const Header = () => {
                 </div>
               </SheetContent>
             </Sheet>
-
-            {/* Mobile Search Bar */}
-            {isSearchOpen && (
-              <div className="md:hidden pb-4 relative z-header">
-                <SearchBar />
-              </div>
-            )}
           </div>
         </div>
       </div>

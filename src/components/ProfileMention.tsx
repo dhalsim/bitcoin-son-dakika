@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 
 import { getProfiles } from "@/lib/nip01";
 import { getCache } from "@/lib/cache";
-import { getDisplayName } from "@/components/ui/ProfileAvatar";
-import { ProfilePopover } from "@/components/ui/ProfilePopover";
+import { getDisplayName } from "@/components/ProfileAvatar";
+import { ProfilePopover } from "@/components/ProfilePopover";
 import { type ProfileItem } from "@/lib/nip01";
 
 interface ProfileMentionProps {
