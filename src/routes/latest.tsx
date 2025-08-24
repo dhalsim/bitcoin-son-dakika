@@ -26,12 +26,14 @@ export const meta: MetaFunction = () => {
       content: `${WEBSITE_DESCRIPTION} - En güncel Bitcoin haberleri ve makaleleri`,
     },
     { property: "og:type", content: "website" },
+    { property: "og:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
     // Twitter
     { name: "twitter:title", content: `En Son İçerikler - ${WEBSITE_NAME}` },
     {
       name: "twitter:description",
       content: `${WEBSITE_DESCRIPTION} - En güncel Bitcoin haberleri ve makaleleri`,
     },
+    { name: "twitter:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
   ];
 };
 

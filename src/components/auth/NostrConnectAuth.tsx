@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Relay, nip44, nip04 } from "nostr-tools";
-import { QrCode, Copy, RefreshCw } from "lucide-react";
+import { Relay } from "nostr-tools";
+import { QrCode, Copy, RefreshCw, Smartphone } from "lucide-react";
 import { toString as toSvgString } from "qrcode/lib/browser.js";
 
 import { Button } from "@/components/ui/button";
@@ -25,17 +25,26 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
   const [relay, setRelay] = useState("wss://relay.nsec.app");
   const [isWaitingForConnection, setIsWaitingForConnection] = useState(false);
   const [showCopiedTooltip, setShowCopiedTooltip] = useState(false);
+  const [showCopiedTooltip2, setShowCopiedTooltip2] = useState(false);
+  const [showCopiedTooltip3, setShowCopiedTooltip3] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [currentSubscription, setCurrentSubscription] = useState<any>(null);
 
   const { loginWithNostrConnect } = useNostrAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!relay) {
-      return;
-    }
+  const copyTooltip = (
+    <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded whitespace-nowrap z-tooltip">
+      Kopyalandı
+    </span>
+  );
 
-    handleRelayChange(relay);
-  }, [relay]);
+  // Generate initial QR code on mount
+  useEffect(() => {
+    if (relay) {
+      generateInitialQRCode();
+    }
+  }, []);
 
   // Scroll to QR when component mounts
   useEffect(() => {
@@ -48,6 +57,18 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
       }, 100);
     }
   }, [generatedUri]);
+
+  const generateInitialQRCode = async () => {
+    const { uri, ephemeralData } = generateNostrConnectUri(relay);
+    setGeneratedUri(uri);
+    await generateQRCode(uri);
+    setIsWaitingForConnection(true);
+    onError(null);
+
+    // Start initial connection
+    const sub = await handleNostrConnection(ephemeralData);
+    setCurrentSubscription(sub);
+  };
 
   const generateQRCode = async (uri: string) => {
     try {
@@ -84,13 +105,26 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
     }
   };
 
-  const copyUri = async () => {
+  const copyUri = async (no: 1 | 2 | 3) => {
     try {
       await navigator.clipboard.writeText(generatedUri);
-      setShowCopiedTooltip(true);
-      setTimeout(() => setShowCopiedTooltip(false), 2000);
+
+      if (no === 1) {
+        setShowCopiedTooltip(true);
+
+        setTimeout(() => setShowCopiedTooltip(false), 2000);
+      } else if (no === 2) {
+        setShowCopiedTooltip2(true);
+
+        setTimeout(() => setShowCopiedTooltip2(false), 2000);
+      } else {
+        setShowCopiedTooltip3(true);
+
+        setTimeout(() => setShowCopiedTooltip3(false), 2000);
+      }
     } catch (error) {
       console.error("Failed to copy URI:", error);
+
       toast({
         title: "Hata",
         description: "URI kopyalanamadı",
@@ -99,18 +133,44 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
     }
   };
 
-  const handleRelayChange = (relay: string) => {
-    setRelay(relay);
+  const handleRelayChange = (newRelay: string) => {
+    setRelay(newRelay);
+    setIsTyping(true);
+
+    // Clear current QR code and show placeholder
+    setQrSvg("");
+    setIsWaitingForConnection(false);
+
+    // Close current subscription if exists
+    if (currentSubscription) {
+      currentSubscription.close();
+      setCurrentSubscription(null);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsTyping(false);
+
+    // Close current subscription if exists
+    if (currentSubscription) {
+      currentSubscription.close();
+
+      setCurrentSubscription(null);
+    }
 
     const { uri, ephemeralData } = generateNostrConnectUri(relay);
 
     setGeneratedUri(uri);
-    generateQRCode(uri);
+
+    await generateQRCode(uri);
 
     setIsWaitingForConnection(true);
     onError(null);
 
-    handleNostrConnection(ephemeralData);
+    // Start new connection
+    const sub = await handleNostrConnection(ephemeralData);
+
+    setCurrentSubscription(sub);
   };
 
   const handleNostrConnection = async (ephemeralData: NostrConnectData) => {
@@ -189,6 +249,15 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
     return sub;
   };
 
+  // Cleanup subscription on unmount
+  useEffect(() => {
+    return () => {
+      if (currentSubscription) {
+        currentSubscription.close();
+      }
+    };
+  }, [currentSubscription]);
+
   return (
     <div className="space-y-4 max-h-[70vh] overflow-y-auto">
       <div className="space-y-4">
@@ -197,38 +266,59 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
           NostrConnect URI ile cihaz eşleştirme
         </div>
 
-        {/* QR Code - Moved to top for better focus */}
-        {generatedUri && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium">QR Kod:</label>
-            <div className="flex justify-center">
-              <div className="border border-gray-200 rounded-lg p-4 bg-white">
-                {isQrLoading ? (
-                  <div className="w-[200px] h-[200px] flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                  </div>
-                ) : (
+        {/* QR Code or Placeholder */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium">QR Kod:</label>
+          <div className="flex justify-center">
+            <div className="border border-gray-200 rounded-lg p-4 bg-white">
+              {isQrLoading ? (
+                <div className="w-[200px] h-[200px] flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              ) : isTyping ? (
+                <div className="w-[200px] h-[200px] flex flex-col items-center justify-center text-center text-muted-foreground">
+                  <p className="text-sm">
+                    <QrCode className="h-12 w-12 mb-2 opacity-50" />
+                  </p>
+                </div>
+              ) : qrSvg ? (
+                <div className="relative cursor-pointer">
                   <div
                     dangerouslySetInnerHTML={{ __html: qrSvg }}
                     className="w-[200px] h-[200px] flex justify-center items-center"
+                    onClick={() => copyUri(2)}
                   />
-                )}
+                  {showCopiedTooltip2 && copyTooltip}
+                </div>
+              ) : (
+                <div className="w-[200px] h-[200px] flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Connection Status */}
+          {isWaitingForConnection && !isTyping && (
+            <div className="text-center py-2">
+              <div className="inline-flex items-center gap-2 text-sm text-orange-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
+                Bağlantı bekleniyor... QR kodu tarayın
               </div>
             </div>
+          )}
 
-            {/* Connection Status */}
-            {isWaitingForConnection && (
-              <div className="text-center py-2">
-                <div className="inline-flex items-center gap-2 text-sm text-orange-600">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
-                  Bağlantı bekleniyor... QR kodu tarayın
-                </div>
+          {/* Typing Status */}
+          {isTyping && (
+            <div className="text-center py-2">
+              <div className="inline-flex items-center gap-2 text-sm bg-primary text-primary-foreground px-3 py-2 rounded-md">
+                Relay değiştirildi - QR kodu güncellemek için "Yenile" butonuna tıklayın
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
-        {/* Relay Input - Moved below QR */}
+        {/* Relay Input */}
         <div className="space-y-2">
           <label htmlFor="nostrconnect-relay" className="text-sm font-medium">
             Relay URL
@@ -243,41 +333,51 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
               className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
             />
             <Button
-              onClick={() => handleRelayChange(relay)}
-              variant="outline"
+              onClick={handleRefresh}
+              variant={isTyping ? "default" : "outline"}
               size="sm"
-              className="px-3"
+              className={`px-3 ${isTyping ? "bg-primary hover:bg-primary/90 text-primary-foreground" : ""}`}
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className={`h-4 w-4 ${isTyping ? "animate-pulse" : ""}`} />
               Yenile
             </Button>
           </div>
         </div>
 
-        {/* Copy URI Button - Simplified */}
-        {generatedUri && (
-          <div className="text-center">
-            <Button onClick={copyUri} variant="outline" size="sm" className="relative">
+        {/* Action Buttons */}
+        {generatedUri && !isTyping && (
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => copyUri(1)} variant="outline" size="sm" className="relative">
               <Copy className="h-4 w-4 mr-2" />
               URI'yi Kopyala
-              {showCopiedTooltip && (
-                <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                  Kopyalandı!
-                </span>
-              )}
+              {showCopiedTooltip && copyTooltip}
             </Button>
+
+            <a
+              href={generatedUri}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors"
+            >
+              <Smartphone className="h-4 w-4 mr-2" />
+              Mobilde Aç
+            </a>
           </div>
         )}
 
-        {/* Instructions - Updated with clickable copy link */}
+        {/* Instructions - Updated */}
         <div className="text-xs text-muted-foreground text-center space-y-1">
-          <p>1. Relay URL'yi gerekirse değiştirin ve "Yenile" butonuna tıklayın</p>
-          <p>2. QR kodu mobil cihazınızla tarayın</p>
-          <p>
+          <p>1. Relay URL'yi gerekirse değiştirin ve "Güncelle" butonuna tıklayın</p>
+          <p>2. QR kodu mobil cihazınızla tarayın veya "Mobilde Aç" butonuna tıklayın</p>
+          <p className="text-blue-600 font-medium">
+            💡 "Mobilde Aç" butonu nostrconnect:// URI'yi açar ve mobil uygulamayı başlatır
+          </p>
+          <p className="relative">
             3. Veya{" "}
-            <button onClick={copyUri} className="underline hover:text-foreground">
+            <button onClick={() => copyUri(3)} className="underline hover:text-foreground">
               URI'yi kopyalayın
             </button>
+            {showCopiedTooltip3 && copyTooltip}
           </p>
           <p>4. Mobil cihazınızda NostrConnect uygulamasını açın ve izin verin</p>
           <p>5. Bağlantı otomatik olarak oluşturulacaktır</p>

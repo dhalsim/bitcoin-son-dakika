@@ -42,6 +42,7 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   // Add null checks for required podcast properties
   if (!podcast.title || !podcast.audioUrl) {
     console.error("Podcast data is incomplete:", podcast);
+
     return [
       { title: `Podcast Hatası - ${WEBSITE_NAME}` },
       { name: "description", content: "Podcast bilgileri eksik." },

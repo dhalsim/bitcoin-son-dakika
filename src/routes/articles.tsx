@@ -24,12 +24,14 @@ export const meta: MetaFunction = () => {
       content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin makaleleri ve analizler`,
     },
     { property: "og:type", content: "website" },
+    { property: "og:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
     // Twitter
     { name: "twitter:title", content: `Tüm Makaleler - ${WEBSITE_NAME}` },
     {
       name: "twitter:description",
       content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin makaleleri ve analizler`,
     },
+    { name: "twitter:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
   ];
 };
 

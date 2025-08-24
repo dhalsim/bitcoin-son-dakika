@@ -21,9 +21,11 @@ export const meta: MetaFunction = () => {
     { property: "og:title", content: `Tüm Haberler - ${WEBSITE_NAME}` },
     { property: "og:description", content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin haberleri` },
     { property: "og:type", content: "website" },
+    { property: "og:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
     // Twitter
     { name: "twitter:title", content: `Tüm Haberler - ${WEBSITE_NAME}` },
     { name: "twitter:description", content: `${WEBSITE_DESCRIPTION} - Tüm Bitcoin haberleri` },
+    { name: "twitter:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
   ];
 };
 

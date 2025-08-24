@@ -27,10 +27,12 @@ export const meta: MetaFunction = () => {
       property: "og:description",
       content: description,
     },
+    { property: "og:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
     { property: "og:type", content: "website" },
     { property: "og:url", content: "https://bitcoinsondakika.com/podcasts" },
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: "Podcastler - Bitcoin Son Dakika" },
+    { name: "twitter:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
     {
       name: "twitter:description",
       content: description,
