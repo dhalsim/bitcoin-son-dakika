@@ -119,13 +119,9 @@ export default function ProfilePage() {
               />
             )}
             <div className="text-center">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-                {profile.display_name}
-              </h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">{profile.display_name}</h1>
               {profile.about && (
-                <p className="text-gray-600 dark:text-gray-400 mt-2 max-w-2xl mx-auto">
-                  {profile.about}
-                </p>
+                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">{profile.about}</p>
               )}
             </div>
           </div>
@@ -191,7 +187,7 @@ export default function ProfilePage() {
             </a>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
             <span>{newsItems.length} haber</span>
             <span>{articleItems.length} makale</span>
             <span>{podcastItems.length} podcast</span>
@@ -211,9 +207,7 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Tüm İçerikler
-            </h2>
+            <h2 className="text-xl font-semibold">Tüm İçerikler</h2>
 
             <div className="grid gap-6">
               {authorContentSorted.map((item, index) => {
@@ -229,6 +223,7 @@ export default function ProfilePage() {
                     publishedAt={item.publishedAt}
                     event={item.event}
                     author={item.author}
+                    image={item.image}
                   />
                 );
               })}
