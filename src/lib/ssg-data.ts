@@ -172,6 +172,18 @@ export async function fetchSSGData(): Promise<SSGData> {
     podcastsEvents: podcastsEvents.length,
   });
 
+  if (newsEvents.length !== newsTags.length) {
+    throw new Error("News events length does not match news tags length");
+  }
+
+  if (articlesEvents.length !== articleTags.length) {
+    throw new Error("Articles events length does not match article tags length");
+  }
+
+  if (podcastsEvents.length !== podcastTags.length) {
+    throw new Error("Podcasts events length does not match podcast tags length");
+  }
+
   const profilePubkeys = [
     ...new Set([...newsEvents, ...articlesEvents, ...podcastsEvents].map((item) => item.pubkey)),
   ];
