@@ -60,10 +60,8 @@ export default function ArticlesPage() {
   return (
     <MainContent>
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          Tüm Makaleler
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Tüm Makaleler</h1>
+        <p className="text-muted-foreground">
           Bitcoin dünyasından en güncel analizler ve makaleler
         </p>
       </div>
