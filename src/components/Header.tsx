@@ -225,12 +225,13 @@ const Header: React.FC = () => {
 
           {/* Right Side Elements - always visible */}
           <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* UserMenu - always visible */}
+            <div className="flex mr-2">
+              <UserMenu />
+            </div>
+
             {/* Mobile Search - visible below lg */}
             <div className="lg:hidden flex items-center whitespace-nowrap">
-              <div className="flex mr-2">
-                <UserMenu />
-              </div>
-
               {isSearchOpen && (
                 <div className="mr-2">
                   <SearchBar />
@@ -246,7 +247,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Mobile Menu - visible below lg */}
-            <div className="p-1">
+            <div className="p-1 lg:hidden">
               <Sheet>
                 <SheetTrigger asChild>
                   <button className="hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300 p-2 rounded">
