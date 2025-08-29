@@ -1,3 +1,5 @@
+import { links } from "@/lib/utils";
+
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 
 const Footer = () => {
@@ -33,7 +35,7 @@ const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
-                  href="/news"
+                  href={links.news}
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Haberler
@@ -41,7 +43,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="/articles"
+                  href={links.articles}
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
                   Köşe Yazıları
@@ -49,18 +51,18 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href={links.podcasts}
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
-                  Eğitim
+                  Podcast
                 </a>
               </li>
               <li>
                 <a
-                  href="/podcasts"
+                  href={links.educations}
                   className="text-muted-foreground hover:text-main-accent transition-colors"
                 >
-                  Podcast
+                  Eğitim
                 </a>
               </li>
             </ul>

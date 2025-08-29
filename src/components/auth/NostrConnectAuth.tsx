@@ -311,7 +311,7 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
                 <span>Bağlantı bekleniyor...</span>{" "}
                 <span className="flex items-center gap-2">
-                  QR kodu tarayın veya üzerine tıklayın <Hand className="h-4 w-4" />
+                  QR kodu tarayın veya kopyalamak için üzerine tıklayın <Hand className="h-4 w-4" />
                 </span>
               </div>
             </div>
@@ -348,7 +348,7 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
             </SheetTrigger>
             <SheetContent style={{ zIndex: "var(--z-dialog-sheet)" }}>
               <SheetHeader>
-                <SheetTitle>NostrConnect Kullanım Kılavuzu</SheetTitle>
+                <SheetTitle>NostrConnect Kullanım Kılavuzu (WIP)</SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-4">
                 <div className="space-y-3">

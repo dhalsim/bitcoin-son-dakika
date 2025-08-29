@@ -46,7 +46,7 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
             <Shield className="h-8 w-8 text-blue-500" />
             <div>
               <p className="text-2xl font-bold">{adminData?.adminUsers.length || 0}</p>
-              <p className="text-gray-600 dark:text-gray-400">Yöneticiler</p>
+              <p className="text-gray-600 dark:text-gray-400">Yönetici</p>
             </div>
           </div>
         </CardContent>
@@ -68,7 +68,7 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
             <Users className="h-8 w-8 text-green-500" />
             <div>
               <p className="text-2xl font-bold">{adminData?.editorUsers.length || 0}</p>
-              <p className="text-gray-600 dark:text-gray-400">Editörler</p>
+              <p className="text-gray-600 dark:text-gray-400">Editör</p>
             </div>
           </div>
         </CardContent>
@@ -90,7 +90,7 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
             <AlertCircle className="h-8 w-8 text-orange-500" />
             <div>
               <p className="text-2xl font-bold">{adminData?.news.length || 0}</p>
-              <p className="text-gray-600 dark:text-gray-400">Haberler</p>
+              <p className="text-gray-600 dark:text-gray-400">Haber</p>
             </div>
           </div>
         </CardContent>
@@ -112,7 +112,7 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
             <RefreshCw className="h-8 w-8 text-purple-500" />
             <div>
               <p className="text-2xl font-bold">{adminData?.articles.length || 0}</p>
-              <p className="text-gray-600 dark:text-gray-400">Makaleler</p>
+              <p className="text-gray-600 dark:text-gray-400">Makale</p>
             </div>
           </div>
         </CardContent>
@@ -134,7 +134,7 @@ export default function AdminStatistics({ adminData, onOpenTab }: AdminStatistic
             <Mic className="h-8 w-8 text-red-500" />
             <div>
               <p className="text-2xl font-bold">{adminData?.podcasts.length || 0}</p>
-              <p className="text-gray-600 dark:text-gray-400">Podcastler</p>
+              <p className="text-gray-600 dark:text-gray-400">Podcast</p>
             </div>
           </div>
         </CardContent>

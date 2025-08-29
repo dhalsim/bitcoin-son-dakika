@@ -1,9 +1,9 @@
-import React from "react";
 import type { MetaFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 
 import type { SSGData } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
+import { links } from "@/lib/utils";
 
 import { createTitleSlug } from "../../api-helpers/utils";
 
@@ -79,7 +79,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
 
   const title = `Haber - ${newsItem.title} - ${WEBSITE_NAME}`;
   const description = newsItem.summary?.substring(0, 200) || newsItem.content.substring(0, 160);
-  const canonicalUrl = `${WEBSITE_URL}/news/${createTitleSlug(newsItem.title!)}`;
+  const canonicalUrl = `${WEBSITE_URL}${links.newsDetail(createTitleSlug(newsItem.title!))}`;
   const imageUrl = newsItem.image ? newsItem.image : `${WEBSITE_URL}/${LOGO_URL}`;
 
   // Add tags for better SEO

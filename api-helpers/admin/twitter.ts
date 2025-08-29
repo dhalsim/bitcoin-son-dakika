@@ -141,7 +141,7 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
       return ErrorResponseCreator("Reply to ID not found", 400);
     }
 
-    const newsUrl = `https://bitcoinsondakika.com/news/${createTitleSlug(title)}`;
+    const newsUrl = `https://bitcoinsondakika.com/haber/${createTitleSlug(title)}`;
 
     const replyTweetResponse = await fetch(tweetUrl, {
       method: tweetMethod,

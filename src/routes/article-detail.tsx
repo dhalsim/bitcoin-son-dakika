@@ -1,7 +1,8 @@
 import type { MetaFunction, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
-import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 
+import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
+import { links } from "@/lib/utils";
 import type { SSGData } from "@/lib/ssg-data";
 import { createProfileSlug } from "@/lib/ssg-data";
 
@@ -80,7 +81,7 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const title = `Makale - ${articleItem.title} - ${WEBSITE_NAME}`;
   const description =
     articleItem.summary?.substring(0, 200) || articleItem.content.substring(0, 160);
-  const canonicalUrl = `${WEBSITE_URL}/article/${createTitleSlug(articleItem.title!)}`;
+  const canonicalUrl = `${WEBSITE_URL}${links.articleDetail(createTitleSlug(articleItem.title!))}`;
   const imageUrl = articleItem.image ? articleItem.image : `${WEBSITE_URL}/${LOGO_URL}`;
 
   // Add tags for better SEO

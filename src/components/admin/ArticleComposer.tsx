@@ -14,29 +14,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createNIP98Auth } from "./utils";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import type { ArticleItem } from "@/lib/ssg-data";
 
-const CATEGORY_OPTIONS = [
-  "bitcoin",
-  "nostr",
-  "analiz",
-  "piyasa",
-  "teknoloji",
-  "ekonomi",
-  "regülasyon",
-  "mining",
-  "defi",
-  "nft",
-  "ethereum",
-  "altcoin",
-  "güvenlik",
-  "eğitim",
-  "haber",
-  "geliştirme",
-];
+import { CATEGORY_OPTIONS, createNIP98Auth } from "./utils";
 
 type ArticleEditData = Omit<ArticleItem, "author"> & {
   dTag: string;

@@ -1,7 +1,8 @@
-import { createTitleSlug } from "../../../api-helpers/utils";
+import { createTitleSlug } from "api-helpers/utils";
+
 import { WEBSITE_URL, LOGO_FOR_PODCAST_URL } from "../constants";
 import type { PodcastItem } from "../ssg-data";
-import { formatRssDate } from "../utils";
+import { formatRssDate, links } from "../utils";
 
 // Function to get file size from URL (returns 0 if unable to determine)
 const getAudioFileSize = async (audioUrl: string): Promise<number> => {
@@ -61,8 +62,8 @@ const generatePodcastItemXml = async (podcast: PodcastItem) => {
   return `
     <item>
       <title>${podcast.title || "Başlıksız Podcast"}</title>
-      <link>https://bitcoinsondakika.com/podcast/${createTitleSlug(podcast.title)}</link>
-      <guid isPermaLink="true">https://bitcoinsondakika.com/podcast/${createTitleSlug(podcast.title)}</guid>
+      <link>https://bitcoinsondakika.com/${links.podcastDetail(createTitleSlug(podcast.title))}</link>
+      <guid isPermaLink="true">https://bitcoinsondakika.com/${links.podcastDetail(createTitleSlug(podcast.title))}</guid>
       <pubDate>${pubDate}</pubDate>
       ${podcast.audioUrl ? `<enclosure url="${podcast.audioUrl}" length="${fileSize}" type="${audioType}"/>` : ""}
       <itunes:episode>${episodeNumber}</itunes:episode>
@@ -103,7 +104,7 @@ export const generatePodcastRssXml = async (podcasts: PodcastItem[]) => {
 	xmlns:podcast="https://podcastindex.org/namespace/1.0">
   <channel>
     <title>Bitcoinsondakika.com</title>
-    <link>https://bitcoinsondakika.com/podcasts</link>
+    <link>${WEBSITE_URL}${links.podcasts}</link>
     <language>tr-TR</language>
     <copyright>Copyright © ${new Date().getFullYear()} Bitcoinsondakika.com. All rights reserved.</copyright>
     <podcast:guid>5ce054d6-a6ed-55b4-8020-4a11479899af</podcast:guid>
@@ -123,7 +124,7 @@ export const generatePodcastRssXml = async (podcasts: PodcastItem[]) => {
     <image>
       <url>${logoUrl}</url>
       <title>Bitcoinsondakika.com</title>
-      <link>https://bitcoinsondakika.com/podcasts</link>
+      <link>${WEBSITE_URL}${links.podcasts}</link>
     </image>
     <itunes:image href="${logoUrl}"/>
     <podcast:image href="${logoUrl}"/>

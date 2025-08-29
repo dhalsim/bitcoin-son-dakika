@@ -2,7 +2,7 @@ import { TrendingUp, PenTool, Info, Mic } from "lucide-react";
 import { Link } from "react-router";
 
 import type { ArticleItem, NewsItem, PodcastItem } from "@/lib/ssg-data";
-import { formatNostrDate } from "@/lib/utils";
+import { formatNostrDate, links } from "@/lib/utils";
 
 import { createTitleSlug } from "../../api-helpers/utils";
 
@@ -32,7 +32,9 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
           {articles.map((article, index) => (
             <div key={index} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
               <h4 className="font-medium text-foreground hover:text-main-accent text-sm leading-snug mb-1">
-                <Link to={`/article/${createTitleSlug(article.title)}`}>{article.title}</Link>
+                <Link to={links.articleDetail(createTitleSlug(article.title))}>
+                  {article.title}
+                </Link>
               </h4>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">{article.author.display_name}</span>
@@ -43,7 +45,7 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
             </div>
           ))}
           <a
-            href="/articles"
+            href={links.articles}
             className="flex items-center text-foreground hover:text-main-accent transition-colors"
           >
             <span className="text-sm font-medium">Tüm Makaleler →</span>
@@ -62,7 +64,7 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
           {news.map((n, index) => (
             <div key={index} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
               <h4 className="font-medium text-foreground hover:text-main-accent text-sm leading-snug mb-1">
-                <Link to={`/news/${createTitleSlug(n.title)}`}>{n.title}</Link>
+                <Link to={links.newsDetail(createTitleSlug(n.title))}>{n.title}</Link>
               </h4>
               <span className="text-xs text-muted-foreground">
                 {formatNostrDate(n.publishedAt)}
@@ -70,7 +72,7 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
             </div>
           ))}
           <a
-            href="/news"
+            href={links.news}
             className="flex items-center text-foreground hover:text-main-accent transition-colors"
           >
             <span className="text-sm font-medium">Tüm Haberler →</span>
@@ -82,14 +84,14 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
       <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
         <div className="flex items-center mb-4">
           <Mic className="h-5 w-5 text-main-accent mr-2" />
-          <h3 className="text-lg font-bold text-foreground">Podcastler</h3>
+          <h3 className="text-lg font-bold text-foreground">Podcast</h3>
         </div>
 
         <div className="space-y-4">
           {podcasts.map((p, index) => (
             <div key={index} className="border-b border-border pb-3 last:border-b-0 last:pb-0">
               <h4 className="font-medium text-foreground hover:text-main-accent text-sm leading-snug mb-1">
-                <Link to={`/podcast/${createTitleSlug(p.title)}`}>{p.title}</Link>
+                <Link to={links.podcastDetail(createTitleSlug(p.title))}>{p.title}</Link>
               </h4>
               <span className="text-xs text-muted-foreground">
                 {formatNostrDate(p.publishedAt)}
@@ -97,7 +99,7 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
             </div>
           ))}
           <a
-            href="/podcasts"
+            href={links.podcasts}
             className="flex items-center text-foreground hover:text-main-accent transition-colors"
           >
             <span className="text-sm font-medium">Tüm Podcastler →</span>

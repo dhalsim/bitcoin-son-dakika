@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 
+import { links } from "@/lib/utils";
+
 import { createTitleSlug } from "../../api-helpers/utils";
 
 import { useLatestNews } from "../contexts/SSGContext";
@@ -15,7 +17,7 @@ export default function BreakingNews() {
 
   const hasLink = topItem.title && topItem.summary;
 
-  const link = hasLink ? `/news/${createTitleSlug(topItem.title)}` : null;
+  const link = hasLink ? links.newsDetail(createTitleSlug(topItem.title)) : null;
 
   return (
     <div className="bg-main-accent text-white py-2">

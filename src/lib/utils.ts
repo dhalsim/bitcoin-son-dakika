@@ -171,3 +171,26 @@ export function generateRandomHexString(length: number): string {
 export function assertUnreachable(value: never): never {
   throw new Error(`Unreachable code: ${value}`);
 }
+
+export const links = {
+  news: "/haberler",
+  newsDetail: (slug: string) => `/haber/${slug}`,
+  articles: "/makaleler",
+  articleDetail: (slug: string) => `/makale/${slug}`,
+  podcasts: "/podcast",
+  podcastDetail: (slug: string) => `/podcast/${slug}`,
+  tag: (slug: string, type?: "news" | "article" | "podcast") => {
+    const base = `/tag/${slug}`;
+
+    if (type) {
+      return `${base}?type=${type}`;
+    }
+
+    return base;
+  },
+  profile: (slug: string) => `/profile/${slug}`,
+  testEvent: (eventId: string) => `/test/${eventId}`,
+  latest: "/son-dakika",
+  educations: "/egitimler",
+  educationDetail: (slug: string) => `/egitim/${slug}`,
+};

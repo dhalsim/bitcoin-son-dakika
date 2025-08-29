@@ -20,13 +20,10 @@ import type { EventItem } from "@/lib/nip01";
 import { getKind1Events } from "@/lib/nip01";
 import { useUserContext } from "@/contexts/UserContext";
 import { SignEventResult, useNostrAuth } from "@/contexts/NostrAuthContext";
-import { formatNostrDate, publishToRelays } from "@/lib/utils";
+import { formatNostrDate, links, publishToRelays } from "@/lib/utils";
+import { WEBSITE_URL } from "@/lib/constants";
 
-import type {
-  MultiPublishResponse,
-  PublishEventResponse,
-  SinglePublishResponse,
-} from "../../../api-helpers/schemas";
+import type { MultiPublishResponse, SinglePublishResponse } from "../../../api-helpers/schemas";
 import {
   ADMIN_RELAYS,
   createTitleSlug,
@@ -36,8 +33,6 @@ import {
 
 import UploadToX from "./UploadToX";
 import { publishToX } from "./utils";
-import { boolean } from "zod";
-import { WEBSITE_URL } from "@/lib/constants";
 
 type NewsCurationProps = {
   news: NewsTag[];
@@ -257,7 +252,7 @@ export default function NewsCuration({
                 const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
                 const display = titleTag || summaryTag || content;
                 const slug = createTitleSlug(titleTag);
-                const url = `${WEBSITE_URL}/news/${slug}`;
+                const url = `${WEBSITE_URL}${links.newsDetail(slug)}`;
                 const nevent = nip19.neventEncode({
                   id: event.id,
                   relays: [event.relay],

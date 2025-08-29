@@ -1,4 +1,4 @@
-import { Loader2, Rocket, Upload, X } from "lucide-react";
+import { Loader2, Rocket, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,27 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { createNIP98Auth } from "./utils";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
-const CATEGORY_OPTIONS = [
-  "bitcoin",
-  "nostr",
-  "analiz",
-  "piyasa",
-  "teknoloji",
-  "ekonomi",
-  "regülasyon",
-  "mining",
-  "defi",
-  "nft",
-  "ethereum",
-  "altcoin",
-  "güvenlik",
-  "eğitim",
-  "haber",
-  "geliştirme",
-];
+import { CATEGORY_OPTIONS, createNIP98Auth } from "./utils";
 
 type PrefillData = {
   title?: string;

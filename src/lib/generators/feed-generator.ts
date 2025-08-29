@@ -1,14 +1,42 @@
 import { createTitleSlug } from "api-helpers/utils";
 
 import { WEBSITE_URL, WEBSITE_NAME, WEBSITE_DESCRIPTION, LOGO_URL } from "../constants";
-import type { ArticleItem, NewsItem, SSGData } from "../ssg-data";
-import { formatRssDate, formatAtomDate } from "../utils";
+import type { ContentItem, SSGData } from "../ssg-data";
+import { formatRssDate, formatAtomDate, links, assertUnreachable } from "../utils";
+
+const prefix = (item: ContentItem) => {
+  switch (item.type) {
+    case "article":
+      return "Makale - ";
+    case "news":
+      return "Haber - ";
+    case "podcast":
+      return "Podcast - ";
+    default:
+      assertUnreachable(item);
+  }
+};
+
+const urlPostfix = (item: ContentItem, slug: string) => {
+  switch (item.type) {
+    case "article":
+      return `${WEBSITE_URL}${links.articleDetail(slug)}`;
+    case "news":
+      return `${WEBSITE_URL}${links.newsDetail(slug)}`;
+    case "podcast":
+      return `${WEBSITE_URL}${links.podcastDetail(slug)}`;
+    default:
+      assertUnreachable(item);
+  }
+};
 
 export function generateRSSFeed(ssgData: SSGData): string {
   // Combine and sort news and articles by publish date
-  const allContent: (NewsItem | ArticleItem)[] = [...ssgData.news, ...ssgData.articles].sort(
-    (a, b) => b.publishedAt - a.publishedAt,
-  );
+  const allContent: ContentItem[] = [
+    ...ssgData.news,
+    ...ssgData.articles,
+    ...ssgData.podcasts,
+  ].sort((a, b) => b.publishedAt - a.publishedAt);
 
   // Generate RSS XML
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -27,12 +55,9 @@ export function generateRSSFeed(ssgData: SSGData): string {
     </image>
     ${allContent
       .map((item) => {
-        const isArticle = item.type === "article";
-        const prefix = isArticle ? "Makale: " : "Haber - ";
-        const title = `${prefix}${item.title}`;
+        const title = `${prefix(item)}${item.title}`;
         const slug = createTitleSlug(item.title);
-        const urlPostfix = isArticle ? `article/${slug}` : `news/${slug}`;
-        const url = `${WEBSITE_URL}/${urlPostfix}`;
+        const url = `${WEBSITE_URL}${urlPostfix(item, slug)}`;
 
         return `
     <item>
@@ -53,9 +78,11 @@ export function generateRSSFeed(ssgData: SSGData): string {
 
 export function generateAtomFeed(ssgData: SSGData): string {
   // Combine and sort news and articles by publish date
-  const allContent = [...ssgData.news, ...ssgData.articles].sort(
-    (a, b) => b.publishedAt - a.publishedAt,
-  );
+  const allContent: ContentItem[] = [
+    ...ssgData.news,
+    ...ssgData.articles,
+    ...ssgData.podcasts,
+  ].sort((a, b) => b.publishedAt - a.publishedAt);
 
   // Generate Atom XML
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -70,15 +97,15 @@ export function generateAtomFeed(ssgData: SSGData): string {
   <logo>${WEBSITE_URL}/${LOGO_URL}</logo>
   ${allContent
     .map((item) => {
-      const isArticle = item.type === "article";
-      const prefix = isArticle ? "Makale: " : "Haber - ";
-      const title = `${prefix}${item.title}`;
+      const title = `${prefix(item)}${item.title}`;
+      const slug = createTitleSlug(item.title);
+      const url = `${WEBSITE_URL}${urlPostfix(item, slug)}`;
 
       return `
   <entry>
     <title>${title}</title>
-    <link href="${WEBSITE_URL}/news/${item.id}" />
-    <id>${WEBSITE_URL}/news/${item.id}</id>
+    <link href="${url}" />
+    <id>${url}</id>
     <updated>${formatAtomDate(item.publishedAt)}</updated>
     <published>${formatAtomDate(item.publishedAt)}</published>
     <summary type="html">${item.summary || item.content.substring(0, 300) + "..."}</summary>

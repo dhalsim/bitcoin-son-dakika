@@ -1,6 +1,7 @@
 import type { MetaFunction } from "react-router";
 
 import PodcastCard from "@/components/PodcastCard";
+import { ContentItem } from "@/lib/ssg-data";
 
 import MainContent from "../components/MainContent";
 import NewsCard from "../components/NewsCard";
@@ -37,13 +38,11 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-// Helper function to convert NewsItem/ArticleItem to NewsCard props
-
 export default function LatestPage() {
   const ssgData = useSSGData();
 
   // Combine news and articles, sort by publish date
-  const allItems = [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts].sort(
+  const allItems: ContentItem[] = [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts].sort(
     (a, b) => b.publishedAt - a.publishedAt,
   );
 
@@ -66,12 +65,8 @@ export default function LatestPage() {
   return (
     <MainContent>
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          En Son İçerikler
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Bitcoin dünyasından en güncel haberler ve makaleler
-        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">En Son İçerikler</h1>
+        <p className="text-muted-foreground">Bitcoin dünyasından en güncel haberler ve makaleler</p>
       </div>
 
       {/* Combined Content List - Single Column */}

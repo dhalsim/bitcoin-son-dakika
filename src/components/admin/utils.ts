@@ -96,3 +96,22 @@ export async function publishToX({
     body: form,
   });
 }
+
+export const CATEGORY_OPTIONS = [
+  "bitcoin",
+  "nostr",
+  "analiz",
+  "piyasa",
+  "teknoloji",
+  "ekonomi",
+  "regülasyon",
+  "mining",
+  "defi",
+  "nft",
+  "ethereum",
+  "altcoin",
+  "güvenlik",
+  "eğitim",
+  "haber",
+  "geliştirme",
+];

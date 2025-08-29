@@ -4,12 +4,13 @@ import { index, route } from "@react-router/dev/routes";
 export default [
   index("routes/_index.tsx"),
   route("admin", "routes/admin.tsx"),
-  route("news", "routes/news.tsx"),
-  route("news/:slug", "routes/news-detail.tsx"),
-  route("article/:slug", "routes/article-detail.tsx"),
-  route("articles", "routes/articles.tsx"),
-  route("podcasts", "routes/podcasts.tsx"),
+  route("haberler", "routes/news.tsx"),
+  route("haber/:slug", "routes/news-detail.tsx"),
+  route("makale/:slug", "routes/article-detail.tsx"),
+  route("makaleler", "routes/articles.tsx"),
+  route("podcast", "routes/podcasts.tsx"),
   route("podcast/:slug", "routes/podcast-detail.tsx"),
+  // TODO: add educations - egitimler routes
   route("son-dakika", "routes/latest.tsx"), // both news and articles
   route("tag/:slug", "routes/tags.tsx"),
   route("profile/:slug", "routes/profile.tsx"),

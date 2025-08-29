@@ -4,12 +4,13 @@ import { Link } from "react-router";
 import type { EventItem, ProfileItem } from "@/lib/nip01";
 import { createProfileSlug } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
+import { links } from "@/lib/utils";
 
 import { createTitleSlug } from "../../api-helpers/utils";
 
 import { CategoryTags } from "./CategoryTags";
 import { EventStatistics } from "./EventStatistics";
-import { Card, CardHeader, CardContent } from "./ui/card";
+import { Card, CardContent } from "./ui/card";
 import { getDisplayName, ProfileAvatar } from "./ProfileAvatar";
 
 export interface NewsCardProps {
@@ -58,7 +59,11 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   const displayName = getDisplayName(author, event.pubkey);
   const slug: string | null = title ? createTitleSlug(title) : null;
   const isArticle = event.kind === 30023;
-  const link: string | null = slug ? (isArticle ? `/article/${slug}` : `/news/${slug}`) : null;
+  const link: string | null = slug
+    ? isArticle
+      ? links.articleDetail(slug)
+      : links.newsDetail(slug)
+    : null;
 
   const titleText = title ? (isArticle ? `Makale - ${title}` : `Haber - ${title}`) : "";
 

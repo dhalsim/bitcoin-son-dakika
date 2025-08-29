@@ -8,8 +8,13 @@ import { createTitleSlug } from "./api-helpers/utils";
 import { generateFeeds } from "./src/lib/generators/feed-generator";
 import { generatePodcastRssXml } from "./src/lib/generators/podcast-generator";
 import { generateSitemapXml } from "./src/lib/generators/sitemap-generator";
-import { fetchSSGData } from "./src/lib/ssg-data";
-import { getUniqueProfiles, getUniqueTags, createProfileSlug } from "./src/lib/ssg-data";
+import {
+  getUniqueProfiles,
+  getUniqueTags,
+  createProfileSlug,
+  fetchSSGData,
+} from "./src/lib/ssg-data";
+import { links } from "./src/lib/utils";
 
 export default {
   // Use src directory instead of app
@@ -88,13 +93,13 @@ export default {
     // Generate news routes for all unique news
     const articlesRoutes = ssgData.articles
       .filter((n): n is typeof n & { title: string } => !!n.title && !!n.summary)
-      .map((n) => `/article/${createTitleSlug(n.title)}`);
+      .map((n) => links.articleDetail(createTitleSlug(n.title)));
 
     console.log(`Generated ${articlesRoutes.length} article routes`);
 
     const newsRoutes = ssgData.news
       .filter((n): n is typeof n & { title: string } => !!n.title && !!n.summary)
-      .map((n) => `/news/${createTitleSlug(n.title)}`);
+      .map((n) => `/haber/${createTitleSlug(n.title)}`);
 
     console.log(`Generated ${newsRoutes.length} news routes`);
 
@@ -107,9 +112,9 @@ export default {
     const allRoutes = [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
       "/admin", // Admin paneli - static
-      "/news", // Haberler sayfası - static
-      "/articles", // Makaleler sayfası - static
-      "/podcasts", // Podcastler sayfası - static
+      "/haberler", // Haberler sayfası - static
+      "/makaleler", // Makaleler sayfası - static
+      "/podcast", // Podcast ana sayfası - static
       "/son-dakika", // Son dakika sayfası - static
       ...profileRoutes, // Profile pages - static
       ...tagRoutes, // Tag pages - static

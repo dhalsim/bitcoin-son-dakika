@@ -22,6 +22,7 @@ import { getTimeAgo } from "@/components/NewsCard";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { LOGO_URL, WEBSITE_NAME, WEBSITE_URL } from "@/lib/constants";
 import { RssButton } from "@/components/RssButton";
+import { links } from "@/lib/utils";
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const podcast = loaderData?.podcast;
@@ -211,7 +212,7 @@ export default function PodcastDetailPage() {
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-4">Aradığınız podcast bulunamadı.</p>
           <Button asChild>
-            <a href="/podcasts">Tüm Podcastlere Dön</a>
+            <a href={links.podcasts}>Tüm Podcastlere Dön</a>
           </Button>
         </div>
       </div>
@@ -265,7 +266,7 @@ export default function PodcastDetailPage() {
             partOfSeries: {
               "@type": "PodcastSeries",
               name: `${WEBSITE_NAME} Podcast`,
-              url: `${WEBSITE_URL}/podcasts`,
+              url: `${WEBSITE_URL}${links.podcasts}`,
             },
           }),
         }}
@@ -275,7 +276,7 @@ export default function PodcastDetailPage() {
           {/* Back button */}
           <div className="mb-6">
             <Button asChild variant="ghost" className="text-gray-600 dark:text-gray-400">
-              <a href="/podcasts">← Tüm Podcastlere Dön</a>
+              <a href={links.podcasts}>← Tüm Podcastlere Dön</a>
             </Button>
           </div>
 

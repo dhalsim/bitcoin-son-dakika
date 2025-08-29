@@ -1,6 +1,8 @@
 import { Search, Menu, Moon, Sun, Rss, Atom, ChevronDown, Mic } from "lucide-react";
 import React, { useState } from "react";
 
+import { links } from "@/lib/utils";
+
 import { useTheme } from "../contexts/ThemeContext";
 
 import {
@@ -149,70 +151,70 @@ const Header: React.FC = () => {
           <nav className="hidden lg:flex items-center space-x-6">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
-                <a href="/news">Haberler</a>
+                <a href={links.news}>Haberler</a>
                 <ChevronDown className="ml-1 h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-popover border border-border">
                 <DropdownMenuItem>
-                  <a href="/news">Son Dakika</a>
+                  <a href={links.news}>Son Dakika</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <a href="/tag/analiz?type=news">Piyasa Analizi</a>
+                  <a href={links.tag("analiz", "news")}>Piyasa Analizi</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <a href="/tag/teknoloji?type=news">Teknoloji</a>
+                  <a href={links.tag("teknoloji", "news")}>Teknoloji</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <a href="/tag/duzenlemeler?type=news">Düzenlemeler</a>
+                  <a href={links.tag("duzenlemeler", "news")}>Düzenlemeler</a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
-                <a href="/articles">Köşe Yazıları</a>
+                <a href={links.articles}>Köşe Yazıları</a>
                 <ChevronDown className="ml-1 h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-popover border border-border">
                 <DropdownMenuItem>
-                  <a href="/tag/yorum?type=article">Güncel Yorumlar</a>
+                  <a href={links.tag("yorum", "article")}>Güncel Yorumlar</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <a href="/tag/analiz?type=article">Teknik Analiz</a>
+                  <a href={links.tag("analiz", "article")}>Teknik Analiz</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <a href="/tag/ekonomi?type=article">Ekonomi</a>
+                  <a href={links.tag("ekonomi", "article")}>Ekonomi</a>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <a href="/tag/teknoloji?type=article">Teknoloji</a>
+                  <a href={links.tag("teknoloji", "article")}>Teknoloji</a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
-                <a href="/egitim">Eğitim</a>
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-popover border border-border">
-                <DropdownMenuItem>
-                  <a href="/egitim/bitcoin-temelleri">Bitcoin Temelleri</a>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <a href="/egitim/cuzdan-kullanimi">Cüzdan Kullanımı</a>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <a href="/egitim/guvenlik">Güvenlik</a>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <a href="/egitim/lightning-network">Lightning Network</a>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <a href="/podcasts" className="text-foreground font-medium px-2 py-1 rounded">
+            <a href={links.podcasts} className="text-foreground font-medium px-2 py-1 rounded">
               Podcast
             </a>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
+                <a href={links.educations}>Eğitim</a>
+                <ChevronDown className="ml-1 h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-popover border border-border">
+                <DropdownMenuItem>
+                  <a href={links.educationDetail("bitcoin-temelleri")}>Bitcoin Temelleri</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href={links.educationDetail("cuzdan-kullanimi")}>Cüzdan Kullanımı</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href={links.educationDetail("guvenlik")}>Güvenlik</a>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <a href={links.educationDetail("lightning-network")}>Lightning Network</a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
 
           {/* Desktop Search Bar - visible on lg and above */}
@@ -262,20 +264,26 @@ const Header: React.FC = () => {
 
                     <div className="space-y-4">
                       <h3 className="text-left-menu-primary font-semibold">
-                        <a href="/news">Haberler</a>
+                        <a href={links.news}>Haberler</a>
                       </h3>
                       <div className="pl-4 space-y-2">
-                        <a href="/news" className="block text-left-menu-accent">
+                        <a href={links.news} className="block text-left-menu-accent">
                           Son Dakika
                         </a>
-                        <a href="/tag/analiz?type=news" className="block text-left-menu-accent">
+                        <a
+                          href={links.tag("analiz", "news")}
+                          className="block text-left-menu-accent"
+                        >
                           Piyasa Analizi
                         </a>
-                        <a href="/tag/teknoloji?type=news" className="block text-left-menu-accent">
+                        <a
+                          href={links.tag("teknoloji", "news")}
+                          className="block text-left-menu-accent"
+                        >
                           Teknoloji
                         </a>
                         <a
-                          href="/tag/duzenlemeler?type=news"
+                          href={links.tag("duzenlemeler", "news")}
                           className="block text-left-menu-accent"
                         >
                           Düzenlemeler
@@ -285,20 +293,29 @@ const Header: React.FC = () => {
 
                     <div className="space-y-4">
                       <h3 className="text-left-menu-primary font-semibold">
-                        <a href="/articles">Köşe Yazıları</a>
+                        <a href={links.articles}>Köşe Yazıları</a>
                       </h3>
                       <div className="pl-4 space-y-2">
-                        <a href="/articles" className="block text-left-menu-accent">
+                        <a
+                          href={links.tag("yorum", "article")}
+                          className="block text-left-menu-accent"
+                        >
                           Güncel Yorumlar
                         </a>
-                        <a href="/tag/analiz?type=article" className="block text-left-menu-accent">
+                        <a
+                          href={links.tag("analiz", "article")}
+                          className="block text-left-menu-accent"
+                        >
                           Teknik Analiz
                         </a>
-                        <a href="/tag/ekonomi?type=article" className="block text-left-menu-accent">
+                        <a
+                          href={links.tag("ekonomi", "article")}
+                          className="block text-left-menu-accent"
+                        >
                           Ekonomi
                         </a>
                         <a
-                          href="/tag/teknoloji?type=article"
+                          href={links.tag("teknoloji", "article")}
                           className="block text-left-menu-accent"
                         >
                           Teknoloji
@@ -308,28 +325,40 @@ const Header: React.FC = () => {
 
                     <div className="space-y-4">
                       <h3 className="text-left-menu-primary font-semibold">
-                        <a href="/egitim">Eğitim</a>
+                        <a href={links.podcasts}>Podcast</a>
                       </h3>
-                      <div className="pl-4 space-y-2">
-                        <a href="/egitim/bitcoin-temelleri" className="block text-left-menu-accent">
-                          Bitcoin Temelleri
-                        </a>
-                        <a href="/egitim/cuzdan-kullanimi" className="block text-left-menu-accent">
-                          Cüzdan Kullanımı
-                        </a>
-                        <a href="/egitim/guvenlik" className="block text-left-menu-accent">
-                          Güvenlik
-                        </a>
-                        <a href="/egitim/lightning-network" className="block text-left-menu-accent">
-                          Lightning Network
-                        </a>
-                      </div>
                     </div>
 
                     <div className="space-y-4">
                       <h3 className="text-left-menu-primary font-semibold">
-                        <a href="/podcasts">Podcast</a>
+                        <a href={links.educations}>Eğitim</a>
                       </h3>
+                      <div className="pl-4 space-y-2">
+                        <a
+                          href={links.educationDetail("bitcoin-temelleri")}
+                          className="block text-left-menu-accent"
+                        >
+                          Bitcoin Temelleri
+                        </a>
+                        <a
+                          href={links.educationDetail("cuzdan-kullanimi")}
+                          className="block text-left-menu-accent"
+                        >
+                          Cüzdan Kullanımı
+                        </a>
+                        <a
+                          href={links.educationDetail("guvenlik")}
+                          className="block text-left-menu-accent"
+                        >
+                          Güvenlik
+                        </a>
+                        <a
+                          href={links.educationDetail("lightning-network")}
+                          className="block text-left-menu-accent"
+                        >
+                          Lightning Network
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </SheetContent>

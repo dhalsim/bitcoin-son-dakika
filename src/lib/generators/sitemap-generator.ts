@@ -13,9 +13,12 @@ export function generateSitemapXml(routes: string[], ssgData: SSGData): string {
   const latestArticle = ssgData.articles.sort((a, b) => b.publishedAt - a.publishedAt)[0];
   const latestPodcast = ssgData.podcasts.sort((a, b) => b.publishedAt - a.publishedAt)[0];
 
-  const allContent = [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts].sort(
-    (a, b) => b.publishedAt - a.publishedAt,
-  );
+  const allContent: ContentItem[] = [
+    ...ssgData.news,
+    ...ssgData.articles,
+    ...ssgData.podcasts,
+  ].sort((a, b) => b.publishedAt - a.publishedAt);
+
   const latestContent = allContent.sort((a, b) => b.publishedAt - a.publishedAt);
 
   const getLastmod = (content: ContentItem) => {
@@ -32,46 +35,54 @@ export function generateSitemapXml(routes: string[], ssgData: SSGData): string {
       if (route === "/") {
         priority = "1.0";
         changefreq = "daily";
-      } else if (route.startsWith("/news/")) {
+      } else if (route.startsWith("/haber/")) {
         // a specific news page
         const [, _route, slug] = route.split("/");
 
+        if (_route !== "haber") {
+          throw new Error("Invalid route for news page");
+        }
+
         if (!slug) {
-          return [];
+          throw new Error("No slug found for news page");
         }
 
         const news = ssgData.news.find((n) => createTitleSlug(n.title) === slug);
 
         if (!news) {
-          return [];
+          throw new Error("News not found");
         }
 
         priority = "0.5";
         changefreq = "monthly";
         lastmod = getLastmod(news);
-      } else if (route === "/news") {
+      } else if (route === "/haberler") {
         // the news page
         priority = "0.9";
         changefreq = "daily";
         lastmod = getLastmod(latestNews);
-      } else if (route.startsWith("/article/")) {
+      } else if (route.startsWith("/makale/")) {
         // a specific article page
         const [, _route, slug] = route.split("/");
 
+        if (_route !== "makale") {
+          throw new Error("Invalid route for article page");
+        }
+
         if (!slug) {
-          return [];
+          throw new Error("No slug found for article page");
         }
 
         const article = ssgData.articles.find((a) => createTitleSlug(a.title) === slug);
 
         if (!article) {
-          return [];
+          throw new Error("Article not found");
         }
 
         priority = "0.5";
         changefreq = "weekly";
         lastmod = getLastmod(article);
-      } else if (route === "/articles") {
+      } else if (route === "/makaleler") {
         // the articles page
         priority = "0.8";
         changefreq = "daily";
@@ -80,20 +91,24 @@ export function generateSitemapXml(routes: string[], ssgData: SSGData): string {
         // a specific podcast page
         const [, _route, slug] = route.split("/");
 
+        if (_route !== "podcast") {
+          throw new Error("Invalid route for podcast page");
+        }
+
         if (!slug) {
-          return [];
+          throw new Error("No slug found for podcast page");
         }
 
         const podcast = ssgData.podcasts.find((p) => createTitleSlug(p.title) === slug);
 
         if (!podcast) {
-          return [];
+          throw new Error("Podcast not found");
         }
 
         priority = "0.5";
         changefreq = "weekly";
         lastmod = getLastmod(podcast);
-      } else if (route === "/podcasts") {
+      } else if (route === "/podcast") {
         // the podcasts page
         priority = "0.7";
         changefreq = "weekly";
@@ -102,8 +117,12 @@ export function generateSitemapXml(routes: string[], ssgData: SSGData): string {
         // a specific tag page
         const [, _route, slug] = route.split("/");
 
+        if (_route !== "tag") {
+          throw new Error("Invalid route for tag page");
+        }
+
         if (!slug) {
-          return [];
+          throw new Error("No slug found for tag page");
         }
 
         const latestContentByTag = latestContent.find((c) => c.tags.includes(slug));

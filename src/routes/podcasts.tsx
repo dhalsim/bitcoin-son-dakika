@@ -5,14 +5,17 @@ import { useState } from "react";
 import { fetchSSGData } from "@/lib/ssg-data";
 import MainContent from "@/components/MainContent";
 import PodcastCard from "@/components/PodcastCard";
-import { formatNostrDate } from "@/lib/utils";
+import { formatNostrDate, links } from "@/lib/utils";
+import { WEBSITE_URL } from "@/lib/constants";
 
 export const meta: MetaFunction = () => {
   const description =
     "Bitcoin dünyasından haberler, uzman görüşleri, analizler ve bitcoin ile ilgili makaleleri tartışıyoruz.";
 
+  const title = "Podcast indeksi - Bitcoin Son Dakika";
+
   return [
-    { title: "Podcastler - Bitcoin Son Dakika" },
+    { title },
     {
       name: "description",
       content: description,
@@ -22,17 +25,17 @@ export const meta: MetaFunction = () => {
       content:
         "bitcoin, btc, bitcoin podcast, bitcoin haberleri, bitcoin analiz, bitcoin uzman görüşleri, kripto para podcast, nostr podcast, bitcoin eğitim",
     },
-    { property: "og:title", content: "Podcastler - Bitcoin Son Dakika" },
+    { property: "og:title", content: title },
     {
       property: "og:description",
       content: description,
     },
     { property: "og:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
     { property: "og:type", content: "website" },
-    { property: "og:url", content: "https://bitcoinsondakika.com/podcasts" },
+    { property: "og:url", content: `${WEBSITE_URL}${links.podcasts}` },
     { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: "Podcastler - Bitcoin Son Dakika" },
-    { name: "twitter:image", content: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:image", content: `${WEBSITE_URL}/bitcoin-son-dakika-logo.png` },
     {
       name: "twitter:description",
       content: description,

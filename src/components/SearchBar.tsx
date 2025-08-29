@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Search, X, FileText, Newspaper, Tag, Clock } from "lucide-react";
 
-import { assertUnreachable, formatNostrDate } from "@/lib/utils";
+import { assertUnreachable, formatNostrDate, links } from "@/lib/utils";
 
 import { createTitleSlug } from "../../api-helpers/utils";
 
@@ -126,18 +126,18 @@ export function SearchBar() {
     if (result.type === "news") {
       const newsItem = result.item as NewsItem;
       const slug = newsItem.title ? createTitleSlug(newsItem.title) : newsItem.id;
-      window.location.href = `/news/${slug}`;
+      window.location.href = links.newsDetail(slug);
     } else if (result.type === "article") {
       const articleItem = result.item as ArticleItem;
       const slug = articleItem.title ? createTitleSlug(articleItem.title) : articleItem.id;
-      window.location.href = `/article/${slug}`;
+      window.location.href = links.articleDetail(slug);
     } else if (result.type === "tag") {
       const tag = result.item as string;
-      window.location.href = `/tag/${tag}`;
+      window.location.href = links.tag(tag);
     } else if (result.type === "podcast") {
       const podcastItem = result.item as PodcastItem;
       const slug = podcastItem.title ? createTitleSlug(podcastItem.title) : podcastItem.id;
-      window.location.href = `/podcast/${slug}`;
+      window.location.href = links.podcastDetail(slug);
     } else {
       return assertUnreachable(result.type);
     }
