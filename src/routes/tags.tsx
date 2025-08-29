@@ -81,12 +81,8 @@ export default function TagsPage() {
   return (
     <MainContent>
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-          "#{slug}" Etiketi
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Bu etiketle ilgili tüm haberler ve makaleler
-        </p>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">"#{slug}" Etiketi</h1>
+        <p className="text-muted-foreground">Bu etiketle ilgili tüm haberler ve makaleler</p>
       </div>
 
       {/* Filtered Content List - Single Column */}
