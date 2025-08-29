@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 
-import { cn } from "@/lib/utils";
+import { cn, links } from "@/lib/utils";
 
 interface CategoryTagsProps {
   tags?: string[];
@@ -43,7 +43,7 @@ export function CategoryTags({
           {tags.map((tag, index) => (
             <Link
               key={index}
-              to={`/tag/${tag}`}
+              to={links.tag(tag)}
               className={cn(
                 "bg-main-accent text-black px-3 py-1 rounded-full text-sm font-medium hover:bg-main-accent/80 transition-colors",
                 getSizeClasses(),

@@ -180,7 +180,7 @@ export const links = {
   podcasts: "/podcast",
   podcastDetail: (slug: string) => `/podcast/${slug}`,
   tag: (slug: string, type?: "news" | "article" | "podcast") => {
-    const base = `/tag/${slug}`;
+    const base = `/etiket/${slug}`;
 
     if (type) {
       return `${base}?type=${type}`;

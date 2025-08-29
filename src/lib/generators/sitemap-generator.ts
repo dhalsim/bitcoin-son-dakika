@@ -113,11 +113,11 @@ export function generateSitemapXml(routes: string[], ssgData: SSGData): string {
         priority = "0.7";
         changefreq = "weekly";
         lastmod = getLastmod(latestPodcast);
-      } else if (route.startsWith("/tag/")) {
+      } else if (route.startsWith("/etiket/")) {
         // a specific tag page
         const [, _route, slug] = route.split("/");
 
-        if (_route !== "tag") {
+        if (_route !== "etiket") {
           throw new Error("Invalid route for tag page");
         }
 

@@ -71,12 +71,8 @@ export default function TagsPage() {
     return (
       <MainContent>
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            "#{slug}" Etiketi İçin İçerik Bulunamadı
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Bu etiketle ilgili haber veya makale bulunmuyor.
-          </p>
+          <h1 className="text-2xl font-bold mb-4">"#{slug}" Etiketi İçin İçerik Bulunamadı</h1>
+          <p className="text-muted-foreground">Bu etiketle ilgili haber veya makale bulunmuyor.</p>
         </div>
       </MainContent>
     );
