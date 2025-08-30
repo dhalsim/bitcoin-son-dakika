@@ -240,17 +240,17 @@ export async function getUserRolesFromNostr(
 
 export type ArticleTag = {
   aTag: string;
-  relay: string;
+  relays: string[];
 };
 
 export type NewsTag = {
   eTag: string;
-  relay: string;
+  relays: string[];
 };
 
 export type PodcastTag = {
   aTag: string;
-  relay: string;
+  relays: string[];
 };
 
 export type FetchNostrSetsResult = {
@@ -286,29 +286,29 @@ export async function fetchNostrSets(sets: EventSet[]): Promise<FetchNostrSetsRe
 
       if (set === "articles") {
         articleTags = event.tags
-          .filter((tag) => tag[0] === "a" && tag[1] && tag[2])
+          .filter((tag) => tag[0] === "a" && tag[1] && tag.length > 2)
           .map((tag) => ({
             aTag: tag[1],
-            relay: tag[2],
+            relays: tag.slice(2),
           }));
       }
 
       if (set === "news") {
         newsTags = event.tags
-          .filter((tag) => tag[0] === "e" && tag[1] && tag[2])
+          .filter((tag) => tag[0] === "e" && tag[1] && tag.length > 2)
           .map((tag) => ({
             eTag: tag[1],
-            relay: tag[2],
+            relays: tag.slice(2),
             pubkey: event.pubkey,
           }));
       }
 
       if (set === "podcasts") {
         podcastTags = event.tags
-          .filter((tag) => tag[0] === "a" && tag[1] && tag[2])
+          .filter((tag) => tag[0] === "a" && tag[1] && tag.length > 2)
           .map((tag) => ({
             aTag: tag[1],
-            relay: tag[2],
+            relays: tag.slice(2),
           }));
       }
     }
@@ -343,7 +343,7 @@ const fetchSets = async (sets: EventSet[]): Promise<Map<EventSet, EventItem>> =>
 
   return new Promise((resolve, reject) => {
     const events = new Map<EventSet, EventItem>();
-    const receivedEventRelayMap = new Map<string, string>();
+    const receivedEventRelayMap = new Map<string, string[]>();
 
     // Use the correct nostr-tools API for fetching events
     const sub = pool.subscribe(
@@ -355,7 +355,9 @@ const fetchSets = async (sets: EventSet[]): Promise<Map<EventSet, EventItem>> =>
       },
       {
         receivedEvent(relay, id) {
-          receivedEventRelayMap.set(id, relay.url);
+          const relays = receivedEventRelayMap.get(id) ?? [];
+
+          receivedEventRelayMap.set(id, [...relays, relay.url]);
         },
         onevent(evt) {
           const dTag = evt.tags.find((tag) => tag[0] === "d")?.[1];
@@ -377,15 +379,15 @@ const fetchSets = async (sets: EventSet[]): Promise<Map<EventSet, EventItem>> =>
             }
           }
 
-          const relay = receivedEventRelayMap.get(evt.id);
+          const relays = receivedEventRelayMap.get(evt.id);
 
-          if (!relay) {
+          if (!relays || relays.length === 0) {
             console.error("Received event from unknown relay", evt);
 
             return;
           }
 
-          events.set(dTag as EventSet, { ...evt, relay });
+          events.set(dTag as EventSet, { ...evt, relays });
         },
         oneose() {
           if (events.size === sets.length) {
@@ -453,7 +455,7 @@ export function createTitleSlug(title: string): string {
 export function extractArticleDataFromEvent(event: EventItem): Omit<ArticleItem, "author"> & {
   dTag: string;
   pubkey: string;
-  relay: string;
+  relays: string[];
 } {
   const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
   const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
@@ -474,14 +476,14 @@ export function extractArticleDataFromEvent(event: EventItem): Omit<ArticleItem,
     identifier: dTag || "",
     dTag: dTag || "",
     pubkey: event.pubkey,
-    relay: event.relay,
+    relays: event.relays,
   };
 }
 
 export function extractPodcastDataFromEvent(event: EventItem): Omit<PodcastItem, "author"> & {
   dTag: string;
   pubkey: string;
-  relay: string;
+  relays: string[];
 } {
   const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
   const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
@@ -512,6 +514,6 @@ export function extractPodcastDataFromEvent(event: EventItem): Omit<PodcastItem,
     identifier: dTag || "",
     dTag: dTag || "",
     pubkey: event.pubkey,
-    relay: event.relay,
+    relays: event.relays,
   };
 }

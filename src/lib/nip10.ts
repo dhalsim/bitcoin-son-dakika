@@ -44,7 +44,7 @@ export function getKind1Replies({ event, relays, cachedReplies, onUpdate }: GetK
   const eventId = event.id;
 
   const newReplies = new Map<string, EventItem>();
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
 
   let eoseCalled = false;
 
@@ -56,15 +56,14 @@ export function getKind1Replies({ event, relays, cachedReplies, onUpdate }: GetK
     },
     {
       receivedEvent(relay, id) {
-        receivedEventRelayMap.set(id, relay.url);
-      },
-      alreadyHaveEvent(id) {
-        return cachedReplies.has(id);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (evt) => {
-        const relay = receivedEventRelayMap.get(evt.id);
+        const relays = receivedEventRelayMap.get(evt.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.error("Received event from unknown relay", evt);
 
           return;
@@ -79,8 +78,8 @@ export function getKind1Replies({ event, relays, cachedReplies, onUpdate }: GetK
           return;
         }
 
-        newReplies.set(evt.id, { ...evt, relay });
-        cachedReplies.set(evt.id, { ...evt, relay });
+        newReplies.set(evt.id, { ...evt, relays });
+        cachedReplies.set(evt.id, { ...evt, relays });
 
         if (eoseCalled) {
           onUpdate(new Map(newReplies));
@@ -149,17 +148,22 @@ export async function postKind1Reply({
   }
 
   const tags: string[][] = [
-    ["e", root.event.id, root.event.relay, "root", root.event.pubkey],
-    ["p", root.author.pubkey, root.author.relay, getDisplayName(root.author, root.author.pubkey)],
+    ["e", root.event.id, root.event.relays[0], "root", root.event.pubkey],
+    [
+      "p",
+      root.author.pubkey,
+      root.author.relays[0],
+      getDisplayName(root.author, root.author.pubkey),
+    ],
   ];
 
   if (parent) {
     tags.push(
-      ["e", parent.event.id, parent.event.relay, "reply", parent.event.pubkey],
+      ["e", parent.event.id, parent.event.relays[0], "reply", parent.event.pubkey],
       [
         "p",
         parent.event.pubkey,
-        parent.event.relay,
+        parent.event.relays[0],
         getDisplayName(parent.author, parent.event.pubkey),
       ],
     );

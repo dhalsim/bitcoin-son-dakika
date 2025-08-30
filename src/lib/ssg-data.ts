@@ -107,23 +107,27 @@ export async function fetchSSGData(): Promise<SSGData> {
     "podcasts",
   ]);
 
-  const newsRelays = newsTags.map((tag) => tag.relay);
+  const newsRelays = [...new Set(newsTags.flatMap((tag) => tag.relays))];
+  const articleRelays = [...new Set(articleTags.flatMap((tag) => tag.relays))];
+  const podcastRelays = [...new Set(podcastTags.flatMap((tag) => tag.relays))];
+
   const articleResults = articleTags.map((tag) => {
     const [_kind, pubkey, dTag] = tag.aTag.split(":");
 
     return {
       dTag,
       pubkey,
-      relay: tag.relay,
+      relays: tag.relays,
     };
   });
+
   const podcastResults = podcastTags.map((tag) => {
     const [_kind, pubkey, dTag] = tag.aTag.split(":");
 
     return {
       dTag,
       pubkey,
-      relay: tag.relay,
+      relays: tag.relays,
     };
   });
 
@@ -140,27 +144,21 @@ export async function fetchSSGData(): Promise<SSGData> {
 
   if (articleTags.length > 0) {
     tasks.push(
-      pool.querySync(
-        articleResults.map((result) => result.relay),
-        {
-          "#d": articleResults.map((result) => result.dTag),
-          authors: articleResults.map((result) => result.pubkey),
-          kinds: [30023],
-        },
-      ),
+      pool.querySync(articleRelays, {
+        "#d": articleResults.map((result) => result.dTag),
+        authors: articleResults.map((result) => result.pubkey),
+        kinds: [30023],
+      }),
     );
   }
 
   if (podcastTags.length > 0) {
     tasks.push(
-      pool.querySync(
-        podcastResults.map((result) => result.relay),
-        {
-          "#d": podcastResults.map((result) => result.dTag),
-          authors: podcastResults.map((result) => result.pubkey),
-          kinds: [30023],
-        },
-      ),
+      pool.querySync(podcastRelays, {
+        "#d": podcastResults.map((result) => result.dTag),
+        authors: podcastResults.map((result) => result.pubkey),
+        kinds: [30023],
+      }),
     );
   }
 
@@ -209,7 +207,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${ne.id}`);
     }
 
-    return processNewsEvent({ ...ne, relay: relayHintTag.relay }, profile);
+    return processNewsEvent({ ...ne, relays: relayHintTag.relays }, profile);
   });
 
   const articleItems: ArticleItem[] = articlesEvents.map((ae) => {
@@ -233,7 +231,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${ae.id}`);
     }
 
-    return processArticleEvent({ ...ae, relay: relayHintTag.relay }, profile);
+    return processArticleEvent({ ...ae, relays: relayHintTag.relays }, profile);
   });
 
   const podcastItems: PodcastItem[] = podcastsEvents.map((pe) => {
@@ -257,7 +255,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${pe.id}`);
     }
 
-    return processPodcastEvent({ ...pe, relay: relayHintTag.relay }, profile);
+    return processPodcastEvent({ ...pe, relays: relayHintTag.relays }, profile);
   });
 
   // Sort by publication date (newest first)

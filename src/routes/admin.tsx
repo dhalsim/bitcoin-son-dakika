@@ -35,111 +35,19 @@ import {
   PublishResponseSchema,
   SinglePublishResponse,
 } from "../../api-helpers/schemas";
+import { Payload } from "@/types/admin";
 
 // Displayed while the route hydrates on initial load
 export function HydrateFallback() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center p-8">
-      <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+    <div className="min-h-screen flex items-center justify-center p-8">
+      <div className="flex items-center space-x-2">
         <Loader2 className="h-5 w-5 animate-spin" />
         <span>Yükleniyor...</span>
       </div>
     </div>
   );
 }
-
-type AddArticlePayload =
-  | { action: "add-article"; type: "naddr"; naddr: string }
-  | { action: "add-article"; type: "a"; a: string; relay: string };
-
-type AddNewsPayload = {
-  action: "add-news";
-  eventId: string;
-  relay: string;
-};
-
-type RemoveNewsPayload = {
-  action: "remove-news";
-  eventId: string;
-  relay: string;
-  requestDeletion?: boolean;
-};
-
-type RemoveArticlePayload = {
-  action: "remove-article";
-  aTag: string;
-  relay: string;
-};
-
-type AddAdminPayload = {
-  action: "add-admin-pubkey";
-  pubkey: string;
-};
-
-type RemoveAdminPayload = {
-  action: "remove-admin-pubkey";
-  pubkey: string;
-};
-
-type RemoveEditorPayload = {
-  action: "remove-editor-pubkey";
-  pubkey: string;
-};
-
-type AddEditorPayload = {
-  action: "add-editor-pubkey";
-  pubkey: string;
-};
-
-type PublishNewsPayload = {
-  action: "publish-news";
-  content: string;
-  title: string;
-  summary?: string;
-  image?: string;
-  tags: string[];
-};
-
-type PublishArticlePayload = {
-  action: "publish-article";
-  title: string;
-  content: string;
-  summary?: string;
-  image?: string;
-  tags: string[];
-};
-
-type PublishPodcastPayload = {
-  action: "publish-podcast";
-  title: string;
-  content: string;
-  summary?: string;
-  image?: string;
-  audioUrl: string;
-  duration?: string;
-  episodeNumber?: number;
-  tags: string[];
-};
-
-type RemovePodcastPayload = {
-  action: "remove-podcast";
-  aTag: string;
-  relay: string;
-};
-
-type Payload =
-  | AddNewsPayload
-  | RemoveNewsPayload
-  | AddArticlePayload
-  | RemoveArticlePayload
-  | AddAdminPayload
-  | RemoveAdminPayload
-  | RemoveEditorPayload
-  | AddEditorPayload
-  | PublishNewsPayload
-  | PublishArticlePayload
-  | PublishPodcastPayload
-  | RemovePodcastPayload;
 
 const MASTER_ADMIN_PUBKEY = "5fb571abb0a02ff241fc6090437ef1516157c66e03918ac519befea6475b72df";
 
@@ -319,33 +227,30 @@ export default function AdminPanel() {
 
             const editorsLastTimeUpdated = editorUsersEvent.created_at * 1000;
 
-            const news = newsEvent.tags
-              .filter((tag) => tag[0] === "e")
+            const news: NewsTag[] = newsEvent.tags
+              .filter((tag) => tag[0] === "e" && tag.length > 2)
               .map((tag) => ({
                 eTag: tag[1],
-                relay: tag[2],
-              }))
-              .filter((item) => item.eTag);
+                relays: tag.slice(2),
+              }));
 
             const newsLastTimeUpdated = newsEvent.created_at * 1000;
 
-            const articles = articlesEvent.tags
-              .filter((tag) => tag[0] === "a")
+            const articles: ArticleTag[] = articlesEvent.tags
+              .filter((tag) => tag[0] === "a" && tag.length > 2)
               .map((tag) => ({
                 aTag: tag[1],
-                relay: tag[2],
-              }))
-              .filter((item) => item.aTag);
+                relays: tag.slice(2),
+              }));
 
             const articlesLastTimeUpdated = articlesEvent.created_at * 1000;
 
-            const podcasts = podcastsEvent.tags
-              .filter((tag) => tag[0] === "a")
+            const podcasts: PodcastTag[] = podcastsEvent.tags
+              .filter((tag) => tag[0] === "a" && tag.length > 2)
               .map((tag) => ({
                 aTag: tag[1],
-                relay: tag[2],
-              }))
-              .filter((item) => item.aTag);
+                relays: tag.slice(2),
+              }));
 
             const podcastsLastTimeUpdated = podcastsEvent.created_at * 1000;
 
@@ -464,7 +369,7 @@ export default function AdminPanel() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center space-x-2">
           <Loader2 className="h-6 w-6 animate-spin" />
           <span>Yükleniyor...</span>
@@ -477,18 +382,14 @@ export default function AdminPanel() {
   const userIsEditor = userInfo.pubkey && adminData?.editorUsers.includes(userInfo.pubkey);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">
-                Yönetim Paneli
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Bitcoin Son Dakika - İçerik Yönetimi
-              </p>
+              <h1 className="text-3xl font-bold">Yönetim Paneli</h1>
+              <p className="text-muted-foreground">Bitcoin Son Dakika - İçerik Yönetimi</p>
             </div>
             <UserMenu />
           </div>
@@ -498,16 +399,16 @@ export default function AdminPanel() {
             publishSuccess.map((ps) => {
               if (isSinglePublishResponse(ps)) {
                 return (
-                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 relative">
+                  <Alert className="border-green-200 bg-green-50 relative">
                     <button
                       onClick={() => setPublishSuccess([])}
-                      className="absolute top-2 right-2 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 cursor-pointer text-lg font-bold"
+                      className="absolute top-2 right-2 text-green-600 hover:text-green-800 cursor-pointer text-lg font-bold"
                     >
                       <X className="h-4 w-4" />
                     </button>
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
-                      <AlertDescription className="text-green-800 dark:text-green-300">
+                      <AlertCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                      <AlertDescription className="text-green-800">
                         <span className="font-bold">{ps.message}</span>
 
                         <p>Gönderilen eventler:</p>
@@ -528,16 +429,16 @@ export default function AdminPanel() {
                 );
               } else if (isMultiPublishResponse(ps)) {
                 return (
-                  <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 relative">
+                  <Alert className="border-green-200 bg-green-50 relative">
                     <button
                       onClick={() => setPublishSuccess([])}
-                      className="absolute top-2 right-2 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 cursor-pointer text-lg font-bold"
+                      className="absolute top-2 right-2 text-green-600 hover:text-green-800 cursor-pointer text-lg font-bold"
                     >
                       ×
                     </button>
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
-                      <AlertDescription className="text-green-800 dark:text-green-300">
+                      <AlertCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                      <AlertDescription className="text-green-800">
                         {Object.values(ps.result).map((result, index) => {
                           return (
                             <>
@@ -573,7 +474,7 @@ export default function AdminPanel() {
           {userInfo.pubkey && (
             <div className="flex items-center gap-2">
               {userIsAdmin && <Badge variant="default">Admin</Badge>}
-              {userIsEditor && <Badge variant="secondary">Editör</Badge>}
+              {userIsEditor && <Badge variant="default">Editör</Badge>}
             </div>
           )}
 

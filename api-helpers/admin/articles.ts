@@ -2,6 +2,11 @@ import { hexToBytes } from "@noble/hashes/utils";
 import { nip19, finalizeEvent } from "nostr-tools";
 
 import { publishToRelays } from "../../src/lib/utils.js";
+import type {
+  AddArticlePayload,
+  RemoveArticlePayload,
+  PublishArticlePayload,
+} from "../../src/types/admin.js";
 import type { AuthResult } from "../types.js";
 import {
   ADMIN_RELAYS,
@@ -10,13 +15,6 @@ import {
   PublishEventResponseCreator,
 } from "../utils.js";
 import type { ArticleTag } from "../utils.js";
-
-import type {
-  AddArticlePayload,
-  AddArticleResolvedPayload,
-  RemoveArticlePayload,
-  PublishArticlePayload,
-} from "./types.js";
 
 export async function handleAddArticle(
   masterAdminPrivateKey: string,
@@ -33,7 +31,7 @@ export async function handleAddArticle(
   }
 
   let aTag: string;
-  let relayTag: string;
+  let relays: string[];
 
   if (data.type === "naddr") {
     try {
@@ -43,23 +41,22 @@ export async function handleAddArticle(
       }
 
       aTag = `${decoded.data.kind}:${decoded.data.pubkey}:${decoded.data.identifier}`;
-      relayTag = decoded.data.relays?.[0] || "wss://relay.damus.io";
+      relays = decoded.data.relays || ["wss://relay.damus.io"];
     } catch {
       return ErrorResponseCreator("Invalid naddr", 400);
     }
   } else {
-    aTag = data.a;
-    relayTag = data.relay;
+    aTag = data.tagToBeAdded.aTag;
+    relays = data.tagToBeAdded.relays;
   }
 
-  if (!aTag || !relayTag) {
+  if (!aTag || !relays) {
     return ErrorResponseCreator("Article data is required", 400);
   }
 
   return await addArticle(masterAdminPrivateKey, currentArticles, {
     aTag,
-    relayTag,
-    action: data.action,
+    relays,
   });
 }
 
@@ -77,8 +74,8 @@ export async function handleRemoveArticle(
     return ErrorResponseCreator("Only editors can remove articles", 403);
   }
 
-  const { aTag, relay } = data;
-  if (!aTag || !relay) {
+  const { aTag, relays } = data.tagToBeRemoved;
+  if (!aTag || !relays || relays.length === 0) {
     return ErrorResponseCreator("Article data is required", 400);
   }
 
@@ -88,15 +85,17 @@ export async function handleRemoveArticle(
 export async function addArticle(
   masterPrivateKey: string,
   currentArticles: ArticleTag[],
-  data: AddArticleResolvedPayload,
+  data: {
+    aTag: string;
+    relays: string[];
+  },
 ) {
   try {
     const privateKeyBytes = hexToBytes(masterPrivateKey);
     const currentTime = Math.floor(Date.now() / 1000);
 
-    const existingArticle = currentArticles.find(
-      (article) => article.aTag === data.aTag && article.relay === data.relayTag,
-    );
+    const existingArticle = currentArticles.find((article) => article.aTag === data.aTag);
+
     if (existingArticle) {
       return ErrorResponseCreator("Article already exists", 409);
     }
@@ -106,8 +105,8 @@ export async function addArticle(
       created_at: currentTime,
       tags: [
         ["d", "articles"],
-        ...currentArticles.map((article) => ["a", article.aTag, article.relay]),
-        ["a", data.aTag, data.relayTag],
+        ...currentArticles.map((article) => ["a", article.aTag, ...article.relays]),
+        ["a", data.aTag, ...data.relays],
       ],
       content: "",
     };
@@ -140,8 +139,9 @@ export async function removeArticle(
     const currentTime = Math.floor(Date.now() / 1000);
 
     const toBeRemoved = currentArticles.find(
-      (article) => article.aTag === data.aTag && article.relay === data.relay,
+      (article) => article.aTag === data.tagToBeRemoved.aTag,
     );
+
     if (!toBeRemoved) {
       return ErrorResponseCreator("Article not found", 404);
     }
@@ -152,8 +152,8 @@ export async function removeArticle(
       tags: [
         ["d", "articles"],
         ...currentArticles
-          .filter((article) => article.aTag !== data.aTag)
-          .map((article) => ["a", article.aTag, article.relay]),
+          .filter((article) => article.aTag !== data.tagToBeRemoved.aTag)
+          .map((article) => ["a", article.aTag, ...article.relays]),
       ],
       content: "",
     };
@@ -223,9 +223,9 @@ async function publishArticle(
 
     const result = await publishToRelays(event, ADMIN_RELAYS);
 
-    const relay = result.find((r) => r.success)?.relay;
+    const relays = result.filter((r) => r.success).map((r) => r.relay);
 
-    if (!relay) {
+    if (!relays || relays.length === 0) {
       return ErrorResponseCreator("Failed to publish article", 500);
     }
 
@@ -233,22 +233,21 @@ async function publishArticle(
     // For new articles, add to curated set
     if (!data.dTag) {
       const addResult = await addArticle(masterPrivateKey, currentArticles, {
-        action: "add-article",
         aTag: `30023:${event.pubkey}:${dIdentifier}`,
-        relayTag: relay,
+        relays,
       });
 
       if (Array.isArray(addResult) ? addResult.some((r) => r.success) : true) {
         return PublishEventResponseCreator(
           { message: "Article published successfully", result },
-          { eventId: event.id, relay, addArticleResult: addResult },
+          { eventId: event.id, relays, addArticleResult: addResult },
         );
       }
     } else {
       // Update case - just return success
       return PublishEventResponseCreator(
         { message: "Article updated successfully", result },
-        { eventId: event.id, relay },
+        { eventId: event.id, relays },
       );
     }
 

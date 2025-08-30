@@ -134,7 +134,7 @@ export async function listenForZapReceipt({
 
   let received = false;
 
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
 
   const subCloser = pool.subscribe(
     relays,
@@ -147,7 +147,9 @@ export async function listenForZapReceipt({
     },
     {
       receivedEvent(relay, id) {
-        receivedEventRelayMap.set(id, relay.url);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (zapReceiptEvent: NostrEvent) => {
         if (received) {
@@ -156,15 +158,15 @@ export async function listenForZapReceipt({
           return;
         }
 
-        const relay = receivedEventRelayMap.get(zapReceiptEvent.id);
+        const relays = receivedEventRelayMap.get(zapReceiptEvent.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.warn("Received event from unknown relay", zapReceiptEvent);
 
           return;
         }
 
-        const zapReceipt = validateZapReceipt({ ...zapReceiptEvent, relay }, invoice);
+        const zapReceipt = validateZapReceipt({ ...zapReceiptEvent, relays }, invoice);
 
         if (!zapReceipt) {
           return;

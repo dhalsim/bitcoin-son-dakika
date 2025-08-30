@@ -21,7 +21,7 @@ export function getReactions(
   onUpdate: (reactions: Map<string, EventItem>) => void,
 ) {
   const newReactions = new Map<string, EventItem>();
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
 
   let eoseCalled = false;
 
@@ -33,15 +33,14 @@ export function getReactions(
     },
     {
       receivedEvent(relay, id) {
-        receivedEventRelayMap.set(id, relay.url);
-      },
-      alreadyHaveEvent(id) {
-        return cachedReactions.has(id);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (evt) => {
-        const relay = receivedEventRelayMap.get(evt.id);
+        const relays = receivedEventRelayMap.get(evt.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.error("Received event from unknown relay", evt);
 
           return;
@@ -51,8 +50,8 @@ export function getReactions(
           return;
         }
 
-        newReactions.set(evt.id, { ...evt, relay });
-        cachedReactions.set(evt.id, { ...evt, relay });
+        newReactions.set(evt.id, { ...evt, relays });
+        cachedReactions.set(evt.id, { ...evt, relays });
 
         if (eoseCalled) {
           onUpdate(new Map(newReactions));
@@ -127,8 +126,8 @@ export async function postReaction({
   }
 
   const tags = [
-    ["e", event.id, event.relay, event.pubkey],
-    ["p", event.pubkey, author.relay],
+    ["e", event.id, event.relays[0], event.pubkey],
+    ["p", event.pubkey, author.relays[0]],
     ["k", String(event.kind)],
   ];
 

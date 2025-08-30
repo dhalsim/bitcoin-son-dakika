@@ -16,7 +16,7 @@ export function getReposts(
   onUpdate: (reposts: Map<string, EventItem>) => void,
 ) {
   const newReposts = new Map<string, EventItem>();
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
 
   let eoseCalled = false;
 
@@ -28,22 +28,21 @@ export function getReposts(
     },
     {
       receivedEvent(relay, id) {
-        receivedEventRelayMap.set(id, relay.url);
-      },
-      alreadyHaveEvent(id) {
-        return cachedReposts.has(id);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (evt) => {
-        const relay = receivedEventRelayMap.get(evt.id);
+        const relays = receivedEventRelayMap.get(evt.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.error("Received event from unknown relay", evt);
 
           return;
         }
 
-        newReposts.set(evt.id, { ...evt, relay });
-        cachedReposts.set(evt.id, { ...evt, relay });
+        newReposts.set(evt.id, { ...evt, relays });
+        cachedReposts.set(evt.id, { ...evt, relays });
 
         if (eoseCalled) {
           onUpdate(new Map(newReposts));
@@ -110,8 +109,8 @@ export async function postRepost({
     content,
     created_at: Math.floor(Date.now() / 1000),
     tags: [
-      ["e", event.id, event.relay], // e tag with event id and relay URL
-      ["p", event.pubkey, author.relay], // p tag with the pubkey of the event being reposted
+      ["e", event.id, event.relays[0]], // e tag with event id and relay URL
+      ["p", event.pubkey, author.relays[0]], // p tag with the pubkey of the event being reposted
     ],
   };
 
@@ -146,7 +145,7 @@ export function getKind1Quotes(
   const identifier = getEventIdentifier(event);
 
   const newQuotes = new Map<string, EventItem>();
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
 
   let eoseCalled = false;
 
@@ -158,15 +157,14 @@ export function getKind1Quotes(
     },
     {
       receivedEvent(relay, id) {
-        receivedEventRelayMap.set(id, relay.url);
-      },
-      alreadyHaveEvent(id) {
-        return cachedQuotes.has(id);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (evt) => {
-        const relay = receivedEventRelayMap.get(evt.id);
+        const relays = receivedEventRelayMap.get(evt.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.error("Received event from unknown relay", evt);
 
           return;
@@ -176,8 +174,8 @@ export function getKind1Quotes(
           return;
         }
 
-        newQuotes.set(evt.id, { ...evt, relay });
-        cachedQuotes.set(evt.id, { ...evt, relay });
+        newQuotes.set(evt.id, { ...evt, relays });
+        cachedQuotes.set(evt.id, { ...evt, relays });
 
         if (eoseCalled) {
           onUpdate(new Map(newQuotes));
@@ -240,7 +238,7 @@ export async function postQuoteRepost({
     id: event.id,
     author: event.pubkey,
     kind: event.kind,
-    relays: [event.relay],
+    relays: event.relays,
   });
 
   // Combine user content with the nevent
@@ -251,7 +249,7 @@ export async function postQuoteRepost({
     content: fullContent,
     created_at: Math.floor(Date.now() / 1000),
     tags: [
-      ["q", event.id, event.relay, event.pubkey], // q tag for quote repost
+      ["q", event.id, event.relays[0], event.pubkey], // q tag for quote repost
     ],
   };
 

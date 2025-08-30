@@ -10,7 +10,7 @@ import { logCloseReasons, pool } from "./utils";
 
 export const parseProfileEvent = (
   event: NostrEvent,
-  relay: string,
+  relays: string[],
   nip65: Nip65Relays | null,
 ): ProfileItem | null => {
   try {
@@ -20,7 +20,7 @@ export const parseProfileEvent = (
       ...content,
       created_at: event.created_at,
       pubkey: event.pubkey,
-      relay,
+      relays,
       nip65,
     });
 
@@ -34,7 +34,7 @@ export const parseProfileEvent = (
 
 export const ProfileItemSchema = z.object({
   pubkey: z.string(),
-  relay: z.string(),
+  relays: z.array(z.string()),
   created_at: z.number(),
   nip65: Nip65RelaysSchema.nullable(),
   name: z.string().optional().nullable(),
@@ -50,7 +50,7 @@ export const ProfileItemSchema = z.object({
 export type ProfileItem = z.infer<typeof ProfileItemSchema>;
 
 export type EventItem = NostrEvent & {
-  relay: string;
+  relays: string[];
 };
 
 export type GetProfilesParams = {
@@ -65,7 +65,7 @@ const cache = getCache();
 // New optimized function that works with ProfileItem cache
 export function getProfiles({ authors, relayHints, nip65Map, onUpdate }: GetProfilesParams) {
   const cachedProfiles = getCache().getProfileItems();
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
   const newProfiles = new Map<string, ProfileItem>();
 
   const foundCachedProfiles = new Map(
@@ -88,12 +88,14 @@ export function getProfiles({ authors, relayHints, nip65Map, onUpdate }: GetProf
     },
     {
       receivedEvent: (relay, id) => {
-        receivedEventRelayMap.set(id, relay.url);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (event) => {
-        const relay = receivedEventRelayMap.get(event.id);
+        const relays = receivedEventRelayMap.get(event.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.error("Received event from unknown relay", event);
 
           return;
@@ -109,7 +111,7 @@ export function getProfiles({ authors, relayHints, nip65Map, onUpdate }: GetProf
         const nip65 = nip65Map?.get(event.pubkey) ?? null;
 
         // Parse the new event
-        const newProfile = parseProfileEvent(event, relay, nip65);
+        const newProfile = parseProfileEvent(event, relays, nip65);
 
         // Skip invalid profiles
         if (!newProfile) {
@@ -162,7 +164,7 @@ export function getKind1Events(
   onUpdate: (events: Map<string, EventItem>) => void,
 ) {
   const newEvents = new Map<string, EventItem>();
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
 
   let eoseCalled = false;
 
@@ -174,18 +176,20 @@ export function getKind1Events(
     },
     {
       receivedEvent: (relay, id) => {
-        receivedEventRelayMap.set(id, relay.url);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (event) => {
-        const relay = receivedEventRelayMap.get(event.id);
+        const relays = receivedEventRelayMap.get(event.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.error("Received event from unknown relay", event);
 
           return;
         }
 
-        newEvents.set(event.id, { ...event, relay });
+        newEvents.set(event.id, { ...event, relays });
 
         if (eoseCalled) {
           onUpdate(new Map(newEvents));

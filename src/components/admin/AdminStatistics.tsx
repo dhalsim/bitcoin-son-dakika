@@ -1,13 +1,14 @@
 import { AlertCircle, RefreshCw, Shield, Users, Mic } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { ArticleTag, NewsTag, PodcastTag } from "api-helpers/utils";
 
 type AdminData = {
   adminUsers: string[];
   editorUsers: string[];
-  news: { eTag: string; relay: string }[];
-  articles: { aTag: string; relay: string }[];
-  podcasts: { aTag: string; relay: string }[];
+  news: NewsTag[];
+  articles: ArticleTag[];
+  podcasts: PodcastTag[];
 };
 
 type AdminStatisticsProps = {

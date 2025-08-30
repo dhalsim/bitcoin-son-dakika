@@ -3,6 +3,11 @@ import { finalizeEvent } from "nostr-tools";
 import type { EventTemplate } from "nostr-tools";
 
 import { publishToRelays } from "../../src/lib/utils.js";
+import type {
+  AddNewsPayload,
+  RemoveNewsPayload,
+  PublishNewsPayload,
+} from "../../src/types/admin.js";
 import type { AuthResult } from "../types.js";
 import {
   ADMIN_RELAYS,
@@ -11,8 +16,6 @@ import {
   PublishEventResponseCreator,
 } from "../utils.js";
 import type { NewsTag } from "../utils.js";
-
-import type { AddNewsPayload, RemoveNewsPayload, PublishNewsPayload } from "./types.js";
 
 export async function handleAddNews(
   masterAdminPrivateKey: string,
@@ -28,14 +31,13 @@ export async function handleAddNews(
     return ErrorResponseCreator("Only editors can add news", 403);
   }
 
-  const { eventId, relay } = data;
-  if (!eventId || !relay) {
+  const { eTag, relays } = data.tagToBeAdded;
+
+  if (!eTag || !relays || relays.length === 0) {
     return ErrorResponseCreator("Event ID and relay are required", 400);
   }
 
-  const existingNews = currentNews.find(
-    (news) => news.eTag === data.eventId && news.relay === data.relay,
-  );
+  const existingNews = currentNews.find((news) => news.eTag === eTag);
 
   if (existingNews) {
     return ErrorResponseCreator("News already exists", 409);
@@ -88,12 +90,13 @@ export async function handleRemoveNews(
     return ErrorResponseCreator("Yalnızca editörler haber kaldırabilir", 403);
   }
 
-  const { eventId, relay, requestDeletion } = data;
-  if (!eventId || !relay) {
-    return ErrorResponseCreator("Event ID ve relay gereklidir", 400);
+  const { tagToBeRemoved, requestDeletion } = data;
+
+  if (!tagToBeRemoved || !tagToBeRemoved.eTag) {
+    return ErrorResponseCreator("Event ID gereklidir", 400);
   }
 
-  const toBeRemoved = currentNews.find((news) => news.eTag === data.eventId);
+  const toBeRemoved = currentNews.find((news) => news.eTag === tagToBeRemoved.eTag);
 
   if (!toBeRemoved) {
     return ErrorResponseCreator("Haber bulunamadı", 404);
@@ -107,7 +110,11 @@ export async function handleRemoveNews(
     }
 
     if (requestDeletion) {
-      const deletionResult = await publishDeletionEvent(masterAdminPrivateKey, eventId, 1);
+      const deletionResult = await publishDeletionEvent(
+        masterAdminPrivateKey,
+        tagToBeRemoved.eTag,
+        1,
+      );
 
       if (!deletionResult.some((r) => r.success)) {
         return ErrorResponseCreator(
@@ -161,7 +168,7 @@ export async function handlePublishNews(
 
 export async function addNews(
   masterPrivateKey: string,
-  currentNews: { eTag: string; relay: string }[],
+  currentNews: NewsTag[],
   data: AddNewsPayload,
 ) {
   const privateKeyBytes = hexToBytes(masterPrivateKey);
@@ -172,8 +179,8 @@ export async function addNews(
     created_at: currentTime,
     tags: [
       ["d", "news"],
-      ...currentNews.map((news) => ["e", news.eTag, news.relay]),
-      ["e", data.eventId, data.relay],
+      ...currentNews.map((news) => ["e", news.eTag, ...news.relays]),
+      ["e", data.tagToBeAdded.eTag, ...data.tagToBeAdded.relays],
     ],
     content: "",
   };
@@ -185,7 +192,7 @@ export async function addNews(
 
 export async function removeNews(
   masterPrivateKey: string,
-  currentNews: { eTag: string; relay: string }[],
+  currentNews: NewsTag[],
   data: RemoveNewsPayload,
 ) {
   const privateKeyBytes = hexToBytes(masterPrivateKey);
@@ -197,8 +204,8 @@ export async function removeNews(
     tags: [
       ["d", "news"],
       ...currentNews
-        .filter((news) => news.eTag !== data.eventId)
-        .map((news) => ["e", news.eTag, news.relay]),
+        .filter((news) => news.eTag !== data.tagToBeRemoved.eTag)
+        .map((news) => ["e", news.eTag, ...news.relays]),
     ],
     content: "",
   };
@@ -243,16 +250,18 @@ export async function publishNews(
 
     const eventPublishResult = await publishToRelays(event, ADMIN_RELAYS);
 
-    const relay = eventPublishResult.find((r) => r.success)?.relay;
+    const relays = eventPublishResult.filter((r) => r.success).map((r) => r.relay);
 
-    if (!relay) {
+    if (relays.length === 0) {
       return ErrorResponseCreator("Haber yayınlanırken hata oluştu", 500);
     }
 
     const addNewsResult = await addNews(masterPrivateKey, currentNews, {
       action: "add-news",
-      eventId: event.id,
-      relay,
+      tagToBeAdded: {
+        eTag: event.id,
+        relays,
+      },
     });
 
     if (addNewsResult.some((r) => r.success)) {
@@ -269,7 +278,7 @@ export async function publishNews(
             },
           },
         },
-        { eventId: event.id, relay, addNewsResult },
+        { eventId: event.id, relays, addNewsResult },
       );
     }
 

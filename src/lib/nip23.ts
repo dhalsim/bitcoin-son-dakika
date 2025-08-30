@@ -8,7 +8,7 @@ export function getKind30023Events(
   onUpdate: (events: Map<string, EventItem>) => void,
 ) {
   const newEvents = new Map<string, EventItem>();
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
 
   let eoseCalled = false;
 
@@ -21,18 +21,20 @@ export function getKind30023Events(
     },
     {
       receivedEvent: (relay, id) => {
-        receivedEventRelayMap.set(id, relay.url);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (event) => {
-        const relay = receivedEventRelayMap.get(event.id);
+        const relays = receivedEventRelayMap.get(event.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.error("Received event from unknown relay", event);
 
           return;
         }
 
-        newEvents.set(event.id, { ...event, relay });
+        newEvents.set(event.id, { ...event, relays });
 
         if (eoseCalled) {
           onUpdate(new Map(newEvents));

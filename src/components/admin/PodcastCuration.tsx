@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RemovePodcastPayload } from "@/types/admin";
 
 import type { PodcastTag } from "../../../api-helpers/utils";
 import { extractPodcastDataFromEvent } from "../../../api-helpers/utils";
@@ -14,7 +15,7 @@ import { Skeleton } from "../ui/skeleton";
 interface PodcastCurationProps {
   podcasts: PodcastTag[];
   lastUpdated: number;
-  performAction: (data: any) => Promise<void>;
+  performAction: (data: RemovePodcastPayload) => Promise<void>;
   reload: () => void;
   onEditPodcast?: (podcastData: any) => void;
 }
@@ -31,7 +32,7 @@ export default function PodcastCuration({
 
   useEffect(() => {
     if (podcasts.length > 0) {
-      const relays = new Set(podcasts.map((n) => n.relay));
+      const relays = new Set(podcasts.flatMap((n) => n.relays));
       const aTags = podcasts.map((n) => n.aTag);
 
       const [pubkeys, identifiers] = aTags.reduce(
@@ -55,14 +56,13 @@ export default function PodcastCuration({
     }
   }, [podcasts]);
 
-  const handleRemovePodcast = async (aTag: string, relay: string) => {
-    setRemoving(aTag);
+  const handleRemovePodcast = async (tag: PodcastTag) => {
+    setRemoving(tag.aTag);
 
     try {
       await performAction({
         action: "remove-podcast",
-        aTag,
-        relay,
+        tagToBeRemoved: tag,
       });
     } finally {
       setRemoving(null);
@@ -123,7 +123,7 @@ export default function PodcastCuration({
                 identifier: dTag,
                 kind: 30023,
                 pubkey: event.pubkey,
-                relays: [event.relay],
+                relays: event.relays,
               });
 
               const aTag = `30023:${event.pubkey}:${dTag}`;
@@ -154,7 +154,7 @@ export default function PodcastCuration({
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleRemovePodcast(aTag, event.relay)}
+                          onClick={() => handleRemovePodcast({ aTag, relays: event.relays })}
                           disabled={removing === aTag}
                         >
                           {removing === aTag ? (
@@ -174,8 +174,8 @@ export default function PodcastCuration({
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <Tag className="h-4 w-4" />
-                          <span>Relay:</span>
-                          <span className="font-mono text-xs">{event.relay}</span>
+                          <span>Relays:</span>
+                          <span className="font-mono text-xs">{event.relays.join(", ")}</span>
                         </div>
                       </div>
 

@@ -82,9 +82,6 @@ export default function DeployTrigger() {
             )}
             {loading ? "Deploy Tetikleniyor..." : "Deploy Tetikle"}
           </Button>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Son değişiklikleri canlı siteye uygular
-          </p>
         </div>
       </CardContent>
     </Card>

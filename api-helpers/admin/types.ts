@@ -9,92 +9,89 @@ export interface AdminActionData {
   pubkey?: string;
 }
 
-export type AddArticlePayload =
-  | { action: "add-article"; type: "naddr"; naddr: string }
-  | { action: "add-article"; type: "a"; a: string; relay: string };
+// export type AddArticlePayload =
+//   | { action: "add-article"; type: "naddr"; naddr: string }
+//   | { action: "add-article"; type: "a"; a: string; relay: string };
 
-export type AddArticleResolvedPayload = {
-  aTag: string;
-  relayTag: string;
-  action: "add-article";
-};
+// export type AddArticleResolvedPayload = {
+//   aTag: string;
+//   relayTag: string;
+//   action: "add-article";
+// };
 
-export type AddNewsPayload = {
-  action: "add-news";
-  eventId: string;
-  relay: string;
-};
+// export type AddNewsPayload = {
+//   action: "add-news";
+//   tagToBeAdded: NewsTag;
+// };
 
-export type RemoveNewsPayload = {
-  action: "remove-news";
-  eventId: string;
-  relay: string;
-  requestDeletion?: boolean;
-};
+// export type RemoveNewsPayload = {
+//   action: "remove-news";
+//   eventId: string;
+//   requestDeletion?: boolean;
+// };
 
-export type RemoveArticlePayload = {
-  action: "remove-article";
-  aTag: string;
-  relay: string;
-};
+// export type RemoveArticlePayload = {
+//   action: "remove-article";
+//   tagToBeRemoved: ArticleTag;
+// };
 
-export type PublishNewsPayload = {
-  action: "publish-news";
-  content: string;
-  title: string;
-  summary?: string;
-  image?: string;
-  tags: string[];
-};
+// export type PublishNewsPayload = {
+//   action: "publish-news";
+//   content: string;
+//   title: string;
+//   summary?: string;
+//   image?: string;
+//   tags: string[];
+// };
 
-export type PublishArticlePayload = {
-  action: "publish-article";
-  content: string;
-  title: string;
-  summary?: string;
-  image?: string;
-  tags: string[];
-  dTag?: string; // For updates, use existing dTag
-};
+// export type PublishArticlePayload = {
+//   action: "publish-article";
+//   content: string;
+//   title: string;
+//   summary?: string;
+//   image?: string;
+//   tags: string[];
+//   dTag?: string; // For updates, use existing dTag
+// };
 
-export type PublishPodcastPayload = {
-  action: "publish-podcast";
-  title: string;
-  content: string;
-  summary?: string;
-  image?: string;
-  audioUrl: string;
-  duration?: string;
-  episodeNumber?: number;
-  tags: string[];
-  transcriptUrl?: string;
-  chaptersUrl?: string;
-  dTag?: string; // For updates, use existing dTag
-};
+// export type PublishPodcastPayload = {
+//   action: "publish-podcast";
+//   title: string;
+//   content: string;
+//   summary?: string;
+//   image?: string;
+//   audioUrl: string;
+//   duration?: string;
+//   episodeNumber?: number;
+//   tags: string[];
+//   transcriptUrl?: string;
+//   chaptersUrl?: string;
+//   dTag?: string; // For updates, use existing dTag
+// };
 
-export type AddPodcastResolvedPayload = {
-  aTag: string;
-  relayTag: string;
-  action: "add-podcast";
-};
+// export type AddPodcastResolvedPayload = {
+//   aTag: string;
+//   relayTag: string;
+//   action: "add-podcast";
+// };
 
-export type RemovePodcastPayload = {
-  action: "remove-podcast";
-  aTag: string;
-  relay: string;
-};
+// export type RemovePodcastPayload = {
+//   action: "remove-podcast";
+//   aTag: string;
+//   relay: string;
+// };
 
-export type UploadToXPayload = {
-  action: "upload-to-x";
-  formData: FormData;
-  title: string;
-};
+// export type UploadToXPayload = {
+//   action: "upload-to-x";
+//   formData: FormData;
+//   title: string;
+// };
 
-export type TranslateNewsPayload = {
-  action: "translate-news";
-  textToTranslate: string[];
-  targetLanguageCode: string;
-};
+// export type TranslateNewsPayload = {
+//   action: "translate-news";
+//   textToTranslate: string[];
+//   targetLanguageCode: string;
+// };
 
 export type TwitterOAuthParams = {
   TWITTER_API_KEY: string;
@@ -103,10 +100,10 @@ export type TwitterOAuthParams = {
   TWITTER_ACCESS_TOKEN_SECRET: string;
 };
 
-export type HandleUploadToXParams = TwitterOAuthParams & {
-  authResult: AuthResult;
-  paramsData: UploadToXPayload;
-};
+// export type HandleUploadToXParams = TwitterOAuthParams & {
+//   authResult: AuthResult;
+//   paramsData: UploadToXPayload;
+// };
 
 export type XAuthHeaderParams = TwitterOAuthParams & {
   method: "POST" | "GET" | "PUT" | "DELETE";

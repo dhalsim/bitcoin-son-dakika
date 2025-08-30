@@ -134,7 +134,7 @@ export function getZaps(
   onUpdate: (zaps: Map<string, ZapReceipt>) => void,
 ) {
   const newZaps = new Map<string, ZapReceipt>();
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
 
   let eoseCalled = false;
 
@@ -146,21 +146,20 @@ export function getZaps(
     },
     {
       receivedEvent(relay, id) {
-        receivedEventRelayMap.set(id, relay.url);
-      },
-      alreadyHaveEvent(id) {
-        return cachedZaps.has(id);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (evt) => {
-        const relay = receivedEventRelayMap.get(evt.id);
+        const relays = receivedEventRelayMap.get(evt.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.error("Received event from unknown relay", evt);
 
           return;
         }
 
-        const validZap = validateZapReceipt({ ...evt, relay });
+        const validZap = validateZapReceipt({ ...evt, relays });
 
         if (!validZap) {
           console.warn("Invalid zap receipt:", evt.id);

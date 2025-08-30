@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import type { PodcastItem } from "@/lib/ssg-data";
+import { PublishPodcastPayload } from "@/types/admin";
 
 type PodcastEditData = Omit<PodcastItem, "author"> & {
   dTag: string;
@@ -35,7 +36,9 @@ export default function PodcastComposer({
   const [image, setImage] = useState(editData?.image || "");
   const [audioUrl, setAudioUrl] = useState(editData?.audioUrl || "");
   const [duration, setDuration] = useState(editData?.duration || "");
-  const [episodeNumber, setEpisodeNumber] = useState(editData?.episodeNumber || "");
+  const [episodeNumber, setEpisodeNumber] = useState<number | null>(
+    editData?.episodeNumber || null,
+  );
   const [transcriptUrl, setTranscriptUrl] = useState(editData?.transcriptUrl || "");
   const [chaptersUrl, setChaptersUrl] = useState(editData?.chaptersUrl || "");
   const [tags, setTags] = useState<string[]>(editData?.tags || []);
@@ -52,7 +55,7 @@ export default function PodcastComposer({
       setImage(editData.image || "");
       setAudioUrl(editData.audioUrl || "");
       setDuration(editData.duration || "");
-      setEpisodeNumber(editData.episodeNumber || "");
+      setEpisodeNumber(editData.episodeNumber);
       setTranscriptUrl(editData.transcriptUrl || "");
       setChaptersUrl(editData.chaptersUrl || "");
       setTags(editData.tags || []);
@@ -75,7 +78,7 @@ export default function PodcastComposer({
     setLoading(true);
 
     try {
-      const payload: any = {
+      const payload: PublishPodcastPayload = {
         action: "publish-podcast",
         title,
         content,
@@ -103,7 +106,7 @@ export default function PodcastComposer({
       setImage("");
       setAudioUrl("");
       setDuration("");
-      setEpisodeNumber("");
+      setEpisodeNumber(undefined);
       setTranscriptUrl("");
       setChaptersUrl("");
       setTags([]);
@@ -153,7 +156,7 @@ export default function PodcastComposer({
                   id="episodeNumber"
                   type="number"
                   value={episodeNumber}
-                  onChange={(e) => setEpisodeNumber(e.target.value)}
+                  onChange={(e) => setEpisodeNumber(Number(e.target.value))}
                   placeholder="1"
                   min="1"
                 />

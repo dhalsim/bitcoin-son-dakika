@@ -32,12 +32,12 @@ export default function UserManagement({
   useEffect(() => {
     const subCloser = getProfiles({
       authors: adminUsers.concat(editorUsers),
-      onUpdate: (profiles) => {
-        setProfiles(profiles);
-
-        subCloser();
-      },
+      onUpdate: setProfiles,
     });
+
+    return () => {
+      subCloser();
+    };
   }, [adminUsers, editorUsers]);
 
   const adminProfiles = useMemo(() => {
@@ -165,7 +165,7 @@ export default function UserManagement({
                 ? Array.from({ length: adminUsers.length }).map((_, idx) => (
                     <div
                       key={`admin-skeleton-${idx}`}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <Skeleton className="h-10 w-10 rounded-full" />
@@ -184,7 +184,7 @@ export default function UserManagement({
                     return (
                       <div
                         key={pubkey}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-muted rounded-lg"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <ProfileAvatar pubkey={pubkey} profile={profile} size="lg" />
@@ -248,7 +248,7 @@ export default function UserManagement({
                 ? Array.from({ length: editorUsers.length }).map((_, idx) => (
                     <div
                       key={`editor-skeleton-${idx}`}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <Skeleton className="h-10 w-10 rounded-full" />
@@ -267,7 +267,7 @@ export default function UserManagement({
                     return (
                       <div
                         key={pubkey}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-muted rounded-lg"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <ProfileAvatar pubkey={pubkey} profile={profile} size="lg" />
@@ -305,7 +305,6 @@ export default function UserManagement({
             />
             <Button
               className="w-full"
-              variant="secondary"
               disabled={!newEditorNpub.trim() || addingEditor}
               onClick={onAddEditor}
             >

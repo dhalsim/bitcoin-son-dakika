@@ -1,3 +1,5 @@
+import type { NostrEvent } from "nostr-tools";
+
 import type { NostrProviderMethod } from "@/contexts/NostrAuthContext";
 import type { BaseEndpointResponse } from "@/types/api";
 import type { EmojiCategories, EmojiUsage } from "@/types/emoji";
@@ -236,7 +238,7 @@ export class LocalStorageCache {
     return this.getCachedValue(`nip02-${pubkey}`);
   }
 
-  setNip02(pubkey: string, value: { event: EventItem; followRelays: string[] }): void {
+  setNip02(pubkey: string, value: { event: NostrEvent; followRelays: string[] }): void {
     const key = `nip02-${pubkey}`;
     this.cache.set(key, value);
     this.setToStorage(key, value);

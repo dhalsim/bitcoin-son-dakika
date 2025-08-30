@@ -2,6 +2,7 @@ import { finalizeEvent } from "nostr-tools/pure";
 import { hexToBytes } from "nostr-tools/utils";
 
 import { publishToRelays } from "../../src/lib/utils.js";
+import type { PublishPodcastPayload } from "../../src/types/admin.js";
 import type { AuthResult } from "../types.js";
 import type { PodcastTag } from "../utils.js";
 import {
@@ -10,8 +11,6 @@ import {
   PublishEventResponseCreator,
   createTitleSlug,
 } from "../utils.js";
-
-import type { AddPodcastResolvedPayload, PublishPodcastPayload } from "./types.js";
 
 export async function handlePublishPodcast(
   masterAdminPrivateKey: string,
@@ -89,9 +88,9 @@ async function publishPodcast(
     // Publish to relays
     const result = await publishToRelays(signedEvent, ADMIN_RELAYS);
 
-    const relay = result.find((r) => r.success)?.relay;
+    const relays = result.filter((r) => r.success).map((r) => r.relay);
 
-    if (!relay) {
+    if (!relays || relays.length === 0) {
       return ErrorResponseCreator("Failed to publish article", 500);
     }
 
@@ -99,22 +98,21 @@ async function publishPodcast(
     // For new podcasts, add to curated set
     if (!dTag) {
       const addResult = await addPodcast(masterAdminPrivateKey, podcastTags, {
-        action: "add-podcast",
         aTag: `30023:${signedEvent.pubkey}:${dIdentifier}`,
-        relayTag: relay,
+        relays,
       });
 
       if (Array.isArray(addResult) ? addResult.some((r) => r.success) : true) {
         return PublishEventResponseCreator(
           { message: "Podcast published successfully", result },
-          { eventId: signedEvent.id, relay, addPodcastResult: addResult },
+          { eventId: signedEvent.id, relays, addPodcastResult: addResult },
         );
       }
     } else {
       // Update case - just return success
       return PublishEventResponseCreator(
         { message: "Podcast updated successfully", result },
-        { eventId: signedEvent.id, relay },
+        { eventId: signedEvent.id, relays },
       );
     }
 
@@ -127,13 +125,16 @@ async function publishPodcast(
 async function addPodcast(
   masterPrivateKey: string,
   currentPodcasts: PodcastTag[],
-  data: AddPodcastResolvedPayload,
+  data: {
+    aTag: string;
+    relays: string[];
+  },
 ) {
   try {
-    const { aTag, relayTag } = data;
+    const { aTag, relays } = data;
 
-    if (!aTag || !relayTag) {
-      return ErrorResponseCreator("aTag and relayTag are required", 400);
+    if (!aTag || !relays) {
+      return ErrorResponseCreator("aTag and relays are required", 400);
     }
 
     const privateKeyBytes = hexToBytes(masterPrivateKey);
@@ -143,8 +144,8 @@ async function addPodcast(
       created_at: Math.floor(Date.now() / 1000),
       tags: [
         ["d", "podcasts"],
-        ...currentPodcasts.map((tag) => ["a", tag.aTag, tag.relay]),
-        ["a", aTag, relayTag],
+        ...currentPodcasts.map((tag) => ["a", tag.aTag, ...tag.relays]),
+        ["a", aTag, ...relays],
       ],
       content: "Updated podcasts set",
     };

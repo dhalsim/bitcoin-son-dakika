@@ -33,11 +33,12 @@ import {
 
 import UploadToX from "./UploadToX";
 import { publishToX } from "./utils";
+import { AddNewsPayload, RemoveNewsPayload } from "@/types/admin";
 
 type NewsCurationProps = {
   news: NewsTag[];
   lastUpdated: number;
-  performAction: (data: any) => Promise<any>;
+  performAction: (data: AddNewsPayload | RemoveNewsPayload) => Promise<any>;
   setPublishSuccess: React.Dispatch<
     React.SetStateAction<(SinglePublishResponse | MultiPublishResponse)[]>
   >;
@@ -53,7 +54,7 @@ export default function NewsCuration({
 }: NewsCurationProps) {
   const { userProfile } = useUserContext();
   const [newsEventId, setNewsEventId] = useState("");
-  const [newsRelay, setNewsRelay] = useState("");
+  const [newsRelays, setNewsRelays] = useState<string>("");
   const [adding, setAdding] = useState(false);
   const [removingKey, setRemovingKey] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -65,7 +66,7 @@ export default function NewsCuration({
 
   useEffect(() => {
     if (news.length > 0) {
-      const relays = new Set(news.map((n) => n.relay));
+      const relays = new Set(news.flatMap((n) => n.relays));
       const ids = news.map((n) => n.eTag);
 
       const cleanup = getKind1Events(Array.from(relays), ids, (events) => {
@@ -84,12 +85,14 @@ export default function NewsCuration({
 
       await performAction({
         action: "add-news",
-        eventId: newsEventId.trim(),
-        relay: newsRelay.trim(),
+        tagToBeAdded: {
+          eTag: newsEventId.trim(),
+          relays: newsRelays.split(";").filter((r) => r.trim() !== ""),
+        },
       });
 
       setNewsEventId("");
-      setNewsRelay("");
+      setNewsRelays("");
 
       await reload();
     } finally {
@@ -97,16 +100,15 @@ export default function NewsCuration({
     }
   };
 
-  const onRemoveNews = async (eventId: string, relay: string, requestDeletion: boolean = false) => {
-    const key = `${eventId}-${relay}`;
+  const onRemoveNews = async (newsToBeRemoved: NewsTag, requestDeletion: boolean = false) => {
+    const key = newsToBeRemoved.eTag;
 
     try {
       setRemovingKey(key);
 
       await performAction({
         action: "remove-news",
-        eventId,
-        relay,
+        tagToBeRemoved: newsToBeRemoved,
         requestDeletion,
       });
 
@@ -153,7 +155,10 @@ export default function NewsCuration({
     const isMasterAccount = pendingDeletionEvent.pubkey === MASTER_ADMIN_PUBKEY;
 
     if (isOwner) {
-      await onRemoveNews(pendingDeletionEvent.id, pendingDeletionEvent.relay, false);
+      await onRemoveNews(
+        { eTag: pendingDeletionEvent.id, relays: pendingDeletionEvent.relays },
+        false,
+      );
 
       if (sendDeleteRequest) {
         const currentTime = Math.floor(Date.now() / 1000);
@@ -204,7 +209,10 @@ export default function NewsCuration({
       }
     } else if (isMasterAccount) {
       // Master account event, use backend deletion
-      await onRemoveNews(pendingDeletionEvent.id, pendingDeletionEvent.relay, sendDeleteRequest);
+      await onRemoveNews(
+        { eTag: pendingDeletionEvent.id, relays: pendingDeletionEvent.relays },
+        sendDeleteRequest,
+      );
     }
 
     setDeletionDialogOpen(false);
@@ -231,7 +239,7 @@ export default function NewsCuration({
             Array.from({ length: news.length }).map((_, idx) => (
               <div
                 key={`skeleton-${idx}`}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                className="flex items-center justify-between p-3 rounded-lg"
               >
                 <div className="flex-1 min-w-0">
                   <Skeleton className="h-4 w-48 mb-2" />
@@ -255,15 +263,15 @@ export default function NewsCuration({
                 const url = `${WEBSITE_URL}${links.newsDetail(slug)}`;
                 const nevent = nip19.neventEncode({
                   id: event.id,
-                  relays: [event.relay],
+                  relays: event.relays,
                   author: event.pubkey,
                   kind: event.kind,
                 });
 
                 return (
                   <div
-                    key={`${event.id}-${event.relay}`}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    key={event.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted"
                   >
                     <div className="min-w-0">
                       <div className="text-sm truncate max-w-[48ch]">
@@ -287,7 +295,7 @@ export default function NewsCuration({
                         </a>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {event.relay} {formatNostrDate(event.created_at)}
+                        {event.relays.join(", ")} {formatNostrDate(event.created_at)}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
@@ -314,10 +322,10 @@ export default function NewsCuration({
                       <Button
                         variant="destructive"
                         size="sm"
-                        disabled={removingKey === `${event.id}-${event.relay}`}
+                        disabled={removingKey === event.id}
                         onClick={() => handleRemoveNewsClick(event)}
                       >
-                        {removingKey === `${event.id}-${event.relay}` ? (
+                        {removingKey === event.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <Trash2 className="h-4 w-4" />
@@ -338,14 +346,14 @@ export default function NewsCuration({
             onChange={(e) => setNewsEventId(e.target.value)}
           />
           <Input
-            placeholder="Relay URL"
-            value={newsRelay}
-            onChange={(e) => setNewsRelay(e.target.value)}
+            placeholder="wss://relay.url;wss://relay2.url"
+            value={newsRelays}
+            onChange={(e) => setNewsRelays(e.target.value)}
           />
           <Button
             className="w-full"
             variant="secondary"
-            disabled={!newsEventId.trim() || !newsRelay.trim() || adding}
+            disabled={!newsEventId.trim() || !newsRelays.trim() || adding}
             onClick={onAddNews}
           >
             {adding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
@@ -421,11 +429,9 @@ export default function NewsCuration({
                     variant="destructive"
                     className="bg-red-600"
                     onClick={() => confirmDeletion(true)}
-                    disabled={
-                      removingKey === `${pendingDeletionEvent.id}-${pendingDeletionEvent.relay}`
-                    }
+                    disabled={removingKey === pendingDeletionEvent.id}
                   >
-                    {removingKey === `${pendingDeletionEvent.id}-${pendingDeletionEvent.relay}` ? (
+                    {removingKey === pendingDeletionEvent.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       "Kaldır ve Sil"
@@ -436,11 +442,9 @@ export default function NewsCuration({
                   variant="destructive"
                   className="bg-orange-600"
                   onClick={() => confirmDeletion(false)}
-                  disabled={
-                    removingKey === `${pendingDeletionEvent.id}-${pendingDeletionEvent.relay}`
-                  }
+                  disabled={removingKey === pendingDeletionEvent.id}
                 >
-                  {removingKey === `${pendingDeletionEvent.id}-${pendingDeletionEvent.relay}` ? (
+                  {removingKey === pendingDeletionEvent.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     "Sadece Kaldır"

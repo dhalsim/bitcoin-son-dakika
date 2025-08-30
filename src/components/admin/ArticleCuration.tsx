@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { EventItem } from "@/lib/nip01";
 import { getKind30023Events } from "@/lib/nip23";
+import type { EventItem } from "@/lib/nip01";
+import type { AddArticlePayload, RemoveArticlePayload } from "@/types/admin";
 
 import type { ArticleTag } from "../../../api-helpers/utils";
 import { extractArticleDataFromEvent } from "../../../api-helpers/utils";
@@ -19,7 +20,7 @@ import UploadToX from "./UploadToX";
 interface ArticleCurationProps {
   articles: ArticleTag[];
   lastUpdated: number;
-  performAction: (data: any) => Promise<any>;
+  performAction: (data: RemoveArticlePayload | AddArticlePayload) => Promise<any>;
   reload: () => Promise<void> | void;
   userNpub?: string;
   onEditArticle: (articleData: any) => void;
@@ -37,7 +38,7 @@ export default function ArticleCuration({
   const [articleNaddr, setArticleNaddr] = useState("");
   const [articleNpub, setArticleNpub] = useState(userNpub || "");
   const [articleDTag, setArticleDTag] = useState("");
-  const [articleRelay, setArticleRelay] = useState("");
+  const [articleRelays, setArticleRelays] = useState("");
   const [adding, setAdding] = useState(false);
   const [removingKey, setRemovingKey] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
@@ -46,7 +47,7 @@ export default function ArticleCuration({
 
   useEffect(() => {
     if (articles.length > 0) {
-      const relays = new Set(articles.map((n) => n.relay));
+      const relays = new Set(articles.flatMap((n) => n.relays));
       const aTags = articles.map((n) => n.aTag);
 
       const [pubkeys, identifiers] = aTags.reduce(
@@ -95,13 +96,15 @@ export default function ArticleCuration({
       await performAction({
         action: "add-article",
         type: "a",
-        a: `30023:${articleNpub}:${articleDTag}`,
-        relay: articleRelay.trim(),
+        tagToBeAdded: {
+          aTag: `30023:${articleNpub}:${articleDTag}`,
+          relays: articleRelays.split(";").filter((r) => r.trim() !== ""),
+        },
       });
 
       setArticleNpub(userNpub || "");
       setArticleDTag("");
-      setArticleRelay("");
+      setArticleRelays("");
 
       await reload();
     } finally {
@@ -109,11 +112,11 @@ export default function ArticleCuration({
     }
   };
 
-  const onRemove = async (aTag: string, relay: string) => {
+  const onRemove = async (tagToBeRemoved: ArticleTag) => {
     try {
-      setRemovingKey(aTag);
+      setRemovingKey(tagToBeRemoved.aTag);
 
-      await performAction({ action: "remove-article", aTag, relay });
+      await performAction({ action: "remove-article", tagToBeRemoved });
 
       await reload();
     } finally {
@@ -141,7 +144,7 @@ export default function ArticleCuration({
             Array.from({ length: articles.length }).map((_, idx) => (
               <div
                 key={`skeleton-${idx}`}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                className="flex items-center justify-between p-3 bg-muted rounded-lg"
               >
                 <div className="flex-1 min-w-0">
                   <Skeleton className="h-4 w-48 mb-2" />
@@ -167,8 +170,8 @@ export default function ArticleCuration({
 
                 return (
                   <div
-                    key={`${event.id}-${event.relay}`}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    key={event.id}
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
                   >
                     <div className="min-w-0">
                       <div className="font-mono text-xs text-muted-foreground">
@@ -211,7 +214,7 @@ export default function ArticleCuration({
                         variant="destructive"
                         size="sm"
                         disabled={removingKey === aTag}
-                        onClick={() => onRemove(aTag, event.relay)}
+                        onClick={() => onRemove({ aTag, relays: event.relays })}
                       >
                         {removingKey === aTag ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -274,9 +277,9 @@ export default function ArticleCuration({
                 onChange={(e) => setArticleDTag(e.target.value)}
               />
               <Input
-                placeholder="wss://relay.example.com (isteğe bağlı)"
-                value={articleRelay}
-                onChange={(e) => setArticleRelay(e.target.value)}
+                placeholder="wss://relay.url;wss://relay2.url"
+                value={articleRelays}
+                onChange={(e) => setArticleRelays(e.target.value)}
               />
               <Button
                 className="w-full"

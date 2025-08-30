@@ -39,7 +39,7 @@ export default function TestEventPage() {
           throw new Error("No profile found");
         }
 
-        const profileItem = parseProfileEvent(profile, PROFILE_RELAYS[0]);
+        const profileItem = parseProfileEvent(profile, PROFILE_RELAYS, null);
 
         setAuthor(profileItem);
       });
@@ -78,7 +78,7 @@ export default function TestEventPage() {
         ids: [eventId],
       });
 
-      setEvent({ ...event, relay: relays[0] });
+      setEvent({ ...event, relays });
       setLoading(false);
     };
 

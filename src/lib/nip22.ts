@@ -31,7 +31,7 @@ export function getArticleReplies({
   onUpdate,
 }: GetArticleRepliesParams) {
   const newReplies = new Map<string, EventItem>();
-  const receivedEventRelayMap = new Map<string, string>();
+  const receivedEventRelayMap = new Map<string, string[]>();
 
   let eoseCalled = false;
 
@@ -44,15 +44,14 @@ export function getArticleReplies({
     },
     {
       receivedEvent(relay, id) {
-        receivedEventRelayMap.set(id, relay.url);
-      },
-      alreadyHaveEvent(id) {
-        return cachedReplies.has(id);
+        const relays = receivedEventRelayMap.get(id) ?? [];
+
+        receivedEventRelayMap.set(id, [...relays, relay.url]);
       },
       onevent: (evt) => {
-        const relay = receivedEventRelayMap.get(evt.id);
+        const relays = receivedEventRelayMap.get(evt.id);
 
-        if (!relay) {
+        if (!relays || relays.length === 0) {
           console.error("Received event from unknown relay", evt);
 
           return;
@@ -62,8 +61,8 @@ export function getArticleReplies({
           return;
         }
 
-        newReplies.set(evt.id, { ...evt, relay });
-        cachedReplies.set(evt.id, { ...evt, relay });
+        newReplies.set(evt.id, { ...evt, relays });
+        cachedReplies.set(evt.id, { ...evt, relays });
 
         if (eoseCalled) {
           onUpdate(new Map(newReplies));
@@ -258,9 +257,9 @@ export async function postNip22Reply({
 
   // first add root tags
   const tags = [
-    ["A", root_aTag, root.event.relay], // root a tag with relay hint
+    ["A", root_aTag, root.event.relays[0]], // root a tag with relay hint
     ["K", "30023"], // root kind tag
-    ["P", root.author.pubkey, root.author.relay], // root p tag
+    ["P", root.author.pubkey, root.author.relays[0]], // root p tag
   ];
 
   if (parent) {
@@ -270,17 +269,17 @@ export async function postNip22Reply({
 
     // then add parent tags
     tags.push(
-      ["e", parent.event.id, parent.event.relay, parent.author.pubkey], // parent e tag
+      ["e", parent.event.id, parent.event.relays[0], parent.author.pubkey], // parent e tag
       ["k", "1111"], // parent kind tag
-      ["p", parent.author.pubkey, parent.author.relay], // parent p tag
+      ["p", parent.author.pubkey, parent.author.relays[0]], // parent p tag
     );
   } else {
     // if no parent, add for root again
     tags.push(
-      ["a", root_aTag, root.event.relay],
-      ["e", root.event.id, root.event.relay],
+      ["a", root_aTag, root.event.relays[0]],
+      ["e", root.event.id, root.event.relays[0]],
       ["k", "30023"],
-      ["p", root.author.pubkey, root.author.relay],
+      ["p", root.author.pubkey, root.author.relays[0]],
     );
   }
 

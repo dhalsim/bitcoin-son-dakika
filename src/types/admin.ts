@@ -1,0 +1,94 @@
+import type { ArticleTag, NewsTag, PodcastTag } from "api-helpers/utils";
+
+export type AddArticlePayload =
+  | { action: "add-article"; type: "naddr"; naddr: string }
+  | { action: "add-article"; type: "a"; tagToBeAdded: ArticleTag };
+
+export type AddNewsPayload = {
+  action: "add-news";
+  tagToBeAdded: NewsTag;
+};
+
+export type RemoveNewsPayload = {
+  action: "remove-news";
+  tagToBeRemoved: NewsTag;
+  requestDeletion?: boolean;
+};
+
+export type RemoveArticlePayload = {
+  action: "remove-article";
+  tagToBeRemoved: ArticleTag;
+};
+
+export type AddAdminPayload = {
+  action: "add-admin-pubkey";
+  pubkey: string;
+};
+
+export type RemoveAdminPayload = {
+  action: "remove-admin-pubkey";
+  pubkey: string;
+};
+
+export type RemoveEditorPayload = {
+  action: "remove-editor-pubkey";
+  pubkey: string;
+};
+
+export type AddEditorPayload = {
+  action: "add-editor-pubkey";
+  pubkey: string;
+};
+
+export type PublishNewsPayload = {
+  action: "publish-news";
+  content: string;
+  title: string;
+  summary?: string;
+  image?: string;
+  tags: string[];
+};
+
+export type PublishArticlePayload = {
+  action: "publish-article";
+  title: string;
+  content: string;
+  summary?: string;
+  image?: string;
+  tags: string[];
+  dTag?: string;
+};
+
+export type PublishPodcastPayload = {
+  action: "publish-podcast";
+  title: string;
+  content: string;
+  summary?: string;
+  image?: string;
+  audioUrl: string;
+  duration?: string;
+  episodeNumber?: number;
+  tags: string[];
+  transcriptUrl?: string;
+  chaptersUrl?: string;
+  dTag?: string; // For updates, use existing dTag
+};
+
+export type RemovePodcastPayload = {
+  action: "remove-podcast";
+  tagToBeRemoved: PodcastTag;
+};
+
+export type Payload =
+  | AddNewsPayload
+  | RemoveNewsPayload
+  | AddArticlePayload
+  | RemoveArticlePayload
+  | AddAdminPayload
+  | RemoveAdminPayload
+  | RemoveEditorPayload
+  | AddEditorPayload
+  | PublishNewsPayload
+  | PublishArticlePayload
+  | PublishPodcastPayload
+  | RemovePodcastPayload;
