@@ -152,24 +152,18 @@ export function LinkPreview({ url, className = "", showFallback = true }: LinkPr
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1">
-                {title}
-              </h4>
-              <ExternalLink className="h-3 w-3 text-gray-400 flex-shrink-0 mt-0.5" />
+              <h4 className="text-sm font-medium line-clamp-1">{title}</h4>
+              <ExternalLink className="h-3 w-3 flex-shrink-0 mt-0.5" />
             </div>
 
             {description && (
-              <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
-                {description}
-              </div>
+              <div className="text-xs text-muted-foreground line-clamp-2 mt-1">{description}</div>
             )}
 
-            <div className="flex items-center gap-1 mt-1">
-              {siteName && (
-                <span className="text-xs text-gray-500 dark:text-gray-500">{siteName}</span>
-              )}
+            <div className="flex items-center text-muted-foreground gap-1 mt-1">
+              {siteName && <span className="text-xs">{siteName}</span>}
               {siteName && <span className="text-xs text-gray-400">•</span>}
-              <span className="text-xs text-gray-500 dark:text-gray-500 truncate">{domain}</span>
+              <span className="text-xs truncate">{domain}</span>
             </div>
           </div>
         </div>
