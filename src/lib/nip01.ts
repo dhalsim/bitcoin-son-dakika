@@ -6,7 +6,7 @@ import { PROFILE_RELAYS } from "../../api-helpers/utils";
 import { getCache } from "./cache";
 import type { Nip65Relays } from "./nip65";
 import { Nip65RelaysSchema } from "./nip65";
-import { logCloseReasons, pool } from "./utils";
+import { logCloseReasons, pool, publishToRelays } from "./utils";
 
 export const parseProfileEvent = (
   event: NostrEvent,
@@ -48,6 +48,9 @@ export const ProfileItemSchema = z.object({
 });
 
 export type ProfileItem = z.infer<typeof ProfileItemSchema>;
+
+// Type for profile updates (excluding readonly fields)
+export type ProfileUpdate = Omit<ProfileItem, "pubkey" | "relays" | "created_at" | "nip65">;
 
 export type EventItem = NostrEvent & {
   relays: string[];
@@ -211,4 +214,53 @@ export function getKind1Events(
   return () => {
     sub.close();
   };
+}
+
+// Function to save profile updates
+export async function saveProfile(
+  pubkey: string,
+  profileUpdate: ProfileUpdate,
+  signEvent: (params: { event: any }) => Promise<{ signedEvent: NostrEvent }>,
+  relays: string[],
+): Promise<boolean> {
+  try {
+    // Create the profile event
+    const eventTemplate = {
+      kind: 0,
+      pubkey,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [],
+      content: JSON.stringify(profileUpdate),
+    };
+
+    // Sign the event
+    const { signedEvent } = await signEvent({ event: eventTemplate });
+
+    const results = await publishToRelays(signedEvent, relays);
+    const successCount = results.filter((result) => result.success).length;
+
+    // Update local cache
+    const cache = getCache();
+    const cachedProfiles = cache.getProfileItems();
+    const existingProfile = cachedProfiles.get(pubkey);
+
+    if (existingProfile) {
+      const updatedProfile: ProfileItem = {
+        ...existingProfile,
+        ...profileUpdate,
+        created_at: signedEvent.created_at,
+      };
+
+      cachedProfiles.set(pubkey, updatedProfile);
+      cache.setProfileItems(cachedProfiles);
+    }
+
+    console.log(`Profile published to ${successCount}/${relays.length} relays`);
+
+    return successCount > 0;
+  } catch (error) {
+    console.error("Error saving profile:", error);
+
+    throw error;
+  }
 }

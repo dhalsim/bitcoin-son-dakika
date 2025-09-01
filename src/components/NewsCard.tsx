@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router";
 
 import type { EventItem, ProfileItem } from "@/lib/nip01";
-import { createProfileSlug } from "@/lib/ssg-data";
+import { createAuthorSlug } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
 import { links } from "@/lib/utils";
 
@@ -123,7 +123,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
           {author && displayName && (
             <div className="flex items-center space-x-2">
               <Link
-                to={`/profile/${createProfileSlug(displayName)}`}
+                to={links.author(createAuthorSlug(displayName))}
                 className="text-muted-foreground font-medium hover:text-main-accent transition-colors"
               >
                 <div className="flex items-center space-x-2">

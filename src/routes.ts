@@ -13,7 +13,7 @@ export default [
   // TODO: add educations - egitimler routes
   route("son-dakika", "routes/latest.tsx"), // both news and articles
   route("etiket/:slug", "routes/tags.tsx"),
-  route("profile/:slug", "routes/profile.tsx"),
+  route("author/:slug", "routes/author.tsx"),
   route("test/:eventId", "routes/test-event.tsx"),
   route("*", "routes/$.tsx"),
 ] satisfies RouteConfig;

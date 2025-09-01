@@ -311,7 +311,7 @@ export function getUniqueTags(ssgData: SSGData): string[] {
 }
 
 // Helper function to get unique profiles from SSG data
-export function getUniqueProfiles(ssgData: SSGData): ProfileItem[] {
+export function getUniqueAuthors(ssgData: SSGData): ProfileItem[] {
   const profileMap = new Map<string, ProfileItem>();
 
   // Collect profiles from news
@@ -339,7 +339,7 @@ export function getUniqueProfiles(ssgData: SSGData): ProfileItem[] {
 }
 
 // Helper function to create profile slug from display name
-export function createProfileSlug(displayName: string): string {
+export function createAuthorSlug(displayName: string): string {
   return displayName
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "") // Remove special characters except spaces and hyphens
@@ -353,10 +353,10 @@ export function getDisplayName(profile: ProfileItem, pubkey: string) {
 }
 
 // Helper function to find profile by slug
-export function findProfileBySlug(ssgData: SSGData, slug: string): ProfileItem | undefined {
-  const profiles = getUniqueProfiles(ssgData);
+export function findAuthorBySlug(ssgData: SSGData, slug: string): ProfileItem | undefined {
+  const profiles = getUniqueAuthors(ssgData);
 
   return profiles.find(
-    (profile) => createProfileSlug(getDisplayName(profile, profile.pubkey)) === slug,
+    (profile) => createAuthorSlug(getDisplayName(profile, profile.pubkey)) === slug,
   );
 }

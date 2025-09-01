@@ -9,9 +9,9 @@ import { generateFeeds } from "./src/lib/generators/feed-generator";
 import { generatePodcastRssXml } from "./src/lib/generators/podcast-generator";
 import { generateSitemapXml } from "./src/lib/generators/sitemap-generator";
 import {
-  getUniqueProfiles,
+  getUniqueAuthors,
   getUniqueTags,
-  createProfileSlug,
+  createAuthorSlug,
   fetchSSGData,
 } from "./src/lib/ssg-data";
 import { links } from "./src/lib/utils";
@@ -77,12 +77,12 @@ export default {
     }
 
     // Generate profile routes for all unique profiles
-    const profiles = getUniqueProfiles(ssgData);
-    const profileRoutes = profiles
+    const authors = getUniqueAuthors(ssgData);
+    const authorRoutes = authors
       .filter((profile) => profile.display_name)
-      .map((profile) => `/profile/${createProfileSlug(profile.display_name!)}`);
+      .map((profile) => links.author(createAuthorSlug(profile.display_name!)));
 
-    console.log(`Generated ${profileRoutes.length} profile routes`);
+    console.log(`Generated ${authorRoutes.length} author routes`);
 
     // Generate tag routes for all unique tags
     const tags = getUniqueTags(ssgData);
@@ -111,12 +111,13 @@ export default {
 
     const allRoutes = [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
-      "/admin", // Admin paneli - static
+      "/admin", // Admin paneli
+      "/profile", // Profil
       "/haberler", // Haberler sayfası - static
       "/makaleler", // Makaleler sayfası - static
       "/podcast", // Podcast ana sayfası - static
       "/son-dakika", // Son dakika sayfası - static
-      ...profileRoutes, // Profile pages - static
+      ...authorRoutes, // Profile pages - static
       ...tagRoutes, // Tag pages - static
       ...articlesRoutes, // Article detail pages - static
       ...newsRoutes, // News detail pages - static

@@ -28,7 +28,6 @@ import { ADMIN_RELAYS } from "../../api-helpers/utils";
 import {
   isMultiPublishResponse,
   isPublishResponseError,
-  isPublishResponseSuccess,
   isSinglePublishResponse,
   MultiPublishResponse,
   PublishResponse,

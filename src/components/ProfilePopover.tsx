@@ -31,7 +31,7 @@ export function ProfilePopover({
   const handleProfileClick = () => {
     const nprofile = nip19.nprofileEncode({
       pubkey,
-      relays: [profile?.relay || PROFILE_RELAYS[0]],
+      relays: profile?.relays || PROFILE_RELAYS,
     });
 
     // Open user profile in njump.me
@@ -58,20 +58,14 @@ export function ProfilePopover({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h4 className="font-semibold text-gray-900 dark:text-gray-100">{displayName}</h4>
+              <h4 className="font-semibold">{displayName}</h4>
               {profile.nip05 && <NIP05Badge nip05={profile.nip05} pubkey={pubkey} size="sm" />}
             </div>
           </div>
 
-          {profile.about && (
-            <p className="text-sm text-gray-600 dark:text-gray-300">{profile.about}</p>
-          )}
+          {profile.about && <p className="text-sm">{profile.about}</p>}
 
-          {popupContent && (
-            <div className="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-2 rounded-md">
-              {popupContent}
-            </div>
-          )}
+          {popupContent && <div className="text-sm p-2 rounded-md">{popupContent}</div>}
 
           <div className="flex space-x-2">
             <Button onClick={handleProfileClick} variant="outline" size="sm" className="flex-1">
@@ -81,7 +75,6 @@ export function ProfilePopover({
             <FollowButton
               pubkey={pubkey}
               size="sm"
-              variant="outline"
               className="flex-1"
               onError={(error) => {
                 console.error("Follow error:", error);

@@ -13,7 +13,6 @@ import { useNostrAuth } from "@/contexts/NostrAuthContext";
 interface FollowButtonProps {
   pubkey: string;
   size?: "sm" | "md" | "lg";
-  variant?: "default" | "outline" | "ghost";
   className?: string;
   onError?: (error: string) => void;
   onFollowChange?: (isFollowing: boolean) => void;
@@ -22,7 +21,6 @@ interface FollowButtonProps {
 export function FollowButton({
   pubkey,
   size = "md",
-  variant = "default",
   className = "",
   onError,
   onFollowChange,
@@ -136,31 +134,6 @@ export function FollowButton({
     }
   };
 
-  // Variant classes
-  const getVariantClasses = () => {
-    if (isFollowing) {
-      // When following, use green styling for all variants
-      switch (variant) {
-        case "outline":
-          return "border border-green-600 dark:border-green-500 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 text-green-700 dark:text-green-300";
-        case "ghost":
-          return "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 text-green-700 dark:text-green-300";
-        default:
-          return "bg-green-600 hover:bg-green-700 text-white";
-      }
-    } else {
-      // When not following, use blue styling for all variants
-      switch (variant) {
-        case "outline":
-          return "border border-blue-600 dark:border-blue-500 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300";
-        case "ghost":
-          return "bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300";
-        default:
-          return "bg-blue-600 hover:bg-blue-700 text-white";
-      }
-    }
-  };
-
   // Don't show button if user is not logged in
   if (!isLoggedIn) {
     return null;
@@ -171,7 +144,7 @@ export function FollowButton({
     return (
       <button
         disabled
-        className={`inline-flex items-center ${getSizeClasses()} font-medium rounded-lg cursor-not-allowed bg-gray-400 text-white ${className}`}
+        className={`inline-flex items-center ${getSizeClasses()} font-medium rounded-lg cursor-not-allowed ${className}`}
       >
         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
         Yükleniyor...
@@ -183,7 +156,7 @@ export function FollowButton({
     return (
       <button
         disabled
-        className={`inline-flex items-center ${getSizeClasses()} font-medium rounded-lg cursor-not-allowed bg-gray-400 text-white ${className}`}
+        className={`inline-flex items-center ${getSizeClasses()} font-medium rounded-lg cursor-not-allowed text-white ${className}`}
       >
         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
         Yükleniyor...
@@ -194,7 +167,7 @@ export function FollowButton({
   return (
     <button
       onClick={handleFollowToggle}
-      className={`inline-flex items-center ${getSizeClasses()} font-medium rounded-lg transition-colors ${getVariantClasses()} ${className}`}
+      className={`inline-flex items-center ${getSizeClasses()} font-medium rounded-lg transition-colors bg-green-600 hover:bg-green-700 text-white ${className}`}
     >
       {isFollowing ? (
         <>

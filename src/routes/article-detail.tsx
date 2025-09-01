@@ -4,7 +4,7 @@ import { Link, useLoaderData } from "react-router";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import { links } from "@/lib/utils";
 import type { SSGData } from "@/lib/ssg-data";
-import { createProfileSlug } from "@/lib/ssg-data";
+import { createAuthorSlug } from "@/lib/ssg-data";
 
 import { createTitleSlug } from "../../api-helpers/utils";
 
@@ -134,7 +134,7 @@ export default function ArticleDetailPage() {
             <div className="flex flex-col">{time}</div>
             <div className="text-xs text-muted-foreground">
               <Link
-                to={`/profile/${createProfileSlug(displayName)}`}
+                to={links.author(createAuthorSlug(displayName))}
                 className="text-foreground font-medium hover:text-main-accent transition-colors"
               >
                 <div className="flex items-center">

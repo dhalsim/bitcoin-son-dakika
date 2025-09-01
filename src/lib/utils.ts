@@ -188,7 +188,7 @@ export const links = {
 
     return base;
   },
-  profile: (slug: string) => `/profile/${slug}`,
+  author: (slug: string) => `/author/${slug}`,
   testEvent: (eventId: string) => `/test/${eventId}`,
   latest: "/son-dakika",
   educations: "/egitimler",
