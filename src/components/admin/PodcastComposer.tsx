@@ -266,7 +266,7 @@ export default function PodcastComposer({
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
                   placeholder="Yeni etiket"
-                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
                 />
                 <Button type="button" onClick={handleAddTag} variant="outline" size="sm">
                   <Plus className="h-4 w-4" />

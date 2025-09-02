@@ -356,7 +356,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
 
     // Cycle through playback speeds
     const cyclePlaybackSpeed = () => {
-      const speeds = [1, 1.25, 1.5, 2];
+      const speeds = [1, 1.25, 1.5, 1.75, 2];
       const currentIndex = speeds.indexOf(playbackSpeed);
       const nextIndex = (currentIndex + 1) % speeds.length;
       const newSpeed = speeds[nextIndex];

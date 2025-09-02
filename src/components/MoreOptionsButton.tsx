@@ -30,7 +30,7 @@ export function MoreOptionsButton({ event }: MoreOptionsButtonProps) {
     id: event.id,
     author: event.pubkey,
     kind: event.kind,
-    relays: [event.relay],
+    relays: event.relays,
   });
 
   const { id, pubkey, created_at, content, kind, tags, sig } = event;
