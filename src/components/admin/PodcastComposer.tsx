@@ -194,7 +194,7 @@ export default function PodcastComposer({
             {content && (
               <div className="space-y-2">
                 <Label className="text-base font-medium">Önizleme</Label>
-                <div className="border rounded-md p-3 bg-gray-50 dark:bg-gray-900">
+                <div className="border rounded-md p-3">
                   <ArticleMarkdownRenderer content={preview || "Önizleme yok"} />
                 </div>
               </div>

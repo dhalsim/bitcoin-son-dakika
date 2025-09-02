@@ -27,14 +27,13 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
   const [relay, setRelay] = useState("wss://relay.nsec.app");
   const [isWaitingForConnection, setIsWaitingForConnection] = useState(false);
   const [showCopiedTooltip, setShowCopiedTooltip] = useState(false);
-  const [showCopiedTooltip2, setShowCopiedTooltip2] = useState(false);
-  const [showCopiedTooltip3, setShowCopiedTooltip3] = useState(false);
+  const [showAmber, setShowAmber] = useState(false);
+
   const [isTyping, setIsTyping] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
 
   // New state variables for UI control
   const [showRelayInput, setShowRelayInput] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
 
   const { loginWithNostrConnect } = useNostrAuth();
   const { toast } = useToast();
@@ -44,6 +43,8 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
       Kopyalandı
     </span>
   );
+
+  const amberButton = <span className="">Amber'de Aç</span>;
 
   // Generate initial QR code on mount
   useEffect(() => {
@@ -111,29 +112,13 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
     }
   };
 
-  const copyOrOpenUri = async (no: 1 | 2 | 3) => {
-    if (isMobile()) {
-      window.open(generatedUri, "_blank");
-
-      return;
-    }
-
+  const copyUri = async () => {
     try {
       await navigator.clipboard.writeText(generatedUri);
 
-      if (no === 1) {
-        setShowCopiedTooltip(true);
+      setShowCopiedTooltip(true);
 
-        setTimeout(() => setShowCopiedTooltip(false), 2000);
-      } else if (no === 2) {
-        setShowCopiedTooltip2(true);
-
-        setTimeout(() => setShowCopiedTooltip2(false), 2000);
-      } else {
-        setShowCopiedTooltip3(true);
-
-        setTimeout(() => setShowCopiedTooltip3(false), 2000);
-      }
+      setTimeout(() => setShowCopiedTooltip(false), 2000);
     } catch (error) {
       console.error("Failed to copy URI:", error);
 
@@ -292,9 +277,10 @@ export function NostrConnectAuth({ onSuccess, onError }: NostrConnectAuthProps) 
                   <div
                     dangerouslySetInnerHTML={{ __html: qrSvg }}
                     className="w-[200px] h-[200px] flex justify-center items-center"
-                    onClick={() => copyOrOpenUri(2)}
+                    onClick={() => copyUri()}
                   />
-                  {showCopiedTooltip2 && copyTooltip}
+                  {showCopiedTooltip && copyTooltip}
+                  {showAmber && amberButton}
                 </div>
               ) : (
                 <div className="w-[200px] h-[200px] flex items-center justify-center">

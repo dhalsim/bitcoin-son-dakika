@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { EventTemplate, NostrEvent } from "nostr-tools";
 
 import { getCache } from "@/lib/cache";
-import { LoginModal } from "@/components/auth/LoginModal";
+import { AuthModal } from "@/components/auth/AuthModal";
 import { createNip07Provider, Nip07Relays } from "@/lib/providers/Nip07Provider";
 import { createNostrConnectProvider, NostrConnectData } from "@/lib/providers/NostrConnectProvider";
 
@@ -347,7 +347,7 @@ const NostrAuthProvider = React.memo(({ children }: NostrAuthProviderProps) => {
   return (
     <NostrAuthContext.Provider value={contextValue}>
       {children}
-      <LoginModal
+      <AuthModal
         open={isModalOpen}
         onClose={handleModalClose}
         intent={pendingAuthRequest?.intent || "read_pubkey"}
