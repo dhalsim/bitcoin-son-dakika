@@ -47,7 +47,7 @@ export async function loader({}: LoaderFunctionArgs) {
   try {
     const ssgData = await fetchSSGData();
 
-    const podcasts = ssgData.podcasts.sort((a, b) => a.publishedAt - b.publishedAt);
+    const podcasts = ssgData.podcasts.sort((a, b) => b.publishedAt - a.publishedAt);
 
     return {
       podcasts,

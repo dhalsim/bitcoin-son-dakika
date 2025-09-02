@@ -10,8 +10,9 @@ import {
 } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION, WEBSITE_URL, LOGO_URL } from "../lib/constants";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { EducationItem } from "@/lib/ssg-data";
+import { ContentItem, EducationItem } from "@/lib/ssg-data";
 import PodcastCard from "@/components/PodcastCard";
+import { assertUnreachable, links } from "@/lib/utils";
 
 export const meta: MetaFunction = () => {
   const title = `${WEBSITE_NAME} - Güncel Bitcoin Haberleri ve Analizler`;
@@ -76,7 +77,7 @@ export default function Index() {
   const ssgData = useSSGData();
   const latestNews = useLatestNews(6); // Get latest 6 news items
   const latestArticles = useLatestArticles(2); // Get latest 2 articles for the articles row
-  const latestPodcasts = useLatestPodcasts(2); // Get latest 2 podcasts for the podcasts row
+  const latestPodcasts = useLatestPodcasts(3); // Get latest 3 podcasts for the podcasts row
 
   const [category, setCategory] = useState<CategoryValue>("all");
 
@@ -113,7 +114,7 @@ export default function Index() {
 
   // Pre-render all category content as React nodes for instant switching
   const categoryNodes = useMemo(() => {
-    const renderContent = (content: any, index: number) => {
+    const renderContent = (content: ContentItem, index: number) => {
       const uniqueKey = `${content.type}-${index}`;
 
       if (content.type === "news") {
@@ -122,13 +123,12 @@ export default function Index() {
         return <NewsCard key={uniqueKey} {...content} />;
       } else if (content.type === "podcast") {
         return <PodcastCard key={uniqueKey} podcast={content} />;
-      } else if (content.type === "education") {
-        return null;
+      } else {
+        return assertUnreachable(content);
       }
-      return null;
     };
 
-    const createGrid = (content: any[], categoryName: string) => {
+    const createGrid = (content: any[], categoryName: CategoryValue) => {
       if (content.length === 0) {
         return (
           <div className="text-center py-12">
@@ -160,14 +160,15 @@ export default function Index() {
       podcast: createGrid(categoryContent.podcast, "podcast"),
       education: createGrid(categoryContent.education, "education"),
     };
+
     return nodesMap;
   }, [categoryContent]);
 
   // Memoize category tabs to prevent unnecessary re-renders
   const categoryTabs = useMemo(() => {
     return categories.map(({ label, value }) => {
-      const contentCount = categoryContent[value].length;
       const isActive = value === category;
+
       return (
         <button
           key={value}
@@ -180,15 +181,6 @@ export default function Index() {
           }`}
         >
           {label}
-          {contentCount > 0 && (
-            <span
-              className={`ml-1 text-xs transition-colors duration-200 ${
-                isActive ? "text-main-accent" : "text-muted-foreground group-hover:text-main-accent"
-              }`}
-            >
-              ({contentCount})
-            </span>
-          )}
           {isActive && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-main-accent rounded-full animate-pulse"></div>
           )}
@@ -211,6 +203,33 @@ export default function Index() {
     );
   }
 
+  const getRestOfLinks = (type: Exclude<CategoryValue, "all" | "education">) => {
+    const linkClassName =
+      "flex items-center text-foreground hover:text-main-accent transition-colors";
+
+    if (type === "news") {
+      return (
+        <a href={links.news} className={linkClassName}>
+          <span className="text-sm font-medium">Tüm haberler →</span>
+        </a>
+      );
+    } else if (type === "articles") {
+      return (
+        <a href={links.articles} className={linkClassName}>
+          Tüm köşe yazılar →
+        </a>
+      );
+    } else if (type === "podcast") {
+      return (
+        <a href={links.podcasts} className={linkClassName}>
+          Tüm podcastler →
+        </a>
+      );
+    } else {
+      return assertUnreachable(type);
+    }
+  };
+
   return (
     <MainContent>
       {/* Featured News */}
@@ -231,6 +250,10 @@ export default function Index() {
       {/* Main News Grid */}
       <div key={category} className="animate-in fade-in-50 duration-200 scale-in-95">
         {categoryNodes[category]}
+
+        <div className="ml-4 text-center">
+          {category !== "all" && category !== "education" && getRestOfLinks(category)}
+        </div>
       </div>
 
       {/* Debug Info - Only show in development */}

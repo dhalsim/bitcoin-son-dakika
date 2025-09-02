@@ -460,7 +460,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
                 variant="ghost"
                 size="sm"
                 onClick={cyclePlaybackSpeed}
-                className="h-6 px-2 text-xs font-mono hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="h-6 px-2 text-xs font-mono hover:text-main-accent"
               >
                 {playbackSpeed}x
               </Button>
@@ -643,7 +643,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
                           onClick={() => jumpToTime(entry.startTime)}
                           className={`group p-2 rounded cursor-pointer hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-500 dark:hover:text-white ${
                             syncTranscript && currentTranscriptEntry?.text === entry.text
-                              ? "bg-green-100 dark:bg-green-900/30 border-l-4 border-l-green-500"
+                              ? "bg-green-100 dark:bg-green-900/30 border-l-4 border-l-green-500 text-gray-700 dark:text-gray-500"
                               : ""
                           }`}
                           title={`${formatTime(entry.startTime)} - ${formatTime(entry.endTime)}`}
