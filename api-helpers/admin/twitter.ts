@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 
-import { ErrorResponseCreator, createTitleSlug } from "../utils.js";
+import { ErrorResponseCreator } from "../utils.js";
 
-import type { HandleUploadToXParams, XAuthHeaderParams } from "./types.js";
+import type { AuthResult, XAuthHeaderParams } from "./types.js";
 
 function createXAuthHeader(params: XAuthHeaderParams): string {
   const {
@@ -46,6 +46,15 @@ function createXAuthHeader(params: XAuthHeaderParams): string {
   );
 }
 
+type HandleUploadToXParams = {
+  TWITTER_API_KEY: string;
+  TWITTER_API_SECRET: string;
+  TWITTER_ACCESS_TOKEN: string;
+  TWITTER_ACCESS_TOKEN_SECRET: string;
+  authResult: AuthResult;
+  paramsData: { formData: FormData; firstPost: string; secondPost: string; slug: string };
+};
+
 export async function handleUploadToX(params: HandleUploadToXParams) {
   const {
     TWITTER_API_KEY,
@@ -64,7 +73,8 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
     return ErrorResponseCreator("Only editors can publish news", 403);
   }
 
-  const { formData, title } = paramsData;
+  const { formData, firstPost, secondPost, slug } = paramsData;
+
   if (!formData) {
     return ErrorResponseCreator("File is required", 400);
   }
@@ -94,6 +104,7 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
     headers: { Authorization: authHeader },
     body: xForm,
   });
+
   if (!uploadResponse.ok) {
     const text = await uploadResponse.text().catch(() => "");
 
@@ -105,17 +116,20 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
 
   try {
     const uploadJson = await uploadResponse.json();
+
     if (uploadJson.errors) {
       return ErrorResponseCreator(uploadJson.errors.map((e: any) => e.message).join(", "), 400);
     }
 
     const { media_id_string: mediaId } = uploadJson;
+
     if (!mediaId) {
       return ErrorResponseCreator("Media ID not found", 400);
     }
 
     const tweetUrl = "https://api.x.com/2/tweets";
     const tweetMethod = "POST";
+
     const tweetAuthHeader = createXAuthHeader({
       TWITTER_API_KEY,
       TWITTER_API_SECRET,
@@ -128,11 +142,14 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
     const mediaTweetResponse = await fetch(tweetUrl, {
       method: tweetMethod,
       headers: { Authorization: tweetAuthHeader, "Content-Type": "application/json" },
-      body: JSON.stringify({ media: { media_ids: [mediaId] }, text: title }),
+      body: JSON.stringify({ media: { media_ids: [mediaId] }, text: firstPost }),
     });
+
     const mediaTweetJson = await mediaTweetResponse.json();
+
     const mediaTweetId = mediaTweetJson?.data?.id;
     const mediaTweetErrors = mediaTweetJson?.errors;
+
     if (mediaTweetErrors) {
       return ErrorResponseCreator(mediaTweetErrors.map((e: any) => e.message).join(", "), 400);
     }
@@ -141,14 +158,14 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
       return ErrorResponseCreator("Reply to ID not found", 400);
     }
 
-    const newsUrl = `https://bitcoinsondakika.com/haber/${createTitleSlug(title)}`;
+    const newsUrl = `https://bitcoinsondakika.com/haber/${slug}`;
 
     const replyTweetResponse = await fetch(tweetUrl, {
       method: tweetMethod,
       headers: { Authorization: tweetAuthHeader, "Content-Type": "application/json" },
       body: JSON.stringify({
         reply: { in_reply_to_tweet_id: mediaTweetId },
-        text: `Haberin devamı ve daha fazlası için: ${newsUrl}`,
+        text: secondPost.replace("[link]", newsUrl),
       }),
     });
 

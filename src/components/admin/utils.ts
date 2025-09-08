@@ -67,20 +67,26 @@ export async function postAdminAction(
 
 export type PublishToXParams = {
   blob: Blob;
-  title: string;
+  firstPost: string;
+  secondPost: string;
+  slug: string;
   getPublicKey: GetPublicKey;
   signEvent: SignEvent;
 };
 
 export async function publishToX({
   blob,
-  title,
+  firstPost,
+  secondPost,
+  slug,
   getPublicKey,
   signEvent,
 }: PublishToXParams): Promise<Response> {
   const form = new FormData();
   form.append("action", "upload-to-x");
-  form.append("title", title);
+  form.append("firstPost", firstPost);
+  form.append("secondPost", secondPost);
+  form.append("slug", slug);
   form.append("media", new File([blob], "post.png", { type: "image/png" }));
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";

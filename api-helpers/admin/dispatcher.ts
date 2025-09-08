@@ -52,7 +52,13 @@ export async function handleAdminPost(request: Request): Promise<Response> {
           return ErrorResponseCreator("Twitter credentials not configured", 500);
         }
 
-        const title = String(form.get("title") || "");
+        const firstPost = String(form.get("firstPost"));
+        const secondPost = String(form.get("secondPost"));
+        const slug = String(form.get("slug"));
+
+        if (!firstPost || !secondPost || !slug) {
+          return ErrorResponseCreator("First post, second post and slug are required", 400);
+        }
 
         return handleUploadToX({
           TWITTER_API_KEY,
@@ -60,7 +66,7 @@ export async function handleAdminPost(request: Request): Promise<Response> {
           TWITTER_ACCESS_TOKEN,
           TWITTER_ACCESS_TOKEN_SECRET,
           authResult,
-          paramsData: { action: "upload-to-x", formData: form, title },
+          paramsData: { formData: form, firstPost, secondPost, slug },
         });
       }
 

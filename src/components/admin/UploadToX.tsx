@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import type { EventItem } from "@/lib/nip01";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
+import { createTitleSlug } from "../../../api-helpers/utils";
+
 import { PublishToXParams } from "./utils";
 
 type UploadToXProps = {
@@ -49,8 +51,9 @@ export default function UploadToX({
   height = 600,
 }: UploadToXProps) {
   const canvasRef = useRef<CanvasEditorHandle | null>(null);
-  const [title, setTitle] = useState<string | undefined>(undefined);
-  const [summary, setSummary] = useState<string | undefined>(undefined);
+  const [firstPost, setFirstPost] = useState<string | undefined>(undefined);
+  const [secondPost, setSecondPost] = useState<string | undefined>(undefined);
+  const [slug, setSlug] = useState<string | undefined>(undefined);
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true); // initializing
   const [overlayText, setOverlayText] = useState<string>("");
@@ -87,11 +90,13 @@ export default function UploadToX({
   useEffect(() => {
     if (open && eventItem) {
       const title = eventItem.tags.find((t) => t[0] === "title")?.[1];
-      const summary = eventItem.tags.find((t) => t[0] === "summary")?.[1];
       const imageUrl = eventItem.tags.find((t) => t[0] === "image")?.[1];
 
-      setTitle(title);
-      setSummary(summary);
+      const tags = eventItem.tags.filter((t) => t[0] === "t").map((t) => `#${t[1]}`);
+
+      setSlug(createTitleSlug(title));
+      setFirstPost(title + " " + tags.join(" "));
+      setSecondPost("Haberin devamı ve daha fazlası için: [link]");
       setImageUrl(imageUrl);
 
       setLoading(false);
@@ -110,12 +115,12 @@ export default function UploadToX({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-3">
             <div>
-              <Label>Başlık</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+              <Label>Birinci Post</Label>
+              <Textarea value={firstPost} onChange={(e) => setFirstPost(e.target.value)} />
             </div>
             <div>
-              <Label>Özet</Label>
-              <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} />
+              <Label>İkinci Post</Label>
+              <Textarea value={secondPost} onChange={(e) => setSecondPost(e.target.value)} />
             </div>
             <div>
               <Label>Görsel URL</Label>
@@ -130,13 +135,22 @@ export default function UploadToX({
                 }
 
                 setXPublishData({ type: "loading" });
+
                 try {
                   const blob = await canvasRef.current.exportAsBlob();
+
                   if (!blob) {
                     throw new Error("Görsel oluşturulamadı");
                   }
 
-                  const res = await publishToX({ blob, title, getPublicKey, signEvent });
+                  const res = await publishToX({
+                    blob,
+                    firstPost,
+                    secondPost,
+                    slug,
+                    getPublicKey,
+                    signEvent,
+                  });
 
                   const data = await res.json();
 
@@ -212,7 +226,7 @@ export default function UploadToX({
             <CanvasEditor
               ref={canvasRef as any}
               imageUrl={imageUrl}
-              captionText={title}
+              captionText={firstPost}
               width={width}
               height={height}
               backgroundColor="#000000"
