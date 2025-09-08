@@ -158,7 +158,7 @@ export function MoreOptionsButton({ event }: MoreOptionsButtonProps) {
             <DialogTitle>Ham Event Verisi</DialogTitle>
           </DialogHeader>
 
-          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-md border overflow-auto max-h-[60vh] relative">
+          <div className="mt-4 p-4 rounded-md border overflow-auto max-h-[60vh] relative">
             <div className="absolute top-4 right-4">
               {showDialogCopiedTooltip && (
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded shadow-lg whitespace-nowrap z-tooltip">

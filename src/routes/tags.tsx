@@ -48,7 +48,15 @@ export const meta: MetaFunction = ({ params }) => {
 };
 
 export default function TagsPage() {
-  const { slug, type } = useParams();
+  const params = useParams();
+  const slug = params.slug;
+
+  const type: "news" | "articles" | "podcast" | undefined = params.type as
+    | "news"
+    | "articles"
+    | "podcast"
+    | undefined;
+
   const ssgData = useSSGData();
 
   // If type is not provided, show all items
@@ -82,7 +90,16 @@ export default function TagsPage() {
     <MainContent>
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold mb-2">"#{slug}" Etiketi</h1>
-        <p className="text-muted-foreground">Bu etiketle ilgili tüm haberler ve makaleler</p>
+        <p className="text-muted-foreground">
+          Bu etiketle ilgili tüm{" "}
+          {type === "news"
+            ? "haberler"
+            : type === "articles"
+              ? "makaleler"
+              : type === "podcast"
+                ? "podcastler"
+                : "haberler, makaleler ve podcastler"}
+        </p>
       </div>
 
       {/* Filtered Content List - Single Column */}
