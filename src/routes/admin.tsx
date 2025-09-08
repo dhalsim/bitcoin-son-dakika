@@ -511,17 +511,10 @@ export default function AdminPanel() {
         >
           <TabsList className="flex flex-wrap gap-2">
             <TabsTrigger value="stats">İstatistikler</TabsTrigger>
-            {userIsEditor && <TabsTrigger value="compose">Haber Yayınla</TabsTrigger>}
-            {userIsEditor && <TabsTrigger value="compose-article">Makale Yayınla</TabsTrigger>}
-            {userIsEditor && <TabsTrigger value="compose-podcast">Podcast Yayınla</TabsTrigger>}
+            {(userIsEditor || userIsAdmin) && <TabsTrigger value="news">Haberler</TabsTrigger>}
+            {(userIsEditor || userIsAdmin) && <TabsTrigger value="articles">Makaleler</TabsTrigger>}
             {(userIsEditor || userIsAdmin) && (
-              <TabsTrigger value="news">Haber Kürasyonu</TabsTrigger>
-            )}
-            {(userIsEditor || userIsAdmin) && (
-              <TabsTrigger value="articles">Makale Kürasyonu</TabsTrigger>
-            )}
-            {(userIsEditor || userIsAdmin) && (
-              <TabsTrigger value="podcasts">Podcast Kürasyonu</TabsTrigger>
+              <TabsTrigger value="podcasts">Podcastler</TabsTrigger>
             )}
             {userIsEditor && <TabsTrigger value="sources">Haber Kaynakları</TabsTrigger>}
             {userIsAdmin && <TabsTrigger value="users">Kullanıcılar</TabsTrigger>}
@@ -544,18 +537,6 @@ export default function AdminPanel() {
                   return;
                 }
 
-                if (tab === "compose" && !userIsEditor) {
-                  return;
-                }
-
-                if (tab === "compose-article" && !userIsEditor) {
-                  return;
-                }
-
-                if (tab === "compose-podcast" && !userIsEditor) {
-                  return;
-                }
-
                 if (tab === "sources" && !userIsEditor) {
                   return;
                 }
@@ -569,76 +550,101 @@ export default function AdminPanel() {
             />
           </TabsContent>
 
-          {userIsEditor && (
-            <TabsContent value="compose">
-              <NewsComposer
-                performAction={performAction}
-                prefill={composerPrefill || undefined}
-                prefillToken={composerPrefillToken}
-              />
-            </TabsContent>
-          )}
-
-          {userIsEditor && (
-            <TabsContent value="compose-article">
-              <ArticleComposer
-                performAction={performAction}
-                editData={editingArticle}
-                onCancelEdit={() => setEditingArticle(null)}
-              />
-            </TabsContent>
-          )}
-
-          {userIsEditor && (
-            <TabsContent value="compose-podcast">
-              <PodcastComposer
-                performAction={performAction}
-                editData={editingPodcast}
-                onCancelEdit={() => setEditingPodcast(null)}
-              />
-            </TabsContent>
-          )}
-
           {(userIsEditor || userIsAdmin) && (
             <TabsContent value="news">
-              <NewsCuration
-                news={adminData?.news || []}
-                lastUpdated={adminData?.newsLastTimeUpdated || 0}
-                performAction={performAction}
-                reload={loadAdminData}
-                setPublishSuccess={setPublishSuccess}
-              />
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <NewsCuration
+                    news={adminData?.news || []}
+                    lastUpdated={adminData?.newsLastTimeUpdated || 0}
+                    performAction={performAction}
+                    reload={loadAdminData}
+                    setPublishSuccess={setPublishSuccess}
+                  />
+                </div>
+                {userIsEditor && (
+                  <div className="space-y-4" data-section="compose-news">
+                    <NewsComposer
+                      performAction={performAction}
+                      prefill={composerPrefill || undefined}
+                      prefillToken={composerPrefillToken}
+                    />
+                  </div>
+                )}
+              </div>
             </TabsContent>
           )}
 
           {(userIsEditor || userIsAdmin) && (
             <TabsContent value="articles">
-              <ArticleCuration
-                articles={adminData?.articles || []}
-                lastUpdated={adminData?.articlesLastTimeUpdated || 0}
-                performAction={performAction}
-                reload={loadAdminData}
-                userNpub={userInfo.pubkey ? nip19.npubEncode(userInfo.pubkey) : undefined}
-                onEditArticle={(articleData) => {
-                  setEditingArticle(articleData);
-                  changeTab("compose-article");
-                }}
-              />
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <ArticleCuration
+                    articles={adminData?.articles || []}
+                    lastUpdated={adminData?.articlesLastTimeUpdated || 0}
+                    performAction={performAction}
+                    reload={loadAdminData}
+                    userNpub={userInfo.pubkey ? nip19.npubEncode(userInfo.pubkey) : undefined}
+                    onEditArticle={(articleData) => {
+                      setEditingArticle(articleData);
+                      // Scroll to the composer section when editing
+                      setTimeout(() => {
+                        const composerSection = document.querySelector(
+                          '[data-section="compose-article"]',
+                        );
+                        if (composerSection) {
+                          composerSection.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }, 100);
+                    }}
+                  />
+                </div>
+                {userIsEditor && (
+                  <div className="space-y-4" data-section="compose-article">
+                    <ArticleComposer
+                      performAction={performAction}
+                      editData={editingArticle}
+                      onCancelEdit={() => setEditingArticle(null)}
+                    />
+                  </div>
+                )}
+              </div>
             </TabsContent>
           )}
 
           {(userIsEditor || userIsAdmin) && (
             <TabsContent value="podcasts">
-              <PodcastCuration
-                podcasts={adminData?.podcasts || []}
-                lastUpdated={adminData?.podcastsLastTimeUpdated || 0}
-                performAction={performAction}
-                reload={loadAdminData}
-                onEditPodcast={(podcastData) => {
-                  setEditingPodcast(podcastData);
-                  changeTab("compose-podcast");
-                }}
-              />
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <PodcastCuration
+                    podcasts={adminData?.podcasts || []}
+                    lastUpdated={adminData?.podcastsLastTimeUpdated || 0}
+                    performAction={performAction}
+                    reload={loadAdminData}
+                    onEditPodcast={(podcastData) => {
+                      setEditingPodcast(podcastData);
+                      // Scroll to the composer section when editing
+                      setTimeout(() => {
+                        const composerSection = document.querySelector(
+                          '[data-section="compose-podcast"]',
+                        );
+                        if (composerSection) {
+                          composerSection.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }, 100);
+                    }}
+                  />
+                </div>
+                {userIsEditor && (
+                  <div className="space-y-4" data-section="compose-podcast">
+                    <PodcastComposer
+                      performAction={performAction}
+                      editData={editingPodcast}
+                      onCancelEdit={() => setEditingPodcast(null)}
+                    />
+                  </div>
+                )}
+              </div>
             </TabsContent>
           )}
 
@@ -648,7 +654,14 @@ export default function AdminPanel() {
                 onPrefill={(data) => {
                   setComposerPrefill(data);
                   setComposerPrefillToken(`${Date.now()}`);
-                  changeTab("compose");
+                  changeTab("news");
+                  // Scroll to the composer section when prefilling
+                  setTimeout(() => {
+                    const composerSection = document.querySelector('[data-section="compose-news"]');
+                    if (composerSection) {
+                      composerSection.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }, 100);
                 }}
               />
             </TabsContent>

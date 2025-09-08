@@ -1,4 +1,4 @@
-import { Loader2, RefreshCw, Trash2, Edit } from "lucide-react";
+import { Loader2, Trash2, Edit, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -128,7 +128,7 @@ export default function ArticleCuration({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <RefreshCw className="h-5 w-5" />
+          <AlertCircle className="h-5 w-5" />
           Makale Küratörlüğü ({articles?.length || 0})
         </CardTitle>
         <CardDescription>
@@ -144,7 +144,7 @@ export default function ArticleCuration({
             Array.from({ length: articles.length }).map((_, idx) => (
               <div
                 key={`skeleton-${idx}`}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                className="flex items-center justify-between p-3 rounded-lg"
               >
                 <div className="flex-1 min-w-0">
                   <Skeleton className="h-4 w-48 mb-2" />
@@ -171,15 +171,28 @@ export default function ArticleCuration({
                 return (
                   <div
                     key={event.id}
-                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted"
                   >
                     <div className="min-w-0">
+                      <div className="text-sm truncate max-w-[48ch]">
+                        <a
+                          href={`https://bitcoinsondakika.com/makale/${dTag}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:text-blue-600 font-bold"
+                        >
+                          {display}
+                        </a>
+                      </div>
                       <div className="font-mono text-xs text-muted-foreground">
                         {event.id.substring(0, 6)}...{event.id.substring(event.id.length - 6)}
                       </div>
-                      <div className="text-sm truncate max-w-[48ch]">{display}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {event.relays.join(", ")}{" "}
+                        {new Date(event.created_at * 1000).toLocaleString()}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-4">
                       <Button
                         variant="outline"
                         size="sm"
