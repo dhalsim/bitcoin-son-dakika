@@ -32,6 +32,63 @@ const Header: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
+  // Function to copy URL to clipboard
+  const copyToClipboard = async (url: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    const target = e.currentTarget;
+
+    if (!target) {
+      console.error("Target not found");
+
+      return;
+    }
+
+    try {
+      // Focus the button first to ensure document is focused
+      target.focus();
+
+      // Try modern clipboard API first
+      await navigator.clipboard.writeText(url);
+    } catch (error) {
+      // Fallback for older browsers or when clipboard API fails
+      try {
+        const textArea = document.createElement("textarea");
+
+        textArea.value = url;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+
+        document.body.appendChild(textArea);
+
+        textArea.focus();
+        textArea.select();
+
+        document.execCommand("copy");
+
+        document.body.removeChild(textArea);
+      } catch (fallbackError) {
+        console.error("Failed to copy to clipboard:", fallbackError);
+
+        return; // Don't show tooltip if copy failed
+      }
+    }
+
+    // Show tooltip after successful copy
+    const tooltip = target.querySelector(".tooltip");
+
+    if (tooltip) {
+      tooltip.classList.remove("hidden");
+      tooltip.classList.add("block");
+    }
+
+    setTimeout(() => {
+      if (tooltip) {
+        tooltip.classList.remove("block");
+        tooltip.classList.add("hidden");
+      }
+    }, 2000);
+  };
+
   return (
     <header className="shadow-md relative z-header">
       {/* Background image */}
@@ -68,6 +125,8 @@ const Header: React.FC = () => {
               </a>
               <a
                 href="https://x.com/sondakikabtc"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-gray-500/20 transition-all duration-300"
               >
                 <svg
@@ -81,31 +140,54 @@ const Header: React.FC = () => {
                   <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
                 </svg>
               </a>
-              <a
-                href="/feed/atom.xml"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+              <button
+                onClick={(e) => copyToClipboard(window.location.origin + "/feed/atom.xml", e)}
+                className="relative p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer"
+                title="Atom feed kopyala"
               >
                 <Atom className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-              </a>
-              <a
-                href="/feed/rss.xml"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+
+                <div className="tooltip absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-800 text-white text-xs rounded shadow-lg max-w-xs sm:max-w-sm hidden z-tooltip">
+                  <div className="text-center">
+                    Atom feed kopyalandı
+                    <br />
+                    <span className="text-gray-300">RSS okuyucunuza yapıştırabilirsiniz</span>
+                  </div>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
+                </div>
+              </button>
+              <button
+                onClick={(e) => copyToClipboard(window.location.origin + "/feed/rss.xml", e)}
+                className="relative p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer"
+                title="RSS feed kopyala"
               >
                 <Rss className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-              </a>
-              <a
-                href="/feed/podcast-rss.xml"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300"
-                title="Podcast RSS Feed"
+                <div className="tooltip absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-800 text-white text-xs rounded shadow-lg max-w-xs sm:max-w-sm hidden z-tooltip">
+                  <div className="text-center">
+                    RSS feed kopyalandı
+                    <br />
+                    <span className="text-gray-300">RSS okuyucunuza yapıştırabilirsiniz</span>
+                  </div>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
+                </div>
+              </button>
+              <button
+                onClick={(e) =>
+                  copyToClipboard(window.location.origin + "/feed/podcast-rss.xml", e)
+                }
+                className="relative p-1 rounded-md hover:bg-accent hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300 cursor-pointer"
+                title="Podcast feed kopyala"
               >
                 <Mic className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-              </a>
+                <div className="tooltip absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-800 text-white text-xs rounded shadow-lg max-w-xs sm:max-w-sm hidden z-tooltip">
+                  <div className="text-center">
+                    Podcast feed kopyalandı
+                    <br />
+                    <span className="text-gray-300">RSS okuyucunuza yapıştırabilirsiniz</span>
+                  </div>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-800"></div>
+                </div>
+              </button>
             </div>
 
             <button
