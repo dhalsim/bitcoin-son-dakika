@@ -527,6 +527,6 @@ export function getTagsEvent() {
   return pool.get(ADMIN_RELAYS, {
     authors: [MASTER_ADMIN_PUBKEY],
     "#d": ["categories"],
-    kinds: [30023],
+    kinds: [30004],
   });
 }
