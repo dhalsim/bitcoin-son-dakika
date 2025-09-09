@@ -264,6 +264,7 @@ export type FetchNostrSetsResult = {
   articleTags: ArticleTag[];
   newsTags: NewsTag[];
   podcastTags: PodcastTag[];
+  tags: TagItem[];
 };
 
 /**
@@ -276,6 +277,7 @@ export async function fetchNostrSets(sets: EventSet[]): Promise<FetchNostrSetsRe
     let articleTags: ArticleTag[] = [];
     let newsTags: NewsTag[] = [];
     let podcastTags: PodcastTag[] = [];
+    let tags: TagItem[] = [];
 
     // Fetch admin users set
     const eventResults: Map<EventSet, EventItem> = await fetchSets(sets);
@@ -316,6 +318,15 @@ export async function fetchNostrSets(sets: EventSet[]): Promise<FetchNostrSetsRe
             relays: tag.slice(2),
           }));
       }
+
+      if (set === "categories") {
+        tags = event.tags
+          .filter((tag) => tag[0] === "t")
+          .map((tag) => ({
+            tag: tag[1],
+            label: tag[2],
+          }));
+      }
     }
 
     return {
@@ -324,6 +335,7 @@ export async function fetchNostrSets(sets: EventSet[]): Promise<FetchNostrSetsRe
       articleTags: articleTags,
       newsTags: newsTags,
       podcastTags: podcastTags,
+      tags: tags,
     };
   } catch (error) {
     console.error("Error fetching Nostr sets:", error);
@@ -336,7 +348,13 @@ function getEventSetType(set: EventSet, type: "follow" | "curation"): boolean {
   return set === "admin-users" || set === "editor-users" ? type === "follow" : type === "curation";
 }
 
-export type EventSet = "admin-users" | "editor-users" | "articles" | "news" | "podcasts";
+export type EventSet =
+  | "admin-users"
+  | "editor-users"
+  | "articles"
+  | "news"
+  | "podcasts"
+  | "categories";
 
 const fetchSets = async (sets: EventSet[]): Promise<Map<EventSet, EventItem>> => {
   const hasFollowSet = sets.some((set) => getEventSetType(set, "follow"));
@@ -457,7 +475,10 @@ export function createTitleSlug(title: string): string {
   );
 }
 
-export function extractArticleDataFromEvent(event: EventItem): Omit<ArticleItem, "author"> & {
+export function extractArticleDataFromEvent(
+  event: EventItem,
+  tags: TagItem[],
+): Omit<ArticleItem, "author"> & {
   dTag: string;
   pubkey: string;
   relays: string[];
@@ -466,7 +487,21 @@ export function extractArticleDataFromEvent(event: EventItem): Omit<ArticleItem,
   const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
   const imageTag = event.tags.find((t) => t[0] === "image")?.[1];
   const dTag = event.tags.find((t) => t[0] === "d")?.[1];
-  const tags = event.tags.filter((t) => t[0] === "t").map((t) => t[1]);
+
+  const tTags = event.tags.filter((t) => t[0] === "t");
+
+  const matchedTags = tTags
+    .map((tTag) => tags.find((t) => t.tag === tTag[1]))
+    .filter((t) => t !== undefined);
+
+  if (matchedTags.length !== tTags.length) {
+    console.log(
+      "missing tags",
+      tTags.filter((t) => !matchedTags.some((m) => m?.tag === t[1])),
+    );
+
+    throw new Error("Tags not found");
+  }
 
   return {
     type: "article",
@@ -477,7 +512,7 @@ export function extractArticleDataFromEvent(event: EventItem): Omit<ArticleItem,
     summary: summaryTag || "",
     content: event.content,
     image: imageTag || "",
-    tags: tags || [],
+    tags: matchedTags,
     identifier: dTag || "",
     dTag: dTag || "",
     pubkey: event.pubkey,
@@ -485,7 +520,10 @@ export function extractArticleDataFromEvent(event: EventItem): Omit<ArticleItem,
   };
 }
 
-export function extractPodcastDataFromEvent(event: EventItem): Omit<PodcastItem, "author"> & {
+export function extractPodcastDataFromEvent(
+  event: EventItem,
+  tags: TagItem[],
+): Omit<PodcastItem, "author"> & {
   dTag: string;
   pubkey: string;
   relays: string[];
@@ -499,7 +537,21 @@ export function extractPodcastDataFromEvent(event: EventItem): Omit<PodcastItem,
   const transcriptTag = event.tags.find((t) => t[0] === "transcript")?.[1];
   const chaptersTag = event.tags.find((t) => t[0] === "chapters")?.[1];
   const dTag = event.tags.find((t) => t[0] === "d")?.[1];
-  const tags = event.tags.filter((t) => t[0] === "t").map((t) => t[1]);
+
+  const tTags = event.tags.filter((t) => t[0] === "t");
+
+  const matchedTags = tTags
+    .map((tTag) => tags.find((t) => t.tag === tTag[1]))
+    .filter((t) => t !== undefined);
+
+  if (matchedTags.length !== tTags.length) {
+    console.log(
+      "missing tags",
+      tTags.filter((t) => !matchedTags.some((m) => m?.tag === t[1])),
+    );
+
+    throw new Error("Tags not found");
+  }
 
   return {
     type: "podcast",
@@ -515,7 +567,7 @@ export function extractPodcastDataFromEvent(event: EventItem): Omit<PodcastItem,
     episodeNumber: episodeTag ? parseInt(episodeTag) : 0,
     transcriptUrl: transcriptTag || "",
     chaptersUrl: chaptersTag || "",
-    tags: tags || [],
+    tags: matchedTags,
     identifier: dTag || "",
     dTag: dTag || "",
     pubkey: event.pubkey,

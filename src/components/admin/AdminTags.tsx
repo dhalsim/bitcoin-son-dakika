@@ -10,6 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { UpdateTagsPayload } from "@/types/admin";
 
 import { useTags } from "@/hooks/useTags";
+import { useSSGData } from "@/contexts/SSGContext";
+
+import TagContentSheet from "./TagContentSheet";
 
 interface TagItem {
   tag: string;
@@ -32,7 +35,58 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
   const [editTag, setEditTag] = useState("");
   const [editLabel, setEditLabel] = useState("");
   const [localTags, setLocalTags] = useState<TagItem[]>([]);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<{ tag: string; label: string } | null>(null);
+  const ssgData = useSSGData();
   const { tags, tagsLastTimeUpdated, loading, error: tagsError, refreshTags } = useTags();
+
+  // Calculate tag usage counts
+  const getTagUsageCounts = () => {
+    const counts: Record<string, number> = {};
+
+    if (!ssgData) return counts;
+
+    // Count usage in all content types
+    [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts].forEach((item) => {
+      item.tags.forEach((tag) => {
+        counts[tag.tag] = (counts[tag.tag] || 0) + 1;
+      });
+    });
+
+    return counts;
+  };
+
+  const tagUsageCounts = getTagUsageCounts();
+
+  const handleUsageCountClick = (tag: TagItem) => {
+    setSelectedTag(tag);
+    setSheetOpen(true);
+  };
+
+  const validateTagFormat = (tag: string): string | null => {
+    // Check if tag is empty
+    if (!tag.trim()) {
+      return "Etiket adı gereklidir";
+    }
+
+    // Check if tag contains only lowercase letters, numbers, and hyphens
+    const validTagRegex = /^[a-z0-9-]+$/;
+    if (!validTagRegex.test(tag)) {
+      return "Etiket sadece latin alfabesi, küçük harfler, rakamlar ve tire (-) içerebilir";
+    }
+
+    // Check if tag starts or ends with hyphen
+    if (tag.startsWith("-") || tag.endsWith("-")) {
+      return "Etiket tire (-) ile başlayamaz veya bitemez";
+    }
+
+    // Check if tag has consecutive hyphens
+    if (tag.includes("--")) {
+      return "Etiket ardışık tire (--) içeremez";
+    }
+
+    return null; // Valid
+  };
 
   // Initialize local tags when tags are loaded
   React.useEffect(() => {
@@ -72,9 +126,18 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
       return;
     }
 
+    // Validate tag format
+    const tagValidationError = validateTagFormat(newTag.trim());
+    if (tagValidationError) {
+      setError(tagValidationError);
+
+      return;
+    }
+
     // Check for duplicate tags
-    if (localTags.some((tag) => tag.tag.toLowerCase() === newTag.toLowerCase())) {
+    if (localTags.some((tag) => tag.tag.toLowerCase() === newTag.trim().toLowerCase())) {
       setError("Etiket zaten mevcut");
+
       return;
     }
 
@@ -100,10 +163,19 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
       return;
     }
 
+    // Validate tag format
+    const tagValidationError = validateTagFormat(editTag.trim());
+    if (tagValidationError) {
+      setError(tagValidationError);
+
+      return;
+    }
+
     // Check for duplicate tags (excluding current one)
     if (
       localTags.some(
-        (tag, idx) => idx !== editingIndex && tag.tag.toLowerCase() === editTag.toLowerCase(),
+        (tag, idx) =>
+          idx !== editingIndex && tag.tag.toLowerCase() === editTag.trim().toLowerCase(),
       )
     ) {
       setError("Etiket zaten mevcut");
@@ -151,6 +223,12 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
         </CardTitle>
         <CardDescription>
           Haber, Makale ve Podcast için kullanılabilir etiketleri yönetin
+          {ssgData && (
+            <span className="block mt-1 text-sm">
+              Toplam {Object.keys(tagUsageCounts).length} etiket kullanımda, {localTags.length}{" "}
+              etiket tanımlı
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -173,6 +251,14 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
             </div>
           ) : (
             <div className="space-y-2">
+              {/* Header */}
+              <div className="flex items-center gap-4 px-2 py-1 text-xs text-muted-foreground font-medium">
+                <div className="w-36">Etiket</div>
+                <div className="flex-1">Etiket Adı</div>
+                <div className="w-16 text-right">Kullanım</div>
+                <div className="w-20 text-center">İşlemler</div>
+              </div>
+
               {localTags.map((tag, index) => (
                 <div
                   key={index}
@@ -188,6 +274,7 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
                           onChange={(e) => setEditTag(e.target.value)}
                           onKeyDown={(e) => handleKeyPress(e, "edit")}
                           className="h-8 text-sm"
+                          placeholder="bitcoin-analiz"
                         />
                       </div>
                       <div className="flex-1">
@@ -227,6 +314,19 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="font-medium text-sm truncate block">{tag.label}</span>
+                        </div>
+                        <div className="w-16 flex-shrink-0 text-right">
+                          <button
+                            onClick={() => handleUsageCountClick(tag)}
+                            className={`text-xs hover:underline ${
+                              (tagUsageCounts[tag.tag] || 0) === 0
+                                ? "text-red-500 font-medium"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                            title="İçeriği görüntüle"
+                          >
+                            {tagUsageCounts[tag.tag] || 0} kullanım
+                          </button>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
@@ -302,7 +402,7 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
               <Label htmlFor="newTag">Etiket</Label>
               <Input
                 id="newTag"
-                placeholder="örnek: bitcoin"
+                placeholder="örnek: bitcoin-analiz (sadece latin alfabesi, küçük harf, rakam, tire)"
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyDown={(e) => handleKeyPress(e, "add")}
@@ -312,7 +412,7 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
               <Label htmlFor="newLabel">Etiket Adı</Label>
               <Input
                 id="newLabel"
-                placeholder="örnek: Bitcoin"
+                placeholder="örnek: Bitcoin Analiz"
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
                 onKeyDown={(e) => handleKeyPress(e, "add")}
@@ -328,6 +428,16 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
           </div>
         </div>
       </CardContent>
+
+      {/* Tag Content Sheet */}
+      {selectedTag && (
+        <TagContentSheet
+          tag={selectedTag.tag}
+          tagLabel={selectedTag.label}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+        />
+      )}
     </Card>
   );
 }

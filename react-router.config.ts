@@ -86,7 +86,7 @@ export default {
 
     // Generate tag routes for all unique tags
     const tags = getUniqueTags(ssgData);
-    const tagRoutes = tags.map((tag) => links.tag(createTitleSlug(tag)));
+    const tagRoutes = tags.map((tagItem) => links.tag(createTitleSlug(tagItem.tag)));
 
     console.log(`Generated ${tagRoutes.length} tag routes`);
 

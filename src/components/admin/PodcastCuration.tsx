@@ -12,6 +12,7 @@ import type { PodcastTag } from "../../../api-helpers/utils";
 import { extractPodcastDataFromEvent } from "../../../api-helpers/utils";
 
 import { Skeleton } from "../ui/skeleton";
+import { useTags } from "@/hooks/useTags";
 
 interface PodcastCurationProps {
   podcasts: PodcastTag[];
@@ -30,6 +31,7 @@ export default function PodcastCuration({
 }: PodcastCurationProps) {
   const [removing, setRemoving] = useState<string | null>(null);
   const [podcastEvents, setPodcastEvents] = useState<Map<string, EventItem>>(new Map());
+  const { tags } = useTags();
 
   useEffect(() => {
     if (podcasts.length > 0) {
@@ -160,7 +162,7 @@ export default function PodcastCuration({
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            onEditPodcast(extractPodcastDataFromEvent(event));
+                            onEditPodcast(extractPodcastDataFromEvent(event, tags));
                           }}
                           title="Düzenle"
                         >

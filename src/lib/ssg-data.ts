@@ -1,5 +1,6 @@
 import type { NostrEvent } from "nostr-tools";
 
+import type { TagItem } from "../../api-helpers/utils";
 import {
   extractArticleDataFromEvent,
   extractPodcastDataFromEvent,
@@ -21,7 +22,7 @@ export interface NewsItem {
   event: EventItem;
   author: ProfileItem;
   publishedAt: number;
-  tags: string[];
+  tags: TagItem[];
   title?: string;
   summary?: string;
   image?: string;
@@ -32,7 +33,7 @@ export interface ArticleItem {
   id: string;
   title: string;
   content: string;
-  tags: string[];
+  tags: TagItem[];
   event: EventItem;
   author: ProfileItem;
   publishedAt: number;
@@ -46,7 +47,7 @@ export interface PodcastItem {
   id: string;
   title: string;
   content: string;
-  tags: string[];
+  tags: TagItem[];
   event: EventItem;
   author: ProfileItem;
   publishedAt: number;
@@ -68,13 +69,29 @@ export interface SSGData {
   news: NewsItem[];
   articles: ArticleItem[];
   podcasts: PodcastItem[];
+  tags: TagItem[];
   lastUpdated: number;
 }
 
-function processNewsEvent(event: EventItem, author: ProfileItem): NewsItem {
+function processNewsEvent(event: EventItem, author: ProfileItem, tagItems: TagItem[]): NewsItem {
   const titleTag = event.tags.find((tag) => tag[0] === "title");
   const summaryTag = event.tags.find((tag) => tag[0] === "summary");
   const imageTag = event.tags.find((tag) => tag[0] === "image");
+
+  const tTags = event.tags.filter((tag) => tag[0] === "t");
+
+  const matchedTags = tTags
+    .map((tag) => tagItems.find((t) => t.tag === tag[1]))
+    .filter((tag) => tag !== undefined);
+
+  if (matchedTags.length !== tTags.length) {
+    console.log(
+      "missing tags",
+      tTags.filter((t) => !matchedTags.some((m) => m?.tag === t[1])),
+    );
+
+    throw new Error("Tags not found");
+  }
 
   return {
     type: "news",
@@ -85,26 +102,27 @@ function processNewsEvent(event: EventItem, author: ProfileItem): NewsItem {
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
-    tags: event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1]),
+    tags: matchedTags,
     image: imageTag?.[1],
   };
 }
 
-function processArticleEvent(event: EventItem, author: ProfileItem): ArticleItem {
-  return { author, ...extractArticleDataFromEvent(event) };
+function processArticleEvent(event: EventItem, author: ProfileItem, tags: TagItem[]): ArticleItem {
+  return { author, ...extractArticleDataFromEvent(event, tags) };
 }
 
-function processPodcastEvent(event: EventItem, author: ProfileItem): PodcastItem {
-  return { author, ...extractPodcastDataFromEvent(event) };
+function processPodcastEvent(event: EventItem, author: ProfileItem, tags: TagItem[]): PodcastItem {
+  return { author, ...extractPodcastDataFromEvent(event, tags) };
 }
 
 export async function fetchSSGData(): Promise<SSGData> {
   console.log("Fetching SSG data from Nostr relays...");
 
-  const { newsTags, articleTags, podcastTags } = await fetchNostrSets([
+  const { newsTags, articleTags, podcastTags, tags } = await fetchNostrSets([
     "news",
     "articles",
     "podcasts",
+    "categories",
   ]);
 
   const newsRelays = [...new Set(newsTags.flatMap((tag) => tag.relays))];
@@ -207,7 +225,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${ne.id}`);
     }
 
-    return processNewsEvent({ ...ne, relays: relayHintTag.relays }, profile);
+    return processNewsEvent({ ...ne, relays: relayHintTag.relays }, profile, tags);
   });
 
   const articleItems: ArticleItem[] = articlesEvents.map((ae) => {
@@ -231,7 +249,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${ae.id}`);
     }
 
-    return processArticleEvent({ ...ae, relays: relayHintTag.relays }, profile);
+    return processArticleEvent({ ...ae, relays: relayHintTag.relays }, profile, tags);
   });
 
   const podcastItems: PodcastItem[] = podcastsEvents.map((pe) => {
@@ -255,7 +273,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${pe.id}`);
     }
 
-    return processPodcastEvent({ ...pe, relays: relayHintTag.relays }, profile);
+    return processPodcastEvent({ ...pe, relays: relayHintTag.relays }, profile, tags);
   });
 
   // Sort by publication date (newest first)
@@ -271,6 +289,7 @@ export async function fetchSSGData(): Promise<SSGData> {
     news: newsItems,
     articles: articleItems,
     podcasts: podcastItems,
+    tags: tags,
     lastUpdated: Date.now(), // Use actual build time for SSG
   };
 }
@@ -292,22 +311,22 @@ export function getProfileEvents(
   });
 }
 
-export function getUniqueTags(ssgData: SSGData): string[] {
-  const tagSet = new Set<string>();
+export function getUniqueTags(ssgData: SSGData): TagItem[] {
+  const tagSet = new Map<string, TagItem>();
 
   ssgData.news.forEach((item) => {
-    item.tags.forEach((tag) => tagSet.add(tag));
+    item.tags.forEach((tagItem) => tagSet.set(tagItem.tag, tagItem));
   });
 
   ssgData.articles.forEach((item) => {
-    item.tags.forEach((tag) => tagSet.add(tag));
+    item.tags.forEach((tagItem) => tagSet.set(tagItem.tag, tagItem));
   });
 
   ssgData.podcasts.forEach((item) => {
-    item.tags.forEach((tag) => tagSet.add(tag));
+    item.tags.forEach((tagItem) => tagSet.set(tagItem.tag, tagItem));
   });
 
-  return Array.from(tagSet);
+  return Array.from(tagSet.values());
 }
 
 // Helper function to get unique profiles from SSG data
