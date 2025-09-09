@@ -1,23 +1,15 @@
-import { Loader2, Rocket, X } from "lucide-react";
+import { Loader2, Rocket } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
-import { useTags } from "@/hooks/useTags";
 
-import { CATEGORY_OPTIONS, createNIP98Auth } from "./utils";
+import { createNIP98Auth } from "./utils";
+import TagSelector from "./TagSelector";
 
 type PrefillData = {
   title?: string;
@@ -49,9 +41,6 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getPublicKey, signEvent } = useNostrAuth();
-
-  // Load dynamic tags
-  const { tags: dynamicTags, loading: tagsLoading } = useTags();
 
   // Apply prefill whenever token changes
   useEffect(() => {
@@ -107,14 +96,8 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
     }
   };
 
-  const addTag = (tag: string) => {
-    if (tag.trim() && !newsTags.includes(tag.trim())) {
-      setNewsTags([...newsTags, tag.trim()]);
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setNewsTags(newsTags.filter((tag) => tag !== tagToRemove));
+  const handleTagsChange = (newTags: string[]) => {
+    setNewsTags(newTags);
   };
 
   return (
@@ -215,46 +198,12 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
               </div>
 
               {/* Tags */}
-              <div>
-                <Label className="text-base font-medium">Etiketler</Label>
-                <div className="space-y-2">
-                  <Select onValueChange={addTag}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Etiket ekle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(dynamicTags.length > 0 ? dynamicTags.map((t) => t.tag) : CATEGORY_OPTIONS)
-                        .filter((tag) => !newsTags.includes(tag))
-                        .map((tag) => {
-                          const tagLabel =
-                            dynamicTags.find((t) => t.tag === tag)?.label ||
-                            tag.charAt(0).toUpperCase() + tag.slice(1);
-                          return (
-                            <SelectItem key={tag} value={tag}>
-                              {tagLabel}
-                            </SelectItem>
-                          );
-                        })}
-                    </SelectContent>
-                  </Select>
-
-                  {newsTags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {newsTags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                          {tag}
-                          <button
-                            onClick={() => removeTag(tag)}
-                            className="ml-1 hover:text-red-500"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <TagSelector
+                selectedTags={newsTags}
+                onTagsChange={handleTagsChange}
+                label="Etiketler"
+                placeholder="Etiket ekle"
+              />
 
               {/* Publish */}
               <div className="pt-2">
@@ -359,45 +308,12 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
                 </div>
               </div>
 
-              <div>
-                <Label className="text-base font-medium">Etiketler</Label>
-                <div className="space-y-2">
-                  <Select onValueChange={addTag}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Etiket ekle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(dynamicTags.length > 0 ? dynamicTags.map((t) => t.tag) : CATEGORY_OPTIONS)
-                        .filter((tag) => !newsTags.includes(tag))
-                        .map((tag) => {
-                          const tagLabel =
-                            dynamicTags.find((t) => t.tag === tag)?.label ||
-                            tag.charAt(0).toUpperCase() + tag.slice(1);
-                          return (
-                            <SelectItem key={tag} value={tag}>
-                              {tagLabel}
-                            </SelectItem>
-                          );
-                        })}
-                    </SelectContent>
-                  </Select>
-                  {newsTags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {newsTags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                          {tag}
-                          <button
-                            onClick={() => removeTag(tag)}
-                            className="ml-1 hover:text-red-500"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <TagSelector
+                selectedTags={newsTags}
+                onTagsChange={handleTagsChange}
+                label="Etiketler"
+                placeholder="Etiket ekle"
+              />
 
               <div className="pt-2">
                 <Button

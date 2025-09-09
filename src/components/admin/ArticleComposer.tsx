@@ -1,25 +1,17 @@
 import { Loader2, Rocket } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import type { ArticleItem } from "@/lib/ssg-data";
 
-import { CATEGORY_OPTIONS, createNIP98Auth } from "./utils";
-import { useTags } from "@/hooks/useTags";
+import { createNIP98Auth } from "./utils";
+import TagSelector from "./TagSelector";
 
 type ArticleEditData = Omit<ArticleItem, "author"> & {
   dTag: string;
@@ -52,9 +44,6 @@ export default function ArticleComposer({
   const [error, setError] = useState<string | null>(null);
   const { getPublicKey, signEvent } = useNostrAuth();
 
-  // Load dynamic tags
-  const { tags: dynamicTags, loading: tagsLoading } = useTags();
-
   const preview = useMemo(() => content, [content]);
 
   // Reset form when editData changes
@@ -68,14 +57,8 @@ export default function ArticleComposer({
     }
   }, [editData]);
 
-  const addTag = (tag: string) => {
-    if (tag.trim() && !tags.includes(tag.trim())) {
-      setTags([...tags, tag.trim()]);
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
+  const handleTagsChange = (newTags: string[]) => {
+    setTags(newTags);
   };
 
   const autoTranslate = async () => {
@@ -199,43 +182,12 @@ export default function ArticleComposer({
             </div>
 
             {/* Tags */}
-            <div>
-              <Label className="text-base font-medium">Etiketler</Label>
-              <div className="space-y-2">
-                <Select onValueChange={addTag}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Etiket ekle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(dynamicTags.length > 0 ? dynamicTags.map((t) => t.tag) : CATEGORY_OPTIONS)
-                      .filter((tag) => !tags.includes(tag))
-                      .map((tag) => {
-                        const tagLabel =
-                          dynamicTags.find((t) => t.tag === tag)?.label ||
-                          tag.charAt(0).toUpperCase() + tag.slice(1);
-                        return (
-                          <SelectItem key={tag} value={tag}>
-                            {tagLabel}
-                          </SelectItem>
-                        );
-                      })}
-                  </SelectContent>
-                </Select>
-
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                        {tag}
-                        <button onClick={() => removeTag(tag)} className="ml-1 hover:text-red-500">
-                          ×
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <TagSelector
+              selectedTags={tags}
+              onTagsChange={handleTagsChange}
+              label="Etiketler"
+              placeholder="Etiket ekle"
+            />
 
             {/* Markdown preview */}
             <div>

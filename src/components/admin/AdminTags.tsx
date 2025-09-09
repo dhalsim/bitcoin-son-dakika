@@ -1,4 +1,4 @@
-import { AlertCircle, Loader2, Plus, Trash2, Edit, Save, X, RefreshCw, Undo2 } from "lucide-react";
+import { AlertCircle, Loader2, Plus, Trash2, Edit, Save, X, RefreshCw } from "lucide-react";
 import React, { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -142,12 +142,6 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
     }
   };
 
-  const handleResetTags = () => {
-    setLocalTags(tags);
-    setError("");
-    setSuccess("");
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -160,81 +154,10 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Error/Success Messages */}
-        {error && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {success && (
-          <Alert className="border-green-200 bg-green-50">
-            <AlertCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Add New Tag Form */}
-        <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-          <h3 className="text-lg font-semibold">Yeni Etiket Ekle</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="newTag">Etiket</Label>
-              <Input
-                id="newTag"
-                placeholder="örnek: bitcoin"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, "add")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="newLabel">Etiket Adı</Label>
-              <Input
-                id="newLabel"
-                placeholder="örnek: Bitcoin"
-                value={newLabel}
-                onChange={(e) => setNewLabel(e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, "add")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>&nbsp;</Label>
-              <Button onClick={handleAddTag} className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Etiket Ekle
-              </Button>
-            </div>
-          </div>
-        </div>
-
         {/* Tags List */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Mevcut Etiketler</h3>
-            <div className="flex gap-2">
-              <Button onClick={refreshTags} disabled={loading} variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Yenile
-              </Button>
-              <Button onClick={handleResetTags} disabled={loading} variant="outline" size="sm">
-                <Undo2 className="h-4 w-4 mr-2" />
-                Sıfırla
-              </Button>
-              <Button
-                onClick={handleSaveTags}
-                disabled={saving || loading}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {saving ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                Değişiklikleri Kaydet
-              </Button>
-            </div>
           </div>
 
           {loading ? (
@@ -249,38 +172,43 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
               </p>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className="space-y-2">
               {localTags.map((tag, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted"
+                  className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors"
                 >
                   {editingIndex === index ? (
                     // Edit mode
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Etiket</Label>
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="flex-1">
+                        <Label className="text-xs text-muted-foreground">Etiket</Label>
                         <Input
                           value={editTag}
                           onChange={(e) => setEditTag(e.target.value)}
-                          onKeyPress={(e) => handleKeyPress(e, "edit")}
-                          className="w-32"
+                          onKeyDown={(e) => handleKeyPress(e, "edit")}
+                          className="h-8 text-sm"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Etiket Adı</Label>
+                      <div className="flex-1">
+                        <Label className="text-xs text-muted-foreground">Etiket Adı</Label>
                         <Input
                           value={editLabel}
                           onChange={(e) => setEditLabel(e.target.value)}
-                          onKeyPress={(e) => handleKeyPress(e, "edit")}
-                          className="w-40"
+                          onKeyDown={(e) => handleKeyPress(e, "edit")}
+                          className="h-8 text-sm"
                         />
                       </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSaveEdit}>
+                      <div className="flex gap-1">
+                        <Button size="sm" onClick={handleSaveEdit} className="h-8 w-8 p-0">
                           <Save className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCancelEdit}
+                          className="h-8 w-8 p-0"
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
@@ -288,18 +216,26 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
                   ) : (
                     // Display mode
                     <>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary" className="font-mono">
-                          {tag.tag}
-                        </Badge>
-                        <span className="font-medium">{tag.label}</span>
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="w-36 flex-shrink-0">
+                          <Badge
+                            variant="secondary"
+                            className="font-mono text-xs w-full justify-start"
+                          >
+                            {tag.tag}
+                          </Badge>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-sm truncate block">{tag.label}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleEditTag(index)}
                           title="Etiket düzenle"
+                          className="h-8 w-8 p-0"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -308,6 +244,7 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
                           size="sm"
                           onClick={() => handleRemoveTag(index)}
                           title="Etiket sil"
+                          className="h-8 w-8 p-0"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -318,6 +255,77 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
               ))}
             </div>
           )}
+
+          <div className="flex gap-2">
+            <Button onClick={refreshTags} disabled={loading} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Yenile
+            </Button>
+
+            <Button
+              onClick={handleSaveTags}
+              disabled={saving || loading}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              Değişiklikleri Kaydet
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Error/Success Messages */}
+            {error && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="border-green-200 bg-green-50">
+                <AlertCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">{success}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </div>
+
+        {/* Add New Tag Form */}
+        <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+          <h3 className="text-lg font-semibold">Yeni Etiket Ekle</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="newTag">Etiket</Label>
+              <Input
+                id="newTag"
+                placeholder="örnek: bitcoin"
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                onKeyDown={(e) => handleKeyPress(e, "add")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newLabel">Etiket Adı</Label>
+              <Input
+                id="newLabel"
+                placeholder="örnek: Bitcoin"
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                onKeyDown={(e) => handleKeyPress(e, "add")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>&nbsp;</Label>
+              <Button onClick={handleAddTag} className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Etiket Ekle
+              </Button>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

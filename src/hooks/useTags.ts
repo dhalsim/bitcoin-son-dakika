@@ -33,6 +33,9 @@ export function useTags(): UseTagsResult {
 
         setTags(tags);
         setTagsLastTimeUpdated(event.created_at);
+      } else {
+        // No tags event found, treat as error
+        throw new Error("Etiket sistemi hatası.");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load tags");
