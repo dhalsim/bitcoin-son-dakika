@@ -34,7 +34,7 @@ export default function ArticleComposer({
   const [summary, setSummary] = useState(editData?.summary || "");
   const [imageUrl, setImageUrl] = useState(editData?.image || "");
   const [content, setContent] = useState(editData?.content || "");
-  const [tags, setTags] = useState<string[]>(editData?.tags.map((tag) => tag.tag) || []);
+  const [tags, setTags] = useState<string[]>(editData?.tagItems.map((tag) => tag.tag) || []);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -53,7 +53,7 @@ export default function ArticleComposer({
       setSummary(editData.summary || "");
       setImageUrl(editData.image || "");
       setContent(editData.content || "");
-      setTags(editData.tags.map((tag) => tag.tag) || []);
+      setTags(editData.tagItems.map((tag) => tag.tag) || []);
     }
   }, [editData]);
 

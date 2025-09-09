@@ -2,20 +2,22 @@ import { Link } from "react-router";
 
 import { cn, links } from "@/lib/utils";
 
+import { type TagItem } from "../../api-helpers/utils";
+
 interface CategoryTagsProps {
-  tags?: string[];
+  tagItems: TagItem[];
   className?: string;
   tagClassName?: string;
   size?: "xs" | "sm" | "md" | "lg";
 }
 
 export function CategoryTags({
-  tags,
+  tagItems,
   className = "",
   tagClassName = "",
   size = "xs",
 }: CategoryTagsProps) {
-  if (!tags || tags.length === 0) {
+  if (!tagItems || tagItems.length === 0) {
     return null;
   }
 
@@ -38,19 +40,19 @@ export function CategoryTags({
   return (
     <div className={cn("flex flex-wrap gap-2", className)}>
       {/* Tags */}
-      {tags.length > 0 && (
+      {tagItems.length > 0 && (
         <>
-          {tags.map((tag, index) => (
+          {tagItems.map((tagItem, index) => (
             <Link
               key={index}
-              to={links.tag(tag)}
+              to={links.tag(tagItem.tag)}
               className={cn(
                 "bg-main-accent text-black px-3 py-1 rounded-full text-sm font-medium hover:bg-main-accent/80 transition-colors",
                 getSizeClasses(),
                 tagClassName,
               )}
             >
-              #{tag}
+              #{tagItem.label}
             </Link>
           ))}
         </>

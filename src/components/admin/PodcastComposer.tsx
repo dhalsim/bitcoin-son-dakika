@@ -42,7 +42,7 @@ export default function PodcastComposer({
   );
   const [transcriptUrl, setTranscriptUrl] = useState(editData?.transcriptUrl || "");
   const [chaptersUrl, setChaptersUrl] = useState(editData?.chaptersUrl || "");
-  const [tags, setTags] = useState<string[]>(editData?.tags.map((tag) => tag.tag) || []);
+  const [tags, setTags] = useState<string[]>(editData?.tagItems.map((tag) => tag.tag) || []);
 
   const preview = useMemo(() => content, [content]);
 
@@ -58,7 +58,7 @@ export default function PodcastComposer({
       setEpisodeNumber(editData.episodeNumber);
       setTranscriptUrl(editData.transcriptUrl || "");
       setChaptersUrl(editData.chaptersUrl || "");
-      setTags(editData.tags.map((tag) => tag.tag) || []);
+      setTags(editData.tagItems.map((tag) => tag.tag) || []);
     }
   }, [editData]);
 

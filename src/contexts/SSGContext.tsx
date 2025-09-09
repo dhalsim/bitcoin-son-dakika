@@ -136,13 +136,13 @@ export function useArticleItem(id: string): ArticleItem | undefined {
 export function useNewsByTag(tag: string): NewsItem[] {
   const news = useNewsItems();
 
-  return useMemo(() => news.filter((item) => item.tags.includes(tag)), [news, tag]);
+  return useMemo(() => news.filter((item) => item.tagItems.includes(tag)), [news, tag]);
 }
 
 export function useArticlesByTag(tag: string): ArticleItem[] {
   const articles = useArticleItems();
 
-  return useMemo(() => articles.filter((item) => item.tags.includes(tag)), [articles, tag]);
+  return useMemo(() => articles.filter((item) => item.tagItems.includes(tag)), [articles, tag]);
 }
 
 // Additional utility hooks

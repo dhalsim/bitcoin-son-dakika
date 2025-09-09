@@ -72,7 +72,7 @@ export default function TagsPage() {
 
   // Filter items by the specified tag
   const filteredItems = selectedItems
-    .filter((item) => item.tags && item.tags.includes(slug))
+    .filter((item) => item.tagItems && item.tagItems.some((tagItem) => tagItem.tag === slug))
     .sort((a, b) => b.publishedAt - a.publishedAt);
 
   // If no content is available, show empty state
@@ -87,10 +87,12 @@ export default function TagsPage() {
     );
   }
 
+  const slugLabel = filteredItems[0].tagItems.find((tagItem) => tagItem.tag === slug)?.label;
+
   return (
     <MainContent>
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2">"#{slug}" Etiketi</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">"#{slugLabel}" Etiketi</h1>
         <p className="text-muted-foreground">
           Bu etiketle ilgili tüm{" "}
           {type === "news"

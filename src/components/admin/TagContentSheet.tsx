@@ -39,7 +39,7 @@ export default function TagContentSheet({
 
     const allContent: ContentItem[] = [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts];
 
-    return allContent.filter((item) => item.tags.some((itemTag) => itemTag.tag === tag));
+    return allContent.filter((item) => item.tagItems.some((itemTag) => itemTag.tag === tag));
   };
 
   const contentWithTag = getContentWithTag();

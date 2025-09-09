@@ -54,7 +54,7 @@ export const PodcastCard: React.FC<PodcastCardProps> = ({ podcast }) => {
         <div className="relative aspect-video overflow-hidden rounded-t-lg group">
           {imageElement}
           <div className="absolute top-2 sm:top-4 left-2 sm:left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 sm:block hidden">
-            <CategoryTags tags={podcast.tags} size="xs" />
+            <CategoryTags tagItems={podcast.tagItems} size="xs" />
           </div>
         </div>
       )}

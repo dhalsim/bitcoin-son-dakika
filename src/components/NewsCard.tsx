@@ -6,7 +6,7 @@ import { createAuthorSlug } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
 import { getTimeAgo, links } from "@/lib/utils";
 
-import { createTitleSlug } from "../../api-helpers/utils";
+import { createTitleSlug, type TagItem } from "../../api-helpers/utils";
 
 import { CategoryTags } from "./CategoryTags";
 import { EventStatistics } from "./EventStatistics";
@@ -16,6 +16,7 @@ import { getDisplayName, ProfileAvatar } from "./ProfileAvatar";
 export interface NewsCardProps {
   event: EventItem;
   publishedAt: number;
+  tagItems: TagItem[];
   title?: string;
   summary?: string;
   image?: string;
@@ -30,6 +31,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
   image,
   featured = false,
   author,
+  tagItems,
   event,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -87,10 +89,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         <div className="relative aspect-video overflow-hidden rounded-t-lg mb-4 group">
           {imageElement}
           <div className="absolute top-2 sm:top-4 left-2 sm:left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 sm:block hidden">
-            <CategoryTags
-              tags={event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1])}
-              size="xs"
-            />
+            <CategoryTags tagItems={tagItems} size="xs" />
           </div>
         </div>
       )}
@@ -130,12 +129,9 @@ export const NewsCard: React.FC<NewsCardProps> = ({
         )}
 
         {/* Show tags in content area when no image */}
-        {!image && event.tags && event.tags.length > 0 && (
+        {!image && tagItems && tagItems.length > 0 && (
           <div className="mb-3">
-            <CategoryTags
-              tags={event.tags.filter((tag) => tag[0] === "t").map((tag) => tag[1])}
-              className="text-xs"
-            />
+            <CategoryTags tagItems={tagItems} className="text-xs" />
           </div>
         )}
 

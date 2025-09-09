@@ -48,7 +48,7 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
 
     // Count usage in all content types
     [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts].forEach((item) => {
-      item.tags.forEach((tag) => {
+      item.tagItems.forEach((tag) => {
         counts[tag.tag] = (counts[tag.tag] || 0) + 1;
       });
     });

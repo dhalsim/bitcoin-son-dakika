@@ -60,7 +60,7 @@ export function SearchBar() {
         matchedFields.push("content");
       }
 
-      item.tags.forEach((tag) => {
+      item.tagItems.forEach((tag) => {
         if (tag.toLowerCase().includes(searchQuery)) {
           relevance += 30;
           matchedFields.push("tags");

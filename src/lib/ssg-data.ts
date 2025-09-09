@@ -22,7 +22,7 @@ export interface NewsItem {
   event: EventItem;
   author: ProfileItem;
   publishedAt: number;
-  tags: TagItem[];
+  tagItems: TagItem[];
   title?: string;
   summary?: string;
   image?: string;
@@ -33,7 +33,7 @@ export interface ArticleItem {
   id: string;
   title: string;
   content: string;
-  tags: TagItem[];
+  tagItems: TagItem[];
   event: EventItem;
   author: ProfileItem;
   publishedAt: number;
@@ -47,7 +47,7 @@ export interface PodcastItem {
   id: string;
   title: string;
   content: string;
-  tags: TagItem[];
+  tagItems: TagItem[];
   event: EventItem;
   author: ProfileItem;
   publishedAt: number;
@@ -102,7 +102,7 @@ function processNewsEvent(event: EventItem, author: ProfileItem, tagItems: TagIt
     summary: summaryTag?.[1],
     publishedAt: event.created_at,
     author,
-    tags: matchedTags,
+    tagItems: matchedTags,
     image: imageTag?.[1],
   };
 }
@@ -315,15 +315,15 @@ export function getUniqueTags(ssgData: SSGData): TagItem[] {
   const tagSet = new Map<string, TagItem>();
 
   ssgData.news.forEach((item) => {
-    item.tags.forEach((tagItem) => tagSet.set(tagItem.tag, tagItem));
+    item.tagItems.forEach((tagItem) => tagSet.set(tagItem.tag, tagItem));
   });
 
   ssgData.articles.forEach((item) => {
-    item.tags.forEach((tagItem) => tagSet.set(tagItem.tag, tagItem));
+    item.tagItems.forEach((tagItem) => tagSet.set(tagItem.tag, tagItem));
   });
 
   ssgData.podcasts.forEach((item) => {
-    item.tags.forEach((tagItem) => tagSet.set(tagItem.tag, tagItem));
+    item.tagItems.forEach((tagItem) => tagSet.set(tagItem.tag, tagItem));
   });
 
   return Array.from(tagSet.values());

@@ -63,7 +63,7 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
 
   // Add tags for better SEO
   const tags =
-    podcast.tags?.length > 0 ? `bitcoin, btc, ${podcast.tags.join(", ")}` : "bitcoin, btc";
+    podcast.tagItems?.length > 0 ? `bitcoin, btc, ${podcast.tagItems.join(", ")}` : "bitcoin, btc";
 
   return [
     // Browser tab title - This is what shows in the browser tab
@@ -257,8 +257,8 @@ export default function PodcastDetailPage() {
             datePublished: podcast.publishedAt * 1000,
             duration: podcast.duration,
             keywords:
-              podcast.tags?.length > 0
-                ? `bitcoin, btc, ${podcast.tags.join(", ")}`
+              podcast.tagItems?.length > 0
+                ? `bitcoin, btc, ${podcast.tagItems.join(", ")}`
                 : "bitcoin, btc",
             episodeNumber: podcast.episodeNumber,
             seasonNumber: 1,
@@ -318,7 +318,7 @@ export default function PodcastDetailPage() {
               </div>
             </div>
 
-            <CategoryTags tags={podcast.tags} className="mb-4" />
+            <CategoryTags tagItems={podcast.tagItems} className="mb-4" />
 
             {/* Podcast RSS Feed Link */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">

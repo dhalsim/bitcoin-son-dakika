@@ -60,7 +60,9 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
 
   // Add tags for better SEO
   const tags =
-    articleItem.tags?.length > 0 ? `bitcoin, btc, ${articleItem.tags.join(", ")}` : "bitcoin, btc";
+    articleItem.tagItems?.length > 0
+      ? `bitcoin, btc, ${articleItem.tagItems.join(", ")}`
+      : "bitcoin, btc";
 
   return [
     { title },
@@ -96,7 +98,7 @@ export default function ArticleDetailPage() {
       <article className="max-w-4xl mx-auto">
         {/* Header */}
         <header className="mb-8">
-          <CategoryTags tags={articleItem.tags} className="mb-4" />
+          <CategoryTags tagItems={articleItem.tagItems} className="mb-4" />
 
           {/* Title */}
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4 leading-tight">
