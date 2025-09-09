@@ -31,7 +31,7 @@ export function useTags(): UseTagsResult {
             label: tag[2],
           }));
 
-        setTags(tags);
+        setTags(tags.sort((a, b) => a.label.localeCompare(b.tag)));
         setTagsLastTimeUpdated(event.created_at);
       } else {
         // No tags event found, treat as error
