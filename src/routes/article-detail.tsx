@@ -2,7 +2,7 @@ import type { MetaFunction, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
-import { links } from "@/lib/utils";
+import { getTimeAgo, links } from "@/lib/utils";
 import type { SSGData } from "@/lib/ssg-data";
 import { createAuthorSlug } from "@/lib/ssg-data";
 
@@ -15,32 +15,6 @@ import { getDisplayName, ProfileAvatar } from "../components/ProfileAvatar";
 import { WEBSITE_NAME, WEBSITE_URL, LOGO_URL } from "../lib/constants";
 
 import NotFound from "./$";
-
-// Helper function to get time ago from timestamp
-function getTimeAgo(timestamp: number): string {
-  const now = Date.now() / 1000;
-  const diffSeconds = Math.floor(now - timestamp);
-
-  if (diffSeconds < 60) {
-    return `${diffSeconds} saniye önce`;
-  }
-
-  if (diffSeconds < 3600) {
-    const minutes = Math.floor(diffSeconds / 60);
-
-    return `${minutes} dakika önce`;
-  }
-
-  if (diffSeconds < 86400) {
-    const hours = Math.floor(diffSeconds / 3600);
-
-    return `${hours} saat önce`;
-  }
-
-  const days = Math.floor(diffSeconds / 86400);
-
-  return `${days} gün önce`;
-}
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const { slug } = params;

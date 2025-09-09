@@ -1,7 +1,7 @@
 import type { MetaFunction } from "react-router";
 
 import MainContent from "../components/MainContent";
-import NewsCard from "../components/NewsCard";
+import ArticleCard from "../components/ArticleCard";
 import { useSSGData } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 
@@ -69,7 +69,7 @@ export default function ArticlesPage() {
       {/* Articles List - Single Column */}
       <div className="max-w-4xl mx-auto space-y-6">
         {articleItems.map((article, index) => (
-          <NewsCard key={index} {...article} />
+          <ArticleCard key={index} {...article} />
         ))}
       </div>
     </MainContent>

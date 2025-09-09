@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import type { EventItem, ProfileItem } from "@/lib/nip01";
 import { createAuthorSlug } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
-import { links } from "@/lib/utils";
+import { getTimeAgo, links } from "@/lib/utils";
 
 import { createTitleSlug } from "../../api-helpers/utils";
 
@@ -21,28 +21,6 @@ export interface NewsCardProps {
   image?: string;
   featured?: boolean;
   author?: ProfileItem;
-}
-
-// Helper function to get time ago from timestamp
-export function getTimeAgo(timestamp: number): string {
-  const now = Date.now() / 1000;
-  const diffSeconds = Math.floor(now - timestamp);
-
-  if (diffSeconds < 60) {
-    return `${diffSeconds} saniye önce`;
-  } else if (diffSeconds < 3600) {
-    const minutes = Math.floor(diffSeconds / 60);
-
-    return `${minutes} dakika önce`;
-  } else if (diffSeconds < 86400) {
-    const hours = Math.floor(diffSeconds / 3600);
-
-    return `${hours} saat önce`;
-  } else {
-    const days = Math.floor(diffSeconds / 86400);
-
-    return `${days} gün önce`;
-  }
 }
 
 export const NewsCard: React.FC<NewsCardProps> = ({

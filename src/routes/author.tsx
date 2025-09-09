@@ -11,6 +11,7 @@ import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
 
 import MainContent from "../components/MainContent.js";
 import NewsCard from "../components/NewsCard.js";
+import ArticleCard from "../components/ArticleCard.js";
 import PodcastCard from "../components/PodcastCard.js";
 import { useContentByAuthor } from "../contexts/SSGContext.js";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants.js";
@@ -212,6 +213,20 @@ export default function AuthorPage() {
               {authorContentSorted.map((item, index) => {
                 if (item.type === "podcast") {
                   return <PodcastCard key={`${item.id}-${index}`} podcast={item} />;
+                }
+
+                if (item.type === "article") {
+                  return (
+                    <ArticleCard
+                      key={`${item.title}-${index}`}
+                      title={item.title}
+                      summary={item.summary}
+                      publishedAt={item.publishedAt}
+                      event={item.event}
+                      author={item.author}
+                      image={item.image}
+                    />
+                  );
                 }
 
                 return (

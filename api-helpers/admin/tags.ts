@@ -2,16 +2,16 @@ import type { EventTemplate } from "nostr-tools";
 import { finalizeEvent } from "nostr-tools";
 import { hexToBytes } from "nostr-tools/utils";
 
-import { publishToRelays } from "../../src/lib/utils";
-import type { AuthResult } from "../types";
-import type { TagItem } from "../utils";
+import { publishToRelays } from "../../src/lib/utils.js";
+import type { AuthResult } from "../types.js";
+import type { TagItem } from "../utils.js";
 import {
   ADMIN_RELAYS,
   ErrorResponseCreator,
   MASTER_ADMIN_PUBKEY,
   pool,
   PublishEventResponseCreator,
-} from "../utils";
+} from "../utils.js";
 
 export interface GetTagsResponse {
   tags: TagItem[];

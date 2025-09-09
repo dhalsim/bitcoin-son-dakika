@@ -18,11 +18,10 @@ import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import AudioPlayer, { AudioPlayerRef } from "@/components/AudioPlayer";
 import { EventStatistics } from "@/components/EventStatistics";
 import { CategoryTags } from "@/components/CategoryTags";
-import { getTimeAgo } from "@/components/NewsCard";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { LOGO_URL, WEBSITE_NAME, WEBSITE_URL } from "@/lib/constants";
 import { RssButton } from "@/components/RssButton";
-import { links } from "@/lib/utils";
+import { getTimeAgo, links } from "@/lib/utils";
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const podcast = loaderData?.podcast;

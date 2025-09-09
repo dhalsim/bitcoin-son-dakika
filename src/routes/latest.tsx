@@ -5,6 +5,7 @@ import { ContentItem } from "@/lib/ssg-data";
 
 import MainContent from "../components/MainContent";
 import NewsCard from "../components/NewsCard";
+import ArticleCard from "../components/ArticleCard";
 import { useSSGData } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
 
@@ -71,13 +72,15 @@ export default function LatestPage() {
 
       {/* Combined Content List - Single Column */}
       <div className="max-w-4xl mx-auto space-y-6">
-        {allItems.map((item, index) =>
-          item.type === "news" || item.type === "article" ? (
-            <NewsCard key={index} {...item} />
-          ) : (
-            <PodcastCard key={index} podcast={item} />
-          ),
-        )}
+        {allItems.map((item, index) => {
+          if (item.type === "news") {
+            return <NewsCard key={index} {...item} />;
+          } else if (item.type === "article") {
+            return <ArticleCard key={index} {...item} />;
+          } else {
+            return <PodcastCard key={index} podcast={item} />;
+          }
+        })}
       </div>
     </MainContent>
   );

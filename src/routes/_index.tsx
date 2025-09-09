@@ -2,6 +2,7 @@ import type { MetaFunction } from "react-router";
 
 import MainContent from "../components/MainContent";
 import NewsCard from "../components/NewsCard";
+import ArticleCard from "../components/ArticleCard";
 import {
   useLatestNews,
   useLatestArticles,
@@ -120,7 +121,7 @@ export default function Index() {
       if (content.type === "news") {
         return <NewsCard key={uniqueKey} {...content} />;
       } else if (content.type === "article") {
-        return <NewsCard key={uniqueKey} {...content} />;
+        return <ArticleCard key={uniqueKey} {...content} />;
       } else if (content.type === "podcast") {
         return <PodcastCard key={uniqueKey} podcast={content} />;
       } else {
@@ -232,7 +233,7 @@ export default function Index() {
 
   return (
     <MainContent>
-      {/* Featured News */}
+      {/* Featured Content */}
       {featuredContent && (
         <div className="mb-6 sm:mb-8">
           <NewsCard {...featuredContent} featured={true} />

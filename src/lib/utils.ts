@@ -194,3 +194,24 @@ export const links = {
   educations: "/egitimler",
   educationDetail: (slug: string) => `/egitim/${slug}`,
 };
+
+export function getTimeAgo(timestamp: number): string {
+  const now = Date.now() / 1000;
+  const diffSeconds = Math.floor(now - timestamp);
+
+  if (diffSeconds < 60) {
+    return `${diffSeconds} saniye önce`;
+  } else if (diffSeconds < 3600) {
+    const minutes = Math.floor(diffSeconds / 60);
+
+    return `${minutes} dakika önce`;
+  } else if (diffSeconds < 86400) {
+    const hours = Math.floor(diffSeconds / 3600);
+
+    return `${hours} saat önce`;
+  } else {
+    const days = Math.floor(diffSeconds / 86400);
+
+    return `${days} gün önce`;
+  }
+}
