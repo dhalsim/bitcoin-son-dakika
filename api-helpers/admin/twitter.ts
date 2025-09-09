@@ -188,6 +188,8 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
       { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } },
     );
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to upload to X");
+    const err = error instanceof Error ? error : new Error("Failed to upload to X");
+
+    return ErrorResponseCreator(err, 500);
   }
 }

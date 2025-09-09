@@ -253,6 +253,11 @@ export type PodcastTag = {
   relays: string[];
 };
 
+export type TagItem = {
+  tag: string;
+  label: string;
+};
+
 export type FetchNostrSetsResult = {
   adminUsers: string[];
   editorUsers: string[];

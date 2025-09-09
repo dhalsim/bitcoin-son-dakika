@@ -168,7 +168,9 @@ export async function GET() {
       cdnMaxAge: 120,
     });
   } catch (error) {
-    const errorResponse = ErrorResponseCreator(error || "Failed to fetch Bitcoin statistics", 500);
+    const err = error instanceof Error ? error : new Error("Failed to fetch Bitcoin statistics");
+
+    const errorResponse = ErrorResponseCreator(err, 500);
 
     // Apply error caching strategy
     return applyCacheHeaders(errorResponse, {

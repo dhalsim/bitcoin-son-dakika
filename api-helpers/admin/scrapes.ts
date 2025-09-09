@@ -84,7 +84,9 @@ export async function handleGetScrapes(authResult: AuthResult) {
       total: items.length,
     });
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to get scrapes");
+    const err = error instanceof Error ? error : new Error("Failed to get scrapes");
+
+    return ErrorResponseCreator(err, 500);
   }
 }
 
@@ -107,6 +109,8 @@ export async function handleRefreshScrapes(authResult: AuthResult) {
       total: items.length,
     });
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to refresh scrapes");
+    const err = error instanceof Error ? error : new Error("Failed to refresh scrapes");
+
+    return ErrorResponseCreator(err, 500);
   }
 }

@@ -19,6 +19,7 @@ import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import type { ArticleItem } from "@/lib/ssg-data";
 
 import { CATEGORY_OPTIONS, createNIP98Auth } from "./utils";
+import { useTags } from "@/hooks/useTags";
 
 type ArticleEditData = Omit<ArticleItem, "author"> & {
   dTag: string;
@@ -50,6 +51,9 @@ export default function ArticleComposer({
   const [enContent, setEnContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const { getPublicKey, signEvent } = useNostrAuth();
+
+  // Load dynamic tags
+  const { tags: dynamicTags, loading: tagsLoading } = useTags();
 
   const preview = useMemo(() => content, [content]);
 
@@ -203,11 +207,18 @@ export default function ArticleComposer({
                     <SelectValue placeholder="Etiket ekle" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORY_OPTIONS.filter((tag) => !tags.includes(tag)).map((tag) => (
-                      <SelectItem key={tag} value={tag}>
-                        {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                      </SelectItem>
-                    ))}
+                    {(dynamicTags.length > 0 ? dynamicTags.map((t) => t.tag) : CATEGORY_OPTIONS)
+                      .filter((tag) => !tags.includes(tag))
+                      .map((tag) => {
+                        const tagLabel =
+                          dynamicTags.find((t) => t.tag === tag)?.label ||
+                          tag.charAt(0).toUpperCase() + tag.slice(1);
+                        return (
+                          <SelectItem key={tag} value={tag}>
+                            {tagLabel}
+                          </SelectItem>
+                        );
+                      })}
                   </SelectContent>
                 </Select>
 

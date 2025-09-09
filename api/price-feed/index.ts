@@ -14,9 +14,13 @@ const redis = await createClient({
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {
+  if (!process.env.TRADINGVIEW_USERNAME || !process.env.TRADINGVIEW_PASSWORD) {
+    return ErrorResponseCreator("TradingView credentials are not set", 500);
+  }
+
   try {
-    const session = await redis.get("session");
-    const signature = await redis.get("signature");
+    let session = await redis.get("session");
+    let signature = await redis.get("signature");
 
     if (!session || !signature) {
       const user = await TradingView.loginUser(
@@ -24,6 +28,9 @@ export async function GET() {
         process.env.TRADINGVIEW_PASSWORD,
         false,
       );
+
+      session = user.session;
+      signature = user.signature;
 
       await redis.set("session", user.session);
       await redis.set("signature", user.signature);
@@ -62,9 +69,11 @@ export async function GET() {
       cdnMaxAge: 60, // CDN cache for 1 minute
     });
   } catch (error) {
-    console.error("New Price Feed API error:", error);
+    const err = error instanceof Error ? error : new Error("Failed to fetch new price feed data");
 
-    const errorResponse = ErrorResponseCreator(error || "Failed to fetch new price feed data", 500);
+    console.error("New Price Feed API error:", err);
+
+    const errorResponse = ErrorResponseCreator(err, 500);
 
     return applyCacheHeaders(errorResponse, {
       maxAge: 60,

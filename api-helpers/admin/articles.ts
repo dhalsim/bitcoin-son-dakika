@@ -125,7 +125,9 @@ export async function addArticle(
 
     return ErrorResponseCreator(`Failed to add article to relays: ${failedRelays}`, 500);
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to add article");
+    const err = error instanceof Error ? error : new Error("Failed to add article");
+
+    return ErrorResponseCreator(err, 500);
   }
 }
 
@@ -163,7 +165,9 @@ export async function removeArticle(
 
     return PublishEventResponseCreator({ message: "Article removed successfully", result }, data);
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to remove article");
+    const err = error instanceof Error ? error : new Error("Failed to remove article");
+
+    return ErrorResponseCreator(err, 500);
   }
 }
 
@@ -253,6 +257,8 @@ async function publishArticle(
 
     return ErrorResponseCreator("Failed to publish article", 500);
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to publish article");
+    const err = error instanceof Error ? error : new Error("Failed to publish article");
+
+    return ErrorResponseCreator(err, 500);
   }
 }

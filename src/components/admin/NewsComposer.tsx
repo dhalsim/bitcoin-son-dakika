@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { useTags } from "@/hooks/useTags";
 
 import { CATEGORY_OPTIONS, createNIP98Auth } from "./utils";
 
@@ -48,6 +49,9 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getPublicKey, signEvent } = useNostrAuth();
+
+  // Load dynamic tags
+  const { tags: dynamicTags, loading: tagsLoading } = useTags();
 
   // Apply prefill whenever token changes
   useEffect(() => {
@@ -219,11 +223,18 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
                       <SelectValue placeholder="Etiket ekle" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORY_OPTIONS.filter((tag) => !newsTags.includes(tag)).map((tag) => (
-                        <SelectItem key={tag} value={tag}>
-                          {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                        </SelectItem>
-                      ))}
+                      {(dynamicTags.length > 0 ? dynamicTags.map((t) => t.tag) : CATEGORY_OPTIONS)
+                        .filter((tag) => !newsTags.includes(tag))
+                        .map((tag) => {
+                          const tagLabel =
+                            dynamicTags.find((t) => t.tag === tag)?.label ||
+                            tag.charAt(0).toUpperCase() + tag.slice(1);
+                          return (
+                            <SelectItem key={tag} value={tag}>
+                              {tagLabel}
+                            </SelectItem>
+                          );
+                        })}
                     </SelectContent>
                   </Select>
 
@@ -356,11 +367,18 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
                       <SelectValue placeholder="Etiket ekle" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORY_OPTIONS.filter((tag) => !newsTags.includes(tag)).map((tag) => (
-                        <SelectItem key={tag} value={tag}>
-                          {tag.charAt(0).toUpperCase() + tag.slice(1)}
-                        </SelectItem>
-                      ))}
+                      {(dynamicTags.length > 0 ? dynamicTags.map((t) => t.tag) : CATEGORY_OPTIONS)
+                        .filter((tag) => !newsTags.includes(tag))
+                        .map((tag) => {
+                          const tagLabel =
+                            dynamicTags.find((t) => t.tag === tag)?.label ||
+                            tag.charAt(0).toUpperCase() + tag.slice(1);
+                          return (
+                            <SelectItem key={tag} value={tag}>
+                              {tagLabel}
+                            </SelectItem>
+                          );
+                        })}
                     </SelectContent>
                   </Select>
                   {newsTags.length > 0 && (

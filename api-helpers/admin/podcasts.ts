@@ -118,7 +118,9 @@ async function publishPodcast(
 
     return ErrorResponseCreator("Failed to publish podcast", 500);
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to publish podcast");
+    const err = error instanceof Error ? error : new Error("Failed to publish podcast");
+
+    return ErrorResponseCreator(err, 500);
   }
 }
 
@@ -165,7 +167,9 @@ async function addPodcast(
 
     return ErrorResponseCreator(`Failed to add podcast to relays: ${failedRelays}`, 500);
   } catch (error) {
-    return ErrorResponseCreator(error);
+    const err = error instanceof Error ? error : new Error("Failed to add podcast");
+
+    return ErrorResponseCreator(err, 500);
   }
 }
 
@@ -210,6 +214,8 @@ export async function handleRemovePodcast(
 
     return ErrorResponseCreator(`Failed to remove podcast from relays: ${failedRelays}`, 500);
   } catch (error) {
-    return ErrorResponseCreator(error);
+    const err = error instanceof Error ? error : new Error("Failed to remove podcast");
+
+    return ErrorResponseCreator(err, 500);
   }
 }

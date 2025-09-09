@@ -1,4 +1,4 @@
-import type { ArticleTag, NewsTag, PodcastTag } from "api-helpers/utils";
+import type { ArticleTag, NewsTag, PodcastTag, TagItem } from "api-helpers/utils";
 
 export type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }
@@ -79,6 +79,18 @@ export type RemovePodcastPayload = {
   tagToBeRemoved: PodcastTag;
 };
 
+export type TranslateNewsPayload = {
+  action: "translate-news";
+  textToTranslate: string[];
+  targetLanguageCode: string;
+};
+
+export type UpdateTagsPayload = {
+  action: "update-tags";
+  tags: TagItem[];
+  lastUpdated: number;
+};
+
 export type Payload =
   | AddNewsPayload
   | RemoveNewsPayload
@@ -91,4 +103,6 @@ export type Payload =
   | PublishNewsPayload
   | PublishArticlePayload
   | PublishPodcastPayload
-  | RemovePodcastPayload;
+  | RemovePodcastPayload
+  | TranslateNewsPayload
+  | UpdateTagsPayload;

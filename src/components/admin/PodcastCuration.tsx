@@ -5,11 +5,12 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RemovePodcastPayload } from "@/types/admin";
+import { EventItem } from "@/lib/nip01";
+import { getKind30023Events } from "@/lib/nip23";
 
 import type { PodcastTag } from "../../../api-helpers/utils";
 import { extractPodcastDataFromEvent } from "../../../api-helpers/utils";
-import { EventItem } from "@/lib/nip01";
-import { getKind30023Events } from "@/lib/nip23";
+
 import { Skeleton } from "../ui/skeleton";
 
 interface PodcastCurationProps {

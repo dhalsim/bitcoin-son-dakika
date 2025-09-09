@@ -4,7 +4,8 @@ import { nip19 } from "nostr-tools";
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import AdminStatistics, { AdminTab } from "@/components/admin/AdminStatistics";
+import AdminStatistics from "@/components/admin/AdminStatistics";
+import AdminTags from "@/components/admin/AdminTags";
 import ArticleCuration from "@/components/admin/ArticleCuration";
 import DeployTrigger from "@/components/admin/DeployTrigger";
 import NewsComposer from "@/components/admin/NewsComposer";
@@ -20,10 +21,11 @@ import { Badge } from "@/components/ui/badge";
 import { UserMenu } from "@/components/UserMenu";
 import { pool } from "@/lib/utils";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
-import type { ArticleTag, NewsTag, PodcastTag } from "../../api-helpers/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Payload } from "@/types/admin";
 import { toast } from "@/hooks/use-toast";
 
+import type { ArticleTag, NewsTag, PodcastTag } from "../../api-helpers/utils";
 import { ADMIN_RELAYS } from "../../api-helpers/utils";
 import {
   isMultiPublishResponse,
@@ -34,7 +36,6 @@ import {
   PublishResponseSchema,
   SinglePublishResponse,
 } from "../../api-helpers/schemas";
-import { Payload } from "@/types/admin";
 
 // Displayed while the route hydrates on initial load
 export function HydrateFallback() {
@@ -67,6 +68,8 @@ interface UserInfo {
   pubkey?: string;
   roles?: string[];
 }
+
+export type AdminTab = "stats" | "news" | "articles" | "podcasts" | "tags" | "users" | "sources";
 
 export default function AdminPanel() {
   const [loading, setLoading] = useState(false);
@@ -359,6 +362,14 @@ export default function AdminPanel() {
           variant: "success",
         });
       }
+
+      if (data.action === "update-tags") {
+        toast({
+          title: "Etiketler güncellendi",
+          description: "Etiketler güncellendi",
+          variant: "success",
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bilinmeyen hata");
     } finally {
@@ -516,6 +527,7 @@ export default function AdminPanel() {
             {(userIsEditor || userIsAdmin) && (
               <TabsTrigger value="podcasts">Podcastler</TabsTrigger>
             )}
+            {(userIsEditor || userIsAdmin) && <TabsTrigger value="tags">Etiketler</TabsTrigger>}
             {userIsEditor && <TabsTrigger value="sources">Haber Kaynakları</TabsTrigger>}
             {userIsAdmin && <TabsTrigger value="users">Kullanıcılar</TabsTrigger>}
           </TabsList>
@@ -542,6 +554,10 @@ export default function AdminPanel() {
                 }
 
                 if (tab === "podcasts" && !(userIsEditor || userIsAdmin)) {
+                  return;
+                }
+
+                if (tab === "tags" && !(userIsEditor || userIsAdmin)) {
                   return;
                 }
 
@@ -668,6 +684,12 @@ export default function AdminPanel() {
           )}
 
           {/* Deploy moved out of tabs */}
+
+          {(userIsEditor || userIsAdmin) && (
+            <TabsContent value="tags">
+              <AdminTags performAction={performAction} />
+            </TabsContent>
+          )}
 
           {userIsAdmin && (
             <TabsContent value="users">

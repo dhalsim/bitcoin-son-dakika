@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import type { PodcastItem } from "@/lib/ssg-data";
 import { PublishPodcastPayload } from "@/types/admin";
+import { useTags } from "@/hooks/useTags";
 
 type PodcastEditData = Omit<PodcastItem, "author"> & {
   dTag: string;
@@ -43,6 +44,9 @@ export default function PodcastComposer({
   const [chaptersUrl, setChaptersUrl] = useState(editData?.chaptersUrl || "");
   const [tags, setTags] = useState<string[]>(editData?.tags || []);
   const [newTag, setNewTag] = useState("");
+
+  // Load dynamic tags
+  const { tags: dynamicTags, loading: tagsLoading } = useTags();
 
   const preview = useMemo(() => content, [content]);
 

@@ -57,3 +57,11 @@ export function getKind30023Events(
     sub.close();
   };
 }
+
+export function getOneKind30023Event(relays: string[], pubkey: string, identifier: string) {
+  return pool.get(relays, {
+    authors: [pubkey],
+    "#d": [identifier],
+    kinds: [30023],
+  });
+}

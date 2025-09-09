@@ -1,9 +1,8 @@
 import { TranslationServiceClient } from "@google-cloud/translate";
 
+import type { TranslateNewsPayload } from "../../src/types/admin.js";
 import type { AuthResult } from "../types.js";
 import { ErrorResponseCreator, SuccessResponse } from "../utils.js";
-
-import type { TranslateNewsPayload } from "./types.js";
 
 export async function handleTranslateNews(
   authResult: AuthResult,

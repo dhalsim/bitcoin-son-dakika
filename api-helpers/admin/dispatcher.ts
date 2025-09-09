@@ -5,6 +5,7 @@ import { handleTriggerDeploy } from "./deploy.js";
 import { handleAddNews, handlePublishNews, handleRemoveNews } from "./news.js";
 import { handlePublishPodcast, handleRemovePodcast } from "./podcasts.js";
 import { handleGetScrapes, handleRefreshScrapes } from "./scrapes.js";
+import { handleUpdateTags } from "./tags.js";
 import { handleTranslateNews } from "./translate.js";
 import { handleUploadToX } from "./twitter.js";
 import { handleAddAdmin, handleAddEditor, handleRemoveAdmin, handleRemoveEditor } from "./users.js";
@@ -114,10 +115,14 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         return handleRemovePodcast(masterAdminPrivateKey, podcastTags, authResult, requestBody);
       case "translate-news":
         return handleTranslateNews(authResult, requestBody);
+      case "update-tags":
+        return handleUpdateTags(masterAdminPrivateKey, authResult, requestBody);
       default:
         return ErrorResponseCreator("Invalid action", 400);
     }
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to handle admin post");
+    const err = error instanceof Error ? error : new Error("Failed to handle admin post");
+
+    return ErrorResponseCreator(err, 500);
   }
 }

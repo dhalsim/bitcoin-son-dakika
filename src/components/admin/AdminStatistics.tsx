@@ -2,6 +2,7 @@ import { AlertCircle, RefreshCw, Shield, Users, Mic } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { ArticleTag, NewsTag, PodcastTag } from "api-helpers/utils";
+import { AdminTab } from "@/routes/admin";
 
 type AdminData = {
   adminUsers: string[];
@@ -15,8 +16,6 @@ type AdminStatisticsProps = {
   adminData: AdminData | null;
   onOpenTab?: (tab: AdminTab) => void;
 };
-
-export type AdminTab = "stats" | "news" | "articles" | "podcasts" | "users" | "deploy" | "sources";
 
 export default function AdminStatistics({ adminData, onOpenTab }: AdminStatisticsProps) {
   return (

@@ -160,6 +160,8 @@ export async function updateNostrUserSet(
       { pubkey, setType, operation },
     );
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to update Nostr user set");
+    const err = error instanceof Error ? error : new Error("Failed to update Nostr user set");
+
+    return ErrorResponseCreator(err, 500);
   }
 }

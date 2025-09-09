@@ -20,7 +20,9 @@ export async function GET(_request: Request) {
       podcasts: podcastTags,
     });
   } catch (error) {
-    return ErrorResponseCreator(error);
+    const err = error instanceof Error ? error : new Error("Failed to fetch admin panel data");
+
+    return ErrorResponseCreator(err, 500);
   }
 }
 

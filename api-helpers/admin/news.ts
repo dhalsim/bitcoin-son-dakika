@@ -48,7 +48,9 @@ export async function handleAddNews(
 
     return PublishEventResponseCreator({ message: `News added successfully`, result }, data);
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to add news");
+    const err = error instanceof Error ? error : new Error("Failed to add news");
+
+    return ErrorResponseCreator(err, 500);
   }
 }
 
@@ -145,7 +147,9 @@ export async function handleRemoveNews(
       data,
     );
   } catch (error) {
-    return ErrorResponseCreator(error || "Haber kaldırılırken hata oluştu");
+    const err = error instanceof Error ? error : new Error("Haber kaldırılırken hata oluştu");
+
+    return ErrorResponseCreator(err, 500);
   }
 }
 
@@ -284,6 +288,8 @@ export async function publishNews(
 
     return ErrorResponseCreator("Haber başarıyla yayınlandı, ancak sete eklenemedi", 500);
   } catch (error) {
-    return ErrorResponseCreator(error || "Haber yayınlanırken hata oluştu");
+    const err = error instanceof Error ? error : new Error("Haber yayınlanırken hata oluştu");
+
+    return ErrorResponseCreator(err, 500);
   }
 }

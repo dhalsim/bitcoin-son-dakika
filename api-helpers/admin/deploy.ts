@@ -35,6 +35,8 @@ export async function handleTriggerDeploy(request: Request) {
       return ErrorResponseCreator("Failed to trigger deploy hook", response.status);
     }
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to trigger deploy hook");
+    const err = error instanceof Error ? error : new Error("Failed to trigger deploy hook");
+
+    return ErrorResponseCreator(err, 500);
   }
 }
