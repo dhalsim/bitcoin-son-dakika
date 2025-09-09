@@ -1,5 +1,6 @@
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { useState } from "react";
+import { nip19 } from "nostr-tools";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -179,9 +180,66 @@ export function UserMenu() {
                   userProfile.profile?.name ||
                   (userProfile.pubkey ? `${userProfile.pubkey.slice(0, 8)}...` : "Unknown User")}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {userProfile.pubkey ? `${userProfile.pubkey.slice(0, 16)}...` : "No public key"}
-              </p>
+              {userProfile.pubkey && (
+                <>
+                  <p className="relative text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <button
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        const target = e.currentTarget;
+
+                        if (!target) {
+                          console.error("Target not found");
+                          return;
+                        }
+
+                        navigator.clipboard.writeText(nip19.npubEncode(userProfile.pubkey));
+
+                        console.log("copied");
+
+                        target.parentNode.querySelector(".tooltip").classList.remove("hidden");
+
+                        setTimeout(() => {
+                          target.parentNode.querySelector(".tooltip").classList.add("hidden");
+                        }, 2000);
+                      }}
+                    >
+                      {nip19.npubEncode(userProfile.pubkey).slice(0, 16)}...
+                    </button>
+                    <span className="tooltip fixed top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-800 text-white text-xs rounded shadow-lg max-w-xs sm:max-w-sm hidden z-tooltip">
+                      Npub kopyalandı
+                    </span>
+                  </p>
+                  <p className="relative text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <button
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        const target = e.currentTarget;
+
+                        if (!target) {
+                          console.error("Target not found");
+                          return;
+                        }
+
+                        navigator.clipboard.writeText(userProfile.pubkey);
+
+                        console.log("copied");
+
+                        target.parentNode.querySelector(".tooltip").classList.remove("hidden");
+
+                        setTimeout(() => {
+                          target.parentNode.querySelector(".tooltip").classList.add("hidden");
+                        }, 2000);
+                      }}
+                    >
+                      {`${userProfile.pubkey.slice(0, 16)}...`}
+                    </button>
+                    <span className="tooltip fixed top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-gray-800 text-white text-xs rounded shadow-lg max-w-xs sm:max-w-sm hidden z-tooltip">
+                      Pubkey kopyalandı
+                    </span>
+                  </p>
+                </>
+              )}
             </div>
           </div>
           <DropdownMenuSeparator />
@@ -195,7 +253,7 @@ export function UserMenu() {
             <User className="h-4 w-4 mr-2" />
             Profilim
           </DropdownMenuItem>
-          <DropdownMenuItem
+          {/* <DropdownMenuItem
             onClick={() => {
               // TODO: Navigate to settings page, not implemented yet
               console.log("Settings clicked");
@@ -227,7 +285,7 @@ export function UserMenu() {
           >
             <Settings className="h-4 w-4 mr-2" />
             Ayarlar
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => {
