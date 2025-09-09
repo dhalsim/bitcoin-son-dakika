@@ -522,3 +522,11 @@ export function extractPodcastDataFromEvent(event: EventItem): Omit<PodcastItem,
     relays: event.relays,
   };
 }
+
+export function getTagsEvent() {
+  return pool.get(ADMIN_RELAYS, {
+    authors: [MASTER_ADMIN_PUBKEY],
+    "#d": ["categories"],
+    kinds: [30023],
+  });
+}

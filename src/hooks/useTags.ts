@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { getOneKind30023Event } from "@/lib/nip23";
-
-import { ADMIN_RELAYS, MASTER_ADMIN_PUBKEY, type TagItem } from "../../api-helpers/utils";
+import { getTagsEvent, type TagItem } from "../../api-helpers/utils";
 
 interface UseTagsResult {
   tags: TagItem[];
@@ -23,11 +21,7 @@ export function useTags(): UseTagsResult {
       setLoading(true);
       setError(null);
 
-      const event = await getOneKind30023Event(
-        Array.from(ADMIN_RELAYS),
-        MASTER_ADMIN_PUBKEY,
-        "tags",
-      );
+      const event = await getTagsEvent();
 
       if (event) {
         const tags = event.tags

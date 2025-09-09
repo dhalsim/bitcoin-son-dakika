@@ -7,9 +7,8 @@ import type { AuthResult } from "../types.js";
 import type { TagItem } from "../utils.js";
 import {
   ADMIN_RELAYS,
+  getTagsEvent,
   ErrorResponseCreator,
-  MASTER_ADMIN_PUBKEY,
-  pool,
   PublishEventResponseCreator,
 } from "../utils.js";
 
@@ -50,11 +49,7 @@ export async function handleUpdateTags(
       }
     }
 
-    const existingEvent = await pool.get(ADMIN_RELAYS, {
-      authors: [MASTER_ADMIN_PUBKEY],
-      "#d": ["tags"],
-      kinds: [30023],
-    });
+    const existingEvent = await getTagsEvent();
 
     if (!existingEvent) {
       throw new Error("Tags event not found");
@@ -67,11 +62,12 @@ export async function handleUpdateTags(
     const eventTemplate: EventTemplate = {
       kind: 30023,
       created_at: Math.floor(Date.now() / 1000),
-      tags: tags.map((tag) => ["t", tag.tag, tag.label]),
+      tags: [["d", "categories"], ...tags.map((tag) => ["t", tag.tag, tag.label])],
       content: "",
     };
 
     const event = finalizeEvent(eventTemplate, hexToBytes(masterAdminPrivateKey));
+
     const result = await publishToRelays(event, ADMIN_RELAYS);
 
     return PublishEventResponseCreator(
