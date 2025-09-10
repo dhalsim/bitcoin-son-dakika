@@ -225,6 +225,7 @@ export default function AuthorPage() {
                       event={item.event}
                       author={item.author}
                       image={item.image}
+                      tagItems={item.tagItems}
                     />
                   );
                 }
@@ -238,6 +239,7 @@ export default function AuthorPage() {
                     event={item.event}
                     author={item.author}
                     image={item.image}
+                    tagItems={item.tagItems}
                   />
                 );
               })}

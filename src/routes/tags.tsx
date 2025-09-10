@@ -1,14 +1,14 @@
-import type { MetaFunction } from "react-router";
-import { useParams } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData } from "react-router";
 
-import type { ArticleItem, NewsItem, PodcastItem } from "@/lib/ssg-data";
-
-import MainContent from "../components/MainContent";
-import NewsCard from "../components/NewsCard";
-import ArticleCard from "../components/ArticleCard";
-import { useSSGData } from "../contexts/SSGContext";
-import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
+import type { SSGData } from "@/lib/ssg-data";
 import PodcastCard from "@/components/PodcastCard";
+import MainContent from "@/components/MainContent";
+import NewsCard from "@/components/NewsCard";
+import ArticleCard from "@/components/ArticleCard";
+import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "@/lib/constants";
+
+import { createTitleSlug } from "../../api-helpers/utils";
 
 export const meta: MetaFunction = ({ params }) => {
   const { slug } = params;
@@ -48,35 +48,33 @@ export const meta: MetaFunction = ({ params }) => {
   ];
 };
 
+export async function loader({ params }: LoaderFunctionArgs) {
+  const { slug, type } = params;
+
+  if (!slug) {
+    throw new Response("Profile slug is required", { status: 400 });
+  }
+
+  // Get SSG data from global (available during prerendering)
+  const ssgData: SSGData = (global as any).__SSG_DATA__;
+
+  if (!ssgData) {
+    throw new Response("SSG data not available", { status: 500 });
+  }
+
+  const tagContents = [...ssgData.articles, ...ssgData.news, ...ssgData.podcasts].filter(
+    (content) =>
+      content.tagItems.some((tagItem) => createTitleSlug(tagItem.tag) === createTitleSlug(slug)),
+  );
+
+  return { tagContents, slug, type };
+}
+
 export default function TagsPage() {
-  const params = useParams();
-  const slug = params.slug;
-
-  const type: "news" | "articles" | "podcast" | undefined = params.type as
-    | "news"
-    | "articles"
-    | "podcast"
-    | undefined;
-
-  const ssgData = useSSGData();
-
-  // If type is not provided, show all items
-  const selectedItems: (NewsItem | ArticleItem | PodcastItem)[] =
-    type == null
-      ? [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts]
-      : type === "news"
-        ? ssgData.news
-        : type === "articles"
-          ? ssgData.articles
-          : ssgData.podcasts;
-
-  // Filter items by the specified tag
-  const filteredItems = selectedItems
-    .filter((item) => item.tagItems && item.tagItems.some((tagItem) => tagItem.tag === slug))
-    .sort((a, b) => b.publishedAt - a.publishedAt);
+  const { tagContents, slug, type } = useLoaderData<typeof loader>();
 
   // If no content is available, show empty state
-  if (filteredItems.length === 0) {
+  if (tagContents.length === 0) {
     return (
       <MainContent>
         <div className="text-center">
@@ -87,7 +85,9 @@ export default function TagsPage() {
     );
   }
 
-  const slugLabel = filteredItems[0].tagItems.find((tagItem) => tagItem.tag === slug)?.label;
+  const slugLabel = tagContents[0].tagItems.find(
+    (tagItem) => createTitleSlug(tagItem.tag) === createTitleSlug(slug),
+  )?.label;
 
   return (
     <MainContent>
@@ -107,7 +107,7 @@ export default function TagsPage() {
 
       {/* Filtered Content List - Single Column */}
       <div className="max-w-4xl mx-auto space-y-6">
-        {filteredItems.map((item, index) => {
+        {tagContents.map((item, index) => {
           if (item.type === "news") {
             return <NewsCard key={index} {...item} />;
           } else if (item.type === "article") {

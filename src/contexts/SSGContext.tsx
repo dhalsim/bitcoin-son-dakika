@@ -33,6 +33,7 @@ const createFallbackData = (): SSGData => ({
   news: [],
   articles: [],
   podcasts: [],
+  tags: [],
   lastUpdated: Date.now(),
 });
 
@@ -133,18 +134,6 @@ export function useArticleItem(id: string): ArticleItem | undefined {
   return useMemo(() => articles.find((item) => item.id === id), [articles, id]);
 }
 
-export function useNewsByTag(tag: string): NewsItem[] {
-  const news = useNewsItems();
-
-  return useMemo(() => news.filter((item) => item.tagItems.includes(tag)), [news, tag]);
-}
-
-export function useArticlesByTag(tag: string): ArticleItem[] {
-  const articles = useArticleItems();
-
-  return useMemo(() => articles.filter((item) => item.tagItems.includes(tag)), [articles, tag]);
-}
-
 // Additional utility hooks
 export function useAllContent(): ContentItem[] {
   const news = useNewsItems();
@@ -152,15 +141,6 @@ export function useAllContent(): ContentItem[] {
   const podcasts = usePodcastItems();
 
   return useMemo(() => [...news, ...articles, ...podcasts], [news, articles, podcasts]);
-}
-
-export function useLatestContent(limit: number = 10): ContentItem[] {
-  const allContent = useAllContent();
-
-  return useMemo(
-    () => allContent.sort((a, b) => b.publishedAt - a.publishedAt).slice(0, limit),
-    [allContent, limit],
-  );
 }
 
 export function useContentByAuthor(pubkey: string): ContentItem[] {

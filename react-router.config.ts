@@ -86,7 +86,14 @@ export default {
 
     // Generate tag routes for all unique tags
     const tags = getUniqueTags(ssgData);
-    const tagRoutes = tags.map((tagItem) => links.tag(createTitleSlug(tagItem.tag)));
+    const tagRoutes = [
+      ...new Set(
+        tags.flatMap((tagItem) => [
+          links.tag(tagItem.tag),
+          links.tag(createTitleSlug(tagItem.tag)),
+        ]),
+      ),
+    ];
 
     console.log(`Generated ${tagRoutes.length} tag routes`);
 
@@ -117,11 +124,11 @@ export default {
       "/makaleler", // Makaleler sayfası - static
       "/podcast", // Podcast ana sayfası - static
       "/son-dakika", // Son dakika sayfası - static
-      ...authorRoutes, // Profile pages - static
-      ...tagRoutes, // Tag pages - static
-      ...articlesRoutes, // Article detail pages - static
-      ...newsRoutes, // News detail pages - static
-      ...podcastRoutes, // Podcast detail pages - static
+      ...authorRoutes.sort(), // Profile pages - static
+      ...tagRoutes.sort(), // Tag pages - static
+      ...articlesRoutes.sort(), // Article detail pages - static
+      ...newsRoutes.sort(), // News detail pages - static
+      ...podcastRoutes.sort(), // Podcast detail pages - static
     ];
 
     // Generate and write sitemap.xml
