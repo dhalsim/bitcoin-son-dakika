@@ -3,7 +3,7 @@ import { Search, X, FileText, Newspaper, Tag, Clock } from "lucide-react";
 
 import { assertUnreachable, formatNostrDate, links } from "@/lib/utils";
 
-import { createTitleSlug } from "../../api-helpers/utils";
+import { createTitleSlug, TagItem } from "../../api-helpers/utils";
 
 import { useSSGData } from "../contexts/SSGContext";
 import type { NewsItem, ArticleItem, PodcastItem } from "../lib/ssg-data";
@@ -13,7 +13,7 @@ import { Input } from "./ui/input";
 
 interface SearchResult {
   type: "news" | "article" | "podcast" | "tag";
-  item: NewsItem | ArticleItem | PodcastItem | string;
+  item: NewsItem | ArticleItem | PodcastItem | TagItem;
   relevance: number;
   matchedFields: string[];
 }
@@ -60,14 +60,20 @@ export function SearchBar() {
         matchedFields.push("content");
       }
 
-      item.tagItems.forEach((tag) => {
-        if (tag.toLowerCase().includes(searchQuery)) {
+      item.tagItems.forEach((tagItem) => {
+        const sanitizedTagItem = createTitleSlug(tagItem.tag);
+        const sanitizedSearchQuery = createTitleSlug(searchQuery);
+
+        if (
+          sanitizedTagItem.includes(sanitizedSearchQuery) ||
+          tagItem.label.toLowerCase().includes(searchQuery)
+        ) {
           relevance += 30;
           matchedFields.push("tags");
 
           results.push({
             type: "tag",
-            item: tag,
+            item: tagItem,
             relevance: 40,
             matchedFields: ["tag"],
           });
@@ -132,8 +138,8 @@ export function SearchBar() {
       const slug = articleItem.title ? createTitleSlug(articleItem.title) : articleItem.id;
       window.location.href = links.articleDetail(slug);
     } else if (result.type === "tag") {
-      const tag = result.item as string;
-      window.location.href = links.tag(tag);
+      const tagItem = result.item as TagItem;
+      window.location.href = links.tag(tagItem.tag);
     } else if (result.type === "podcast") {
       const podcastItem = result.item as PodcastItem;
       const slug = podcastItem.title ? createTitleSlug(podcastItem.title) : podcastItem.id;
@@ -235,8 +241,13 @@ export function SearchBar() {
                   <div className="flex-1 min-w-0">
                     {result.type === "tag" ? (
                       <div>
-                        <div className="font-medium text-foreground">#{result.item as string}</div>
+                        <div className="font-medium text-foreground">
+                          #{(result.item as TagItem).tag}
+                        </div>
                         <div className="text-sm text-muted-foreground">Etiket</div>
+                        <div className="text-xs text-muted-foreground">
+                          {(result.item as TagItem).label}
+                        </div>
                       </div>
                     ) : (
                       <div>

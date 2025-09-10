@@ -14,6 +14,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { ContentItem, EducationItem } from "@/lib/ssg-data";
 import PodcastCard from "@/components/PodcastCard";
 import { assertUnreachable, links } from "@/lib/utils";
+import { Clock4, Mic, PenTool } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   const title = `${WEBSITE_NAME} - Güncel Bitcoin Haberleri ve Analizler`;
@@ -48,6 +49,8 @@ type CategoryValue = "all" | "news" | "articles" | "podcast" | "education";
 type Category = {
   label: string;
   value: CategoryValue;
+  color?: string;
+  icon?: React.ReactNode;
 };
 
 // Define categories array first
@@ -59,18 +62,20 @@ const categories: Category[] = [
   {
     label: "Haberler",
     value: "news",
+    color: "text-red-500",
+    icon: <Clock4 className="h-4 w-4 mr-2" />,
   },
   {
     label: "Köşe Yazıları",
     value: "articles",
+    color: "text-main-accent",
+    icon: <PenTool className="h-4 w-4 mr-2" />,
   },
   {
     label: "Podcast",
     value: "podcast",
-  },
-  {
-    label: "Eğitim",
-    value: "education",
+    color: "text-purple-500",
+    icon: <Mic className="h-4 w-4 mr-2" />,
   },
 ];
 
@@ -167,7 +172,7 @@ export default function Index() {
 
   // Memoize category tabs to prevent unnecessary re-renders
   const categoryTabs = useMemo(() => {
-    return categories.map(({ label, value }) => {
+    return categories.map(({ label, value, icon, color }) => {
       const isActive = value === category;
 
       return (
@@ -175,16 +180,14 @@ export default function Index() {
           key={value}
           onClick={() => handleCategoryChange(value)}
           disabled={false}
-          className={`pb-2 px-1 text-xs sm:text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap relative group ${
+          className={`relative pb-2 px-1 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap  group flex items-center gap-2 ${
             isActive
-              ? "border-main-accent text-main-accent"
-              : "border-transparent text-muted-foreground hover:text-main-accent hover:border-muted-foreground"
+              ? `border-main-accent ${color}`
+              : `border-transparent text-muted-foreground hover:${color} hover:border-muted-foreground`
           }`}
         >
+          {icon}
           {label}
-          {isActive && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-main-accent rounded-full animate-pulse"></div>
-          )}
         </button>
       );
     });

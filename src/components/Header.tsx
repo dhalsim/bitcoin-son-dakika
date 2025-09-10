@@ -245,10 +245,10 @@ const Header: React.FC = () => {
           {/* Desktop Navigation - visible on lg and above */}
           <nav className="hidden lg:flex items-center space-x-6">
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded">
+              <DropdownMenuTrigger className="flex items-center text-foreground font-medium px-2 py-1 rounded hover:text-red-500">
                 <a href={links.news}>
                   <div className="flex items-center whitespace-nowrap">
-                    <Clock4 className="h-5 w-5 text-main-accent mr-2" /> Haberler
+                    <Clock4 className="h-5 w-5 text-red-500 mr-2" /> Haberler
                   </div>
                 </a>
                 <ChevronDown className="ml-1 h-4 w-4 cursor-pointer" />
@@ -270,7 +270,7 @@ const Header: React.FC = () => {
             </DropdownMenu>
 
             <div className="flex items-center text-foreground font-medium px-2 py-1 rounded whitespace-nowrap">
-              <div className="flex items-center">
+              <div className="flex items-center hover:text-main-accent">
                 <PenTool className="h-5 w-5 text-main-accent mr-2" />
                 <a href={links.articles}>Köşe Yazıları</a>
               </div>
@@ -278,10 +278,10 @@ const Header: React.FC = () => {
 
             <a
               href={links.podcasts}
-              className="text-foreground font-medium px-2 py-1 rounded whitespace-nowrap"
+              className="text-foreground font-medium px-2 py-1 rounded whitespace-nowrap hover:text-purple-500"
             >
               <div className="flex items-center">
-                <Mic className="h-5 w-5 text-red-500 mr-2" />
+                <Mic className="h-5 w-5 text-purple-500 mr-2" />
                 Podcast
               </div>
             </a>
