@@ -329,38 +329,41 @@ const Header: React.FC = () => {
                   className="w-80 text-left-menu bg-left-menu border-left-menu overflow-y-auto"
                 >
                   <div className="flex flex-col space-y-6 mt-6">
-                    <a href="/" className="font-medium text-lg pb-2">
+                    <a href="/" className="font-medium text-lg pb-2 hover:text-main-accent">
                       Ana Sayfa
                     </a>
 
                     <div className="space-y-4">
                       <h3 className="text-left-menu-primary font-semibold">
-                        <a href={links.news}>
+                        <a href={links.news} className="hover:text-red-500">
                           <div className="flex items-center">
-                            <Clock4 className="h-5 w-5 text-main-accent mr-2" />
+                            <Clock4 className="h-5 w-5 text-red-500 mr-2" />
                             Haberler
                           </div>
                         </a>
                       </h3>
                       <div className="pl-4 space-y-2">
-                        <a href={links.news} className="block text-left-menu-accent">
+                        <a
+                          href={links.news}
+                          className="block text-left-menu-accent hover:text-red-500"
+                        >
                           Son Dakika
                         </a>
                         <a
                           href={links.tag("analiz", "news")}
-                          className="block text-left-menu-accent"
+                          className="block text-left-menu-accent hover:text-red-500"
                         >
                           Piyasa Analizi
                         </a>
                         <a
                           href={links.tag("teknoloji", "news")}
-                          className="block text-left-menu-accent"
+                          className="block text-left-menu-accent hover:text-red-500"
                         >
                           Teknoloji
                         </a>
                         <a
-                          href={links.tag("duzenlemeler", "news")}
-                          className="block text-left-menu-accent"
+                          href={links.tag("regulasyon", "news")}
+                          className="block text-left-menu-accent hover:text-red-500"
                         >
                           Düzenlemeler
                         </a>
@@ -368,7 +371,7 @@ const Header: React.FC = () => {
                     </div>
 
                     <div className="space-y-4">
-                      <h3 className="text-left-menu-primary font-semibold">
+                      <h3 className="text-left-menu-primary font-semibold hover:text-main-accent">
                         <a href={links.articles}>
                           <div className="flex items-center">
                             <PenTool className="h-5 w-5 text-main-accent mr-2" />
@@ -380,10 +383,10 @@ const Header: React.FC = () => {
                     </div>
 
                     <div className="space-y-4">
-                      <h3 className="text-left-menu-primary font-semibold">
+                      <h3 className="text-left-menu-primary font-semibold hover:text-purple-500">
                         <a href={links.podcasts}>
                           <div className="flex items-center">
-                            <Mic className="h-5 w-5 text-red-500 mr-2" />
+                            <Mic className="h-5 w-5 text-purple-500 mr-2" />
                             Podcast'ler
                           </div>
                         </a>
