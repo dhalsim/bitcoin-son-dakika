@@ -1,4 +1,4 @@
-import { TrendingUp, PenTool, Info, Mic } from "lucide-react";
+import { PenTool, Info, Mic, Clock4 } from "lucide-react";
 import { Link } from "react-router";
 
 import type { ArticleItem, NewsItem, PodcastItem } from "@/lib/ssg-data";
@@ -23,9 +23,9 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
     <aside className="w-full lg:w-80 space-y-6">
       {/* Recent Columns */}
       <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
-        <div className="flex items-center mb-4">
-          <PenTool className="h-5 w-5 text-main-accent mr-2" />
-          <h3 className="text-lg font-bold text-foreground">Köşe Yazıları</h3>
+        <div className="flex items-center mb-4 text-main-accent">
+          <PenTool className="h-5 w-5 mr-2" />
+          <h3 className="text-lg font-bold">Köşe Yazıları</h3>
         </div>
 
         <div className="space-y-4">
@@ -55,9 +55,9 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
 
       {/* Trending News */}
       <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
-        <div className="flex items-center mb-4">
-          <TrendingUp className="h-5 w-5 text-main-accent mr-2" />
-          <h3 className="text-lg font-bold text-foreground">Gündem</h3>
+        <div className="flex items-center mb-4 text-red-500">
+          <Clock4 className="h-5 w-5 mr-2" />
+          <h3 className="text-lg font-bold">Gündem</h3>
         </div>
 
         <div className="space-y-4">
@@ -82,9 +82,9 @@ const Sidebar = ({ news, articles, podcasts }: SidebarProps) => {
 
       {/* Podcasts */}
       <div className="bg-card rounded-lg shadow-sm p-6 border border-border">
-        <div className="flex items-center mb-4">
-          <Mic className="h-5 w-5 text-main-accent mr-2" />
-          <h3 className="text-lg font-bold text-foreground">Podcast</h3>
+        <div className="flex items-center mb-4 text-purple-500">
+          <Mic className="h-5 w-5 mr-2" />
+          <h3 className="text-lg font-bold">Podcast</h3>
         </div>
 
         <div className="space-y-4">

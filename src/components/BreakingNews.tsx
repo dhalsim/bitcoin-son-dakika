@@ -22,20 +22,18 @@ export default function BreakingNews() {
   return (
     <div className="bg-main-accent text-white py-2">
       <div className="container mx-auto px-4">
-        <div className="flex items-center">
-          <span className="bg-white text-main-accent px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold mr-2 sm:mr-4 whitespace-nowrap">
+        <div className="flex items-center animate-pulse text-gray-700">
+          <span className="bg-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold mr-2 sm:mr-4 whitespace-nowrap">
             SON DAKİKA
           </span>
           <div className="flex-1 overflow-hidden">
-            <div className="animate-pulse">
-              <span className="text-xs sm:text-sm font-medium">
-                <a href={link}>
-                  {`${topItem.title || "Bitcoin Haberleri"} - ${(
-                    topItem.summary || "Güncel Bitcoin haberleri ve analizler"
-                  ).substring(0, 100)}...`}
-                </a>
-              </span>
-            </div>
+            <span className="text-xs sm:text-sm font-medium">
+              <a href={link}>
+                {`${topItem.title || "Bitcoin Haberleri"} - ${(
+                  topItem.summary || "Güncel Bitcoin haberleri ve analizler"
+                ).substring(0, 100)}...`}
+              </a>
+            </span>
           </div>
         </div>
       </div>
