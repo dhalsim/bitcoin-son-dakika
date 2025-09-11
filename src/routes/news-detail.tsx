@@ -65,6 +65,8 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
     { title },
     { name: "description", content: description },
+    // Canonical URL
+    { rel: "canonical", href: canonicalUrl },
     // Keywords (tags)
     { name: "keywords", content: tags },
     // Open Graph

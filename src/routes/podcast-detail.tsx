@@ -73,6 +73,8 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
       name: "description",
       content: description,
     },
+    // Canonical URL
+    { rel: "canonical", href: canonicalUrl },
     {
       name: "keywords",
       content: tags,
@@ -321,8 +323,8 @@ export default function PodcastDetailPage() {
             <CategoryTags tagItems={podcast.tagItems} className="mb-4" />
 
             {/* Podcast RSS Feed Link */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <RssButton text="RSS Feed'e Abone Ol" variant="ghost" className="text-blue-600" />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4 mt-4">
+              <RssButton text="RSS Feed'e Abone Ol" variant="blue" />
             </div>
           </div>
 

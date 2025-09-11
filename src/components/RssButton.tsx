@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface RssButtonProps {
   text?: string;
-  variant?: "default" | "outline" | "ghost";
+  variant?: "default" | "outline" | "ghost" | "blue";
   size?: "default" | "sm" | "lg";
   className?: string;
 }
