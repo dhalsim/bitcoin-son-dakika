@@ -2,9 +2,9 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://bitcoinsondakika.com/sitemap.xml
+Sitemap: https://www.bitcoinsondakika.com/sitemap.xml
 
 # RSS feeds for content discovery
-Sitemap: https://bitcoinsondakika.com/feed/rss.xml
-Sitemap: https://bitcoinsondakika.com/feed/atom.xml
-Sitemap: https://bitcoinsondakika.com/feed/podcast-rss.xml
+Sitemap: https://www.bitcoinsondakika.com/feed/rss.xml
+Sitemap: https://www.bitcoinsondakika.com/feed/atom.xml
+Sitemap: https://www.bitcoinsondakika.com/feed/podcast-rss.xml
