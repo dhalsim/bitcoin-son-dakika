@@ -563,7 +563,7 @@ export function extractPodcastDataFromEvent(
     content: event.content,
     image: imageTag || "",
     audioUrl: audioTag || "",
-    duration: durationTag || "",
+    duration: durationTag ? parseInt(durationTag) : 0,
     episodeNumber: episodeTag ? parseInt(episodeTag) : 0,
     transcriptUrl: transcriptTag || "",
     chaptersUrl: chaptersTag || "",

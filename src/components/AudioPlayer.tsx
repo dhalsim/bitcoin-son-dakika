@@ -39,7 +39,7 @@ interface AudioPlayerProps {
   title: string;
   chaptersUrl?: string;
   transcriptUrl?: string;
-  duration?: string;
+  duration?: number;
   event?: EventItem;
 }
 
@@ -80,19 +80,6 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
       },
     }));
 
-    // Parse duration string to seconds (e.g., "1:23:45" -> 5025)
-    const parseDurationString = (durationStr: string): number => {
-      const parts = durationStr.split(":").map(Number);
-      if (parts.length === 3) {
-        // HH:MM:SS format
-        return parts[0] * 3600 + parts[1] * 60 + parts[2];
-      } else if (parts.length === 2) {
-        // MM:SS format
-        return parts[0] * 60 + parts[1];
-      }
-      return 0;
-    };
-
     // Load chapters if available
     useEffect(() => {
       if (chaptersUrl) {
@@ -123,7 +110,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
     // Set duration from prop if available
     useEffect(() => {
       if (duration && !durationSeconds) {
-        setDurationSeconds(parseDurationString(duration));
+        setDurationSeconds(duration);
       }
     }, [duration, durationSeconds]);
 
@@ -299,7 +286,7 @@ const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
           setDurationSeconds(audioDuration);
         } else if (duration) {
           // Fallback to duration prop if audio metadata is not available
-          setDurationSeconds(parseDurationString(duration));
+          setDurationSeconds(duration);
         }
       }
     };

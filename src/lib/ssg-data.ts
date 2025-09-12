@@ -54,7 +54,7 @@ export interface PodcastItem {
   summary: string;
   identifier: string;
   audioUrl: string;
-  duration: string;
+  duration: number;
   episodeNumber: number;
   image?: string;
   transcriptUrl?: string;

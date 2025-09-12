@@ -215,3 +215,33 @@ export function getTimeAgo(timestamp: number): string {
     return `${days} gün önce`;
   }
 }
+
+// Format seconds to HH:MM:SS or MM:SS
+export function formatDuration(seconds: number): string {
+  if (seconds >= 3600) {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  } else {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  }
+}
+
+// Parse duration string to seconds (e.g., "1:23:45" -> 5025)
+export function parseDurationString(durationStr: string): number {
+  const parts = durationStr.split(":").map(Number);
+  if (parts.length === 3) {
+    // HH:MM:SS format
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  } else if (parts.length === 2) {
+    // MM:SS format
+    return parts[0] * 60 + parts[1];
+  }
+
+  return 0;
+}

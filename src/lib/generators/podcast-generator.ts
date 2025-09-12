@@ -2,7 +2,7 @@ import { createTitleSlug } from "api-helpers/utils";
 
 import { WEBSITE_URL, LOGO_FOR_PODCAST_URL } from "../constants";
 import type { PodcastItem } from "../ssg-data";
-import { formatRssDate, links } from "../utils";
+import { formatDuration, formatRssDate, links } from "../utils";
 
 // Function to get file size from URL (returns 0 if unable to determine)
 const getAudioFileSize = async (audioUrl: string): Promise<number> => {
@@ -43,7 +43,7 @@ const generatePodcastItemXml = async (podcast: PodcastItem) => {
   const transcriptUrl = podcast.transcriptUrl;
   const chaptersUrl = podcast.chaptersUrl;
   const episodeNumber = podcast.episodeNumber;
-  const duration = podcast.duration;
+  const duration = formatDuration(podcast.duration);
 
   // Determine audio type based on URL extension
   const audioType = podcast.audioUrl.endsWith(".mp3") ? "audio/mp3" : "audio/mpeg";

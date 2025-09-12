@@ -220,9 +220,9 @@ export default function PodcastDetailPage() {
     );
   }
 
-  const formatDuration = (duration?: string) => {
+  const formatDuration = (duration?: number) => {
     if (!duration) return "";
-    return duration;
+    return formatDuration(duration);
   };
 
   const time = getTimeAgo(podcast.publishedAt);
@@ -245,7 +245,7 @@ export default function PodcastDetailPage() {
               "@type": "AudioObject",
               contentUrl: podcast.audioUrl,
               encodingFormat: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg",
-              duration: podcast.duration,
+              duration: formatDuration(podcast.duration),
             },
             author: {
               "@type": "Person",
@@ -257,7 +257,7 @@ export default function PodcastDetailPage() {
               url: WEBSITE_URL,
             },
             datePublished: podcast.publishedAt * 1000,
-            duration: podcast.duration,
+            duration: formatDuration(podcast.duration),
             keywords:
               podcast.tagItems?.length > 0
                 ? `bitcoin, btc, ${podcast.tagItems.join(", ")}`

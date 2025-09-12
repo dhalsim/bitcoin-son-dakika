@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import type { PodcastItem } from "@/lib/ssg-data";
 import { PublishPodcastPayload } from "@/types/admin";
+import { formatDuration, parseDurationString } from "@/lib/utils";
 
 import TagSelector from "./TagSelector";
 
@@ -36,13 +37,17 @@ export default function PodcastComposer({
   const [summary, setSummary] = useState(editData?.summary || "");
   const [image, setImage] = useState(editData?.image || "");
   const [audioUrl, setAudioUrl] = useState(editData?.audioUrl || "");
-  const [duration, setDuration] = useState(editData?.duration || "");
+  const [duration, setDuration] = useState(
+    editData?.duration ? formatDuration(editData.duration) : "",
+  );
   const [episodeNumber, setEpisodeNumber] = useState<number | null>(
     editData?.episodeNumber || null,
   );
   const [transcriptUrl, setTranscriptUrl] = useState(editData?.transcriptUrl || "");
   const [chaptersUrl, setChaptersUrl] = useState(editData?.chaptersUrl || "");
-  const [tags, setTags] = useState<string[]>(editData?.tagItems.map((tag) => tag.tag) || []);
+  const [tags, setTags] = useState<string[]>(
+    editData?.tagItems.map((tagItem) => tagItem.tag) || [],
+  );
 
   const preview = useMemo(() => content, [content]);
 
@@ -54,11 +59,11 @@ export default function PodcastComposer({
       setSummary(editData.summary || "");
       setImage(editData.image || "");
       setAudioUrl(editData.audioUrl || "");
-      setDuration(editData.duration || "");
+      setDuration(editData.duration ? formatDuration(editData.duration) : "");
       setEpisodeNumber(editData.episodeNumber);
       setTranscriptUrl(editData.transcriptUrl || "");
       setChaptersUrl(editData.chaptersUrl || "");
-      setTags(editData.tagItems.map((tag) => tag.tag) || []);
+      setTags(editData.tagItems.map((tagItem) => tagItem.tag) || []);
     }
   }, [editData]);
 
@@ -78,7 +83,7 @@ export default function PodcastComposer({
         summary,
         image,
         audioUrl,
-        duration,
+        duration: duration ? parseDurationString(duration) : 0,
         episodeNumber,
         transcriptUrl,
         chaptersUrl,

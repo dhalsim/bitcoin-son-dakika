@@ -62,11 +62,11 @@ export type PublishArticlePayload = {
 export type PublishPodcastPayload = {
   action: "publish-podcast";
   title: string;
+  audioUrl: string;
   content: string;
+  duration: number;
   summary?: string;
   image?: string;
-  audioUrl: string;
-  duration?: string;
   episodeNumber?: number;
   tags: string[];
   transcriptUrl?: string;
