@@ -8,8 +8,6 @@ import {
 import { Mic, Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { createTitleSlug } from "../../api-helpers/utils";
-
 import { createAuthorSlug, fetchSSGData, getDisplayName } from "@/lib/ssg-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +19,9 @@ import { CategoryTags } from "@/components/CategoryTags";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { LOGO_URL, WEBSITE_NAME, WEBSITE_URL } from "@/lib/constants";
 import { RssButton } from "@/components/RssButton";
-import { getTimeAgo, links } from "@/lib/utils";
+import { formatDuration, getTimeAgo, links } from "@/lib/utils";
+
+import { createTitleSlug } from "../../api-helpers/utils";
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const podcast = loaderData?.podcast;
@@ -219,11 +219,6 @@ export default function PodcastDetailPage() {
       </div>
     );
   }
-
-  const formatDuration = (duration?: number) => {
-    if (!duration) return "";
-    return formatDuration(duration);
-  };
 
   const time = getTimeAgo(podcast.publishedAt);
   const displayName = getDisplayName(podcast.author, podcast.event.pubkey);
