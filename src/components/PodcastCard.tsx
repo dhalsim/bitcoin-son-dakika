@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Clock, Play } from "lucide-react";
 
 import type { PodcastItem } from "@/lib/ssg-data";
+import { formatDuration } from "@/lib/utils";
+
 import { createTitleSlug } from "../../api-helpers/utils";
 
 import { Badge } from "./ui/badge";
@@ -70,7 +72,7 @@ export const PodcastCard: React.FC<PodcastCardProps> = ({ podcast }) => {
           )}
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Clock className="h-4 w-4" />
-            {podcast.duration}
+            {formatDuration(podcast.duration)}
           </div>
         </div>
 

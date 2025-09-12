@@ -51,7 +51,7 @@ export default function PodcastComposer({
 
   const preview = useMemo(() => content, [content]);
 
-  // Reset form when editData changes
+  // Reset form when editData changes (only when entering edit mode)
   useEffect(() => {
     if (editData) {
       setTitle(editData.title || "");
@@ -64,6 +64,18 @@ export default function PodcastComposer({
       setTranscriptUrl(editData.transcriptUrl || "");
       setChaptersUrl(editData.chaptersUrl || "");
       setTags(editData.tagItems.map((tagItem) => tagItem.tag) || []);
+    } else {
+      // Clear form when not in edit mode
+      setTitle("");
+      setContent("");
+      setSummary("");
+      setImage("");
+      setAudioUrl("");
+      setDuration("");
+      setEpisodeNumber(null);
+      setTranscriptUrl("");
+      setChaptersUrl("");
+      setTags([]);
     }
   }, [editData]);
 
@@ -97,22 +109,11 @@ export default function PodcastComposer({
 
       await performAction(payload);
 
-      // Reset form
-      setTitle("");
-      setContent("");
-      setSummary("");
-      setImage("");
-      setAudioUrl("");
-      setDuration("");
-      setEpisodeNumber(undefined);
-      setTranscriptUrl("");
-      setChaptersUrl("");
-      setTags([]);
-
       // Clear edit mode after successful publish
       if (editData) {
         onCancelEdit();
       }
+      // Form will be cleared by useEffect when editData becomes null
     } finally {
       setLoading(false);
     }
