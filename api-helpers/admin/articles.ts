@@ -199,12 +199,14 @@ async function publishArticle(
     const currentTime = Math.floor(Date.now() / 1000);
 
     // Use existing dTag for updates, or create new one for new articles
+    const publishedAt = data.publishedAt || Math.floor(Date.now() / 1000);
     const dIdentifier = data.dTag || createTitleSlug(data.title);
 
     const eventTags: string[][] = [
       ["d", dIdentifier],
       ["title", data.title],
       ["editor", pubkey],
+      ["published_at", publishedAt.toString()],
       ...data.tags.map((tag) => ["t", tag]),
     ];
 

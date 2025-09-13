@@ -56,7 +56,8 @@ export type PublishArticlePayload = {
   summary?: string;
   image?: string;
   tags: string[];
-  dTag?: string;
+  publishedAt?: number; // For updates, use existing publishedAt
+  dTag?: string; // For updates, use existing dTag
 };
 
 export type PublishPodcastPayload = {
@@ -71,6 +72,7 @@ export type PublishPodcastPayload = {
   tags: string[];
   transcriptUrl?: string;
   chaptersUrl?: string;
+  publishedAt?: number; // For updates, use existing publishedAt
   dTag?: string; // For updates, use existing dTag
 };
 

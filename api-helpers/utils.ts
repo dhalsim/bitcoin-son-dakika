@@ -486,6 +486,7 @@ export function extractArticleDataFromEvent(
   const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
   const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
   const imageTag = event.tags.find((t) => t[0] === "image")?.[1];
+  const publishedAtTag = event.tags.find((t) => t[0] === "published_at")?.[1];
   const dTag = event.tags.find((t) => t[0] === "d")?.[1];
 
   const tTags = event.tags.filter((t) => t[0] === "t");
@@ -507,7 +508,7 @@ export function extractArticleDataFromEvent(
     type: "article",
     id: event.id,
     event,
-    publishedAt: event.created_at,
+    publishedAt: publishedAtTag ? parseInt(publishedAtTag) : event.created_at,
     title: titleTag || "",
     summary: summaryTag || "",
     content: event.content,
@@ -536,6 +537,7 @@ export function extractPodcastDataFromEvent(
   const episodeTag = event.tags.find((t) => t[0] === "episode")?.[1];
   const transcriptTag = event.tags.find((t) => t[0] === "transcript")?.[1];
   const chaptersTag = event.tags.find((t) => t[0] === "chapters")?.[1];
+  const publishedAtTag = event.tags.find((t) => t[0] === "published_at")?.[1];
   const dTag = event.tags.find((t) => t[0] === "d")?.[1];
 
   const tTags = event.tags.filter((t) => t[0] === "t");
@@ -557,7 +559,7 @@ export function extractPodcastDataFromEvent(
     type: "podcast",
     id: event.id,
     event,
-    publishedAt: event.created_at,
+    publishedAt: publishedAtTag ? parseInt(publishedAtTag) : event.created_at,
     title: titleTag || "",
     summary: summaryTag || "",
     content: event.content,

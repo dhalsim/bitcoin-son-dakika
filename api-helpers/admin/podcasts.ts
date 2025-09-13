@@ -58,6 +58,7 @@ async function publishPodcast(
 
     // Create the podcast event
     // Use existing dTag for updates, or create new one for new podcasts
+    const publishedAt = data.publishedAt || Math.floor(Date.now() / 1000);
     const dIdentifier = dTag || createTitleSlug(title);
     const url = `https://bitcoinsondakika.com/podcast/${dIdentifier}`;
 
@@ -72,6 +73,7 @@ async function publishPodcast(
         ["title", title],
         ["audio", audioUrl],
         ["duration", duration.toString()],
+        ["published_at", publishedAt.toString()],
         ...(summary ? [["summary", summary]] : []),
         ...(image ? [["image", image]] : []),
         ...(episodeNumber ? [["episode", episodeNumber.toString()]] : []),
