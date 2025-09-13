@@ -107,8 +107,12 @@ function processNewsEvent(event: EventItem, author: ProfileItem, tagItems: TagIt
   };
 }
 
-function processArticleEvent(event: EventItem, author: ProfileItem, tags: TagItem[]): ArticleItem {
-  return { author, ...extractArticleDataFromEvent(event, tags) };
+function processArticleEvent(
+  event: EventItem,
+  author: ProfileItem,
+  tagItems: TagItem[],
+): ArticleItem {
+  return { author, ...extractArticleDataFromEvent(event, tagItems) };
 }
 
 function processPodcastEvent(event: EventItem, author: ProfileItem, tags: TagItem[]): PodcastItem {
@@ -118,12 +122,12 @@ function processPodcastEvent(event: EventItem, author: ProfileItem, tags: TagIte
 export async function fetchSSGData(): Promise<SSGData> {
   console.log("Fetching SSG data from Nostr relays...");
 
-  const { newsTags, articleTags, podcastTags, tags } = await fetchNostrSets([
-    "news",
-    "articles",
-    "podcasts",
-    "categories",
-  ]);
+  const {
+    newsTags,
+    articleTags,
+    podcastTags,
+    tags: tagItems,
+  } = await fetchNostrSets(["news", "articles", "podcasts", "categories"]);
 
   const newsRelays = [...new Set(newsTags.flatMap((tag) => tag.relays))];
   const articleRelays = [...new Set(articleTags.flatMap((tag) => tag.relays))];
@@ -225,7 +229,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${ne.id}`);
     }
 
-    return processNewsEvent({ ...ne, relays: relayHintTag.relays }, profile, tags);
+    return processNewsEvent({ ...ne, relays: relayHintTag.relays }, profile, tagItems);
   });
 
   const articleItems: ArticleItem[] = articlesEvents.map((ae) => {
@@ -249,7 +253,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${ae.id}`);
     }
 
-    return processArticleEvent({ ...ae, relays: relayHintTag.relays }, profile, tags);
+    return processArticleEvent({ ...ae, relays: relayHintTag.relays }, profile, tagItems);
   });
 
   const podcastItems: PodcastItem[] = podcastsEvents.map((pe) => {
@@ -273,7 +277,7 @@ export async function fetchSSGData(): Promise<SSGData> {
       throw new Error(`Relay hint not found: ${pe.id}`);
     }
 
-    return processPodcastEvent({ ...pe, relays: relayHintTag.relays }, profile, tags);
+    return processPodcastEvent({ ...pe, relays: relayHintTag.relays }, profile, tagItems);
   });
 
   // Sort by publication date (newest first)
@@ -289,7 +293,7 @@ export async function fetchSSGData(): Promise<SSGData> {
     news: newsItems,
     articles: articleItems,
     podcasts: podcastItems,
-    tags: tags,
+    tags: tagItems,
     lastUpdated: Date.now(), // Use actual build time for SSG
   };
 }

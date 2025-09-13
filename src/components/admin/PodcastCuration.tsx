@@ -7,12 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RemovePodcastPayload } from "@/types/admin";
 import { EventItem } from "@/lib/nip01";
 import { getKind30023Events } from "@/lib/nip23";
+import { useTags } from "@/hooks/useTags";
+import { getPublishedAt } from "@/lib/utils";
 
 import type { PodcastTag } from "../../../api-helpers/utils";
 import { extractPodcastDataFromEvent } from "../../../api-helpers/utils";
 
 import { Skeleton } from "../ui/skeleton";
-import { useTags } from "@/hooks/useTags";
 
 interface PodcastCurationProps {
   podcasts: PodcastTag[];
@@ -72,16 +73,6 @@ export default function PodcastCuration({
     }
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString("tr-TR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -116,7 +107,7 @@ export default function PodcastCuration({
             ))
           ) : (
             Array.from(podcastEvents.values())
-              .sort((a, b) => b.created_at - a.created_at)
+              .sort((a, b) => getPublishedAt(b) - getPublishedAt(a))
               .map((event) => {
                 const content = event.content || "";
                 const titleTag = event.tags.find((t) => t[0] === "title")?.[1];

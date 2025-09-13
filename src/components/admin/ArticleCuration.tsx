@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { getKind30023Events } from "@/lib/nip23";
 import type { EventItem } from "@/lib/nip01";
 import type { AddArticlePayload, RemoveArticlePayload } from "@/types/admin";
+import { getPublishedAt } from "@/lib/utils";
 
-import type { ArticleTag } from "../../../api-helpers/utils";
+import type { ArticleTag, TagItem } from "../../../api-helpers/utils";
 import { extractArticleDataFromEvent } from "../../../api-helpers/utils";
 
 import { Skeleton } from "../ui/skeleton";
@@ -19,6 +20,7 @@ import UploadToX from "./UploadToX";
 
 interface ArticleCurationProps {
   articles: ArticleTag[];
+  tagItems: TagItem[];
   lastUpdated: number;
   performAction: (data: RemoveArticlePayload | AddArticlePayload) => Promise<any>;
   reload: () => Promise<void> | void;
@@ -28,6 +30,7 @@ interface ArticleCurationProps {
 
 export default function ArticleCuration({
   articles,
+  tagItems,
   lastUpdated,
   performAction,
   reload,
@@ -158,7 +161,7 @@ export default function ArticleCuration({
             ))
           ) : (
             Array.from(articleEvents.values())
-              .sort((a, b) => b.created_at - a.created_at)
+              .sort((a, b) => getPublishedAt(b) - getPublishedAt(a))
               .map((event) => {
                 const content = event.content || "";
                 const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
@@ -217,7 +220,7 @@ export default function ArticleCuration({
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          onEditArticle(extractArticleDataFromEvent(event));
+                          onEditArticle(extractArticleDataFromEvent(event, tagItems));
                         }}
                         title="Düzenle"
                       >

@@ -50,8 +50,8 @@ async function publishPodcast(
       dTag,
     } = data;
 
-    if (!title || !audioUrl || !duration || !dTag) {
-      return ErrorResponseCreator("Title, audioUrl, duration, and dTag are required", 400);
+    if (!title || !audioUrl || !duration) {
+      return ErrorResponseCreator("Title, audioUrl, duration are required", 400);
     }
 
     const privateKeyBytes = hexToBytes(masterAdminPrivateKey);

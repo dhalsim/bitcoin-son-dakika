@@ -477,7 +477,7 @@ export function createTitleSlug(title: string): string {
 
 export function extractArticleDataFromEvent(
   event: EventItem,
-  tags: TagItem[],
+  tagItems: TagItem[],
 ): Omit<ArticleItem, "author"> & {
   dTag: string;
   pubkey: string;
@@ -492,7 +492,7 @@ export function extractArticleDataFromEvent(
   const tTags = event.tags.filter((t) => t[0] === "t");
 
   const matchedTags = tTags
-    .map((tTag) => tags.find((t) => t.tag === tTag[1]))
+    .map((tTag) => tagItems.find((t) => t.tag === tTag[1]))
     .filter((t) => t !== undefined);
 
   if (matchedTags.length !== tTags.length) {

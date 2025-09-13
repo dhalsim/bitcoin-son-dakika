@@ -245,3 +245,9 @@ export function parseDurationString(durationStr: string): number {
 
   return 0;
 }
+
+export function getPublishedAt(event: EventItem) {
+  const tag = event.tags.find((t) => t[0] === "published_at")?.[1];
+
+  return tag ? parseInt(tag) : event.created_at;
+}

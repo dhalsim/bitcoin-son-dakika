@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Payload } from "@/types/admin";
 import { toast } from "@/hooks/use-toast";
 
-import type { ArticleTag, NewsTag, PodcastTag } from "../../api-helpers/utils";
+import type { ArticleTag, NewsTag, PodcastTag, TagItem } from "../../api-helpers/utils";
 import { ADMIN_RELAYS } from "../../api-helpers/utils";
 import {
   isMultiPublishResponse,
@@ -62,6 +62,8 @@ interface AdminData {
   articlesLastTimeUpdated: number;
   podcasts: PodcastTag[];
   podcastsLastTimeUpdated: number;
+  tagItems: TagItem[];
+  tagItemsLastTimeUpdated: number;
 }
 
 interface UserInfo {
@@ -152,6 +154,12 @@ export default function AdminPanel() {
             "#d": ["podcasts"],
             limit: 1,
           },
+          {
+            authors: [MASTER_ADMIN_PUBKEY],
+            kinds: [30004],
+            "#d": ["categories"],
+            limit: 1,
+          },
         ],
         {
           onevent(evt) {
@@ -215,6 +223,15 @@ export default function AdminPanel() {
               return;
             }
 
+            const categoriesEvent = events.get("categories");
+
+            if (!categoriesEvent) {
+              setError("Kategorileri yüklerken hata oluştu, logları kontrol ediniz");
+              setLoading(false);
+
+              return;
+            }
+
             const adminUsers = adminUsersEvent.tags
               .filter((tag) => tag[0] === "p")
               .map((tag) => tag[1])
@@ -256,6 +273,15 @@ export default function AdminPanel() {
 
             const podcastsLastTimeUpdated = podcastsEvent.created_at * 1000;
 
+            const tagItems: TagItem[] = categoriesEvent.tags
+              .filter((tag) => tag[0] === "t")
+              .map((tag) => ({
+                tag: tag[1],
+                label: tag[2],
+              }));
+
+            const tagItemsLastTimeUpdated = categoriesEvent.created_at * 1000;
+
             setAdminData({
               adminUsers,
               adminsLastTimeUpdated,
@@ -267,6 +293,8 @@ export default function AdminPanel() {
               articlesLastTimeUpdated,
               podcasts,
               podcastsLastTimeUpdated,
+              tagItems,
+              tagItemsLastTimeUpdated,
             });
 
             setLoading(false);
@@ -598,6 +626,7 @@ export default function AdminPanel() {
                   <ArticleCuration
                     articles={adminData?.articles || []}
                     lastUpdated={adminData?.articlesLastTimeUpdated || 0}
+                    tagItems={adminData?.tagItems || []}
                     performAction={performAction}
                     reload={loadAdminData}
                     userNpub={userInfo.pubkey ? nip19.npubEncode(userInfo.pubkey) : undefined}

@@ -31,7 +31,6 @@ export default function TagContentSheet({
   onOpenChange,
 }: TagContentSheetProps) {
   const ssgData = useSSGData();
-  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
 
   // Get all content that uses this tag
   const getContentWithTag = () => {
