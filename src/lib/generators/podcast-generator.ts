@@ -52,7 +52,10 @@ const generatePodcastItemXml = async (podcast: PodcastItem) => {
   const fileSize = await getAudioFileSize(podcast.audioUrl);
 
   // Create tags string for description
-  const tagsString = podcast.tagItems.length > 0 ? `Tags: ${podcast.tagItems.join(", ")}` : "";
+  const tagsString =
+    podcast.tagItems.length > 0
+      ? `Etiketler: ${podcast.tagItems.map((tagItem) => tagItem.tag).join(", ")}`
+      : "";
 
   // Create summary content
   const summaryContent = podcast.summary
