@@ -367,6 +367,7 @@ export default function NewsCuration({
         onOpenChange={setShareOpen}
         eventItem={shareData}
         publishToX={publishToX}
+        type="news"
         width={800}
         height={600}
       />

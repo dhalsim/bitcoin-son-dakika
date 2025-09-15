@@ -52,7 +52,13 @@ type HandleUploadToXParams = {
   TWITTER_ACCESS_TOKEN: string;
   TWITTER_ACCESS_TOKEN_SECRET: string;
   authResult: AuthResult;
-  paramsData: { formData: FormData; firstPost: string; secondPost: string; slug: string };
+  paramsData: {
+    formData: FormData;
+    firstPost: string;
+    secondPost: string;
+    type: "news" | "podcast" | "article";
+    slug: string;
+  };
 };
 
 export async function handleUploadToX(params: HandleUploadToXParams) {
@@ -73,7 +79,7 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
     return ErrorResponseCreator("Only editors can publish news", 403);
   }
 
-  const { formData, firstPost, secondPost, slug } = paramsData;
+  const { formData, firstPost, secondPost, type, slug } = paramsData;
 
   if (!formData) {
     return ErrorResponseCreator("File is required", 400);
@@ -158,14 +164,21 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
       return ErrorResponseCreator("Reply to ID not found", 400);
     }
 
-    const newsUrl = `https://bitcoinsondakika.com/haber/${slug}`;
+    let url = "";
+    if (type === "news") {
+      url = `https://bitcoinsondakika.com/haber/${slug}`;
+    } else if (type === "podcast") {
+      url = `https://bitcoinsondakika.com/podcast/${slug}`;
+    } else if (type === "article") {
+      url = `https://bitcoinsondakika.com/makale/${slug}`;
+    }
 
     const replyTweetResponse = await fetch(tweetUrl, {
       method: tweetMethod,
       headers: { Authorization: tweetAuthHeader, "Content-Type": "application/json" },
       body: JSON.stringify({
         reply: { in_reply_to_tweet_id: mediaTweetId },
-        text: secondPost.replace("[link]", newsUrl),
+        text: secondPost.replace("[link]", url),
       }),
     });
 

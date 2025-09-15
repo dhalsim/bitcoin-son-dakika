@@ -69,6 +69,7 @@ export type PublishToXParams = {
   blob: Blob;
   firstPost: string;
   secondPost: string;
+  type: "news" | "podcast" | "article";
   slug: string;
   getPublicKey: GetPublicKey;
   signEvent: SignEvent;
@@ -78,6 +79,7 @@ export async function publishToX({
   blob,
   firstPost,
   secondPost,
+  type,
   slug,
   getPublicKey,
   signEvent,
@@ -86,6 +88,7 @@ export async function publishToX({
   form.append("action", "upload-to-x");
   form.append("firstPost", firstPost);
   form.append("secondPost", secondPost);
+  form.append("type", type);
   form.append("slug", slug);
   form.append("media", new File([blob], "post.png", { type: "image/png" }));
 

@@ -26,6 +26,7 @@ type UploadToXProps = {
   onOpenChange: (v: boolean) => void;
   eventItem: EventItem;
   publishToX: (params: PublishToXParams) => Promise<Response>;
+  type: "news" | "podcast" | "article";
   width?: number;
   height?: number;
 };
@@ -47,6 +48,7 @@ export default function UploadToX({
   onOpenChange,
   eventItem,
   publishToX,
+  type,
   width = 800,
   height = 600,
 }: UploadToXProps) {
@@ -147,6 +149,7 @@ export default function UploadToX({
                     blob,
                     firstPost,
                     secondPost,
+                    type,
                     slug,
                     getPublicKey,
                     signEvent,

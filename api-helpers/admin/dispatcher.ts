@@ -55,10 +55,15 @@ export async function handleAdminPost(request: Request): Promise<Response> {
 
         const firstPost = String(form.get("firstPost"));
         const secondPost = String(form.get("secondPost"));
+        const type = String(form.get("type"));
         const slug = String(form.get("slug"));
 
-        if (!firstPost || !secondPost || !slug) {
+        if (!firstPost || !secondPost || !slug || !type) {
           return ErrorResponseCreator("First post, second post and slug are required", 400);
+        }
+
+        if (type !== "news" && type !== "podcast" && type !== "article") {
+          return ErrorResponseCreator("Invalid type", 400);
         }
 
         return handleUploadToX({
@@ -67,7 +72,7 @@ export async function handleAdminPost(request: Request): Promise<Response> {
           TWITTER_ACCESS_TOKEN,
           TWITTER_ACCESS_TOKEN_SECRET,
           authResult,
-          paramsData: { formData: form, firstPost, secondPost, slug },
+          paramsData: { formData: form, firstPost, secondPost, type, slug },
         });
       }
 

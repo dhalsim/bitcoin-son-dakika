@@ -209,6 +209,7 @@ export default function PodcastCuration({
         onOpenChange={setShareOpen}
         eventItem={shareData}
         publishToX={publishToX}
+        type="podcast"
         width={800}
         height={600}
       />

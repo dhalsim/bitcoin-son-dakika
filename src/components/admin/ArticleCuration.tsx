@@ -315,6 +315,7 @@ export default function ArticleCuration({
         onOpenChange={setShareOpen}
         eventItem={shareData}
         publishToX={publishToX}
+        type="article"
         width={800}
         height={600}
       />
