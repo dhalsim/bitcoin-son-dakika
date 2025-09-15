@@ -2,7 +2,7 @@ import { Mic, Rss } from "lucide-react";
 import { LoaderFunctionArgs, MetaFunction, useLoaderData } from "react-router-dom";
 import { useState } from "react";
 
-import { fetchSSGData } from "@/lib/ssg-data";
+import { SSGData } from "@/lib/ssg-data";
 import MainContent from "@/components/MainContent";
 import PodcastCard from "@/components/PodcastCard";
 import { formatNostrDate, links } from "@/lib/utils";
@@ -45,7 +45,12 @@ export const meta: MetaFunction = () => {
 
 export async function loader({}: LoaderFunctionArgs) {
   try {
-    const ssgData = await fetchSSGData();
+    // Get SSG data from global (available during prerendering)
+    const ssgData: SSGData = (global as any).__SSG_DATA__;
+
+    if (!ssgData) {
+      throw new Response("SSG data not available", { status: 500 });
+    }
 
     const podcasts = ssgData.podcasts.sort((a, b) => b.publishedAt - a.publishedAt);
 

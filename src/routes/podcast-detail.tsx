@@ -8,7 +8,7 @@ import {
 import { Mic, Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { createAuthorSlug, fetchSSGData, getDisplayName } from "@/lib/ssg-data";
+import { createAuthorSlug, getDisplayName, SSGData } from "@/lib/ssg-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MainContent from "@/components/MainContent";
@@ -101,14 +101,19 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
     { property: "og:audio:track", content: podcast.episodeNumber?.toString() || "1" },
 
     // Twitter Card tags - These are important for Twitter and other platforms
-    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:card", content: "player" },
     { name: "twitter:title", content: title },
     {
       name: "twitter:description",
       content: description,
     },
     { property: "twitter:image", content: imageUrl },
-    { name: "twitter:player", content: podcast.audioUrl },
+    {
+      name: "twitter:player",
+      content: `${WEBSITE_URL}/podcast-player/${createTitleSlug(podcast.title)}`,
+    },
+    { name: "twitter:player:width", content: "435" },
+    { name: "twitter:player:height", content: "251" },
     { name: "twitter:player:stream", content: podcast.audioUrl },
     {
       name: "twitter:player:stream:content_type",
@@ -172,7 +177,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
       throw new Error("Podcast slug is required");
     }
 
-    const ssgData = await fetchSSGData();
+    // Get SSG data from global (available during prerendering)
+    const ssgData: SSGData = (global as any).__SSG_DATA__;
+
+    if (!ssgData) {
+      throw new Response("SSG data not available", { status: 500 });
+    }
 
     // Find podcast by slug using createTitleSlug function
     const foundPodcast = ssgData.podcasts.find((p) => {

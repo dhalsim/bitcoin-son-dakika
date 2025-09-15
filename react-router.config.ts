@@ -8,6 +8,7 @@ import { createTitleSlug } from "./api-helpers/utils";
 import { generateFeeds } from "./src/lib/generators/feed-generator";
 import { generatePodcastRssXml } from "./src/lib/generators/podcast-generator";
 import { generateSitemapXml } from "./src/lib/generators/sitemap-generator";
+import type { SSGData } from "./src/lib/ssg-data";
 import {
   getUniqueAuthors,
   getUniqueTags,
@@ -34,18 +35,19 @@ export default {
   async prerender() {
     console.log("Starting prerender with SSG data fetch...");
 
-    // Fetch the latest news and articles from Nostr relays
-    const ssgData = await fetchSSGData();
+    let ssgData: SSGData;
 
-    // Store the data globally for use in routes during prerendering
-    global.__SSG_DATA__ = ssgData;
+    if (global.__SSG_DATA__) {
+      console.log("SSG data already exists in global");
 
-    // Also embed the data in the HTML for client-side access
-    if (typeof global !== "undefined") {
-      console.log(`ssgData is set to window.__SSG_DATA__ in the client`);
+      ssgData = global.__SSG_DATA__;
+    } else {
+      console.log("SSG data does not exist in global, fetching from Nostr relays");
 
-      // Store the data as a string that will be embedded in the HTML
-      (global as any).__SSG_DATA_HTML__ = JSON.stringify(ssgData);
+      ssgData = await fetchSSGData();
+
+      global.__SSG_DATA__ = ssgData;
+      global.__SSG_DATA_HTML__ = JSON.stringify(ssgData);
     }
 
     console.log(
@@ -112,7 +114,11 @@ export default {
 
     const podcastRoutes = ssgData.podcasts
       .filter((p): p is typeof p & { title: string } => !!p.title && !!p.summary)
-      .map((p) => `/podcast/${createTitleSlug(p.title)}`);
+      .flatMap((p) => {
+        const slug = createTitleSlug(p.title);
+
+        return [`/podcast/${slug}`, `/podcast-player/${slug}`];
+      });
 
     console.log(`Generated ${podcastRoutes.length} podcast routes`);
 

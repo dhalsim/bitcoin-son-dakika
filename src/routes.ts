@@ -10,6 +10,7 @@ export default [
   route("makaleler", "routes/articles.tsx"),
   route("podcast", "routes/podcasts.tsx"),
   route("podcast/:slug", "routes/podcast-detail.tsx"),
+  route("podcast-player/:slug", "routes/podcast-player.tsx"),
   // TODO: add educations - egitimler routes
   route("son-dakika", "routes/latest.tsx"), // both news and articles
   route("etiket/:slug", "routes/tags.tsx"),
