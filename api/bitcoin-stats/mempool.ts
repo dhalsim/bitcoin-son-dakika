@@ -101,8 +101,8 @@ export async function GET() {
     // Process difficulty data
     const rawDifficultyData = await difficultyResponse.value.json();
     const difficultyData = MempoolDifficultySchema.parse(rawDifficultyData);
-    const previousChange = (difficultyData.previousRetarget - 1) * 100;
-    const estimatedChange = (difficultyData.difficultyChange - 1) * 100;
+    const previousChange = difficultyData.previousRetarget;
+    const estimatedChange = difficultyData.difficultyChange;
     const difficulty = {
       previousChange,
       estimatedChange,
