@@ -80,7 +80,18 @@ export default function PodcastPlayerPage() {
               {podcast.title}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              {podcast.summary || podcast.content?.substring(0, 150) || "Bitcoin podcast"}
+              {podcast.summary?.substring(0, 150) ||
+                podcast.content?.substring(0, 150) ||
+                "Bitcoin podcast"}{" "}
+              {podcast.summary && podcast.summary.length > 150 && (
+                <a
+                  className="text-main-accent"
+                  href={`/podcast/${createTitleSlug(podcast.title)}`}
+                  target="_blank"
+                >
+                  Devamını Oku
+                </a>
+              )}
             </p>
           </div>
 
@@ -98,7 +109,13 @@ export default function PodcastPlayerPage() {
 
             {/* Additional info */}
             <div className="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-              <span>Bitcoin Son Dakika</span>
+              <a
+                className="text-main-accent"
+                href={`/podcast/${createTitleSlug(podcast.title)}`}
+                target="_blank"
+              >
+                Bitcoin Son Dakika'da aç
+              </a>
               {podcast.duration && (
                 <span>
                   {Math.floor(podcast.duration / 60)}:
@@ -109,10 +126,10 @@ export default function PodcastPlayerPage() {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 text-center">
+            <a className="text-main-accent" href={`/`} target="_blank">
               Bitcoin Son Dakika
-            </p>
+            </a>
           </div>
         </div>
       </div>

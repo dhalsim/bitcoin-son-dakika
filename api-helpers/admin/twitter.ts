@@ -168,7 +168,7 @@ export async function handleUploadToX(params: HandleUploadToXParams) {
     if (type === "news") {
       url = `https://bitcoinsondakika.com/haber/${slug}`;
     } else if (type === "podcast") {
-      url = `https://bitcoinsondakika.com/podcast/${slug}`;
+      url = `https://bitcoinsondakika.com/podcast-player/${slug}`;
     } else if (type === "article") {
       url = `https://bitcoinsondakika.com/makale/${slug}`;
     }
