@@ -14,6 +14,8 @@ import type { PodcastTag } from "../../../api-helpers/utils";
 import { extractPodcastDataFromEvent } from "../../../api-helpers/utils";
 
 import { Skeleton } from "../ui/skeleton";
+import UploadToX from "./UploadToX";
+import { publishToX } from "./utils";
 
 interface PodcastCurationProps {
   podcasts: PodcastTag[];
@@ -32,6 +34,8 @@ export default function PodcastCuration({
 }: PodcastCurationProps) {
   const [removing, setRemoving] = useState<string | null>(null);
   const [podcastEvents, setPodcastEvents] = useState<Map<string, EventItem>>(new Map());
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareData, setShareData] = useState<EventItem | null>(null);
   const { tags } = useTags();
 
   useEffect(() => {
@@ -148,6 +152,26 @@ export default function PodcastCuration({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShareData(event);
+                          setShareOpen(true);
+                        }}
+                        title="X'e yükle"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          className="h-4 w-4 text-muted-foreground"
+                          viewBox="0 0 16 16"
+                        >
+                          <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
+                        </svg>
+                      </Button>
                       {onEditPodcast && (
                         <Button
                           variant="outline"
@@ -179,6 +203,15 @@ export default function PodcastCuration({
           )}
         </div>
       </CardContent>
+
+      <UploadToX
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        eventItem={shareData}
+        publishToX={publishToX}
+        width={800}
+        height={600}
+      />
     </Card>
   );
 }
