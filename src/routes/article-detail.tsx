@@ -131,7 +131,7 @@ export default function ArticleDetailPage() {
           {/* Summary */}
           {articleItem.summary && (
             <div className="mb-6">
-              <p className="text-lg text-muted-foreground leading-relaxed">{articleItem.summary}</p>
+              <ArticleMarkdownRenderer content={articleItem.summary} className="mb-8" />
             </div>
           )}
         </header>
