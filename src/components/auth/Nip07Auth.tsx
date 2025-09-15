@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Key, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,21 @@ interface Nip07AuthProps {
 export function Nip07Auth({ onSuccess, onError }: Nip07AuthProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { loginWithNip07 } = useNostrAuth();
+  const [isLoadingNip07Available, setIsLoadingNip07Available] = useState(true);
+  const [nip07Available, setNip07Available] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setTimeout(() => {
+      setNip07Available(isNip07Available());
+      setIsLoadingNip07Available(false);
+    }, 500);
+  }, []);
 
   const handleNip07Login = async () => {
     if (!isNip07Available()) {
       onError("NIP-07 eklentisi bulunamadı. Lütfen yükleyin.");
+
       return;
     }
 
@@ -49,7 +59,11 @@ export function Nip07Auth({ onSuccess, onError }: Nip07AuthProps) {
     }
   };
 
-  if (!isNip07Available()) {
+  if (isLoadingNip07Available) {
+    return <div>NIP-07 eklentisi kontrol ediliyor...</div>;
+  }
+
+  if (!nip07Available) {
     return (
       <Alert>
         <AlertTriangle className="h-4 w-4" />
