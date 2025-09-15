@@ -85,25 +85,14 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
     { property: "og:audio:album", content: `${WEBSITE_NAME} Podcast` },
     { property: "og:audio:track", content: podcast.episodeNumber?.toString() || "1" },
 
-    // Twitter Card tags - These are important for Twitter and other platforms
-    { name: "twitter:card", content: "player" },
+    // Twitter Card tags - This is the actual player page, so we use summary_large_image
+    { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     {
       name: "twitter:description",
       content: description,
     },
     { property: "twitter:image", content: imageUrl },
-    {
-      name: "twitter:player",
-      content: `${WEBSITE_URL}/podcast-player/${createTitleSlug(podcast.title)}`,
-    },
-    { name: "twitter:player:width", content: "435" },
-    { name: "twitter:player:height", content: "251" },
-    { name: "twitter:player:stream", content: podcast.audioUrl },
-    {
-      name: "twitter:player:stream:content_type",
-      content: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg",
-    },
 
     // Podcast-specific meta tags
     { name: "medium", content: "audio" },
@@ -111,15 +100,6 @@ export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
     { name: "audio", content: podcast.audioUrl },
     { name: "audio:type", content: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg" },
 
-    // Additional Twitter/X audio support
-    { name: "twitter:audio", content: podcast.audioUrl },
-    {
-      name: "twitter:audio:type",
-      content: podcast.audioUrl.endsWith(".m4a") ? "audio/mp4" : "audio/mpeg",
-    },
-    { name: "twitter:audio:title", content: title },
-    { name: "twitter:audio:artist", content: WEBSITE_NAME },
-    { name: "twitter:audio:duration", content: podcast.duration || "" },
     { name: "podcast:episode", content: podcast.episodeNumber?.toString() || "1" },
     { name: "podcast:season", content: "1" },
     { name: "podcast:duration", content: podcast.duration || "" },
