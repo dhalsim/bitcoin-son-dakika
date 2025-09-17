@@ -3,12 +3,15 @@ import React from "react";
 import { LinkPreview } from "@/components/LinkPreview";
 import { ProfileMention } from "@/components/ProfileMention";
 import { getCache } from "./cache";
+import { assertUnreachable } from "./utils";
 
 // Regular expressions for different content types
 const URL_REGEX =
   /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/gi;
 const IMAGE_REGEX =
   /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)\.(jpg|jpeg|png|gif|webp|svg)(\?[^&\s]*)?/gi;
+const VIDEO_REGEX =
+  /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)\.(mp4|webm|ogg|mov|avi|flv|wmv|mkv)(\?[^&\s]*)?/gi;
 const NOSTR_REGEX = /nostr:([a-zA-Z0-9]+)/gi;
 
 interface RenderedTextProps {
@@ -22,7 +25,7 @@ interface RenderedTextProps {
 }
 
 interface TextSegment {
-  type: "text" | "link" | "image" | "nostr";
+  type: "text" | "link" | "image" | "video" | "nostr";
   content: string;
   url?: string;
   alt?: string;
@@ -30,18 +33,21 @@ interface TextSegment {
 
 function parseText(text: string): TextSegment[] {
   const segments: TextSegment[] = [];
+
   let currentIndex = 0;
 
   // Find all matches for images, links, and nostr references
   const allMatches: Array<{
-    type: "image" | "link" | "nostr";
+    type: TextSegment["type"];
     match: RegExpMatchArray;
     index: number;
   }> = [];
 
   // Find image matches first (images are more specific than general URLs)
-  let match;
+  let match: RegExpMatchArray | null = null;
+
   const imageRegex = new RegExp(IMAGE_REGEX);
+
   while ((match = imageRegex.exec(text)) !== null) {
     allMatches.push({
       type: "image",
@@ -50,8 +56,19 @@ function parseText(text: string): TextSegment[] {
     });
   }
 
+  const videoRegex = new RegExp(VIDEO_REGEX);
+
+  while ((match = videoRegex.exec(text)) !== null) {
+    allMatches.push({
+      type: "video",
+      match,
+      index: match.index!,
+    });
+  }
+
   // Find nostr matches
   const nostrRegex = new RegExp(NOSTR_REGEX);
+
   while ((match = nostrRegex.exec(text)) !== null) {
     allMatches.push({
       type: "nostr",
@@ -62,6 +79,7 @@ function parseText(text: string): TextSegment[] {
 
   // Find general URL matches (excluding those already matched as images)
   const urlRegex = new RegExp(URL_REGEX);
+
   while ((match = urlRegex.exec(text)) !== null) {
     const isAlreadyMatched = allMatches.some(
       (existing) =>
@@ -95,6 +113,7 @@ function parseText(text: string): TextSegment[] {
 
     // Add the matched segment
     const matchContent = match[0];
+
     switch (type) {
       case "image":
         segments.push({
@@ -118,6 +137,21 @@ function parseText(text: string): TextSegment[] {
           url: matchContent,
         });
         break;
+      case "text":
+        segments.push({
+          type: "text",
+          content: matchContent,
+        });
+        break;
+      case "video":
+        segments.push({
+          type: "video",
+          content: matchContent,
+          url: matchContent,
+        });
+        break;
+      default:
+        assertUnreachable(type);
     }
 
     currentIndex = index + matchContent.length;
@@ -151,6 +185,7 @@ export function RenderedText({
   const renderSegments = (segmentsToRender: TextSegment[], keyPrefix = "") =>
     segmentsToRender.map((segment, index) => {
       const key = `${keyPrefix}${index}`;
+
       switch (segment.type) {
         case "image":
           return (
@@ -205,8 +240,19 @@ export function RenderedText({
             </a>
           );
         case "text":
-        default:
           return <React.Fragment key={key}>{segment.content}</React.Fragment>;
+        case "video":
+          return (
+            <video
+              key={key}
+              src={segment.url}
+              className="max-w-full h-auto rounded-md my-2"
+              controls
+              preload="metadata"
+            />
+          );
+        default:
+          return assertUnreachable(segment.type);
       }
     });
 
