@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { shareContent } from "@/lib/utils";
+import { links, shareContent } from "@/lib/utils";
 import { WEBSITE_URL } from "@/lib/constants";
 import { createTitleSlug } from "../../api-helpers/utils";
 import { EventItem } from "@/lib/nip01";
@@ -38,8 +38,15 @@ export function ShareButton({ event, isPodcast = false }: ShareButtonProps) {
       // Create the slug and URL
       const slug = createTitleSlug(eventTitle);
       const isArticle = event.kind === 30023;
-      const urlCategory = isPodcast ? "podcast" : isArticle ? "article" : "news";
-      const url = `${WEBSITE_URL}/${urlCategory}/${slug}`;
+
+      const restOfTheUrl = isPodcast
+        ? links.podcastDetail(slug)
+        : isArticle
+          ? links.articleDetail(slug)
+          : links.newsDetail(slug);
+
+      const url = `${WEBSITE_URL}/${restOfTheUrl}`;
+
       const titlePrefix = isPodcast ? "Podcast" : isArticle ? "Makale" : "Haber";
 
       const success = await shareContent(url, `${titlePrefix} - ${eventTitle}`);
