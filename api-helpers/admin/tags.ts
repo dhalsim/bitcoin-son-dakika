@@ -68,7 +68,11 @@ export async function handleUpdateTags(
 
     const event = finalizeEvent(eventTemplate, hexToBytes(masterAdminPrivateKey));
 
+    console.log("event", event);
+
     const result = await publishToRelays(event, ADMIN_RELAYS);
+
+    console.log("result", result);
 
     return PublishEventResponseCreator(
       { message: "Tags updated successfully", result },
