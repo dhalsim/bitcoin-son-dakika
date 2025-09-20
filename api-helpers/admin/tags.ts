@@ -60,7 +60,7 @@ export async function handleUpdateTags(
     }
 
     const eventTemplate: EventTemplate = {
-      kind: 30023,
+      kind: 30004,
       created_at: Math.floor(Date.now() / 1000),
       tags: [["d", "categories"], ...tags.map((tag) => ["t", tag.tag, tag.label])],
       content: "",
@@ -68,11 +68,7 @@ export async function handleUpdateTags(
 
     const event = finalizeEvent(eventTemplate, hexToBytes(masterAdminPrivateKey));
 
-    console.log("event", event);
-
     const result = await publishToRelays(event, ADMIN_RELAYS);
-
-    console.log("result", result);
 
     return PublishEventResponseCreator(
       { message: "Tags updated successfully", result },
