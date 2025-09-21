@@ -93,6 +93,12 @@ export type UpdateTagsPayload = {
   lastUpdated: number;
 };
 
+export type UpdateBlossomServersPayload = {
+  action: "update-blossom-servers";
+  servers: string[];
+  lastUpdated: number;
+};
+
 export type Payload =
   | AddNewsPayload
   | RemoveNewsPayload
@@ -107,4 +113,5 @@ export type Payload =
   | PublishPodcastPayload
   | RemovePodcastPayload
   | TranslateNewsPayload
-  | UpdateTagsPayload;
+  | UpdateTagsPayload
+  | UpdateBlossomServersPayload;

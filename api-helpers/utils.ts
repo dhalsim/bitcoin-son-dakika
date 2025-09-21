@@ -584,3 +584,10 @@ export function getTagsEvent() {
     kinds: [30004],
   });
 }
+
+export function getBlossomServersEvent() {
+  return pool.get(ADMIN_RELAYS, {
+    authors: [MASTER_ADMIN_PUBKEY],
+    kinds: [10063],
+  });
+}

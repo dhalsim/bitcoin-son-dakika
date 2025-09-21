@@ -15,6 +15,7 @@ import PodcastComposer from "@/components/admin/PodcastComposer";
 import PodcastCuration from "@/components/admin/PodcastCuration";
 import NewsSources from "@/components/admin/NewsSources";
 import UserManagement from "@/components/admin/UserManagement";
+import { Blossom } from "@/components/admin/blossom/Blossom";
 import { createNIP98Auth } from "@/components/admin/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,8 @@ interface AdminData {
   podcastsLastTimeUpdated: number;
   tagItems: TagItem[];
   tagItemsLastTimeUpdated: number;
+  blossomServers: string[];
+  blossomServersLastTimeUpdated: number;
 }
 
 interface UserInfo {
@@ -160,22 +163,42 @@ export default function AdminPanel() {
             "#d": ["categories"],
             limit: 1,
           },
+          {
+            authors: [MASTER_ADMIN_PUBKEY],
+            kinds: [10063],
+            limit: 1,
+          },
         ],
         {
           onevent(evt) {
             const dTag = evt.tags.find((tag) => tag[0] === "d")?.[1];
 
-            if (!dTag) {
-              throw new Error("d tag bulunamadı");
-            }
+            if (dTag) {
+              const existingEvent = events.get(dTag);
 
-            const existingEvent = events.get(dTag);
+              if (existingEvent && existingEvent.created_at > evt.created_at) {
+                return;
+              }
 
-            if (existingEvent && existingEvent.created_at > evt.created_at) {
+              events.set(dTag, evt);
+
               return;
             }
 
-            events.set(dTag, evt);
+            if (evt.kind === 10063) {
+              const existingEvent = events.get("blossom-servers");
+
+              if (existingEvent && existingEvent.created_at > evt.created_at) {
+                return;
+              }
+
+              events.set("blossom-servers", evt);
+
+              return;
+            }
+
+            // unknown event
+            console.log("unknown event", evt);
           },
           oneose() {
             const adminUsersEvent = events.get("admin-users");
@@ -231,6 +254,21 @@ export default function AdminPanel() {
 
               return;
             }
+
+            const blossomServersEvent = events.get("blossom-servers");
+
+            if (!blossomServersEvent) {
+              setError("Blossom sunucularını yüklerken hata oluştu, logları kontrol ediniz");
+              setLoading(false);
+
+              return;
+            }
+
+            const blossomServers = blossomServersEvent.tags
+              .filter((tag) => tag[0] === "server")
+              .map((tag) => tag[1]);
+
+            const blossomServersLastTimeUpdated = blossomServersEvent.created_at * 1000;
 
             const adminUsers = adminUsersEvent.tags
               .filter((tag) => tag[0] === "p")
@@ -295,6 +333,8 @@ export default function AdminPanel() {
               podcastsLastTimeUpdated,
               tagItems,
               tagItemsLastTimeUpdated,
+              blossomServers,
+              blossomServersLastTimeUpdated,
             });
 
             setLoading(false);
@@ -395,6 +435,14 @@ export default function AdminPanel() {
         toast({
           title: "Etiketler güncellendi",
           description: "Etiketler güncellendi",
+          variant: "success",
+        });
+      }
+
+      if (data.action === "update-blossom-servers") {
+        toast({
+          title: "Blossom sunucuları güncellendi",
+          description: "Blossom sunucuları güncellendi",
           variant: "success",
         });
       }
@@ -556,6 +604,7 @@ export default function AdminPanel() {
               <TabsTrigger value="podcasts">Podcastler</TabsTrigger>
             )}
             {(userIsEditor || userIsAdmin) && <TabsTrigger value="tags">Etiketler</TabsTrigger>}
+            {(userIsEditor || userIsAdmin) && <TabsTrigger value="blossom">Blossom</TabsTrigger>}
             {userIsEditor && <TabsTrigger value="sources">Haber Kaynakları</TabsTrigger>}
             {userIsAdmin && <TabsTrigger value="users">Kullanıcılar</TabsTrigger>}
           </TabsList>
@@ -717,6 +766,19 @@ export default function AdminPanel() {
           {(userIsEditor || userIsAdmin) && (
             <TabsContent value="tags">
               <AdminTags performAction={performAction} />
+            </TabsContent>
+          )}
+
+          {(userIsEditor || userIsAdmin) && (
+            <TabsContent value="blossom">
+              <Blossom
+                servers={adminData?.blossomServers || []}
+                lastUpdated={adminData?.blossomServersLastTimeUpdated || 0}
+                onRefresh={() => {
+                  loadAdminData();
+                }}
+                performAction={performAction}
+              />
             </TabsContent>
           )}
 

@@ -1,6 +1,8 @@
 import { authenticateNIP98, ErrorResponseCreator, fetchNostrSets } from "../utils.js";
 
 import { handleAddArticle, handleRemoveArticle, handlePublishArticle } from "./articles.js";
+import { handleUpdateBlossomServers } from "./blossom.js";
+// import { handleUploadToBlossom } from "./blossom.js";
 import { handleTriggerDeploy } from "./deploy.js";
 import { handleAddNews, handlePublishNews, handleRemoveNews } from "./news.js";
 import { handlePublishPodcast, handleRemovePodcast } from "./podcasts.js";
@@ -76,6 +78,21 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         });
       }
 
+      // if (action === "upload-to-blossom") {
+      //   const servers = String(form.get("servers")).split(",").filter(Boolean);
+      //   const mirrorUrl = String(form.get("mirrorUrl")) || undefined;
+
+      //   if (!servers.length) {
+      //     return ErrorResponseCreator("At least one Blossom server is required", 400);
+      //   }
+
+      //   return handleUploadToBlossom(authResult, {
+      //     formData: form,
+      //     servers,
+      //     mirrorUrl,
+      //   });
+      // }
+
       return ErrorResponseCreator("Invalid action for multipart request", 400);
     }
 
@@ -122,6 +139,8 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         return handleTranslateNews(authResult, requestBody);
       case "update-tags":
         return handleUpdateTags(masterAdminPrivateKey, authResult, requestBody);
+      case "update-blossom-servers":
+        return handleUpdateBlossomServers(masterAdminPrivateKey, authResult, requestBody);
       default:
         return ErrorResponseCreator("Invalid action", 400);
     }
