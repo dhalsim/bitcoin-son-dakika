@@ -3,6 +3,7 @@
 
 import { finalizeEvent, type EventTemplate } from "nostr-tools";
 import { hexToBytes } from "nostr-tools/utils";
+import { createClient } from "redis";
 
 import { publishToRelays } from "../../src/lib/utils.js";
 import type { UpdateBlossomServersPayload } from "../../src/types/admin.js";
@@ -14,20 +15,13 @@ import {
   PublishEventResponseCreator,
 } from "../utils.js";
 
-// Types for Blossom blob listing
-export interface BlobDescriptor {
-  url: string;
-  sha256: string;
-  size: number;
-  type: string;
-  uploaded: number;
-}
+import type { BlossomServerBlobs, BlobDescriptor } from "./types.js";
 
-export interface BlossomServerBlobs {
-  server: string;
-  blobs: BlobDescriptor[];
-  error?: string;
-}
+const redis = await createClient({
+  url: process.env.REDIS_URL,
+}).connect();
+
+const getServerCacheKey = (server: string) => `blossom-blob-list-${server}`;
 
 // Create Nostr authorization event for Blossom server access
 function createBlossomAuthEvent(privateKey: string): string {
@@ -78,6 +72,8 @@ async function fetchBlobListFromServer(
 
     const blobs: BlobDescriptor[] = await response.json();
 
+    await redis.set(getServerCacheKey(server), JSON.stringify(blobs), { EX: 60 * 60 * 24 });
+
     return {
       server,
       blobs,
@@ -96,8 +92,19 @@ export async function fetchBlobListsFromServers(
   servers: string[],
   pubkey: string,
   privateKey: string,
+  useCache: boolean,
 ): Promise<BlossomServerBlobs[]> {
-  const promises = servers.map((server) => fetchBlobListFromServer(server, pubkey, privateKey));
+  const promises = servers.map(async (server) => {
+    if (useCache) {
+      const cachedBlobList = await redis.get(getServerCacheKey(server));
+
+      if (cachedBlobList) {
+        return JSON.parse(cachedBlobList);
+      }
+    }
+
+    return fetchBlobListFromServer(server, pubkey, privateKey);
+  });
 
   return Promise.all(promises);
 }
@@ -106,7 +113,7 @@ export async function fetchBlobListsFromServers(
 export async function handleFetchBlobLists(
   masterAdminPrivateKey: string,
   authResult: AuthResult,
-  requestBody: { servers: string[] },
+  requestBody: { servers: string[]; useCache: boolean },
 ): Promise<Response> {
   if (!authResult.success) {
     return ErrorResponseCreator("Kimlik doğrulama hatası", 401);
@@ -123,7 +130,7 @@ export async function handleFetchBlobLists(
     return ErrorResponseCreator("Public key bulunamadı", 400);
   }
 
-  const { servers } = requestBody;
+  const { servers, useCache } = requestBody;
 
   if (!servers || servers.length === 0) {
     return ErrorResponseCreator("En az bir sunucu belirtilmelidir", 400);
@@ -134,6 +141,7 @@ export async function handleFetchBlobLists(
       servers,
       authResult.pubkey,
       masterAdminPrivateKey,
+      useCache,
     );
 
     return new Response(

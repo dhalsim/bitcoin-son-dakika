@@ -58,6 +58,33 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
     });
   };
 
+  const fetchAllBlobs = async () => {
+    try {
+      const response = await performAction({
+        action: "fetch-blob-lists",
+        servers: BLOSSOM_SERVERS,
+      });
+
+      if (response.success) {
+        const newServerBlobs = new Map<string, BlobDescriptor[]>();
+        const newBlobErrors = new Map<string, string>();
+
+        response.data.forEach((serverData: BlossomServerBlobs) => {
+          if (serverData.error) {
+            newBlobErrors.set(serverData.server, serverData.error);
+          } else {
+            newServerBlobs.set(serverData.server, serverData.blobs);
+          }
+        });
+
+        setServerBlobs(newServerBlobs);
+        setBlobErrors(newBlobErrors);
+      }
+    } catch (error) {
+      console.error("Error fetching all blob lists:", error);
+    }
+  };
+
   // Update local state when servers prop changes
   useEffect(() => {
     setSelectedServers(new Set(servers));
@@ -66,35 +93,8 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
 
   // Fetch blobs for all servers on component mount
   useEffect(() => {
-    const fetchAllBlobs = async () => {
-      try {
-        const response = await performAction({
-          action: "fetch-blob-lists",
-          servers: BLOSSOM_SERVERS,
-        });
-
-        if (response.success) {
-          const newServerBlobs = new Map<string, BlobDescriptor[]>();
-          const newBlobErrors = new Map<string, string>();
-
-          response.data.forEach((serverData: BlossomServerBlobs) => {
-            if (serverData.error) {
-              newBlobErrors.set(serverData.server, serverData.error);
-            } else {
-              newServerBlobs.set(serverData.server, serverData.blobs);
-            }
-          });
-
-          setServerBlobs(newServerBlobs);
-          setBlobErrors(newBlobErrors);
-        }
-      } catch (error) {
-        console.error("Error fetching all blob lists:", error);
-      }
-    };
-
     fetchAllBlobs();
-  }, [performAction]);
+  }, []);
 
   const handleServerToggle = (server: string, checked: boolean) => {
     const newSelectedServers = new Set(selectedServers);
@@ -153,6 +153,15 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
             {formatDate(lastUpdated)}
           </Badge>
           <div className="flex items-center gap-1">
+            <Button
+              onClick={fetchAllBlobs}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <Database className="h-3 w-3" />
+              Blob Listelerini Yükle
+            </Button>
             <Button
               onClick={handleSelectAll}
               variant="outline"
