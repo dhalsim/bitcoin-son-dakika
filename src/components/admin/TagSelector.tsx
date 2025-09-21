@@ -1,15 +1,18 @@
-import { X } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
+import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTags } from "@/hooks/useTags";
 
 import TagsDialog from "./TagsDialog";
@@ -29,6 +32,8 @@ export default function TagSelector({
   placeholder = "Etiket ekle",
   className = "",
 }: TagSelectorProps) {
+  const [open, setOpen] = useState(false);
+
   // Load dynamic tags
   const { tags: dynamicTags, loading: tagsLoading, error: tagsError, refreshTags } = useTags();
 
@@ -39,12 +44,13 @@ export default function TagSelector({
   // Get available tags from dynamic tags and sort alphabetically
   const availableTags = dynamicTags.map((t) => t.tag).sort();
 
-  // Filter out already selected tags
-  const unselectedTags = availableTags.filter((tag) => !selectedTags.includes(tag));
-
-  const addTag = (tag: string) => {
-    if (tag.trim() && !selectedTags.includes(tag.trim())) {
-      onTagsChange([...selectedTags, tag.trim()]);
+  const toggleTag = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      // Remove tag if already selected
+      onTagsChange(selectedTags.filter((t) => t !== tag));
+    } else {
+      // Add tag if not selected
+      onTagsChange([...selectedTags, tag]);
     }
   };
 
@@ -64,31 +70,53 @@ export default function TagSelector({
       {/* Tag Selection */}
       <div className="space-y-2">
         <div className="flex gap-2">
-          <Select
-            onValueChange={addTag}
-            disabled={tagsLoading || !!tagsError || availableTags.length === 0}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue
-                placeholder={
-                  tagsLoading
-                    ? "Etiketler yükleniyor..."
-                    : tagsError
-                      ? "Etiket sistemi hatası"
-                      : availableTags.length === 0
-                        ? "Henüz etiket yok"
-                        : placeholder
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {unselectedTags.map((tag) => (
-                <SelectItem key={tag} value={tag}>
-                  {getTagLabel(tag)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="flex-1 justify-between"
+                disabled={tagsLoading || !!tagsError || availableTags.length === 0}
+              >
+                {tagsLoading
+                  ? "Etiketler yükleniyor..."
+                  : tagsError
+                    ? "Etiket sistemi hatası"
+                    : availableTags.length === 0
+                      ? "Henüz etiket yok"
+                      : placeholder}
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+              <Command>
+                <CommandInput placeholder="Etiket ara..." />
+                <CommandList>
+                  <CommandEmpty>Etiket bulunamadı.</CommandEmpty>
+                  <CommandGroup>
+                    {availableTags.map((tag) => {
+                      const isSelected = selectedTags.includes(tag);
+                      return (
+                        <CommandItem
+                          key={tag}
+                          value={`${tag} ${getTagLabel(tag)}`}
+                          onSelect={() => toggleTag(tag)}
+                        >
+                          <div className="flex items-center gap-2">
+                            {isSelected && <Check className="h-4 w-4 text-green-600" />}
+                            <span className={isSelected ? "text-green-600 font-medium" : ""}>
+                              {getTagLabel(tag)}
+                            </span>
+                          </div>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
           {/* Manage Tags Dialog */}
           {!tagsError && <TagsDialog onTagsUpdated={handleTagsUpdated} />}
