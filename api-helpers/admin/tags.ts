@@ -75,9 +75,16 @@ export async function handleUpdateTags(
       { eventId: event.id, relays: result },
     );
   } catch (error) {
-    console.error("Error updating tags:", error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : "Failed to update tags";
 
-    return new Response(JSON.stringify({ error: `Failed to update tags: ${error.message}` }), {
+    console.error("Error updating tags:", errorMessage);
+
+    return new Response(JSON.stringify({ error: `Failed to update tags: ${errorMessage}` }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

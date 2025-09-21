@@ -40,6 +40,13 @@ export async function handleTranslateNews(
 
     return SuccessResponse({ translations });
   } catch (error) {
-    return ErrorResponseCreator(error || "Failed to translate news");
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : "Failed to translate news";
+
+    return ErrorResponseCreator(errorMessage);
   }
 }

@@ -7,8 +7,8 @@
       "@/api/*": ["./api/*"],
       "@/*": ["./src/*"]
     },
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
     "strict": true
   }
 }
