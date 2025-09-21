@@ -10,6 +10,7 @@ import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
 import { createNIP98Auth } from "./utils";
 import TagSelector from "./TagSelector";
+import { ImageUrlInput } from "./ImageUrlInput";
 
 type PrefillData = {
   title?: string;
@@ -23,11 +24,17 @@ type PrefillData = {
 
 type NewsComposerProps = {
   performAction: (data: any) => Promise<any>;
-  prefill?: PrefillData;
-  prefillToken?: string;
+  prefill: PrefillData | null;
+  prefillToken: string | null;
+  blossomServers: string[];
 };
 
-export default function NewsComposer({ performAction, prefill, prefillToken }: NewsComposerProps) {
+export default function NewsComposer({
+  performAction,
+  prefill,
+  prefillToken,
+  blossomServers = [],
+}: NewsComposerProps) {
   const [newsContent, setNewsContent] = useState("");
   const [newsTitle, setNewsTitle] = useState("");
   const [newsSummary, setNewsSummary] = useState("");
@@ -138,13 +145,18 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
                   className="min-h-[120px]"
                 />
               </div>
-              <div>
-                <Label className="text-base font-medium">Image URL</Label>
-                <Input value={newsImageUrl} onChange={(e) => setNewsImageUrl(e.target.value)} />
-                {newsImageUrl ? (
-                  <img src={newsImageUrl} alt="preview" className="mt-2 max-h-48 rounded" />
-                ) : null}
-              </div>
+              <ImageUrlInput
+                value={newsImageUrl}
+                onChange={setNewsImageUrl}
+                label="Image URL"
+                placeholder="Enter image URL or upload file"
+                blossomServers={blossomServers}
+                onUploadToBlossom={async (file, servers) => {
+                  // TODO: Implement actual Blossom upload
+                  console.log("Uploading to Blossom servers:", servers);
+                  return [`https://example.com/${file.name}`]; // Placeholder
+                }}
+              />
               <div>
                 <Label className="text-base font-medium">English Content</Label>
                 <Textarea
@@ -297,16 +309,18 @@ export default function NewsComposer({ performAction, prefill, prefillToken }: N
                 />
               </div>
 
-              <div>
-                <Label className="text-base font-medium">Görsel</Label>
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Görsel URL'si"
-                    value={newsImageUrl}
-                    onChange={(e) => setNewsImageUrl(e.target.value)}
-                  />
-                </div>
-              </div>
+              <ImageUrlInput
+                value={newsImageUrl}
+                onChange={setNewsImageUrl}
+                label="Görsel"
+                placeholder="Görsel URL'si veya dosya yükle"
+                blossomServers={blossomServers}
+                onUploadToBlossom={async (file, servers) => {
+                  // TODO: Implement actual Blossom upload
+                  console.log("Uploading to Blossom servers:", servers);
+                  return [`https://example.com/${file.name}`]; // Placeholder
+                }}
+              />
 
               <TagSelector
                 selectedTags={newsTags}

@@ -94,7 +94,7 @@ export default function AdminPanel() {
     (SinglePublishResponse | MultiPublishResponse)[]
   >([]);
   const [composerPrefill, setComposerPrefill] = useState<any | null>(null);
-  const [composerPrefillToken, setComposerPrefillToken] = useState<string>("");
+  const [composerPrefillToken, setComposerPrefillToken] = useState<string | null>(null);
 
   // Edit state for articles and podcasts
   const [editingArticle, setEditingArticle] = useState<any | null>(null);
@@ -659,8 +659,9 @@ export default function AdminPanel() {
                   <div className="space-y-4" data-section="compose-news">
                     <NewsComposer
                       performAction={performAction}
-                      prefill={composerPrefill || undefined}
-                      prefillToken={composerPrefillToken}
+                      prefill={composerPrefill || null}
+                      prefillToken={composerPrefillToken || null}
+                      blossomServers={adminData?.blossomServers || []}
                     />
                   </div>
                 )}
