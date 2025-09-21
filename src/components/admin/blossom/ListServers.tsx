@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { Server, Clock, Save } from "lucide-react";
+import { Clock, Save, CheckSquare, Square } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { UpdateBlossomServersPayload } from "@/types/admin";
@@ -58,6 +57,16 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
     setHasChanges(true);
   };
 
+  const handleSelectAll = () => {
+    setSelectedServers(new Set(BLOSSOM_SERVERS));
+    setHasChanges(true);
+  };
+
+  const handleUnselectAll = () => {
+    setSelectedServers(new Set());
+    setHasChanges(true);
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
 
@@ -85,55 +94,62 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
             <Clock className="h-3 w-3" />
             {formatDate(lastUpdated)}
           </Badge>
+          <div className="flex items-center gap-1">
+            <Button
+              onClick={handleSelectAll}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <CheckSquare className="h-3 w-3" />
+              Tümünü Seç
+            </Button>
+            <Button
+              onClick={handleUnselectAll}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <Square className="h-3 w-3" />
+              Tümünü Kaldır
+            </Button>
+          </div>
           <Button
             onClick={handleSave}
-            disabled={!hasChanges}
+            disabled={!hasChanges || isSaving}
             size="sm"
             className="flex items-center gap-2"
           >
             <Save className="h-4 w-4" />
-            Sunucu Seçimini Kaydet
+            {isSaving ? "Kaydediliyor..." : "Sunucu Seçimini Kaydet"}
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-2">
         {BLOSSOM_SERVERS.map((server) => {
           const isSelected = selectedServers.has(server);
 
           return (
-            <Card
+            <div
               key={server}
-              className={`hover:shadow-md transition-shadow ${
-                isSelected ? "ring-2 ring-green-500 ring-opacity-50" : ""
+              className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                isSelected
+                  ? "bg-green-100 border-green-300"
+                  : "bg-white border-gray-200 hover:bg-gray-50"
               }`}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Server className="h-4 w-4 text-primary" />
-                    <CardTitle className="text-sm font-medium">
-                      {server.replace("https://", "").split(".")[0]}
-                    </CardTitle>
-                  </div>
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={(checked) => handleServerToggle(server, checked as boolean)}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="break-all text-xs">{server}</CardDescription>
-                <div className="mt-3 flex items-center gap-2">
-                  <Badge
-                    variant={isSelected ? "default" : "secondary"}
-                    className={`text-xs ${isSelected ? "bg-green-500" : ""}`}
-                  >
-                    {isSelected ? "Seçili" : "Mevcut"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={(checked) => handleServerToggle(server, checked as boolean)}
+                className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 border-gray-400"
+              />
+              <span
+                className={`text-sm font-mono ${isSelected ? "text-green-800" : "text-gray-700"}`}
+              >
+                {server}
+              </span>
+            </div>
           );
         })}
       </div>
