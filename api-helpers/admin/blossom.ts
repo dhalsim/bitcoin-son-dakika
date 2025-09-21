@@ -13,6 +13,7 @@ import {
   ErrorResponseCreator,
   getBlossomServersEvent,
   PublishEventResponseCreator,
+  SuccessResponse,
 } from "../utils.js";
 
 import type { BlossomServerBlobs, BlobDescriptor } from "./types.js";
@@ -148,16 +149,10 @@ export async function handleFetchBlobLists(
       useCache,
     );
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: blobLists,
-      }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
+    return SuccessResponse({
+      message: "Blob lists fetched successfully",
+      data: blobLists,
+    });
   } catch (error) {
     console.error("Error fetching blob lists:", error);
 
