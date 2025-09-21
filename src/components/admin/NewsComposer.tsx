@@ -10,7 +10,6 @@ import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
 import { createNIP98Auth } from "./utils";
 import TagSelector from "./TagSelector";
-import { ImageUrlInput } from "./ImageUrlInput";
 
 type PrefillData = {
   title?: string;
@@ -145,18 +144,15 @@ export default function NewsComposer({
                   className="min-h-[120px]"
                 />
               </div>
-              <ImageUrlInput
-                value={newsImageUrl}
-                onChange={setNewsImageUrl}
-                label="Image URL"
-                placeholder="Enter image URL or upload file"
-                blossomServers={blossomServers}
-                onUploadToBlossom={async (file, servers) => {
-                  // TODO: Implement actual Blossom upload
-                  console.log("Uploading to Blossom servers:", servers);
-                  return [`https://example.com/${file.name}`]; // Placeholder
-                }}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="newsImageUrl">Image URL</Label>
+                <Input
+                  id="newsImageUrl"
+                  value={newsImageUrl}
+                  onChange={(e) => setNewsImageUrl(e.target.value)}
+                  placeholder="Enter image URL"
+                />
+              </div>
               <div>
                 <Label className="text-base font-medium">English Content</Label>
                 <Textarea
@@ -309,18 +305,15 @@ export default function NewsComposer({
                 />
               </div>
 
-              <ImageUrlInput
-                value={newsImageUrl}
-                onChange={setNewsImageUrl}
-                label="Görsel"
-                placeholder="Görsel URL'si veya dosya yükle"
-                blossomServers={blossomServers}
-                onUploadToBlossom={async (file, servers) => {
-                  // TODO: Implement actual Blossom upload
-                  console.log("Uploading to Blossom servers:", servers);
-                  return [`https://example.com/${file.name}`]; // Placeholder
-                }}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="newsImageUrlTr">Görsel</Label>
+                <Input
+                  id="newsImageUrlTr"
+                  value={newsImageUrl}
+                  onChange={(e) => setNewsImageUrl(e.target.value)}
+                  placeholder="Görsel URL'si"
+                />
+              </div>
 
               <TagSelector
                 selectedTags={newsTags}
