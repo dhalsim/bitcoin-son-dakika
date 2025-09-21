@@ -1,11 +1,26 @@
 import { useState, useEffect } from "react";
-import { Clock, Save, CheckSquare, Square } from "lucide-react";
+import { Clock, Save, CheckSquare, Square, Database } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import { UpdateBlossomServersPayload } from "@/types/admin";
+import { UpdateBlossomServersPayload, FetchBlobListsPayload } from "@/types/admin";
+import BlobContentSheet from "./BlobContentSheet";
+
+interface BlobDescriptor {
+  url: string;
+  sha256: string;
+  size: number;
+  type: string;
+  uploaded: number;
+}
+
+interface BlossomServerBlobs {
+  server: string;
+  blobs: BlobDescriptor[];
+  error?: string;
+}
 
 const BLOSSOM_SERVERS = [
   "https://blossom.band",
@@ -19,13 +34,19 @@ const BLOSSOM_SERVERS = [
 interface ListServersProps {
   servers: string[];
   lastUpdated: number;
-  performAction: (data: UpdateBlossomServersPayload) => Promise<any>;
+  performAction: (data: UpdateBlossomServersPayload | FetchBlobListsPayload) => Promise<any>;
 }
 
 export function ListServers({ servers, lastUpdated, performAction }: ListServersProps) {
   const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set(servers));
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Blob-related state
+  const [serverBlobs, setServerBlobs] = useState<Map<string, BlobDescriptor[]>>(new Map());
+  const [blobErrors, setBlobErrors] = useState<Map<string, string>>(new Map());
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedServer, setSelectedServer] = useState<string>("");
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString("tr-TR", {
@@ -42,6 +63,38 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
     setSelectedServers(new Set(servers));
     setHasChanges(false);
   }, [servers]);
+
+  // Fetch blobs for all servers on component mount
+  useEffect(() => {
+    const fetchAllBlobs = async () => {
+      try {
+        const response = await performAction({
+          action: "fetch-blob-lists",
+          servers: BLOSSOM_SERVERS,
+        });
+
+        if (response.success) {
+          const newServerBlobs = new Map<string, BlobDescriptor[]>();
+          const newBlobErrors = new Map<string, string>();
+
+          response.data.forEach((serverData: BlossomServerBlobs) => {
+            if (serverData.error) {
+              newBlobErrors.set(serverData.server, serverData.error);
+            } else {
+              newServerBlobs.set(serverData.server, serverData.blobs);
+            }
+          });
+
+          setServerBlobs(newServerBlobs);
+          setBlobErrors(newBlobErrors);
+        }
+      } catch (error) {
+        console.error("Error fetching all blob lists:", error);
+      }
+    };
+
+    fetchAllBlobs();
+  }, [performAction]);
 
   const handleServerToggle = (server: string, checked: boolean) => {
     const newSelectedServers = new Set(selectedServers);
@@ -65,6 +118,11 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
   const handleUnselectAll = () => {
     setSelectedServers(new Set());
     setHasChanges(true);
+  };
+
+  const handleServerClick = (server: string) => {
+    setSelectedServer(server);
+    setSheetOpen(true);
   };
 
   const handleSave = async () => {
@@ -129,6 +187,8 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
       <div className="space-y-2">
         {BLOSSOM_SERVERS.map((server) => {
           const isSelected = selectedServers.has(server);
+          const blobs = serverBlobs.get(server) || [];
+          const error = blobErrors.get(server);
 
           return (
             <div
@@ -144,15 +204,44 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
                 onCheckedChange={(checked) => handleServerToggle(server, checked as boolean)}
                 className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 border-gray-400"
               />
-              <span
-                className={`text-sm font-mono ${isSelected ? "text-green-800" : "text-gray-700"}`}
-              >
-                {server}
-              </span>
+              <div className="flex-1 flex items-center justify-between">
+                <span
+                  className={`text-sm font-mono ${isSelected ? "text-green-800" : "text-gray-700"}`}
+                >
+                  {server}
+                </span>
+                <div className="flex items-center gap-2">
+                  {error ? (
+                    <Badge variant="destructive" className="text-xs">
+                      Hata
+                    </Badge>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleServerClick(server)}
+                      className="text-xs h-6 px-2 flex items-center gap-1"
+                    >
+                      <Database className="h-3 w-3" />
+                      {blobs.length} blob
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* Blob Content Sheet */}
+      {selectedServer && (
+        <BlobContentSheet
+          server={selectedServer}
+          blobs={serverBlobs.get(selectedServer) || []}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+        />
+      )}
     </div>
   );
 }

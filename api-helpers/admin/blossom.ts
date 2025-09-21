@@ -14,6 +14,148 @@ import {
   PublishEventResponseCreator,
 } from "../utils.js";
 
+// Types for Blossom blob listing
+export interface BlobDescriptor {
+  url: string;
+  sha256: string;
+  size: number;
+  type: string;
+  uploaded: number;
+}
+
+export interface BlossomServerBlobs {
+  server: string;
+  blobs: BlobDescriptor[];
+  error?: string;
+}
+
+// Create Nostr authorization event for Blossom server access
+function createBlossomAuthEvent(privateKey: string): string {
+  const ONE_HOUR_IN_SECONDS = 60 * 60;
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+
+  const authEvent: EventTemplate = {
+    kind: 24242,
+    created_at: nowSeconds,
+    content: "List Blobs",
+    tags: [
+      ["t", "list"],
+      ["expiration", (nowSeconds + ONE_HOUR_IN_SECONDS).toString()],
+    ],
+  };
+
+  const signedEvent = finalizeEvent(authEvent, hexToBytes(privateKey));
+
+  return btoa(JSON.stringify(signedEvent));
+}
+
+// Fetch blob list from a single Blossom server
+async function fetchBlobListFromServer(
+  server: string,
+  pubkey: string,
+  privateKey: string,
+): Promise<BlossomServerBlobs> {
+  try {
+    const authHeader = createBlossomAuthEvent(privateKey);
+    const serverUrl = server.endsWith("/") ? server.slice(0, -1) : server;
+
+    const response = await fetch(`${serverUrl}/list/${pubkey}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Nostr ${authHeader}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      return {
+        server,
+        blobs: [],
+        error: `HTTP ${response.status}: ${response.statusText}`,
+      };
+    }
+
+    const blobs: BlobDescriptor[] = await response.json();
+
+    return {
+      server,
+      blobs,
+    };
+  } catch (error) {
+    return {
+      server,
+      blobs: [],
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// Fetch blob lists from multiple Blossom servers in parallel
+export async function fetchBlobListsFromServers(
+  servers: string[],
+  pubkey: string,
+  privateKey: string,
+): Promise<BlossomServerBlobs[]> {
+  const promises = servers.map((server) => fetchBlobListFromServer(server, pubkey, privateKey));
+
+  return Promise.all(promises);
+}
+
+// Handler function for fetching blob lists from admin panel
+export async function handleFetchBlobLists(
+  masterAdminPrivateKey: string,
+  authResult: AuthResult,
+  requestBody: { servers: string[] },
+): Promise<Response> {
+  if (!authResult.success) {
+    return ErrorResponseCreator("Kimlik doğrulama hatası", 401);
+  }
+
+  if (!authResult.roles.includes("editor") && !authResult.roles.includes("admin")) {
+    return ErrorResponseCreator(
+      "Yalnızca editörler ve adminler blob listelerini görüntüleyebilir",
+      403,
+    );
+  }
+
+  if (!authResult.pubkey) {
+    return ErrorResponseCreator("Public key bulunamadı", 400);
+  }
+
+  const { servers } = requestBody;
+
+  if (!servers || servers.length === 0) {
+    return ErrorResponseCreator("En az bir sunucu belirtilmelidir", 400);
+  }
+
+  try {
+    const blobLists = await fetchBlobListsFromServers(
+      servers,
+      authResult.pubkey,
+      masterAdminPrivateKey,
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: blobLists,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  } catch (error) {
+    console.error("Error fetching blob lists:", error);
+
+    return ErrorResponseCreator(
+      error instanceof Error ? error.message : "Blob listeleri alınırken hata oluştu",
+      500,
+    );
+  }
+}
+
 export async function handleUpdateBlossomServers(
   masterAdminPrivateKey: string,
   authResult: AuthResult,

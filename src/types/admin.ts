@@ -99,6 +99,11 @@ export type UpdateBlossomServersPayload = {
   lastUpdated: number;
 };
 
+export type FetchBlobListsPayload = {
+  action: "fetch-blob-lists";
+  servers: string[];
+};
+
 export type Payload =
   | AddNewsPayload
   | RemoveNewsPayload
@@ -114,4 +119,5 @@ export type Payload =
   | RemovePodcastPayload
   | TranslateNewsPayload
   | UpdateTagsPayload
-  | UpdateBlossomServersPayload;
+  | UpdateBlossomServersPayload
+  | FetchBlobListsPayload;

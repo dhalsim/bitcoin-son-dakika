@@ -42,8 +42,11 @@ export function ImageUrlInput({
     try {
       // First try a simple fetch to see if the image is accessible
       const response = await fetch(url, {
-        method: "GET",
+        method: "HEAD",
         mode: "cors",
+        headers: {
+          "Content-Type": "application/octet-stream",
+        },
       });
 
       if (!response.ok) {
@@ -56,40 +59,33 @@ export function ImageUrlInput({
       const corsHeader = response.headers.get("access-control-allow-origin");
 
       // If we got a successful response, check for CORS headers
-      const hasCorsHeader =
-        corsHeader === "*" || corsHeader === url.split("/")[0] + "//" + url.split("/")[2];
-
-      // If no explicit CORS header, try to determine if it's accessible
-      if (!hasCorsHeader) {
-        // For Blossom servers, they typically allow cross-origin access
-        if (url.includes("24242.io") || url.includes("blossom")) {
-          return {
-            hasCors: true,
-            error: "No explicit CORS header, but likely accessible (Blossom server)",
-          };
-        }
-
-        return {
-          hasCors: false,
-          error: "No CORS header found - may not be accessible from other domains",
-        };
-      }
+      const hasCorsHeader = corsHeader === "*";
 
       return {
-        hasCors: true,
+        hasCors: hasCorsHeader,
+        error: hasCorsHeader ? undefined : "CORS bulunamadı - Blossom'a yüklemeyi deneyiniz",
       };
     } catch (error) {
       // If it's a CORS error, the image might still be accessible via img tag
       if (error instanceof TypeError && error.message.includes("CORS")) {
         return {
           hasCors: false,
-          error: "CORS blocked - image may not be accessible from other domains",
+          error: "CORS bulunamadı - Blossom'a yüklemeyi deneyiniz",
         };
       }
 
+      const genericErrorMessage = "CORS kontrolü başarısız";
+
+      const errorMessage =
+        error instanceof Error
+          ? genericErrorMessage + ": " + error.message
+          : typeof error === "string"
+            ? genericErrorMessage + ": " + error
+            : genericErrorMessage;
+
       return {
         hasCors: false,
-        error: error instanceof Error ? error.message : "Failed to check CORS",
+        error: errorMessage,
       };
     }
   };

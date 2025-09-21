@@ -1,7 +1,7 @@
 import { authenticateNIP98, ErrorResponseCreator, fetchNostrSets } from "../utils.js";
 
 import { handleAddArticle, handleRemoveArticle, handlePublishArticle } from "./articles.js";
-import { handleUpdateBlossomServers } from "./blossom.js";
+import { handleUpdateBlossomServers, handleFetchBlobLists } from "./blossom.js";
 // import { handleUploadToBlossom } from "./blossom.js";
 import { handleTriggerDeploy } from "./deploy.js";
 import { handleAddNews, handlePublishNews, handleRemoveNews } from "./news.js";
@@ -141,6 +141,8 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         return handleUpdateTags(masterAdminPrivateKey, authResult, requestBody);
       case "update-blossom-servers":
         return handleUpdateBlossomServers(masterAdminPrivateKey, authResult, requestBody);
+      case "fetch-blob-lists":
+        return handleFetchBlobLists(masterAdminPrivateKey, authResult, requestBody);
       default:
         return ErrorResponseCreator("Invalid action", 400);
     }
