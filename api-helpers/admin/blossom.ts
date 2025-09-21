@@ -4,15 +4,15 @@
 import { finalizeEvent, type EventTemplate } from "nostr-tools";
 import { hexToBytes } from "nostr-tools/utils";
 
-import { publishToRelays } from "../../src/lib/utils";
-import type { UpdateBlossomServersPayload } from "../../src/types/admin";
-import type { AuthResult } from "../types";
+import { publishToRelays } from "../../src/lib/utils.js";
+import type { UpdateBlossomServersPayload } from "../../src/types/admin.js";
+import type { AuthResult } from "../types.js";
 import {
   ADMIN_RELAYS,
   ErrorResponseCreator,
   getBlossomServersEvent,
   PublishEventResponseCreator,
-} from "../utils";
+} from "../utils.js";
 
 export async function handleUpdateBlossomServers(
   masterAdminPrivateKey: string,
