@@ -73,7 +73,7 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
     await performAction({
       action: "update-blossom-servers",
       servers: Array.from(selectedServers),
-      lastUpdated: Date.now(),
+      lastUpdated,
     });
 
     setHasChanges(false);
