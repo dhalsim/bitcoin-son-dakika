@@ -102,6 +102,7 @@ export type UpdateBlossomServersPayload = {
 export type FetchBlobListsPayload = {
   action: "fetch-blob-lists";
   servers: string[];
+  useCache: boolean;
 };
 
 export type Payload =

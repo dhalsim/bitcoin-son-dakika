@@ -41,7 +41,11 @@ function createBlossomAuthEvent(privateKey: string): string {
 
   const signedEvent = finalizeEvent(authEvent, hexToBytes(privateKey));
 
-  return btoa(JSON.stringify(signedEvent));
+  const base64Event = btoa(JSON.stringify(signedEvent));
+
+  console.log("base64Event", base64Event);
+
+  return base64Event;
 }
 
 // Fetch blob list from a single Blossom server

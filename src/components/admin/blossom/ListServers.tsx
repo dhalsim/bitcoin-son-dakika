@@ -58,11 +58,12 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
     });
   };
 
-  const fetchAllBlobs = async () => {
+  const fetchAllBlobs = async (cache: boolean) => {
     try {
       const response = await performAction({
         action: "fetch-blob-lists",
         servers: BLOSSOM_SERVERS,
+        useCache: cache,
       });
 
       if (response.success) {
@@ -93,7 +94,7 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
 
   // Fetch blobs for all servers on component mount
   useEffect(() => {
-    fetchAllBlobs();
+    fetchAllBlobs(true);
   }, []);
 
   const handleServerToggle = (server: string, checked: boolean) => {
@@ -225,7 +226,7 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
 
       <div className="flex justify-between">
         <Button
-          onClick={fetchAllBlobs}
+          onClick={() => fetchAllBlobs(false)}
           variant="outline"
           size="sm"
           className="flex items-center gap-1"
