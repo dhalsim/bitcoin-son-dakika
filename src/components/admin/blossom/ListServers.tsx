@@ -152,45 +152,28 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
             <Clock className="h-3 w-3" />
             {formatDate(lastUpdated)}
           </Badge>
-          <div className="flex items-center gap-1">
-            <Button
-              onClick={fetchAllBlobs}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <Database className="h-3 w-3" />
-              Blob Listelerini Yükle
-            </Button>
-            <Button
-              onClick={handleSelectAll}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <CheckSquare className="h-3 w-3" />
-              Tümünü Seç
-            </Button>
-            <Button
-              onClick={handleUnselectAll}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <Square className="h-3 w-3" />
-              Tümünü Kaldır
-            </Button>
-          </div>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || isSaving}
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {isSaving ? "Kaydediliyor..." : "Sunucu Seçimini Kaydet"}
-          </Button>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={handleSelectAll}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-1"
+        >
+          <CheckSquare className="h-3 w-3" />
+          Tümünü Seç
+        </Button>
+        <Button
+          onClick={handleUnselectAll}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-1"
+        >
+          <Square className="h-3 w-3" />
+          Tümünü Kaldır
+        </Button>
       </div>
 
       <div className="space-y-2">
@@ -203,19 +186,17 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
             <div
               key={server}
               className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
-                isSelected
-                  ? "bg-green-100 border-green-300"
-                  : "bg-white border-gray-200 hover:bg-gray-50"
+                isSelected ? "bg-accent border-accent" : "bg-card border-border hover:bg-accent"
               }`}
             >
               <Checkbox
                 checked={isSelected}
                 onCheckedChange={(checked) => handleServerToggle(server, checked as boolean)}
-                className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 border-gray-400"
+                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-border"
               />
               <div className="flex-1 flex items-center justify-between">
                 <span
-                  className={`text-sm font-mono ${isSelected ? "text-green-800" : "text-gray-700"}`}
+                  className={`text-sm font-mono ${isSelected ? "text-accent-foreground" : "text-card-foreground"}`}
                 >
                   {server}
                 </span>
@@ -240,6 +221,27 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
             </div>
           );
         })}
+      </div>
+
+      <div className="flex justify-between">
+        <Button
+          onClick={fetchAllBlobs}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-1"
+        >
+          <Database className="h-3 w-3" />
+          Blob Listelerini Tekrar Yükle
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={!hasChanges || isSaving}
+          size="sm"
+          className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+        >
+          <Save className="h-4 w-4" />
+          {isSaving ? "Kaydediliyor..." : "Sunucu Seçimini Kaydet"}
+        </Button>
       </div>
 
       {/* Blob Content Sheet */}
