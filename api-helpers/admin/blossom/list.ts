@@ -30,7 +30,41 @@ async function fetchBlobListFromServer(
       };
     }
 
-    const blobs: BlobDescriptor[] = await response.json();
+    const responseData = await response.json();
+
+    // Parse different response formats
+    let blobs: BlobDescriptor[] = [];
+
+    if (Array.isArray(responseData)) {
+      // Handle direct array response (like nostr.download)
+      blobs = responseData.map((item: any) => ({
+        url: item.url,
+        sha256: item.sha256,
+        size: item.size,
+        type: item.type,
+        uploaded: item.uploaded,
+      }));
+    } else if (responseData && Array.isArray(responseData.blobs)) {
+      // Handle wrapped response with blobs array
+      blobs = responseData.blobs.map((item: any) => ({
+        url: item.url,
+        sha256: item.sha256,
+        size: item.size,
+        type: item.type,
+        uploaded: item.uploaded,
+      }));
+    } else if (responseData && responseData.status === "success") {
+      // Handle single blob response (like cdn.nostrcheck.me)
+      blobs = [
+        {
+          url: responseData.url,
+          sha256: responseData.sha256,
+          size: responseData.size,
+          type: responseData.type,
+          uploaded: responseData.uploaded,
+        },
+      ];
+    }
 
     await redis.set(getServerCacheKey(server), JSON.stringify(blobs)); // No TTL - persistent until invalidated
 

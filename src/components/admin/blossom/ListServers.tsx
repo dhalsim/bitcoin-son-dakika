@@ -70,11 +70,16 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
         const newServerBlobs = new Map<string, BlobDescriptor[]>();
         const newBlobErrors = new Map<string, string>();
 
-        response.data.forEach((serverData: BlossomServerBlobs) => {
+        response.data.forEach((serverData: any) => {
+          // Handle different response formats
           if (serverData.error) {
             newBlobErrors.set(serverData.server, serverData.error);
-          } else {
+          } else if (serverData.server && Array.isArray(serverData.blobs)) {
+            // Standard BlossomServerBlobs format
             newServerBlobs.set(serverData.server, serverData.blobs);
+          } else if (Array.isArray(serverData)) {
+            // Handle case where server returns array directly (fallback)
+            console.warn("Unexpected array format from server:", serverData);
           }
         });
 
