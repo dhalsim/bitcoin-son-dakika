@@ -1,8 +1,11 @@
 import { authenticateNIP98, ErrorResponseCreator, fetchNostrSets } from "../utils.js";
 
 import { handleAddArticle, handleRemoveArticle, handlePublishArticle } from "./articles.js";
-import { handleUpdateBlossomServers, handleFetchBlobLists } from "./blossom.js";
-// import { handleUploadToBlossom } from "./blossom.js";
+import { handleDeleteBlossomMedia } from "./blossom/delete.js";
+import { handleFetchBlobLists } from "./blossom/list.js";
+import { handleMirrorBlossomMedia } from "./blossom/mirror.js";
+import { handleUpdateBlossomServers } from "./blossom/servers.js";
+import { handleUploadBlossomMedia } from "./blossom/upload.js";
 import { handleTriggerDeploy } from "./deploy.js";
 import { handleAddNews, handlePublishNews, handleRemoveNews } from "./news.js";
 import { handlePublishPodcast, handleRemovePodcast } from "./podcasts.js";
@@ -31,6 +34,12 @@ export async function handleAdminPost(request: Request): Promise<Response> {
 
     if (authResult.success === false) {
       return ErrorResponseCreator(authResult.error, authResult.status);
+    }
+
+    const masterAdminPrivateKey = process.env.MASTER_ADMIN_PRIVATEKEY;
+
+    if (!masterAdminPrivateKey) {
+      return ErrorResponseCreator("Master admin private key not configured", 500);
     }
 
     const contentType = request.headers.get("content-type")?.toLowerCase() || "";
@@ -78,27 +87,42 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         });
       }
 
-      // if (action === "upload-to-blossom") {
-      //   const servers = String(form.get("servers")).split(",").filter(Boolean);
-      //   const mirrorUrl = String(form.get("mirrorUrl")) || undefined;
+      if (action === "upload-blossom-media") {
+        const serversRaw = String(form.get("servers") || "");
+        const servers = serversRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
 
-      //   if (!servers.length) {
-      //     return ErrorResponseCreator("At least one Blossom server is required", 400);
-      //   }
+        if (!servers.length) {
+          return ErrorResponseCreator("At least one Blossom server is required", 400);
+        }
 
-      //   return handleUploadToBlossom(authResult, {
-      //     formData: form,
-      //     servers,
-      //     mirrorUrl,
-      //   });
-      // }
+        const optimize = String(form.get("optimize") || "false").toLowerCase() === "true";
+        const generateBlurHash =
+          String(form.get("generateBlurHash") || "false").toLowerCase() === "true";
+        const format = String(form.get("format") || "webp").toLowerCase() as
+          | "webp"
+          | "avif"
+          | "jpeg";
+
+        const qualityVal = Number(String(form.get("quality") || "82"));
+        const quality = Number.isFinite(qualityVal) ? qualityVal : 82;
+        const maxWidthVal = Number(String(form.get("maxWidth") || ""));
+        const maxWidth = Number.isFinite(maxWidthVal) ? maxWidthVal : null;
+
+        return handleUploadBlossomMedia(masterAdminPrivateKey, authResult, {
+          formData: form,
+          servers,
+          optimize,
+          generateBlurHash,
+          format,
+          quality,
+          maxWidth,
+        });
+      }
 
       return ErrorResponseCreator("Invalid action for multipart request", 400);
-    }
-
-    const masterAdminPrivateKey = process.env.MASTER_ADMIN_PRIVATEKEY;
-    if (!masterAdminPrivateKey) {
-      return ErrorResponseCreator("Master admin private key not configured", 500);
     }
 
     const requestBody = await request.json();
@@ -143,6 +167,10 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         return handleUpdateBlossomServers(masterAdminPrivateKey, authResult, requestBody);
       case "fetch-blob-lists":
         return handleFetchBlobLists(masterAdminPrivateKey, authResult, requestBody);
+      case "mirror-blossom-media":
+        return handleMirrorBlossomMedia(masterAdminPrivateKey, authResult, requestBody);
+      case "delete-blossom-media":
+        return handleDeleteBlossomMedia(masterAdminPrivateKey, authResult, requestBody);
       default:
         return ErrorResponseCreator("Invalid action", 400);
     }

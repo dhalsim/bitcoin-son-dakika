@@ -1,9 +1,12 @@
 // // Blossom service implementation for uploading files to Blossom servers
 // // Based on the Blossom specification: https://github.com/hzrd149/blossom
 
+import { createHash } from "crypto";
+
 import { finalizeEvent, type EventTemplate } from "nostr-tools";
 import { hexToBytes } from "nostr-tools/utils";
 import { createClient } from "redis";
+import sharp from "sharp";
 
 import { publishToRelays } from "../../src/lib/utils.js";
 import type { UpdateBlossomServersPayload } from "../../src/types/admin.js";
@@ -22,7 +25,12 @@ const redis = await createClient({
   url: process.env.REDIS_URL,
 }).connect();
 
-const getServerCacheKey = (server: string) => `blossom-blob-list-${server}`;
+export const getServerCacheKey = (server: string) => `blossom-blob-list-${server}`;
+export const getLastGoodKey = (sha256: string) => `blossom:last-good:${sha256}`;
+export const getBlurHashKey = (sha256: string) => `blossom:blurhash:${sha256}`;
+export const getBadServerKey = (sha256: string, server: string) =>
+  `blossom:bad:${sha256}:${server}`;
+export const getCachedServersKey = () => `blossom:cached-servers`;
 
 // Create Nostr authorization event for Blossom server access
 function createBlossomAuthEvent(privateKey: string): string {
@@ -42,11 +50,199 @@ function createBlossomAuthEvent(privateKey: string): string {
 
   const signedEvent = finalizeEvent(authEvent, hexToBytes(privateKey));
 
-  const base64Event = btoa(JSON.stringify(signedEvent));
+  const base64Event = Buffer.from(JSON.stringify(signedEvent)).toString("base64");
 
   console.log("base64Event", base64Event);
 
   return base64Event;
+}
+
+// Create MASTER-signed auth for specific action with optional x tags
+function createMasterAuthBase64(
+  privateKey: string,
+  action: "get" | "upload" | "list" | "delete",
+  xTags?: string[],
+  expirationSeconds: number = 60 * 60 * 24,
+): string {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+
+  const tags: string[][] = [
+    ["t", action],
+    ["expiration", String(nowSeconds + expirationSeconds)],
+  ];
+
+  if (xTags && xTags.length) {
+    for (const x of xTags) {
+      tags.push(["x", x]);
+    }
+  }
+
+  const authEvent: EventTemplate = {
+    kind: 24242,
+    created_at: nowSeconds,
+    content: `${action} Blob`,
+    tags,
+  };
+
+  const signedEvent = finalizeEvent(authEvent, hexToBytes(privateKey));
+
+  return Buffer.from(JSON.stringify(signedEvent)).toString("base64");
+}
+
+function sha256Hex(buffer: Buffer): string {
+  return createHash("sha256").update(buffer).digest("hex");
+}
+
+async function optimizeImageWithSharp(
+  input: Buffer,
+  options: { format?: "webp" | "avif" | "jpeg"; quality?: number; maxWidth?: number },
+): Promise<{ output: Buffer; mime: string }> {
+  const { format = "webp", quality = 82, maxWidth } = options;
+
+  let instance = sharp(input, { failOn: "none" }).rotate();
+
+  if (maxWidth && Number.isFinite(maxWidth)) {
+    instance = instance.resize({
+      width: Math.floor(maxWidth),
+      fit: "inside",
+      withoutEnlargement: true,
+    });
+  }
+
+  if (format === "avif") {
+    instance = instance.avif({ quality });
+  } else if (format === "jpeg") {
+    instance = instance.jpeg({ quality, mozjpeg: true });
+  } else {
+    instance = instance.webp({ quality });
+  }
+
+  const output = await instance.toBuffer();
+  const mime = format === "avif" ? "image/avif" : format === "jpeg" ? "image/jpeg" : "image/webp";
+
+  return { output, mime };
+}
+
+async function uploadBufferToServer(
+  server: string,
+  data: Buffer,
+  contentType: string,
+  authBase64: string,
+): Promise<BlobDescriptor> {
+  const serverUrl = server.endsWith("/") ? server.slice(0, -1) : server;
+
+  const response = await fetch(`${serverUrl}/upload`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Nostr ${authBase64}`,
+      "Content-Type": contentType,
+      "Content-Length": String(data.length),
+    },
+    body: new Uint8Array(data),
+  });
+
+  if (!response.ok) {
+    const reason = response.headers.get("X-Reason") || response.statusText;
+
+    throw new Error(`Upload failed on ${server}: ${response.status} ${reason}`);
+  }
+
+  return (await response.json()) as BlobDescriptor;
+}
+
+export async function handleUploadBlossomMedia(
+  masterAdminPrivateKey: string,
+  authResult: AuthResult,
+  paramsData: {
+    formData: FormData;
+    servers: string[];
+    optimize?: boolean;
+    format?: "webp" | "avif" | "jpeg";
+    quality?: number;
+    maxWidth?: number;
+  },
+): Promise<Response> {
+  if (!authResult.success) {
+    return ErrorResponseCreator("Kimlik doğrulama hatası", 401);
+  }
+
+  if (!authResult.roles.includes("editor") && !authResult.roles.includes("admin")) {
+    return ErrorResponseCreator("Yalnızca editörler ve adminler yükleme yapabilir", 403);
+  }
+
+  const { formData, servers, optimize, format, quality, maxWidth } = paramsData;
+
+  if (!servers || servers.length === 0) {
+    return ErrorResponseCreator("En az bir sunucu belirtilmelidir", 400);
+  }
+
+  const file = formData.get("file") as File | null;
+
+  if (!file) {
+    return ErrorResponseCreator("Dosya bulunamadı", 400);
+  }
+
+  const inputArrayBuffer = await file.arrayBuffer();
+  let buffer = Buffer.from(inputArrayBuffer) as Buffer;
+  let contentType = file.type || "application/octet-stream";
+  const isImage = contentType.startsWith("image/");
+
+  try {
+    if (optimize && isImage) {
+      const { output, mime } = await optimizeImageWithSharp(buffer, { format, quality, maxWidth });
+      buffer = output;
+      contentType = mime;
+    }
+
+    const hashHex = sha256Hex(buffer);
+    const authBase64 = createMasterAuthBase64(masterAdminPrivateKey, "upload", [hashHex]);
+
+    const results = await Promise.allSettled(
+      servers.map(async (server) => {
+        const descriptor = await uploadBufferToServer(server, buffer, contentType, authBase64);
+        // Cache updates on success
+        await Promise.allSettled([
+          redis.set(getLastGoodKey(hashHex), server, { EX: 60 * 60 * 24 }),
+          redis.del(getServerCacheKey(server)),
+          redis.del(getBadServerKey(hashHex, server)),
+        ]);
+
+        return { server, descriptor };
+      }),
+    );
+
+    const successful = results
+      .filter(
+        (r): r is PromiseFulfilledResult<{ server: string; descriptor: BlobDescriptor }> =>
+          r.status === "fulfilled",
+      )
+      .map((r) => r.value);
+
+    const failed = results
+      .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+      .map((r, idx) => ({
+        server: servers[idx],
+        error: r.reason instanceof Error ? r.reason.message : String(r.reason),
+      }));
+
+    return SuccessResponse({
+      message: `Uploaded to ${successful.length} / ${servers.length} servers`,
+      data: {
+        successful,
+        failed,
+        sha256: hashHex,
+        contentType,
+        size: buffer.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error uploading to Blossom:", error);
+
+    return ErrorResponseCreator(
+      error instanceof Error ? error.message : "Blossom'a yükleme sırasında bir hata oluştu",
+      500,
+    );
+  }
 }
 
 // Fetch blob list from a single Blossom server
@@ -93,7 +289,7 @@ async function fetchBlobListFromServer(
 }
 
 // Fetch blob lists from multiple Blossom servers in parallel
-export async function fetchBlobListsFromServers(
+async function fetchBlobListsFromServers(
   servers: string[],
   pubkey: string,
   privateKey: string,
@@ -198,6 +394,9 @@ export async function handleUpdateBlossomServers(
   const event = finalizeEvent(eventTemplate, hexToBytes(masterAdminPrivateKey));
 
   const result = await publishToRelays(event, ADMIN_RELAYS);
+
+  // Cache the servers list for fallback use
+  await redis.setex(getCachedServersKey(), 60 * 60 * 24 * 7, JSON.stringify(servers)); // 7 days TTL
 
   return PublishEventResponseCreator(
     { message: "Blossom sunucuları güncellendi", result },

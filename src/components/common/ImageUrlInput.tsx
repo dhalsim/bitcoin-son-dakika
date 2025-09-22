@@ -1,5 +1,13 @@
 import { useState, useRef } from "react";
-import { Upload, Link, AlertTriangle, CheckCircle, Loader2, ExternalLink } from "lucide-react";
+import {
+  Upload,
+  Link,
+  AlertTriangle,
+  CheckCircle,
+  Loader2,
+  ExternalLink,
+  Settings,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +16,15 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface ImageUrlInputProps {
   value: string;
@@ -15,7 +32,28 @@ interface ImageUrlInputProps {
   label?: string;
   placeholder?: string;
   blossomServers: string[];
-  onUploadToBlossom?: (file: File, servers: string[]) => Promise<string[]>;
+  onUploadToBlossom?: (
+    file: File,
+    servers: string[],
+    options: UploadOptions,
+  ) => Promise<UploadResult>;
+}
+
+interface UploadOptions {
+  optimize: boolean;
+  generateBlurHash: boolean;
+  format: "webp" | "avif" | "jpeg";
+  quality: number;
+  maxWidth: number | null;
+}
+
+interface UploadResult {
+  successful: Array<{ server: string; descriptor: any }>;
+  failed: Array<{ server: string; error: string }>;
+  sha256: string;
+  contentType: string;
+  size: number;
+  blurhash?: { blurhash: string; width: number; height: number };
 }
 
 interface CorsCheckResult {
@@ -36,6 +74,16 @@ export function ImageUrlInput({
   const [corsResult, setCorsResult] = useState<CorsCheckResult | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set());
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+  const [showOptimizationSettings, setShowOptimizationSettings] = useState(false);
+
+  // Optimization settings
+  const [optimize, setOptimize] = useState(true);
+  const [generateBlurHash, setGenerateBlurHash] = useState(true);
+  const [format, setFormat] = useState<"webp" | "avif" | "jpeg">("webp");
+  const [quality, setQuality] = useState(82);
+  const [maxWidth, setMaxWidth] = useState<number | null>(1920);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const checkCors = async (url: string): Promise<CorsCheckResult> => {
@@ -116,14 +164,41 @@ export function ImageUrlInput({
     if (!fileInput?.files?.[0]) return;
 
     setIsUploading(true);
+    setUploadResult(null);
+
     try {
-      const uploadedUrls = await onUploadToBlossom(fileInput.files[0], Array.from(selectedServers));
-      if (uploadedUrls.length > 0) {
-        onChange(uploadedUrls[0]); // Use first successful upload
+      const options: UploadOptions = {
+        optimize,
+        generateBlurHash,
+        format,
+        quality,
+        maxWidth,
+      };
+
+      const result = await onUploadToBlossom(
+        fileInput.files[0],
+        Array.from(selectedServers),
+        options,
+      );
+      setUploadResult(result);
+
+      if (result.successful.length > 0) {
+        // Use first successful upload URL
+        const firstSuccess = result.successful[0];
+        onChange(firstSuccess.descriptor.url);
         setActiveTab("url");
       }
     } catch (error) {
       console.error("Upload failed:", error);
+      setUploadResult({
+        successful: [],
+        failed: [
+          { server: "Unknown", error: error instanceof Error ? error.message : "Upload failed" },
+        ],
+        sha256: "",
+        contentType: "",
+        size: 0,
+      });
     } finally {
       setIsUploading(false);
     }
@@ -251,6 +326,95 @@ export function ImageUrlInput({
                     </div>
                   </div>
 
+                  {/* Optimization Settings */}
+                  <Collapsible
+                    open={showOptimizationSettings}
+                    onOpenChange={setShowOptimizationSettings}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Optimization Settings
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg bg-muted/50">
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="optimize"
+                            checked={optimize}
+                            onCheckedChange={(checked) => setOptimize(checked as boolean)}
+                          />
+                          <Label htmlFor="optimize">Optimize image (resize & convert format)</Label>
+                        </div>
+
+                        {optimize && (
+                          <>
+                            <div className="space-y-2">
+                              <Label htmlFor="format">Output Format</Label>
+                              <Select
+                                value={format}
+                                onValueChange={(value: "webp" | "avif" | "jpeg") =>
+                                  setFormat(value)
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="webp">WebP (recommended)</SelectItem>
+                                  <SelectItem value="avif">AVIF (best compression)</SelectItem>
+                                  <SelectItem value="jpeg">JPEG (compatibility)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="quality">Quality: {quality}%</Label>
+                              <Slider
+                                id="quality"
+                                min={10}
+                                max={100}
+                                step={1}
+                                value={[quality]}
+                                onValueChange={(value) => setQuality(value[0])}
+                                className="w-full"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="maxWidth">
+                                Max Width: {maxWidth ? `${maxWidth}px` : "Original"}
+                              </Label>
+                              <Slider
+                                id="maxWidth"
+                                min={320}
+                                max={4096}
+                                step={160}
+                                value={maxWidth ? [maxWidth] : [4096]}
+                                onValueChange={(value) =>
+                                  setMaxWidth(value[0] === 4096 ? null : value[0])
+                                }
+                                className="w-full"
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="generateBlurHash"
+                            checked={generateBlurHash}
+                            onCheckedChange={(checked) => setGenerateBlurHash(checked as boolean)}
+                          />
+                          <Label htmlFor="generateBlurHash">
+                            Generate BlurHash for progressive loading
+                          </Label>
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+
                   <div className="flex items-center gap-2">
                     <Button
                       onClick={handleUploadToBlossom}
@@ -277,6 +441,47 @@ export function ImageUrlInput({
                         className="h-20 w-20 object-cover rounded border"
                       />
                       <div className="text-sm text-muted-foreground">Ready to upload</div>
+                    </div>
+                  )}
+
+                  {/* Upload Results */}
+                  {uploadResult && (
+                    <div className="space-y-2">
+                      <Label>Upload Results:</Label>
+                      <div className="space-y-2">
+                        {uploadResult.successful.length > 0 && (
+                          <Alert className="border-green-200 bg-green-50">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <AlertDescription>
+                              Successfully uploaded to {uploadResult.successful.length} server(s)
+                              {uploadResult.blurhash && " with BlurHash"}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        {uploadResult.failed.length > 0 && (
+                          <Alert className="border-red-200 bg-red-50">
+                            <AlertTriangle className="h-4 w-4 text-red-600" />
+                            <AlertDescription>
+                              Failed to upload to {uploadResult.failed.length} server(s)
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <div>
+                            SHA256: <code className="font-mono">{uploadResult.sha256}</code>
+                          </div>
+                          <div>Size: {(uploadResult.size / 1024).toFixed(1)} KB</div>
+                          <div>Type: {uploadResult.contentType}</div>
+                          {uploadResult.blurhash && (
+                            <div>
+                              BlurHash:{" "}
+                              <code className="font-mono">{uploadResult.blurhash.blurhash}</code>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </>
