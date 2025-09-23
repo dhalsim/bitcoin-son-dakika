@@ -14,6 +14,7 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "api-helpers": path.resolve(__dirname, "./api-helpers"),
       // ensure no accidental node 'canvas' resolution
       canvas: false as unknown as string,
     },

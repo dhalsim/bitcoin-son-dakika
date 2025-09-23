@@ -5,7 +5,8 @@
     "baseUrl": ".",
     "paths": {
       "@/api/*": ["./api/*"],
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "api-helpers/*": ["./api-helpers/*"]
     },
     "module": "ESNext",
     "moduleResolution": "bundler",
