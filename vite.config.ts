@@ -19,7 +19,7 @@ export default defineConfig(() => ({
     },
   },
   optimizeDeps: {
-    exclude: ["nostr-tools"],
+    exclude: ["nostr-tools", "redis"],
     include: ["react", "react-dom", "react-router", "react-router-dom"],
   },
   build: {
@@ -27,6 +27,7 @@ export default defineConfig(() => ({
     sourcemap: process.env.NODE_ENV !== "production", // Source maps in development
     assetsInclude: ["**/*.xml"],
     rollupOptions: {
+      external: ["redis"],
       output: {
         // Keep readable chunk names
         chunkFileNames:

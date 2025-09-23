@@ -1,16 +1,12 @@
 import TradingView from "@mathieuc/tradingview";
-import { createClient } from "redis";
 
 import {
   applyCacheHeaders,
   ErrorResponseCreator,
+  getRedis,
   SuccessResponse,
 } from "../../api-helpers/utils.js";
 import { type BaseEndpointResponse, type PriceData } from "../../src/types/api.js";
-
-const redis = await createClient({
-  url: process.env.REDIS_URL,
-}).connect();
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {
@@ -19,6 +15,8 @@ export async function GET() {
   }
 
   try {
+    const redis = await getRedis();
+
     let session = await redis.get("session");
     let signature = await redis.get("signature");
 

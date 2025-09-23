@@ -2,14 +2,13 @@
 import z from "zod";
 
 import type { AuthResult } from "../../types.js";
-import { ErrorResponseCreator, SuccessResponse } from "../../utils.js";
+import { ErrorResponseCreator, getRedis, SuccessResponse } from "../../utils.js";
 
 import {
   createMasterAuthBase64,
   getLastGoodKey,
   getServerCacheKey,
   markServerBad,
-  redis,
 } from "./common.js";
 
 export const DeleteBlossomMediaResponseSchema = z.object({
@@ -99,6 +98,8 @@ export async function handleDeleteBlossomMedia(
         if (result.success) {
           // If delete was successful, mark server as bad for this blob
           await markServerBad(sha256, server);
+
+          const redis = await getRedis();
 
           // Clear server cache
           await redis.del(getServerCacheKey(server));

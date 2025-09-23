@@ -1,16 +1,10 @@
-import { createClient } from "redis";
-
 import {
   getBadServerKey,
   getLastGoodKey,
   getCachedServersKey,
   getBlurHashKey,
 } from "../api-helpers/admin/blossom/common.js";
-import { getBlossomServersEvent } from "../api-helpers/utils.js";
-
-const redis = await createClient({
-  url: process.env.REDIS_URL,
-}).connect();
+import { getBlossomServersEvent, getRedis } from "../api-helpers/utils.js";
 
 // Extract sha256 from URL path (last 64-char hex string)
 function extractSha256FromPath(pathname: string): string | null {
@@ -21,6 +15,8 @@ function extractSha256FromPath(pathname: string): string | null {
 
 // Get server list in priority order
 async function getServerList(sha256: string): Promise<string[]> {
+  const redis = await getRedis();
+
   // 1. Try last-good server first
   const lastGood = await redis.get(getLastGoodKey(sha256));
 

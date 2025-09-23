@@ -1,32 +1,16 @@
-import { createClient } from "redis";
-
 import { fetchAllSources, type ScrapedItem } from "../scrapers/index.js";
 import type { AuthResult } from "../types.js";
-import { ErrorResponseCreator, SuccessResponse } from "../utils.js";
+import { ErrorResponseCreator, getRedis, SuccessResponse } from "../utils.js";
 
 const SCRAPES_CACHE_KEY = "scrapes:all";
 const SCRAPES_CACHE_TTL_SECONDS = 15 * 60; // 15 minutes
 
-let redisClient: ReturnType<typeof createClient> | null = null;
-
-async function getRedis() {
-  if (!redisClient) {
-    const url = process.env.REDIS_URL;
-    if (!url) {
-      throw new Error("REDIS_URL not configured");
-    }
-
-    redisClient = createClient({ url });
-    await redisClient.connect();
-  }
-
-  return redisClient;
-}
-
 async function getCachedScrapes(): Promise<{ items: ScrapedItem[]; lastUpdated?: string } | null> {
   try {
     const redis = await getRedis();
+
     const json = await redis.get(SCRAPES_CACHE_KEY);
+
     if (!json) {
       return null;
     }

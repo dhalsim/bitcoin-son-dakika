@@ -1,7 +1,8 @@
 import { verifyEvent, SimplePool } from "nostr-tools";
+import { createClient } from "redis";
 
-import type { EventItem } from "@/lib/nip01.js";
-import type { ArticleItem, PodcastItem } from "@/lib/ssg-data.js";
+import type { EventItem } from "../src/lib/nip01.js";
+import type { ArticleItem, PodcastItem } from "../src/lib/ssg-data.js";
 
 import type {
   ErrorResponse,
@@ -590,4 +591,21 @@ export function getBlossomServersEvent() {
     authors: [MASTER_ADMIN_PUBKEY],
     kinds: [10063],
   });
+}
+
+let redisClient: ReturnType<typeof createClient> | null = null;
+
+export async function getRedis() {
+  if (!redisClient) {
+    const url = process.env.REDIS_URL;
+
+    if (!url) {
+      throw new Error("REDIS_URL not configured");
+    }
+
+    redisClient = createClient({ url });
+    await redisClient.connect();
+  }
+
+  return redisClient;
 }
