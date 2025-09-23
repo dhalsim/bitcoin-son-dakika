@@ -15,11 +15,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { DeleteBlossomMediaPayload } from "@/types/admin";
-import { createNIP98Auth } from "../utils";
+import { WEBSITE_URL } from "@/lib/constants";
+
 import {
   DeleteBlossomMediaResponse,
   DeleteBlossomMediaResponseSchema,
 } from "api-helpers/admin/blossom/delete";
+
+import { createNIP98Auth } from "../utils";
 
 interface BlobDescriptor {
   url: string;
@@ -86,8 +89,7 @@ export default function BlobContentSheet({
     data: DeleteBlossomMediaPayload,
   ): Promise<DeleteBlossomMediaResponse | null> => {
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/api/admin-panel`;
+      const url = `${WEBSITE_URL}/api/admin-panel`;
       const authHeader = await createNIP98Auth(
         "POST",
         url,
@@ -178,16 +180,16 @@ export default function BlobContentSheet({
             {/* Error Alert */}
             {deleteError && (
               <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">{deleteError}</AlertDescription>
+                <AlertCircle className="h-4 w-4 text-gray-600" />
+                <AlertDescription className="text-gray-800">{deleteError}</AlertDescription>
               </Alert>
             )}
 
             {/* Success Alert */}
             {deleteSuccess && (
               <Alert className="border-green-200 bg-green-50">
-                <AlertCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">{deleteSuccess}</AlertDescription>
+                <AlertCircle className="h-4 w-4 text-gray-600" />
+                <AlertDescription className="text-gray-800">{deleteSuccess}</AlertDescription>
               </Alert>
             )}
             {blobs.length === 0 ? (

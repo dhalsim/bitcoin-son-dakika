@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { WEBSITE_URL } from "@/lib/constants";
 
 import { createNIP98Auth } from "./utils";
 
@@ -20,8 +21,7 @@ export default function DeployTrigger() {
       setError("");
       setSuccess(false);
 
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/api/admin-panel`;
+      const url = `${WEBSITE_URL}/api/admin-panel`;
       const authHeader = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
       const response = await fetch(url, {
@@ -34,6 +34,7 @@ export default function DeployTrigger() {
       });
 
       const result = await response.json();
+
       if (result.success) {
         setSuccess(true);
         setTimeout(() => setSuccess(false), 5000);

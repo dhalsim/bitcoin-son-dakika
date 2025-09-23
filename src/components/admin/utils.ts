@@ -1,6 +1,7 @@
 import { nip19 } from "nostr-tools";
 
 import type { GetPublicKey, SignEvent } from "@/contexts/NostrAuthContext";
+import { WEBSITE_URL } from "@/lib/constants";
 
 export type NpubValidationResult =
   | { valid: true; pubkey: string }
@@ -52,8 +53,8 @@ export async function postAdminAction(
   getPublicKey: GetPublicKey,
   signEvent: SignEvent,
 ): Promise<any> {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const url = `${origin}/api/admin-panel`;
+  const url = `${WEBSITE_URL}/api/admin-panel`;
+
   const auth = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
   const res = await fetch(url, {

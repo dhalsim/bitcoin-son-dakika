@@ -2,36 +2,29 @@ import { ImageUrlInput } from "@/components/common/ImageUrlInput";
 import { useBlossomUpload } from "@/hooks/useBlossomUpload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-// Example Blossom servers - in real usage, these would come from your server configuration
-const DEFAULT_BLOSSOM_SERVERS = [
-  "https://blossom.band",
-  "https://blossom.primal.net",
-  "https://nostr.download",
-  "https://24242.io",
-  "https://cdn.nostrcheck.me",
-  "https://blossom.nostr.build",
-];
+import { createNIP98Auth } from "../utils";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { WEBSITE_URL } from "@/lib/constants";
 
 interface BlossomImageUploadProps {
   value: string;
   onChange: (url: string) => void;
+  blossomServers: string[];
   label?: string;
   placeholder?: string;
-  blossomServers?: string[];
-  authToken?: string; // Nostr auth token for API calls
 }
 
 export function BlossomImageUpload({
   value,
   onChange,
+  blossomServers,
   label = "Image URL",
   placeholder = "Enter image URL or upload file",
-  blossomServers = DEFAULT_BLOSSOM_SERVERS,
-  authToken,
 }: BlossomImageUploadProps) {
+  const { getPublicKey, signEvent } = useNostrAuth();
   const { uploadToBlossom, isUploading, error } = useBlossomUpload();
 
-  const handleUploadToBlossom = async (
+  const performUploadToBlossom = async (
     file: File,
     servers: string[],
     options: {
@@ -42,28 +35,11 @@ export function BlossomImageUpload({
       maxWidth: number | null;
     },
   ) => {
-    if (!authToken) {
-      throw new Error("Authentication token required for upload");
-    }
+    const url = `${WEBSITE_URL}/api/admin-panel`;
 
-    // Create a custom fetch function that includes the auth token
-    const originalFetch = window.fetch;
-    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-      return originalFetch(input, {
-        ...init,
-        headers: {
-          ...init?.headers,
-          Authorization: authToken,
-        },
-      });
-    };
+    const authToken = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
-    try {
-      return await uploadToBlossom(file, servers, options);
-    } finally {
-      // Restore original fetch
-      window.fetch = originalFetch;
-    }
+    return await uploadToBlossom(file, servers, options, authToken);
   };
 
   return (
@@ -81,7 +57,7 @@ export function BlossomImageUpload({
           label={label}
           placeholder={placeholder}
           blossomServers={blossomServers}
-          onUploadToBlossom={authToken ? handleUploadToBlossom : undefined}
+          onUploadToBlossom={performUploadToBlossom}
         />
 
         {error && (

@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
-import { UpdateBlossomServersPayload, FetchBlobListsPayload } from "@/types/admin";
+import { FetchBlobListsPayload, UpdateBlossomServersPayload } from "@/types/admin";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { WEBSITE_URL } from "@/lib/constants";
+
 import BlobContentSheet from "./BlobContentSheet";
 
 import {
@@ -74,8 +76,8 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
     data: FetchBlobListsPayload,
   ): Promise<FetchBlobListsResponse | null> => {
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/api/admin-panel`;
+      const url = `${WEBSITE_URL}/api/admin-panel`;
+
       const authHeader = await createNIP98Auth(
         "POST",
         url,

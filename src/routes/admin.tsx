@@ -25,12 +25,11 @@ import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Payload } from "@/types/admin";
 import { toast } from "@/hooks/use-toast";
+import { WEBSITE_URL } from "@/lib/constants";
 
 import type { ArticleTag, NewsTag, PodcastTag, TagItem } from "api-helpers/common_with_client";
 import { ADMIN_RELAYS } from "api-helpers/common_with_client";
 import {
-  ErrorResponseSchema,
-  isErrorResponse,
   isMultiPublishResponse,
   isPublishResponseError,
   isSinglePublishResponse,
@@ -388,8 +387,8 @@ export default function AdminPanel() {
     setError("");
 
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/api/admin-panel`;
+      const url = `${WEBSITE_URL}/api/admin-panel`;
+
       const authHeader = await createNIP98Auth(
         "POST",
         url,

@@ -3,9 +3,9 @@ import {
   getLastGoodKey,
   getCachedServersKey,
   getBlurHashKey,
-} from "../api-helpers/admin/blossom/common.js";
-import { type RedisClient, getRedis } from "../api-helpers/common.js";
-import { getBlossomServersEvent } from "../api-helpers/common_with_client.js";
+} from "../../api-helpers/admin/blossom/common.js";
+import { type RedisClient, getRedis } from "../../api-helpers/common.js";
+import { getBlossomServersEvent } from "../../api-helpers/common_with_client.js";
 
 // Extract sha256 from URL path (last 64-char hex string)
 function extractSha256FromPath(pathname: string): string | null {
@@ -125,6 +125,7 @@ async function fetchFromServer(
     // Check if redirect contains the same sha256
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("Location");
+
       if (location && location.includes(sha256)) {
         return response; // Valid redirect
       }

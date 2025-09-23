@@ -4,6 +4,7 @@ import { AlertCircle, Loader2, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { WEBSITE_URL } from "@/lib/constants";
 
 import { createNIP98Auth } from "./utils";
 
@@ -31,8 +32,7 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
     setScrapesError("");
 
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/api/admin-panel`;
+      const url = `${WEBSITE_URL}/api/admin-panel`;
 
       const authHeader = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 

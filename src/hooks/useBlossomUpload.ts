@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { WEBSITE_URL } from "@/lib/constants";
+
 interface UploadOptions {
   optimize: boolean;
   generateBlurHash: boolean;
@@ -25,6 +27,7 @@ export function useBlossomUpload() {
     file: File,
     servers: string[],
     options: UploadOptions,
+    authToken: string,
   ): Promise<UploadResult> => {
     setIsUploading(true);
     setError(null);
@@ -42,11 +45,14 @@ export function useBlossomUpload() {
         formData.append("maxWidth", options.maxWidth.toString());
       }
 
-      const response = await fetch("/api/admin-panel", {
+      const url = `${WEBSITE_URL}/api/admin-panel`;
+
+      const response = await fetch(url, {
         method: "POST",
+        headers: {
+          Authorization: authToken,
+        },
         body: formData,
-        // Note: Authorization header should be set by the parent component
-        // that has access to the user's Nostr authentication
       });
 
       if (!response.ok) {

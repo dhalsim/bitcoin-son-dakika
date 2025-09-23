@@ -63,8 +63,8 @@ interface CorsCheckResult {
 export function ImageUrlInput({
   value,
   onChange,
-  label = "Image URL",
-  placeholder = "Enter image URL or upload file",
+  label = "Resim URL'si",
+  placeholder = "Resim URL'si girin veya dosya yükleyin",
   blossomServers,
   onUploadToBlossom,
 }: ImageUrlInputProps) {
@@ -179,6 +179,7 @@ export function ImageUrlInput({
         Array.from(selectedServers),
         options,
       );
+
       setUploadResult(result);
 
       if (result.successful.length > 0) {
@@ -192,7 +193,62 @@ export function ImageUrlInput({
       setUploadResult({
         successful: [],
         failed: [
-          { server: "Unknown", error: error instanceof Error ? error.message : "Upload failed" },
+          {
+            server: "Bilinmeyen",
+            error: error instanceof Error ? error.message : "Yükleme başarısız",
+          },
+        ],
+        sha256: "",
+        contentType: "",
+        size: 0,
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleUrlUploadToBlossom = async () => {
+    if (!onUploadToBlossom || selectedServers.size === 0 || !value) return;
+
+    setIsUploading(true);
+    setUploadResult(null);
+
+    try {
+      // Download the image from URL
+      const response = await fetch(value);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const file = new File([blob], "image", { type: blob.type });
+
+      const options: UploadOptions = {
+        optimize,
+        generateBlurHash,
+        format,
+        quality,
+        maxWidth,
+      };
+
+      const result = await onUploadToBlossom(file, Array.from(selectedServers), options);
+
+      setUploadResult(result);
+
+      if (result.successful.length > 0) {
+        // Use first successful upload URL
+        const firstSuccess = result.successful[0];
+        onChange(firstSuccess.descriptor.url);
+      }
+    } catch (error) {
+      console.error("URL upload failed:", error);
+      setUploadResult({
+        successful: [],
+        failed: [
+          {
+            server: "Bilinmeyen",
+            error: error instanceof Error ? error.message : "URL yükleme başarısız",
+          },
         ],
         sha256: "",
         contentType: "",
@@ -213,6 +269,16 @@ export function ImageUrlInput({
     setSelectedServers(newSelectedServers);
   };
 
+  const handleSelectAllServers = () => {
+    if (selectedServers.size === blossomServers.length) {
+      // If all are selected, deselect all
+      setSelectedServers(new Set());
+    } else {
+      // Select all servers
+      setSelectedServers(new Set(blossomServers));
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -225,7 +291,7 @@ export function ImageUrlInput({
             </TabsTrigger>
             <TabsTrigger value="file" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
-              File
+              Dosya
             </TabsTrigger>
           </TabsList>
 
@@ -245,7 +311,11 @@ export function ImageUrlInput({
                   variant="outline"
                   size="sm"
                 >
-                  {isCheckingCors ? <Loader2 className="h-4 w-4 animate-spin" /> : "Check CORS"}
+                  {isCheckingCors ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "CORS Kontrol Et"
+                  )}
                 </Button>
               </div>
 
@@ -263,32 +333,127 @@ export function ImageUrlInput({
                     )}
                     <AlertDescription>
                       {corsResult.hasCors
-                        ? "CORS enabled - image can be used externally"
-                        : `CORS not enabled${corsResult.error ? `: ${corsResult.error}` : ""} - consider uploading to Blossom`}
+                        ? "CORS etkin - resim harici olarak kullanılabilir"
+                        : `CORS etkin değil${corsResult.error ? `: ${corsResult.error}` : ""} - Blossom'a yüklemeyi düşünün`}
                     </AlertDescription>
                   </div>
                 </Alert>
               )}
 
               {value && (
-                <div className="flex items-center gap-2">
-                  <img
-                    src={value}
-                    alt="Preview"
-                    className="h-20 w-20 object-cover rounded border"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(value, "_blank")}
-                    className="flex items-center gap-1"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    Open
-                  </Button>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={value}
+                      alt="Önizleme"
+                      className="h-20 w-20 object-cover rounded border"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(value, "_blank")}
+                      className="flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Aç
+                    </Button>
+                  </div>
+
+                  {/* Upload URL to Blossom */}
+                  {onUploadToBlossom && blossomServers.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label>URL'yi Blossom'a Yükle:</Label>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSelectAllServers}
+                            className="text-xs"
+                          >
+                            {selectedServers.size === blossomServers.length
+                              ? "Hepsini Kaldır"
+                              : "Hepsini Seç"}
+                          </Button>
+                        </div>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {blossomServers.map((server) => (
+                            <div key={server} className="flex items-center gap-2">
+                              <Checkbox
+                                checked={selectedServers.has(server)}
+                                onCheckedChange={(checked) =>
+                                  handleServerToggle(server, checked as boolean)
+                                }
+                              />
+                              <span className="text-sm font-mono">{server}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={handleUrlUploadToBlossom}
+                          disabled={selectedServers.size === 0 || isUploading}
+                          className="flex items-center gap-2"
+                        >
+                          {isUploading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4" />
+                          )}
+                          Blossom'a Yükle
+                        </Button>
+                        <Badge variant="outline">{selectedServers.size} sunucu seçildi</Badge>
+                      </div>
+
+                      {/* Upload Results */}
+                      {uploadResult && (
+                        <div className="space-y-2">
+                          <Label>Yükleme Sonuçları:</Label>
+                          <div className="space-y-2">
+                            {uploadResult.successful.length > 0 && (
+                              <Alert className="border-green-200 bg-green-50">
+                                <CheckCircle className="h-4 w-4 text-gray-600" />
+                                <AlertDescription className="text-gray-600">
+                                  {uploadResult.successful.length} sunucuya başarıyla yüklendi
+                                  {uploadResult.blurhash && " BlurHash ile"}
+                                </AlertDescription>
+                              </Alert>
+                            )}
+
+                            {uploadResult.failed.length > 0 && (
+                              <Alert className="border-red-200 bg-red-50">
+                                <AlertTriangle className="h-4 w-4 text-red-600" />
+                                <AlertDescription>
+                                  {uploadResult.failed.length} sunucuya yükleme başarısız
+                                </AlertDescription>
+                              </Alert>
+                            )}
+
+                            <div className="text-xs text-muted-foreground space-y-1">
+                              <div>
+                                SHA256: <code className="font-mono">{uploadResult.sha256}</code>
+                              </div>
+                              <div>Boyut: {(uploadResult.size / 1024).toFixed(1)} KB</div>
+                              <div>Tür: {uploadResult.contentType}</div>
+                              {uploadResult.blurhash && (
+                                <div>
+                                  BlurHash:{" "}
+                                  <code className="font-mono">
+                                    {uploadResult.blurhash.blurhash}
+                                  </code>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -309,7 +474,19 @@ export function ImageUrlInput({
               {fileInputRef.current?.files?.[0] && (
                 <>
                   <div className="space-y-2">
-                    <Label>Select Blossom Servers for Upload:</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Yükleme için Blossom Sunucularını Seçin:</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSelectAllServers}
+                        className="text-xs"
+                      >
+                        {selectedServers.size === blossomServers.length
+                          ? "Hepsini Kaldır"
+                          : "Hepsini Seç"}
+                      </Button>
+                    </div>
                     <div className="space-y-2 max-h-32 overflow-y-auto">
                       {blossomServers.map((server) => (
                         <div key={server} className="flex items-center gap-2">
@@ -333,7 +510,7 @@ export function ImageUrlInput({
                     <CollapsibleTrigger asChild>
                       <Button variant="outline" size="sm" className="w-full">
                         <Settings className="h-4 w-4 mr-2" />
-                        Optimization Settings
+                        Optimizasyon Ayarları
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg bg-muted/50">
@@ -344,13 +521,15 @@ export function ImageUrlInput({
                             checked={optimize}
                             onCheckedChange={(checked) => setOptimize(checked as boolean)}
                           />
-                          <Label htmlFor="optimize">Optimize image (resize & convert format)</Label>
+                          <Label htmlFor="optimize">
+                            Resmi optimize et (boyutlandır ve format dönüştür)
+                          </Label>
                         </div>
 
                         {optimize && (
                           <>
                             <div className="space-y-2">
-                              <Label htmlFor="format">Output Format</Label>
+                              <Label htmlFor="format">Çıktı Formatı</Label>
                               <Select
                                 value={format}
                                 onValueChange={(value: "webp" | "avif" | "jpeg") =>
@@ -361,15 +540,15 @@ export function ImageUrlInput({
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="webp">WebP (recommended)</SelectItem>
-                                  <SelectItem value="avif">AVIF (best compression)</SelectItem>
-                                  <SelectItem value="jpeg">JPEG (compatibility)</SelectItem>
+                                  <SelectItem value="webp">WebP (önerilen)</SelectItem>
+                                  <SelectItem value="avif">AVIF (en iyi sıkıştırma)</SelectItem>
+                                  <SelectItem value="jpeg">JPEG (uyumluluk)</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor="quality">Quality: {quality}%</Label>
+                              <Label htmlFor="quality">Kalite: {quality}%</Label>
                               <Slider
                                 id="quality"
                                 min={10}
@@ -383,7 +562,7 @@ export function ImageUrlInput({
 
                             <div className="space-y-2">
                               <Label htmlFor="maxWidth">
-                                Max Width: {maxWidth ? `${maxWidth}px` : "Original"}
+                                Maksimum Genişlik: {maxWidth ? `${maxWidth}px` : "Orijinal"}
                               </Label>
                               <Slider
                                 id="maxWidth"
@@ -407,7 +586,7 @@ export function ImageUrlInput({
                             onCheckedChange={(checked) => setGenerateBlurHash(checked as boolean)}
                           />
                           <Label htmlFor="generateBlurHash">
-                            Generate BlurHash for progressive loading
+                            Aşamalı yükleme için BlurHash oluştur
                           </Label>
                         </div>
                       </div>
@@ -425,35 +604,33 @@ export function ImageUrlInput({
                       ) : (
                         <Upload className="h-4 w-4" />
                       )}
-                      Upload to Blossom
+                      Blossom'a Yükle
                     </Button>
-                    <Badge variant="outline">
-                      {selectedServers.size} server{selectedServers.size !== 1 ? "s" : ""} selected
-                    </Badge>
+                    <Badge variant="outline">{selectedServers.size} sunucu seçildi</Badge>
                   </div>
 
                   {value && (
                     <div className="flex items-center gap-2">
                       <img
                         src={value}
-                        alt="Preview"
+                        alt="Önizleme"
                         className="h-20 w-20 object-cover rounded border"
                       />
-                      <div className="text-sm text-muted-foreground">Ready to upload</div>
+                      <div className="text-sm text-muted-foreground">Yüklemeye hazır</div>
                     </div>
                   )}
 
                   {/* Upload Results */}
                   {uploadResult && (
                     <div className="space-y-2">
-                      <Label>Upload Results:</Label>
+                      <Label>Yükleme Sonuçları:</Label>
                       <div className="space-y-2">
                         {uploadResult.successful.length > 0 && (
                           <Alert className="border-green-200 bg-green-50">
                             <CheckCircle className="h-4 w-4 text-green-600" />
                             <AlertDescription>
-                              Successfully uploaded to {uploadResult.successful.length} server(s)
-                              {uploadResult.blurhash && " with BlurHash"}
+                              {uploadResult.successful.length} sunucuya başarıyla yüklendi
+                              {uploadResult.blurhash && " BlurHash ile"}
                             </AlertDescription>
                           </Alert>
                         )}
@@ -462,7 +639,7 @@ export function ImageUrlInput({
                           <Alert className="border-red-200 bg-red-50">
                             <AlertTriangle className="h-4 w-4 text-red-600" />
                             <AlertDescription>
-                              Failed to upload to {uploadResult.failed.length} server(s)
+                              {uploadResult.failed.length} sunucuya yükleme başarısız
                             </AlertDescription>
                           </Alert>
                         )}
@@ -471,8 +648,8 @@ export function ImageUrlInput({
                           <div>
                             SHA256: <code className="font-mono">{uploadResult.sha256}</code>
                           </div>
-                          <div>Size: {(uploadResult.size / 1024).toFixed(1)} KB</div>
-                          <div>Type: {uploadResult.contentType}</div>
+                          <div>Boyut: {(uploadResult.size / 1024).toFixed(1)} KB</div>
+                          <div>Tür: {uploadResult.contentType}</div>
                           {uploadResult.blurhash && (
                             <div>
                               BlurHash:{" "}

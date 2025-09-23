@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { WEBSITE_URL } from "@/lib/constants";
 
 import { createNIP98Auth } from "./utils";
 import TagSelector from "./TagSelector";
@@ -69,8 +70,7 @@ export default function NewsComposer({
     setError(null);
 
     try {
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const url = `${origin}/api/admin-panel`;
+      const url = `${WEBSITE_URL}/api/admin-panel`;
 
       const authHeader = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
