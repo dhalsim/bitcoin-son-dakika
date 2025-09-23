@@ -1,3 +1,4 @@
+import type { FetchBlobListsResponse } from "../../schemas.js";
 import type { AuthResult } from "../../types.js";
 import { ErrorResponseCreator, SuccessResponse } from "../../utils.js";
 import type { BlossomServerBlobs, BlobDescriptor } from "../types.js";
@@ -138,9 +139,10 @@ export async function handleFetchBlobLists(
       useCache,
     );
 
-    return SuccessResponse({
+    return SuccessResponse<FetchBlobListsResponse>({
+      success: true,
       message: "Blob lists fetched successfully",
-      data: blobLists,
+      serverBlobs: blobLists,
     });
   } catch (error) {
     console.error("Error fetching blob lists:", error);

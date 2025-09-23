@@ -93,9 +93,15 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
         body: JSON.stringify(data),
       });
 
-      const result: FetchBlobListsResponse = await response.json();
+      if (!response.ok) {
+        setError(response.statusText);
 
-      FetchBlobListsResponseSchema.parse(result);
+        return;
+      }
+
+      const result = await response.json();
+
+      FetchBlobListsResponseSchema.parse(result.data);
 
       if (isErrorResponse(result)) {
         setError(result.message);
@@ -209,26 +215,26 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
 
   return (
     <div className="space-y-4">
+      <div>
+        {(error || blobErrors.size > 0) && (
+          <Alert className="border-red-200 bg-red-50 relative">
+            <button
+              onClick={() => setError(null)}
+              className="absolute top-2 right-2 text-red-600 hover:text-white-800 cursor-pointer text-lg font-bold"
+            >
+              ×
+            </button>
+            <AlertCircle className="h-4 w-4 text-white-600" />
+            {error && <AlertDescription className="text-white-800">{error}</AlertDescription>}
+            {blobErrors.size > 0 && (
+              <AlertDescription className="text-white-800">
+                {Array.from(blobErrors.values()).join(", ")}
+              </AlertDescription>
+            )}
+          </Alert>
+        )}
+      </div>
       <div className="flex items-center justify-between">
-        <div>
-          {(error || blobErrors.size > 0) && (
-            <Alert className="border-red-200 bg-red-50 relative">
-              <button
-                onClick={() => setError(null)}
-                className="absolute top-2 right-2 text-red-600 hover:text-white-800 cursor-pointer text-lg font-bold"
-              >
-                ×
-              </button>
-              <AlertCircle className="h-4 w-4 text-white-600" />
-              {error && <AlertDescription className="text-white-800">{error}</AlertDescription>}
-              {blobErrors.size > 0 && (
-                <AlertDescription className="text-white-800">
-                  {Array.from(blobErrors.values()).join(", ")}
-                </AlertDescription>
-              )}
-            </Alert>
-          )}
-        </div>
         <div>
           <h3 className="text-lg font-semibold">Blossom Sunucuları</h3>
           <p className="text-sm text-muted-foreground">

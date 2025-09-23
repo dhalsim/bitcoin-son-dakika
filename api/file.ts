@@ -5,7 +5,7 @@ import {
   getLastGoodKey,
   getCachedServersKey,
   getBlurHashKey,
-} from "../api-helpers/admin/blossom.js";
+} from "../api-helpers/admin/blossom/common.js";
 import { getBlossomServersEvent } from "../api-helpers/utils.js";
 
 const redis = await createClient({
