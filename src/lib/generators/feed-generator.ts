@@ -1,4 +1,4 @@
-import { createTitleSlug } from "api-helpers/utils";
+import { createTitleSlug } from "api-helpers/common_with_client";
 
 import { WEBSITE_URL, WEBSITE_NAME, WEBSITE_DESCRIPTION, LOGO_URL } from "../constants";
 import type { ContentItem, SSGData } from "../ssg-data";

@@ -2,7 +2,6 @@ import { nip19 } from "nostr-tools";
 import { useEffect, useState } from "react";
 
 import { getProfiles } from "@/lib/nip01";
-import { getCache } from "@/lib/cache";
 import { getDisplayName } from "@/components/ProfileAvatar";
 import { ProfilePopover } from "@/components/ProfilePopover";
 import { type ProfileItem } from "@/lib/nip01";

@@ -26,13 +26,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Payload } from "@/types/admin";
 import { toast } from "@/hooks/use-toast";
 
-import type {
-  ArticleTag,
-  NewsTag,
-  PodcastTag,
-  TagItem,
-} from "../../api-helpers/common_with_client";
-import { ADMIN_RELAYS } from "../../api-helpers/common_with_client";
+import type { ArticleTag, NewsTag, PodcastTag, TagItem } from "api-helpers/common_with_client";
+import { ADMIN_RELAYS } from "api-helpers/common_with_client";
 import {
   ErrorResponseSchema,
   isErrorResponse,
@@ -43,7 +38,7 @@ import {
   PublishResponse,
   PublishResponseSchema,
   SinglePublishResponse,
-} from "../../api-helpers/schemas";
+} from "api-helpers/schemas";
 
 // Displayed while the route hydrates on initial load
 export function HydrateFallback() {

@@ -10,8 +10,8 @@ import type { EventItem } from "@/lib/nip01";
 import type { AddArticlePayload, RemoveArticlePayload } from "@/types/admin";
 import { getPublishedAt } from "@/lib/utils";
 
-import type { ArticleTag, TagItem } from "../../../api-helpers/common_with_client";
-import { extractArticleDataFromEvent } from "../../../api-helpers/common_with_client";
+import type { ArticleTag, TagItem } from "api-helpers/common_with_client";
+import { extractArticleDataFromEvent } from "api-helpers/common_with_client";
 
 import { Skeleton } from "../ui/skeleton";
 

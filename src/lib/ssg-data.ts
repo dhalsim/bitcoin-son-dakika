@@ -1,13 +1,13 @@
 import type { NostrEvent } from "nostr-tools";
 
-import type { TagItem } from "../../api-helpers/common_with_client";
+import type { TagItem } from "api-helpers/common_with_client";
 import {
   extractArticleDataFromEvent,
   extractPodcastDataFromEvent,
   fetchNostrSets,
   pool,
   PROFILE_RELAYS,
-} from "../../api-helpers/common_with_client";
+} from "api-helpers/common_with_client";
 
 import type { EventItem, ProfileItem } from "./nip01";
 import { getProfiles } from "./nip01";

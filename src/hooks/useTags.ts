@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { getTagsEvent, type TagItem } from "../../api-helpers/common_with_client";
+import { getTagsEvent, type TagItem } from "api-helpers/common_with_client";
 
 interface UseTagsResult {
   tags: TagItem[];

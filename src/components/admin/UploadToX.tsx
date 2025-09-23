@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { EventItem } from "@/lib/nip01";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 
-import { createTitleSlug } from "../../../api-helpers/common_with_client";
+import { createTitleSlug } from "api-helpers/common_with_client";
 
 import { PublishToXParams } from "./utils";
 

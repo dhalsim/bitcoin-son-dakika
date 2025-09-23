@@ -13,7 +13,7 @@ import {
   FetchBlobListsResponse,
   FetchBlobListsResponseSchema,
   isErrorResponse,
-} from "../../../../api-helpers/schemas";
+} from "api-helpers/schemas";
 
 import { createNIP98Auth } from "../utils";
 

@@ -9,7 +9,7 @@ import { NIP05Badge } from "@/components/NIP05Badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { type ProfileItem } from "@/lib/nip01";
 
-import { PROFILE_RELAYS } from "../../api-helpers/common_with_client";
+import { PROFILE_RELAYS } from "api-helpers/common_with_client";
 
 interface ProfilePopoverProps {
   pubkey: string;

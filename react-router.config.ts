@@ -4,7 +4,7 @@ import { join } from "path";
 import type { Config } from "@react-router/dev/config";
 import { vercelPreset } from "@vercel/react-router/vite";
 
-import { createTitleSlug } from "./api-helpers/utils";
+import { createTitleSlug } from "./api-helpers/common_with_client";
 import { generateFeeds } from "./src/lib/generators/feed-generator";
 import { generatePodcastRssXml } from "./src/lib/generators/podcast-generator";
 import { generateSitemapXml } from "./src/lib/generators/sitemap-generator";

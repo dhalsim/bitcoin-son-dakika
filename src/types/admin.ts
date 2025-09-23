@@ -1,4 +1,4 @@
-import type { ArticleTag, NewsTag, PodcastTag, TagItem } from "api-helpers/utils";
+import type { ArticleTag, NewsTag, PodcastTag, TagItem } from "api-helpers/common_with_client";
 
 export type AddArticlePayload =
   | { action: "add-article"; type: "naddr"; naddr: string }

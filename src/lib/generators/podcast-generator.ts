@@ -1,4 +1,4 @@
-import { createTitleSlug } from "api-helpers/utils";
+import { createTitleSlug } from "api-helpers/common_with_client";
 
 import { WEBSITE_URL, LOGO_FOR_PODCAST_URL } from "../constants";
 import type { PodcastItem } from "../ssg-data";

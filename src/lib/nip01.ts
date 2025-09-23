@@ -1,7 +1,7 @@
 import type { NostrEvent } from "nostr-tools";
 import { z } from "zod";
 
-import { PROFILE_RELAYS } from "../../api-helpers/common_with_client";
+import { PROFILE_RELAYS } from "api-helpers/common_with_client";
 
 import { getCache } from "./cache";
 import type { Nip65Relays } from "./nip65";

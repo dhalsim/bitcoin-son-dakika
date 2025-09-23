@@ -21,7 +21,7 @@ import { LOGO_URL, WEBSITE_NAME, WEBSITE_URL } from "@/lib/constants";
 import { RssButton } from "@/components/RssButton";
 import { formatDuration, getTimeAgo, links } from "@/lib/utils";
 
-import { createTitleSlug } from "../../api-helpers/common_with_client";
+import { createTitleSlug } from "api-helpers/common_with_client";
 
 export const meta: MetaFunction<typeof loader> = ({ loaderData }) => {
   const podcast = loaderData?.podcast;

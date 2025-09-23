@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { PROFILE_RELAYS } from "../../api-helpers/common_with_client";
+import { PROFILE_RELAYS } from "api-helpers/common_with_client";
 
 interface ProfileDialogProps {
   open: boolean;

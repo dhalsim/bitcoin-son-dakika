@@ -19,7 +19,7 @@ import { createNIP98Auth } from "../utils";
 import {
   DeleteBlossomMediaResponse,
   DeleteBlossomMediaResponseSchema,
-} from "../../../../api-helpers/admin/blossom/delete";
+} from "api-helpers/admin/blossom/delete";
 
 interface BlobDescriptor {
   url: string;

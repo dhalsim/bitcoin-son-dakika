@@ -1,5 +1,4 @@
 import type { NostrEvent } from "nostr-tools";
-import { useState } from "react";
 
 import { NIP05Badge } from "@/components/NIP05Badge";
 import { ProfileAvatar, getDisplayName } from "@/components/ProfileAvatar";

@@ -3,7 +3,7 @@ import type { NostrEvent } from "nostr-tools";
 import { generateSecretKey, getPublicKey, Relay, SimplePool } from "nostr-tools";
 import { twMerge } from "tailwind-merge";
 
-import type { PublishToRelayResult } from "../../api-helpers/schemas";
+import type { PublishToRelayResult } from "api-helpers/schemas";
 
 import type { EventItem } from "./nip01";
 

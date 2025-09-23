@@ -5,7 +5,7 @@ import { Clock, Play } from "lucide-react";
 import type { PodcastItem } from "@/lib/ssg-data";
 import { formatDuration } from "@/lib/utils";
 
-import { createTitleSlug } from "../../api-helpers/common_with_client";
+import { createTitleSlug } from "api-helpers/common_with_client";
 
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
