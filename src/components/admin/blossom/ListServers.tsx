@@ -99,9 +99,9 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
         return;
       }
 
-      const result = await response.json();
+      const result: FetchBlobListsResponse = await response.json();
 
-      FetchBlobListsResponseSchema.parse(result.data);
+      FetchBlobListsResponseSchema.parse(result);
 
       if (isErrorResponse(result)) {
         setError(result.message);
