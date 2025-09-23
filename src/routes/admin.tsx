@@ -322,7 +322,7 @@ export default function AdminPanel() {
 
             const tagItemsLastTimeUpdated = categoriesEvent.created_at * 1000;
 
-            setAdminData({
+            const _adminData: AdminData = {
               adminUsers,
               adminsLastTimeUpdated,
               editorUsers,
@@ -337,7 +337,11 @@ export default function AdminPanel() {
               tagItemsLastTimeUpdated,
               blossomServers,
               blossomServersLastTimeUpdated,
-            });
+            };
+
+            console.log(_adminData);
+
+            setAdminData(_adminData);
 
             setLoading(false);
           },

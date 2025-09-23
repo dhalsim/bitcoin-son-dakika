@@ -37,7 +37,7 @@ export async function handleUpdateBlossomServers(
   const eventTemplate: EventTemplate = {
     kind: 10063,
     created_at: Math.floor(Date.now() / 1000),
-    tags: [["server", ...servers]],
+    tags: servers.map((server) => ["server", server]),
     content: "",
   };
 

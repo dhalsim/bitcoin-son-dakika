@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clock, Save, CheckSquare, Square, Database, AlertCircle } from "lucide-react";
+import { Clock, Save, CheckSquare, Square, Database, AlertCircle, Loader2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,7 @@ interface ListServersProps {
 }
 
 export function ListServers({ servers, lastUpdated, performPublishAction }: ListServersProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set(servers));
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -126,6 +127,8 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
 
   const fetchAllBlobs = async (cache: boolean) => {
     try {
+      setIsLoading(true);
+
       const response = await performListAction({
         action: "fetch-blob-lists",
         servers: BLOSSOM_SERVERS,
@@ -157,6 +160,8 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
             : "Bir hata oluştu";
 
       setError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -234,6 +239,11 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
           </Alert>
         )}
       </div>
+      {isLoading && (
+        <div className="flex items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Blossom Sunucuları</h3>
