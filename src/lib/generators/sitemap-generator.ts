@@ -125,7 +125,9 @@ export function generateSitemapXml(routes: string[], ssgData: SSGData): string {
           throw new Error("No slug found for tag page");
         }
 
-        const latestContentByTag = latestContent.find((c) => c.tagItems.includes(slug));
+        const latestContentByTag = latestContent.find((c) =>
+          c.tagItems.some((tagItem) => tagItem.tag === slug),
+        );
 
         if (!latestContentByTag) {
           return [];
