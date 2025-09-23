@@ -1,7 +1,7 @@
 import { finalizeEvent, type EventTemplate } from "nostr-tools";
 import { hexToBytes } from "nostr-tools/utils";
 
-import { getRedis } from "../../utils.js";
+import type { RedisClient } from "../../utils.js";
 
 // Redis key generators
 export const getServerCacheKey = (server: string) => `blossom-blob-list-${server}`;
@@ -77,10 +77,12 @@ export function createBlossomAuthEvent(privateKey: string): string {
 }
 
 // Cache management functions
-export async function markServerGood(sha256: string, server: string): Promise<void> {
+export async function markServerGood(
+  redis: RedisClient,
+  sha256: string,
+  server: string,
+): Promise<void> {
   const lastGoodKey = getLastGoodKey(sha256);
-
-  const redis = await getRedis();
 
   await redis.set(lastGoodKey, server); // No TTL - persistent until server fails
 
@@ -89,18 +91,22 @@ export async function markServerGood(sha256: string, server: string): Promise<vo
   await redis.del(badKey);
 }
 
-export async function markServerBad(sha256: string, server: string): Promise<void> {
+export async function markServerBad(
+  redis: RedisClient,
+  sha256: string,
+  server: string,
+): Promise<void> {
   const badKey = getBadServerKey(sha256, server);
-
-  const redis = await getRedis();
 
   await redis.set(badKey, "1"); // No TTL - persistent until server succeeds
 }
 
-export async function isServerBad(sha256: string, server: string): Promise<boolean> {
+export async function isServerBad(
+  redis: RedisClient,
+  sha256: string,
+  server: string,
+): Promise<boolean> {
   const badKey = getBadServerKey(sha256, server);
-
-  const redis = await getRedis();
 
   return !!(await redis.exists(badKey));
 }

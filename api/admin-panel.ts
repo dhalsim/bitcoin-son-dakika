@@ -1,5 +1,10 @@
 import { handleAdminPost } from "../api-helpers/admin/dispatcher.js";
-import { ErrorResponseCreator, SuccessResponse, fetchNostrSets } from "../api-helpers/utils.js";
+import {
+  ErrorResponseCreator,
+  getRedis,
+  SuccessResponse,
+  fetchNostrSets,
+} from "../api-helpers/utils.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET(_request: Request) {
@@ -28,7 +33,9 @@ export async function GET(_request: Request) {
 
 // Vercel Edge Function handler for POST requests
 export async function POST(request: Request) {
-  return handleAdminPost(request);
+  const redis = await getRedis();
+
+  return handleAdminPost(redis, request);
 }
 
 // Handle CORS preflight requests

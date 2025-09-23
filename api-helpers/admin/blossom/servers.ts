@@ -4,12 +4,18 @@ import { hexToBytes } from "nostr-tools/utils";
 import { publishToRelays } from "../../../src/lib/utils.js";
 import type { UpdateBlossomServersPayload } from "../../../src/types/admin.js";
 import type { AuthResult } from "../../types.js";
-import { ErrorResponseCreator, PublishEventResponseCreator } from "../../utils.js";
-import { ADMIN_RELAYS, getBlossomServersEvent } from "../../utils.js";
+import type { RedisClient } from "../../utils.js";
+import {
+  ADMIN_RELAYS,
+  getBlossomServersEvent,
+  ErrorResponseCreator,
+  PublishEventResponseCreator,
+} from "../../utils.js";
 
-import { getCachedServersKey, redis } from "./common.js";
+import { getCachedServersKey } from "./common.js";
 
 export async function handleUpdateBlossomServers(
+  redis: RedisClient,
   masterAdminPrivateKey: string,
   authResult: AuthResult,
   requestBody: UpdateBlossomServersPayload,

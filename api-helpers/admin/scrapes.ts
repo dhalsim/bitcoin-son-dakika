@@ -1,14 +1,15 @@
 import { fetchAllSources, type ScrapedItem } from "../scrapers/index.js";
 import type { AuthResult } from "../types.js";
-import { ErrorResponseCreator, getRedis, SuccessResponse } from "../utils.js";
+import type { RedisClient } from "../utils.js";
+import { ErrorResponseCreator, SuccessResponse } from "../utils.js";
 
 const SCRAPES_CACHE_KEY = "scrapes:all";
 const SCRAPES_CACHE_TTL_SECONDS = 15 * 60; // 15 minutes
 
-async function getCachedScrapes(): Promise<{ items: ScrapedItem[]; lastUpdated?: string } | null> {
+async function getCachedScrapes(
+  redis: RedisClient,
+): Promise<{ items: ScrapedItem[]; lastUpdated?: string } | null> {
   try {
-    const redis = await getRedis();
-
     const json = await redis.get(SCRAPES_CACHE_KEY);
 
     if (!json) {
@@ -23,10 +24,10 @@ async function getCachedScrapes(): Promise<{ items: ScrapedItem[]; lastUpdated?:
   }
 }
 
-async function setCachedScrapes(items: ScrapedItem[]) {
+async function setCachedScrapes(redis: RedisClient, items: ScrapedItem[]) {
   try {
-    const redis = await getRedis();
     const payload = JSON.stringify({ items, lastUpdated: new Date().toISOString() });
+
     await redis.set(SCRAPES_CACHE_KEY, payload, {
       expiration: { type: "EX", value: SCRAPES_CACHE_TTL_SECONDS },
     });
@@ -35,14 +36,15 @@ async function setCachedScrapes(items: ScrapedItem[]) {
   }
 }
 
-async function fetchAndCacheScrapes() {
+async function fetchAndCacheScrapes(redis: RedisClient) {
   const items = await fetchAllSources();
-  await setCachedScrapes(items);
+
+  await setCachedScrapes(redis, items);
 
   return items;
 }
 
-export async function handleGetScrapes(authResult: AuthResult) {
+export async function handleGetScrapes(redis: RedisClient, authResult: AuthResult) {
   if (!authResult.success) {
     return ErrorResponseCreator("Authentication failed", 401);
   }
@@ -51,7 +53,8 @@ export async function handleGetScrapes(authResult: AuthResult) {
     return ErrorResponseCreator("Only editors can access scrapes", 403);
   }
 
-  const cached = await getCachedScrapes();
+  const cached = await getCachedScrapes(redis);
+
   if (cached) {
     return SuccessResponse({
       message: "Scrapes from cache",
@@ -61,7 +64,7 @@ export async function handleGetScrapes(authResult: AuthResult) {
   }
 
   try {
-    const items = await fetchAndCacheScrapes();
+    const items = await fetchAndCacheScrapes(redis);
 
     return SuccessResponse({
       message: "Scrapes fetched",
@@ -76,7 +79,7 @@ export async function handleGetScrapes(authResult: AuthResult) {
   }
 }
 
-export async function handleRefreshScrapes(authResult: AuthResult) {
+export async function handleRefreshScrapes(redis: RedisClient, authResult: AuthResult) {
   if (!authResult.success) {
     return ErrorResponseCreator("Authentication failed", 401);
   }
@@ -86,7 +89,7 @@ export async function handleRefreshScrapes(authResult: AuthResult) {
   }
 
   try {
-    const items = await fetchAndCacheScrapes();
+    const items = await fetchAndCacheScrapes(redis);
 
     return SuccessResponse({
       message: "Scrapes refreshed",

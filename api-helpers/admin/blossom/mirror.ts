@@ -1,4 +1,5 @@
 import type { AuthResult } from "../../types.js";
+import type { RedisClient } from "../../utils.js";
 import { ErrorResponseCreator, SuccessResponse } from "../../utils.js";
 import type { BlobDescriptor } from "../types.js";
 
@@ -8,7 +9,6 @@ import {
   getBadServerKey,
   getServerCacheKey,
   markServerGood,
-  redis,
 } from "./common.js";
 
 // Mirror blob from source URL to target servers
@@ -40,6 +40,7 @@ export async function mirrorBlobToServer(
 
 // Main mirror handler
 export async function handleMirrorBlossomMedia(
+  redis: RedisClient,
   masterAdminPrivateKey: string,
   authResult: AuthResult,
   requestBody: { servers: string[]; sourceUrl: string },
@@ -76,7 +77,8 @@ export async function handleMirrorBlossomMedia(
         const descriptor = await mirrorBlobToServer(server, sourceUrl, sha256, authBase64);
 
         // Cache updates on success - sequential to ensure consistency
-        await markServerGood(sha256, server);
+        await markServerGood(redis, sha256, server);
+
         await redis.del(getServerCacheKey(server));
         await redis.del(getBadServerKey(sha256, server));
 

@@ -1,3 +1,4 @@
+import type { RedisClient } from "../utils.js";
 import { authenticateNIP98, ErrorResponseCreator, fetchNostrSets } from "../utils.js";
 
 import { handleAddArticle, handleRemoveArticle, handlePublishArticle } from "./articles.js";
@@ -15,7 +16,7 @@ import { handleTranslateNews } from "./translate.js";
 import { handleUploadToX } from "./twitter.js";
 import { handleAddAdmin, handleAddEditor, handleRemoveAdmin, handleRemoveEditor } from "./users.js";
 
-export async function handleAdminPost(request: Request): Promise<Response> {
+export async function handleAdminPost(redis: RedisClient, request: Request): Promise<Response> {
   try {
     const { adminUsers, editorUsers, articleTags, newsTags, podcastTags } = await fetchNostrSets([
       "admin-users",
@@ -132,9 +133,9 @@ export async function handleAdminPost(request: Request): Promise<Response> {
       case "trigger-deploy":
         return handleTriggerDeploy(request);
       case "get-scrapes":
-        return handleGetScrapes(authResult);
+        return handleGetScrapes(redis, authResult);
       case "refresh-scrapes":
-        return handleRefreshScrapes(authResult);
+        return handleRefreshScrapes(redis, authResult);
       case "add-editor-pubkey":
         return handleAddEditor(masterAdminPrivateKey, editorUsers, authResult, requestBody);
       case "remove-editor-pubkey":
@@ -164,13 +165,13 @@ export async function handleAdminPost(request: Request): Promise<Response> {
       case "update-tags":
         return handleUpdateTags(masterAdminPrivateKey, authResult, requestBody);
       case "update-blossom-servers":
-        return handleUpdateBlossomServers(masterAdminPrivateKey, authResult, requestBody);
+        return handleUpdateBlossomServers(redis, masterAdminPrivateKey, authResult, requestBody);
       case "fetch-blob-lists":
-        return handleFetchBlobLists(masterAdminPrivateKey, authResult, requestBody);
+        return handleFetchBlobLists(redis, masterAdminPrivateKey, authResult, requestBody);
       case "mirror-blossom-media":
-        return handleMirrorBlossomMedia(masterAdminPrivateKey, authResult, requestBody);
+        return handleMirrorBlossomMedia(redis, masterAdminPrivateKey, authResult, requestBody);
       case "delete-blossom-media":
-        return handleDeleteBlossomMedia(masterAdminPrivateKey, authResult, requestBody);
+        return handleDeleteBlossomMedia(redis, masterAdminPrivateKey, authResult, requestBody);
       default:
         return ErrorResponseCreator("Invalid action", 400);
     }

@@ -2,7 +2,8 @@
 import z from "zod";
 
 import type { AuthResult } from "../../types.js";
-import { ErrorResponseCreator, getRedis, SuccessResponse } from "../../utils.js";
+import type { RedisClient } from "../../utils.js";
+import { ErrorResponseCreator, SuccessResponse } from "../../utils.js";
 
 import {
   createMasterAuthBase64,
@@ -65,6 +66,7 @@ export async function deleteBlobFromServer(
 
 // Main delete handler
 export async function handleDeleteBlossomMedia(
+  redis: RedisClient,
   masterAdminPrivateKey: string,
   authResult: AuthResult,
   requestBody: { servers: string[]; sha256: string },
@@ -97,9 +99,7 @@ export async function handleDeleteBlossomMedia(
         // Cache updates
         if (result.success) {
           // If delete was successful, mark server as bad for this blob
-          await markServerBad(sha256, server);
-
-          const redis = await getRedis();
+          await markServerBad(redis, sha256, server);
 
           // Clear server cache
           await redis.del(getServerCacheKey(server));

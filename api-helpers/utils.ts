@@ -593,7 +593,9 @@ export function getBlossomServersEvent() {
   });
 }
 
-let redisClient: ReturnType<typeof createClient> | null = null;
+export type RedisClient = ReturnType<typeof createClient>;
+
+let redisClient: RedisClient | null = null;
 
 export async function getRedis() {
   if (!redisClient) {

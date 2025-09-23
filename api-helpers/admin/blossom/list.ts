@@ -1,13 +1,15 @@
 import type { FetchBlobListsResponse } from "../../schemas.js";
 import { BlobDescriptorSchema } from "../../schemas.js";
 import type { AuthResult } from "../../types.js";
+import type { RedisClient } from "../../utils.js";
 import { ErrorResponseCreator, SuccessResponse } from "../../utils.js";
 import type { BlossomServerBlobs, BlobDescriptor } from "../types.js";
 
-import { createBlossomAuthEvent, getServerCacheKey, redis } from "./common.js";
+import { createBlossomAuthEvent, getServerCacheKey } from "./common.js";
 
 // Fetch blob list from a single Blossom server
 async function fetchBlobListFromServer(
+  redis: RedisClient,
   server: string,
   pubkey: string,
   privateKey: string,
@@ -85,6 +87,7 @@ async function fetchBlobListFromServer(
 
 // Fetch blob lists from multiple Blossom servers in parallel
 async function fetchBlobListsFromServers(
+  redis: RedisClient,
   servers: string[],
   pubkey: string,
   privateKey: string,
@@ -112,7 +115,7 @@ async function fetchBlobListsFromServers(
       }
     }
 
-    return fetchBlobListFromServer(server, pubkey, privateKey);
+    return fetchBlobListFromServer(redis, server, pubkey, privateKey);
   });
 
   return Promise.all(promises);
@@ -120,6 +123,7 @@ async function fetchBlobListsFromServers(
 
 // Handler function for fetching blob lists from admin panel
 export async function handleFetchBlobLists(
+  redis: RedisClient,
   masterAdminPrivateKey: string,
   authResult: AuthResult,
   requestBody: { servers: string[]; useCache: boolean },
@@ -147,6 +151,7 @@ export async function handleFetchBlobLists(
 
   try {
     const blobLists = await fetchBlobListsFromServers(
+      redis,
       servers,
       authResult.pubkey,
       masterAdminPrivateKey,

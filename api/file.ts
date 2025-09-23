@@ -4,6 +4,7 @@ import {
   getCachedServersKey,
   getBlurHashKey,
 } from "../api-helpers/admin/blossom/common.js";
+import type { RedisClient } from "../api-helpers/utils.js";
 import { getBlossomServersEvent, getRedis } from "../api-helpers/utils.js";
 
 // Extract sha256 from URL path (last 64-char hex string)
@@ -14,9 +15,7 @@ function extractSha256FromPath(pathname: string): string | null {
 }
 
 // Get server list in priority order
-async function getServerList(sha256: string): Promise<string[]> {
-  const redis = await getRedis();
-
+async function getServerList(redis: RedisClient, sha256: string): Promise<string[]> {
   // 1. Try last-good server first
   const lastGood = await redis.get(getLastGoodKey(sha256));
 
@@ -44,6 +43,7 @@ async function getServerList(sha256: string): Promise<string[]> {
 
   // 3. Fallback to cached servers
   const cachedServers = await redis.get(getCachedServersKey());
+
   if (cachedServers) {
     try {
       const servers = JSON.parse(cachedServers);
@@ -60,7 +60,7 @@ async function getServerList(sha256: string): Promise<string[]> {
 }
 
 // Check if server is marked as bad for this blob
-async function isServerBad(sha256: string, server: string): Promise<boolean> {
+async function isServerBad(redis: RedisClient, sha256: string, server: string): Promise<boolean> {
   const badKey = getBadServerKey(sha256, server);
 
   return (await redis.exists(badKey)) > 0;
@@ -68,27 +68,32 @@ async function isServerBad(sha256: string, server: string): Promise<boolean> {
 
 // Mark server as bad for this blob
 async function markServerBad(
+  redis: RedisClient,
   sha256: string,
   server: string,
   ttlSeconds: number = 900,
 ): Promise<void> {
   const badKey = getBadServerKey(sha256, server);
+
   await redis.set(badKey, "1", { expiration: { type: "EX", value: ttlSeconds } });
 }
 
 // Mark server as good for this blob
-async function markServerGood(sha256: string, server: string): Promise<void> {
+async function markServerGood(redis: RedisClient, sha256: string, server: string): Promise<void> {
   const lastGoodKey = getLastGoodKey(sha256);
   const _24hoursInSeconds = 60 * 60 * 24;
-  await redis.set(lastGoodKey, server, { expiration: { type: "EX", value: _24hoursInSeconds } }); // 24h TTL
+
+  await redis.set(lastGoodKey, server, { expiration: { type: "EX", value: _24hoursInSeconds } });
 
   // Clear bad flag
   const badKey = getBadServerKey(sha256, server);
+
   await redis.del(badKey);
 }
 
 // Get BlurHash metadata from Redis
 async function getBlurHashMetadata(
+  redis: RedisClient,
   sha256: string,
 ): Promise<{ blurhash: string; width: number; height: number; contentType: string } | null> {
   const metadata = await redis.get(getBlurHashKey(sha256));
@@ -135,6 +140,8 @@ async function fetchFromServer(
 
 // Main handler for GET requests
 export async function GET(request: Request) {
+  const redis = await getRedis();
+
   const url = new URL(request.url);
 
   // Extract sha256 from path
@@ -145,13 +152,13 @@ export async function GET(request: Request) {
   }
 
   try {
-    const servers = await getServerList(sha256);
+    const servers = await getServerList(redis, sha256);
 
     let lastError: string = "";
 
     for (const server of servers) {
       // Skip if server is marked as bad
-      if (await isServerBad(sha256, server)) {
+      if (await isServerBad(redis, sha256, server)) {
         continue;
       }
 
@@ -159,7 +166,7 @@ export async function GET(request: Request) {
 
       if (response && response.ok) {
         // Success - mark server as good
-        await markServerGood(sha256, server);
+        await markServerGood(redis, sha256, server);
 
         // Create response with proper headers
         const responseHeaders = new Headers();
@@ -196,7 +203,7 @@ export async function GET(request: Request) {
       } else if (response) {
         // Server responded but with error
         lastError = `Server ${server}: ${response.status} ${response.statusText}`;
-        await markServerBad(sha256, server);
+        await markServerBad(redis, sha256, server);
       }
     }
 
@@ -224,6 +231,8 @@ export async function GET(request: Request) {
 
 // Handler for HEAD requests
 export async function HEAD(request: Request) {
+  const redis = await getRedis();
+
   const url = new URL(request.url);
 
   // Extract sha256 from path
@@ -234,12 +243,12 @@ export async function HEAD(request: Request) {
   }
 
   try {
-    const servers = await getServerList(sha256);
+    const servers = await getServerList(redis, sha256);
     let lastError: string = "";
 
     for (const server of servers) {
       // Skip if server is marked as bad
-      if (await isServerBad(sha256, server)) {
+      if (await isServerBad(redis, sha256, server)) {
         continue;
       }
 
@@ -247,10 +256,10 @@ export async function HEAD(request: Request) {
 
       if (response && response.ok) {
         // Success - mark server as good
-        await markServerGood(sha256, server);
+        await markServerGood(redis, sha256, server);
 
         // Get BlurHash metadata
-        const blurHashMeta = await getBlurHashMetadata(sha256);
+        const blurHashMeta = await getBlurHashMetadata(redis, sha256);
 
         // Create response with proper headers
         const responseHeaders = new Headers();
@@ -295,7 +304,8 @@ export async function HEAD(request: Request) {
       } else if (response) {
         // Server responded but with error
         lastError = `Server ${server}: ${response.status} ${response.statusText}`;
-        await markServerBad(sha256, server);
+
+        await markServerBad(redis, sha256, server);
       }
     }
 
