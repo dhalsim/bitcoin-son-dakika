@@ -355,6 +355,7 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
           blobs={serverBlobs.get(selectedServer) || []}
           open={sheetOpen}
           onOpenChange={setSheetOpen}
+          onBlobDeleted={() => fetchAllBlobs(true)}
         />
       )}
     </div>

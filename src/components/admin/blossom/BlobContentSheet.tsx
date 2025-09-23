@@ -1,4 +1,5 @@
-import { ExternalLink, Calendar, FileText, Hash } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Calendar, FileText, Hash, Trash2, Loader2, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { DeleteBlossomMediaPayload } from "@/types/admin";
+import { createNIP98Auth } from "../utils";
+import {
+  DeleteBlossomMediaResponse,
+  DeleteBlossomMediaResponseSchema,
+} from "../../../../api-helpers/admin/blossom/delete";
 
 interface BlobDescriptor {
   url: string;
@@ -25,6 +34,7 @@ interface BlobContentSheetProps {
   blobs: BlobDescriptor[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onBlobDeleted?: () => void; // Callback to refresh the blob list
 }
 
 export default function BlobContentSheet({
@@ -32,7 +42,12 @@ export default function BlobContentSheet({
   blobs,
   open,
   onOpenChange,
+  onBlobDeleted,
 }: BlobContentSheetProps) {
+  const { getPublicKey, signEvent } = useNostrAuth();
+  const [isDeleting, setIsDeleting] = useState<string | null>(null); // Track which blob is being deleted
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -67,6 +82,86 @@ export default function BlobContentSheet({
     return "📄";
   };
 
+  const performDeleteBlobAction = async (
+    data: DeleteBlossomMediaPayload,
+  ): Promise<DeleteBlossomMediaResponse | null> => {
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const url = `${origin}/api/admin-panel`;
+      const authHeader = await createNIP98Auth(
+        "POST",
+        url,
+        () => getPublicKey({ options: { reason: "Blob silme işlemi" } }),
+        (params) => signEvent({ event: params.event, options: { reason: "Blob silme işlemi" } }),
+      );
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        setDeleteError(response.statusText);
+        return null;
+      }
+
+      const result: DeleteBlossomMediaResponse = await response.json();
+
+      DeleteBlossomMediaResponseSchema.parse(result);
+
+      result.failed;
+
+      return result;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Silme işlemi sırasında bir hata oluştu";
+
+      setDeleteError(errorMessage);
+      return null;
+    }
+  };
+
+  const handleDeleteBlob = async (blob: BlobDescriptor) => {
+    setIsDeleting(blob.sha256);
+    setDeleteError(null);
+    setDeleteSuccess(null);
+
+    try {
+      const response = await performDeleteBlobAction({
+        action: "delete-blossom-media",
+        servers: [server],
+        sha256: blob.sha256,
+      });
+
+      if (response && response.successful.length > 0) {
+        setDeleteSuccess(`Blob başarıyla silindi: ${blob.sha256.substring(0, 8)}...`);
+
+        // Call the callback to refresh the blob list
+        if (onBlobDeleted) {
+          onBlobDeleted();
+        }
+      } else {
+        setDeleteError("Blob silinemedi");
+      }
+    } catch (error) {
+      setDeleteError("Silme işlemi sırasında bir hata oluştu");
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  const handleOpenInNewTab = (url: string) => {
+    window.open(url, "_blank");
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-[600px] sm:w-[800px]">
@@ -80,6 +175,21 @@ export default function BlobContentSheet({
 
         <ScrollArea className="h-[calc(100vh-120px)] mt-6">
           <div className="space-y-4">
+            {/* Error Alert */}
+            {deleteError && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">{deleteError}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Success Alert */}
+            {deleteSuccess && (
+              <Alert className="border-green-200 bg-green-50">
+                <AlertCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">{deleteSuccess}</AlertDescription>
+              </Alert>
+            )}
             {blobs.length === 0 ? (
               <Card>
                 <CardContent className="flex items-center justify-center py-8">
@@ -125,7 +235,7 @@ export default function BlobContentSheet({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(blob.url, "_blank")}
+                          onClick={() => handleOpenInNewTab(blob.url)}
                           className="flex-shrink-0"
                         >
                           <ExternalLink className="h-3 w-3" />
@@ -160,13 +270,32 @@ export default function BlobContentSheet({
                         </span>
                       </div>
 
+                      {/* Delete Button */}
+                      <div className="flex items-center gap-2 pt-2">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteBlob(blob)}
+                          disabled={isDeleting === blob.sha256}
+                          className="flex items-center gap-1"
+                        >
+                          {isDeleting === blob.sha256 ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                          {isDeleting === blob.sha256 ? "Siliniyor..." : "Sil"}
+                        </Button>
+                      </div>
+
                       {/* File Preview */}
                       {blob.type.startsWith("image/") && (
                         <div className="mt-3">
                           <img
                             src={blob.url}
                             alt="Preview"
-                            className="max-w-full h-32 object-cover rounded border"
+                            className="max-w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => handleOpenInNewTab(blob.url)}
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = "none";
                             }}

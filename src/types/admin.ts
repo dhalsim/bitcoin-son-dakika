@@ -105,6 +105,12 @@ export type FetchBlobListsPayload = {
   useCache: boolean;
 };
 
+export type DeleteBlossomMediaPayload = {
+  action: "delete-blossom-media";
+  servers: string[];
+  sha256: string;
+};
+
 export type Payload =
   | AddNewsPayload
   | RemoveNewsPayload
@@ -121,4 +127,5 @@ export type Payload =
   | TranslateNewsPayload
   | UpdateTagsPayload
   | UpdateBlossomServersPayload
-  | FetchBlobListsPayload;
+  | FetchBlobListsPayload
+  | DeleteBlossomMediaPayload;

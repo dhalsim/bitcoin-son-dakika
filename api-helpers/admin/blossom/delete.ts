@@ -1,4 +1,6 @@
 // Delete functionality for Blossom servers
+import z from "zod";
+
 import type { AuthResult } from "../../types.js";
 import { ErrorResponseCreator, SuccessResponse } from "../../utils.js";
 
@@ -9,6 +11,34 @@ import {
   markServerBad,
   redis,
 } from "./common.js";
+
+export const DeleteBlossomMediaResponseSchema = z.object({
+  successful: z.array(
+    z.object({
+      server: z.string(),
+      success: z.literal(true),
+      status: z.number(),
+      message: z.string(),
+    }),
+  ),
+  failed: z.array(
+    z.object({
+      server: z.string(),
+      error: z.string(),
+    }),
+  ),
+  partialFailures: z.array(
+    z.object({
+      server: z.string(),
+      success: z.literal(false),
+      status: z.number(),
+      message: z.string(),
+    }),
+  ),
+  sha256: z.string(),
+});
+
+export type DeleteBlossomMediaResponse = z.infer<typeof DeleteBlossomMediaResponseSchema>;
 
 // Delete blob from a single Blossom server
 export async function deleteBlobFromServer(
@@ -75,6 +105,7 @@ export async function handleDeleteBlossomMedia(
 
           // If this was the last-good server, clear it
           const lastGood = await redis.get(getLastGoodKey(sha256));
+
           if (lastGood === server) {
             await redis.del(getLastGoodKey(sha256));
           }
@@ -90,7 +121,7 @@ export async function handleDeleteBlossomMedia(
           r,
         ): r is PromiseFulfilledResult<{
           server: string;
-          success: boolean;
+          success: true;
           status: number;
           message: string;
         }> => r.status === "fulfilled" && r.value.success,
@@ -110,21 +141,21 @@ export async function handleDeleteBlossomMedia(
           r,
         ): r is PromiseFulfilledResult<{
           server: string;
-          success: boolean;
+          success: false;
           status: number;
           message: string;
         }> => r.status === "fulfilled" && !r.value.success,
       )
       .map((r) => r.value);
 
-    return SuccessResponse({
-      message: `Deleted from ${successful.length} / ${servers.length} servers`,
-      data: {
-        successful,
-        failed: [...failed, ...partialFailures],
-        sha256,
-      },
-    });
+    const data: DeleteBlossomMediaResponse = {
+      successful,
+      failed,
+      partialFailures,
+      sha256,
+    };
+
+    return SuccessResponse<DeleteBlossomMediaResponse>(data);
   } catch (error) {
     console.error("Error deleting from Blossom:", error);
 
