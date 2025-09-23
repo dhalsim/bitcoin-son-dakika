@@ -115,7 +115,11 @@ if (result.success) {
 #### Server List Update (`handleUpdateBlossomServers`):
 
 ```javascript
-await redis.setex(getCachedServersKey(), 60 * 60 * 24 * 7, JSON.stringify(servers));
+const _7daysInSeconds = 60 * 60 * 24 * 7;
+
+await redis.set(getCachedServersKey(), JSON.stringify(servers), {
+  expiration: { type: "EX", value: _7daysInSeconds },
+});
 // Sets: blossom:cached-servers → servers (7 days TTL)
 ```
 

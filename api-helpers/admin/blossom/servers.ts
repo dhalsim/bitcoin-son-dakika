@@ -46,7 +46,11 @@ export async function handleUpdateBlossomServers(
   const result = await publishToRelays(event, ADMIN_RELAYS);
 
   // Cache the servers list for fallback use
-  await redis.setex(getCachedServersKey(), 60 * 60 * 24 * 7, JSON.stringify(servers)); // 7 days TTL
+  const _7daysInSeconds = 60 * 60 * 24 * 7;
+
+  await redis.set(getCachedServersKey(), JSON.stringify(servers), {
+    expiration: { type: "EX", value: _7daysInSeconds },
+  }); // 7 days TTL
 
   return PublishEventResponseCreator(
     { message: "Blossom sunucuları güncellendi", result },

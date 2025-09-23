@@ -77,13 +77,14 @@ async function markServerBad(
   ttlSeconds: number = 900,
 ): Promise<void> {
   const badKey = getBadServerKey(sha256, server);
-  await redis.setex(badKey, ttlSeconds, "1");
+  await redis.set(badKey, "1", { expiration: { type: "EX", value: ttlSeconds } });
 }
 
 // Mark server as good for this blob
 async function markServerGood(sha256: string, server: string): Promise<void> {
   const lastGoodKey = getLastGoodKey(sha256);
-  await redis.setex(lastGoodKey, 60 * 60 * 24, server); // 24h TTL
+  const _24hoursInSeconds = 60 * 60 * 24;
+  await redis.set(lastGoodKey, server, { expiration: { type: "EX", value: _24hoursInSeconds } }); // 24h TTL
 
   // Clear bad flag
   const badKey = getBadServerKey(sha256, server);

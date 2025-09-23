@@ -43,7 +43,9 @@ async function setCachedScrapes(items: ScrapedItem[]) {
   try {
     const redis = await getRedis();
     const payload = JSON.stringify({ items, lastUpdated: new Date().toISOString() });
-    await redis.set(SCRAPES_CACHE_KEY, payload, { EX: SCRAPES_CACHE_TTL_SECONDS });
+    await redis.set(SCRAPES_CACHE_KEY, payload, {
+      expiration: { type: "EX", value: SCRAPES_CACHE_TTL_SECONDS },
+    });
   } catch {
     // ignore cache errors
   }
