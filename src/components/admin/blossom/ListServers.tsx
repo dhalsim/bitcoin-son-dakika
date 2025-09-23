@@ -215,14 +215,14 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
             <Alert className="border-red-200 bg-red-50 relative">
               <button
                 onClick={() => setError(null)}
-                className="absolute top-2 right-2 text-red-600 hover:text-red-800 cursor-pointer text-lg font-bold"
+                className="absolute top-2 right-2 text-red-600 hover:text-white-800 cursor-pointer text-lg font-bold"
               >
                 ×
               </button>
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              {error && <AlertDescription className="text-red-800">{error}</AlertDescription>}
+              <AlertCircle className="h-4 w-4 text-white-600" />
+              {error && <AlertDescription className="text-white-800">{error}</AlertDescription>}
               {blobErrors.size > 0 && (
-                <AlertDescription className="text-red-800">
+                <AlertDescription className="text-white-800">
                   {Array.from(blobErrors.values()).join(", ")}
                 </AlertDescription>
               )}

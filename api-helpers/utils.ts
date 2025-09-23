@@ -98,7 +98,7 @@ export function PublishEventResponseCreator(
   });
 }
 
-export function SuccessResponse(data: Record<string, unknown>, status: number = 200) {
+export function SuccessResponse<T = Record<string, unknown>>(data: T, status: number = 200) {
   return new Response(
     JSON.stringify({
       success: true,

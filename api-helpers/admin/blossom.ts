@@ -10,6 +10,7 @@ import sharp from "sharp";
 
 import { publishToRelays } from "../../src/lib/utils.js";
 import type { UpdateBlossomServersPayload } from "../../src/types/admin.js";
+import type { FetchBlobListsResponse } from "../schemas.js";
 import type { AuthResult } from "../types.js";
 import {
   ADMIN_RELAYS,
@@ -345,9 +346,10 @@ export async function handleFetchBlobLists(
       useCache,
     );
 
-    return SuccessResponse({
+    return SuccessResponse<FetchBlobListsResponse>({
+      success: true,
       message: "Blob lists fetched successfully",
-      data: blobLists,
+      serverBlobs: blobLists,
     });
   } catch (error) {
     console.error("Error fetching blob lists:", error);

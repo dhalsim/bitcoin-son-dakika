@@ -67,6 +67,7 @@ export const BlossomServerBlobsSchema = z.object({
 
 export const FetchBlobListsSuccessResponseSchema = z.object({
   success: z.literal(true),
+  message: z.string(),
   serverBlobs: z.array(BlossomServerBlobsSchema),
 });
 
