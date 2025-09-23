@@ -7,7 +7,7 @@ import { useLoaderData } from "react-router";
 import { FollowButton } from "@/components/FollowButton.js";
 import { NIP05Badge } from "@/components/NIP05Badge.js";
 
-import { PROFILE_RELAYS } from "../../api-helpers/utils.js";
+import { PROFILE_RELAYS } from "../../api-helpers/common_with_client.js";
 
 import MainContent from "../components/MainContent.js";
 import NewsCard from "../components/NewsCard.js";

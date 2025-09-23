@@ -1,8 +1,9 @@
 import { AlertCircle, RefreshCw, Shield, Users, Mic } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { ArticleTag, NewsTag, PodcastTag } from "api-helpers/utils";
 import { AdminTab } from "@/routes/admin";
+
+import { ArticleTag, NewsTag, PodcastTag } from "../../../api-helpers/common_with_client";
 
 type AdminData = {
   adminUsers: string[];

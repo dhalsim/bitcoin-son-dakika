@@ -1,5 +1,5 @@
-import type { RedisClient } from "../utils.js";
-import { authenticateNIP98, ErrorResponseCreator, fetchNostrSets } from "../utils.js";
+import type { RedisClient } from "../common.js";
+import { authenticateNIP98, ErrorResponseCreator, fetchNostrSets } from "../common_with_client.js";
 
 import { handleAddArticle, handleRemoveArticle, handlePublishArticle } from "./articles.js";
 import { handleDeleteBlossomMedia } from "./blossom/delete.js";

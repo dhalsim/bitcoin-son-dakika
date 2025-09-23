@@ -1,5 +1,9 @@
-import { ErrorResponseCreator, SuccessResponse } from "../utils.js";
-import { authenticateNIP98, fetchNostrSets } from "../utils.js";
+import {
+  authenticateNIP98,
+  fetchNostrSets,
+  ErrorResponseCreator,
+  SuccessResponse,
+} from "../common_with_client.js";
 
 export async function handleTriggerDeploy(request: Request) {
   try {

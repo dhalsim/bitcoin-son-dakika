@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { UpdateTagsPayload } from "@/types/admin";
-
 import { useTags } from "@/hooks/useTags";
 import { useSSGData } from "@/contexts/SSGContext";
 

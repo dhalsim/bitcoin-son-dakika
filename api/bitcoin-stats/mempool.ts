@@ -9,7 +9,7 @@ import {
   applyCacheHeaders,
   ErrorResponseCreator,
   SuccessResponse,
-} from "../../api-helpers/utils.js";
+} from "../../api-helpers/common_with_client.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET() {

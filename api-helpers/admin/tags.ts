@@ -3,14 +3,14 @@ import { finalizeEvent } from "nostr-tools";
 import { hexToBytes } from "nostr-tools/utils";
 
 import { publishToRelays } from "../../src/lib/utils.js";
-import type { AuthResult } from "../types.js";
-import type { TagItem } from "../utils.js";
+import type { TagItem } from "../common_with_client.js";
 import {
   ADMIN_RELAYS,
   getTagsEvent,
   ErrorResponseCreator,
   PublishEventResponseCreator,
-} from "../utils.js";
+} from "../common_with_client.js";
+import type { AuthResult } from "../types.js";
 
 export interface GetTagsResponse {
   tags: TagItem[];

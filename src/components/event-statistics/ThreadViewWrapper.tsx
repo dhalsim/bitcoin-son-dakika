@@ -2,16 +2,16 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-
-import { RichTextPreview } from "./RichTextPreview";
-import { ThreadView } from "../ThreadView";
-import type { ThreadViewWrapperProps } from "./types";
-import { isContainerAtBottom } from "./utils";
 import type { EventItem } from "@/lib/nip01";
 import { postNip22Reply } from "@/lib/nip22";
 import { postKind1Reply } from "@/lib/nip10";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { useToast } from "@/hooks/use-toast";
+
+import { RichTextPreview } from "./RichTextPreview";
+import { ThreadView } from "../ThreadView";
+import type { ThreadViewWrapperProps } from "./types";
+import { isContainerAtBottom } from "./utils";
 
 export function ThreadViewWrapper({
   thread,

@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-import { ErrorResponseCreator } from "../utils.js";
+import { ErrorResponseCreator } from "../common_with_client.js";
 
 import type { AuthResult, XAuthHeaderParams } from "./types.js";
 

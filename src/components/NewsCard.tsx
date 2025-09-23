@@ -6,7 +6,7 @@ import { createAuthorSlug } from "@/lib/ssg-data";
 import { RenderedText } from "@/lib/text-renderer";
 import { getTimeAgo, links } from "@/lib/utils";
 
-import { createTitleSlug, type TagItem } from "../../api-helpers/utils";
+import { createTitleSlug, type TagItem } from "../../api-helpers/common_with_client";
 
 import { CategoryTags } from "./CategoryTags";
 import { EventStatistics } from "./EventStatistics";

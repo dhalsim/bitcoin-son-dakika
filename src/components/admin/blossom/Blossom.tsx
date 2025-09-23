@@ -9,11 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { ProgressiveBlossomImage } from "@/components/common/ProgressiveBlossomImage";
+import { UpdateBlossomServersPayload } from "@/types/admin";
 
 import { ListServers } from "./ListServers";
 import { BlossomImageUpload } from "./BlossomImageUpload";
-import { ProgressiveBlossomImage } from "@/components/common/ProgressiveBlossomImage";
-import { FetchBlobListsPayload, UpdateBlossomServersPayload } from "@/types/admin";
 
 interface BlossomProps {
   servers: string[];

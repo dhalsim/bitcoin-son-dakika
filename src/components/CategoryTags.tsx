@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 import { cn, links } from "@/lib/utils";
 
-import { type TagItem } from "../../api-helpers/utils";
+import { type TagItem } from "../../api-helpers/common_with_client";
 
 interface CategoryTagsProps {
   tagItems: TagItem[];

@@ -6,7 +6,7 @@ import { getTimeAgo, links } from "@/lib/utils";
 import type { SSGData } from "@/lib/ssg-data";
 import { createAuthorSlug } from "@/lib/ssg-data";
 
-import { createTitleSlug } from "../../api-helpers/utils";
+import { createTitleSlug } from "../../api-helpers/common_with_client";
 
 import { CategoryTags } from "../components/CategoryTags";
 import { EventStatistics } from "../components/EventStatistics";

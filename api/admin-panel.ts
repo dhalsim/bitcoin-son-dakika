@@ -1,10 +1,10 @@
 import { handleAdminPost } from "../api-helpers/admin/dispatcher.js";
+import { getRedis } from "../api-helpers/common.js";
 import {
   ErrorResponseCreator,
-  getRedis,
   SuccessResponse,
   fetchNostrSets,
-} from "../api-helpers/utils.js";
+} from "../api-helpers/common_with_client.js";
 
 // Vercel Edge Function handler for GET requests
 export async function GET(_request: Request) {

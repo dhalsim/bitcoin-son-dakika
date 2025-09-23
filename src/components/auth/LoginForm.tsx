@@ -3,6 +3,7 @@ import { Key, Smartphone } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginResult } from "@/contexts/NostrAuthContext";
+
 import { Nip07Auth } from "./Nip07Auth";
 import { NostrConnectAuth } from "./NostrConnectAuth";
 

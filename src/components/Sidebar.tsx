@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import type { ArticleItem, NewsItem, PodcastItem } from "@/lib/ssg-data";
 import { formatNostrDate, links } from "@/lib/utils";
 
-import { createTitleSlug } from "../../api-helpers/utils";
+import { createTitleSlug } from "../../api-helpers/common_with_client";
 
 import { useBitcoinStats } from "../hooks/useBitcoinStats";
 

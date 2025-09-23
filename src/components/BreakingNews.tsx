@@ -2,7 +2,7 @@ import { useMemo } from "react";
 
 import { links } from "@/lib/utils";
 
-import { createTitleSlug } from "../../api-helpers/utils";
+import { createTitleSlug } from "../../api-helpers/common_with_client";
 
 import { useLatestNews } from "../contexts/SSGContext";
 

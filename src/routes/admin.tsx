@@ -26,8 +26,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Payload } from "@/types/admin";
 import { toast } from "@/hooks/use-toast";
 
-import type { ArticleTag, NewsTag, PodcastTag, TagItem } from "../../api-helpers/utils";
-import { ADMIN_RELAYS } from "../../api-helpers/utils";
+import type {
+  ArticleTag,
+  NewsTag,
+  PodcastTag,
+  TagItem,
+} from "../../api-helpers/common_with_client";
+import { ADMIN_RELAYS } from "../../api-helpers/common_with_client";
 import {
   ErrorResponseSchema,
   isErrorResponse,

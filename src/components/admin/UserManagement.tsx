@@ -1,6 +1,7 @@
 import { Loader2, Shield, Trash2, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { getProfiles, ProfileItem } from "@/lib/nip01";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileAvatar, getDisplayName } from "@/components/ProfileAvatar";
 
 import { validateNpub } from "./utils";
-import { getProfiles, ProfileItem } from "@/lib/nip01";
 
 export default function UserManagement({
   adminUsers,

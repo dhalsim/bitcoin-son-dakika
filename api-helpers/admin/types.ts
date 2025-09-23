@@ -1,9 +1,9 @@
-import type { AuthResult } from "../types.js";
 import type {
   ArticleTag,
   NewsTag,
   PublishEventResponseCreator as PublishEventResponseType,
-} from "../utils.js";
+} from "../common_with_client.js";
+import type { AuthResult } from "../types.js";
 
 export interface AdminActionData {
   pubkey?: string;

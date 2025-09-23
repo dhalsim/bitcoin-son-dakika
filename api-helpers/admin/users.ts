@@ -2,8 +2,12 @@ import { hexToBytes } from "@noble/hashes/utils";
 import { finalizeEvent } from "nostr-tools";
 
 import { publishToRelays } from "../../src/lib/utils.js";
+import {
+  ADMIN_RELAYS,
+  ErrorResponseCreator,
+  PublishEventResponseCreator,
+} from "../common_with_client.js";
 import type { AuthResult } from "../types.js";
-import { ADMIN_RELAYS, ErrorResponseCreator, PublishEventResponseCreator } from "../utils.js";
 
 import type { AdminActionData } from "./types.js";
 

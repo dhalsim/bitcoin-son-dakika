@@ -3,9 +3,9 @@ import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { extractAmountFromBolt11 } from "@/lib/nip57";
 import type { ZapReceipt } from "@/lib/nip57";
 import type { ProfileItem } from "@/lib/nip01";
+import { extractEmojiInfo } from "@/lib/utils";
 
 import type { ExpandedReactionsProps } from "./types";
-import { extractEmojiInfo } from "@/lib/utils";
 
 const zapRenderer =
   (profiles: Map<string, ProfileItem>, author: ProfileItem) => (reactionEvent: ZapReceipt) => {

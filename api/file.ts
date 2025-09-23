@@ -4,8 +4,8 @@ import {
   getCachedServersKey,
   getBlurHashKey,
 } from "../api-helpers/admin/blossom/common.js";
-import type { RedisClient } from "../api-helpers/utils.js";
-import { getBlossomServersEvent, getRedis } from "../api-helpers/utils.js";
+import { type RedisClient, getRedis } from "../api-helpers/common.js";
+import { getBlossomServersEvent } from "../api-helpers/common_with_client.js";
 
 // Extract sha256 from URL path (last 64-char hex string)
 function extractSha256FromPath(pathname: string): string | null {

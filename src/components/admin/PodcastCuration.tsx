@@ -10,8 +10,8 @@ import { getKind30023Events } from "@/lib/nip23";
 import { useTags } from "@/hooks/useTags";
 import { getPublishedAt } from "@/lib/utils";
 
-import type { PodcastTag } from "../../../api-helpers/utils";
-import { extractPodcastDataFromEvent } from "../../../api-helpers/utils";
+import type { PodcastTag } from "../../../api-helpers/common_with_client";
+import { extractPodcastDataFromEvent } from "../../../api-helpers/common_with_client";
 
 import { Skeleton } from "../ui/skeleton";
 import UploadToX from "./UploadToX";

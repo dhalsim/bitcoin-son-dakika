@@ -3,14 +3,14 @@ import { hexToBytes } from "nostr-tools/utils";
 
 import { publishToRelays } from "../../src/lib/utils.js";
 import type { PublishPodcastPayload } from "../../src/types/admin.js";
-import type { AuthResult } from "../types.js";
-import type { PodcastTag } from "../utils.js";
+import type { PodcastTag } from "../common_with_client.js";
 import {
   ADMIN_RELAYS,
   ErrorResponseCreator,
   PublishEventResponseCreator,
   createTitleSlug,
-} from "../utils.js";
+} from "../common_with_client.js";
+import type { AuthResult } from "../types.js";
 
 export async function handlePublishPodcast(
   masterAdminPrivateKey: string,

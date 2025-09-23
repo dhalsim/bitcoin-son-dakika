@@ -8,7 +8,7 @@ import NewsCard from "@/components/NewsCard";
 import ArticleCard from "@/components/ArticleCard";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "@/lib/constants";
 
-import { createTitleSlug } from "../../api-helpers/utils";
+import { createTitleSlug } from "../../api-helpers/common_with_client";
 
 export const meta: MetaFunction = ({ params }) => {
   const { slug } = params;

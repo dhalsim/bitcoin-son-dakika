@@ -1,7 +1,7 @@
 import { finalizeEvent, type EventTemplate } from "nostr-tools";
 import { hexToBytes } from "nostr-tools/utils";
 
-import type { RedisClient } from "../../utils.js";
+import type { RedisClient } from "../../common.js";
 
 // Redis key generators
 export const getServerCacheKey = (server: string) => `blossom-blob-list-${server}`;

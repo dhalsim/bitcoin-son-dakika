@@ -2,9 +2,9 @@
 import { encode } from "blurhash";
 import sharp from "sharp";
 
+import type { RedisClient } from "../../common.js";
+import { ErrorResponseCreator, SuccessResponse } from "../../common_with_client.js";
 import type { AuthResult } from "../../types.js";
-import type { RedisClient } from "../../utils.js";
-import { ErrorResponseCreator, SuccessResponse } from "../../utils.js";
 import type { BlobDescriptor } from "../types.js";
 
 import {

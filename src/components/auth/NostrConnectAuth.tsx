@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { hexToBytes } from "nostr-tools/utils";
 import { Relay } from "nostr-tools";
-import { QrCode, Copy, RefreshCw, Smartphone, Hand, Info, Settings } from "lucide-react";
+import { QrCode, RefreshCw, Hand, Info, Settings } from "lucide-react";
 import { toString as toSvgString } from "qrcode/lib/browser.js";
 
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,6 @@ import {
   generateNostrConnectUri,
   NostrConnectData,
 } from "@/lib/providers/NostrConnectProvider";
-import { hexToBytes } from "nostr-tools/utils";
-import { isMobile } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface NostrConnectAuthProps {

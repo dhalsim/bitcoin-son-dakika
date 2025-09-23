@@ -22,6 +22,7 @@ import { useUserContext } from "@/contexts/UserContext";
 import { SignEventResult, useNostrAuth } from "@/contexts/NostrAuthContext";
 import { formatNostrDate, links, publishToRelays } from "@/lib/utils";
 import { WEBSITE_URL } from "@/lib/constants";
+import { AddNewsPayload, RemoveNewsPayload } from "@/types/admin";
 
 import type { MultiPublishResponse, SinglePublishResponse } from "../../../api-helpers/schemas";
 import {
@@ -29,11 +30,10 @@ import {
   createTitleSlug,
   MASTER_ADMIN_PUBKEY,
   type NewsTag,
-} from "../../../api-helpers/utils";
+} from "../../../api-helpers/common_with_client";
 
 import UploadToX from "./UploadToX";
 import { publishToX } from "./utils";
-import { AddNewsPayload, RemoveNewsPayload } from "@/types/admin";
 
 type NewsCurationProps = {
   news: NewsTag[];

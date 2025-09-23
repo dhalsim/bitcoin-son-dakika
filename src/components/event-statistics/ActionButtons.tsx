@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { createNip10Thread, ReplyNode } from "@/lib/nip10";
 import { postQuoteRepost, postRepost } from "@/lib/nip18";
 import { createNip22Thread } from "@/lib/nip22";
+import { postReaction } from "@/lib/nip25";
 
 import { EmojiBoard } from "../EmojiBoard";
 import { ZapDialog } from "../ZapDialog";
@@ -37,7 +38,6 @@ import { QuotesSection } from "./QuotesSection";
 import { ThreadViewWrapper } from "./ThreadViewWrapper";
 import type { ActionButtonsProps, ReactionGroup } from "./types";
 import { getMostUsedEmojis, loadDraft, saveDraft, saveEmojiUsage } from "./utils";
-import { postReaction } from "@/lib/nip25";
 
 export function ActionButtons({
   event,

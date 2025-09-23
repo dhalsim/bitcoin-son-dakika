@@ -1,11 +1,11 @@
 import TradingView from "@mathieuc/tradingview";
 
+import { getRedis } from "../../api-helpers/common.js";
 import {
   applyCacheHeaders,
   ErrorResponseCreator,
-  getRedis,
   SuccessResponse,
-} from "../../api-helpers/utils.js";
+} from "../../api-helpers/common_with_client.js";
 import { type BaseEndpointResponse, type PriceData } from "../../src/types/api.js";
 
 // Vercel Edge Function handler for GET requests

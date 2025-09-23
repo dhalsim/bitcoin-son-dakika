@@ -6,7 +6,7 @@ import type { EventItem } from "@/lib/nip01";
 import { parseProfileEvent, type ProfileItem } from "@/lib/nip01";
 import { pool } from "@/lib/utils";
 
-import { PROFILE_RELAYS } from "../../api-helpers/utils";
+import { PROFILE_RELAYS } from "../../api-helpers/common_with_client";
 
 export default function TestEventPage() {
   const { eventId } = useParams();

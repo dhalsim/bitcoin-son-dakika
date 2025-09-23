@@ -3,14 +3,14 @@ import { hexToBytes } from "nostr-tools/utils";
 
 import { publishToRelays } from "../../../src/lib/utils.js";
 import type { UpdateBlossomServersPayload } from "../../../src/types/admin.js";
-import type { AuthResult } from "../../types.js";
-import type { RedisClient } from "../../utils.js";
+import type { RedisClient } from "../../common.js";
 import {
   ADMIN_RELAYS,
   getBlossomServersEvent,
   ErrorResponseCreator,
   PublishEventResponseCreator,
-} from "../../utils.js";
+} from "../../common_with_client.js";
+import type { AuthResult } from "../../types.js";
 
 import { getCachedServersKey } from "./common.js";
 

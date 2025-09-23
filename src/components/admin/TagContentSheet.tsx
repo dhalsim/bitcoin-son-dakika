@@ -15,7 +15,7 @@ import { getDisplayName, type ContentItem } from "@/lib/ssg-data";
 import { WEBSITE_URL } from "@/lib/constants";
 import { assertUnreachable, links } from "@/lib/utils";
 
-import { createTitleSlug } from "../../../api-helpers/utils";
+import { createTitleSlug } from "../../../api-helpers/common_with_client";
 
 interface TagContentSheetProps {
   tag: string;

@@ -1,3 +1,4 @@
+import { nip19 } from "nostr-tools";
 import { MoreVertical, Copy, ExternalLink, Key, FileText } from "lucide-react";
 import { useState } from "react";
 
@@ -12,7 +13,6 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { EventItem } from "@/lib/nip01";
-import { nip19 } from "nostr-tools";
 
 interface MoreOptionsButtonProps {
   event: EventItem;

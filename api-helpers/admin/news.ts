@@ -8,14 +8,14 @@ import type {
   RemoveNewsPayload,
   PublishNewsPayload,
 } from "../../src/types/admin.js";
-import type { AuthResult } from "../types.js";
 import {
   ADMIN_RELAYS,
   ErrorResponseCreator,
   MultiPublishEventResponseCreator,
   PublishEventResponseCreator,
-} from "../utils.js";
-import type { NewsTag } from "../utils.js";
+} from "../common_with_client.js";
+import type { NewsTag } from "../common_with_client.js";
+import type { AuthResult } from "../types.js";
 
 export async function handleAddNews(
   masterAdminPrivateKey: string,

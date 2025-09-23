@@ -7,14 +7,14 @@ import type {
   RemoveArticlePayload,
   PublishArticlePayload,
 } from "../../src/types/admin.js";
-import type { AuthResult } from "../types.js";
 import {
   ADMIN_RELAYS,
   createTitleSlug,
   ErrorResponseCreator,
   PublishEventResponseCreator,
-} from "../utils.js";
-import type { ArticleTag } from "../utils.js";
+  type ArticleTag,
+} from "../common_with_client.js";
+import type { AuthResult } from "../types.js";
 
 export async function handleAddArticle(
   masterAdminPrivateKey: string,

@@ -9,7 +9,6 @@ import {
   ExternalLink,
   ArrowLeft,
   CheckCircle,
-  Key,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

@@ -1,7 +1,7 @@
+import type { RedisClient } from "../common.js";
+import { ErrorResponseCreator, SuccessResponse } from "../common_with_client.js";
 import { fetchAllSources, type ScrapedItem } from "../scrapers/index.js";
 import type { AuthResult } from "../types.js";
-import type { RedisClient } from "../utils.js";
-import { ErrorResponseCreator, SuccessResponse } from "../utils.js";
 
 const SCRAPES_CACHE_KEY = "scrapes:all";
 const SCRAPES_CACHE_TTL_SECONDS = 15 * 60; // 15 minutes

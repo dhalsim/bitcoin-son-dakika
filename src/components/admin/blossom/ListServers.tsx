@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { UpdateBlossomServersPayload, FetchBlobListsPayload } from "@/types/admin";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import BlobContentSheet from "./BlobContentSheet";
 
 import {
   FetchBlobListsResponse,
@@ -14,9 +16,6 @@ import {
 } from "../../../../api-helpers/schemas";
 
 import { createNIP98Auth } from "../utils";
-
-import BlobContentSheet from "./BlobContentSheet";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface BlobDescriptor {
   url: string;

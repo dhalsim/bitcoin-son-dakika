@@ -3,7 +3,7 @@ import { Search, X, FileText, Newspaper, Tag, Clock } from "lucide-react";
 
 import { assertUnreachable, formatNostrDate, links } from "@/lib/utils";
 
-import { createTitleSlug, TagItem } from "../../api-helpers/utils";
+import { createTitleSlug, TagItem } from "../../api-helpers/common_with_client";
 
 import { useSSGData } from "../contexts/SSGContext";
 import type { NewsItem, ArticleItem, PodcastItem } from "../lib/ssg-data";

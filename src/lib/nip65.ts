@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { PROFILE_RELAYS } from "../../api-helpers/utils";
+import { PROFILE_RELAYS } from "../../api-helpers/common_with_client";
 
 import { getCache } from "./cache";
 import { pool } from "./utils";

@@ -5,7 +5,7 @@ import type { EventItem, ProfileItem } from "@/lib/nip01";
 import { createAuthorSlug } from "@/lib/ssg-data";
 import { getTimeAgo, links } from "@/lib/utils";
 
-import { createTitleSlug, type TagItem } from "../../api-helpers/utils";
+import { createTitleSlug, type TagItem } from "../../api-helpers/common_with_client";
 
 import ArticleMarkdownRenderer from "./ArticleMarkdownRenderer";
 import { CategoryTags } from "./CategoryTags";
