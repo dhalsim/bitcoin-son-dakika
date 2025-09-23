@@ -1,4 +1,5 @@
 import type { FetchBlobListsResponse } from "../../schemas.js";
+import { BlobDescriptorSchema } from "../../schemas.js";
 import type { AuthResult } from "../../types.js";
 import { ErrorResponseCreator, SuccessResponse } from "../../utils.js";
 import type { BlossomServerBlobs, BlobDescriptor } from "../types.js";
@@ -94,7 +95,20 @@ async function fetchBlobListsFromServers(
       const cachedBlobList = await redis.get(getServerCacheKey(server));
 
       if (cachedBlobList) {
-        return JSON.parse(cachedBlobList);
+        try {
+          // Parse and validate the cached blobs array
+          const parsedBlobs = JSON.parse(cachedBlobList);
+          const validatedBlobs = BlobDescriptorSchema.array().parse(parsedBlobs);
+
+          // Reconstruct the full BlossomServerBlobs object
+          return {
+            server,
+            blobs: validatedBlobs,
+          } satisfies BlossomServerBlobs;
+        } catch (error) {
+          console.warn(`Failed to parse cached blob list for ${server}:`, error);
+          // If cache parsing fails, fall back to fetching from server
+        }
       }
     }
 
