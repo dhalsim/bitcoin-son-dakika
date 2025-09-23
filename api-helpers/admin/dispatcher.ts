@@ -112,7 +112,7 @@ export async function handleAdminPost(redis: RedisClient, request: Request): Pro
         const maxWidthVal = Number(String(form.get("maxWidth") || ""));
         const maxWidth = Number.isFinite(maxWidthVal) ? maxWidthVal : null;
 
-        return handleUploadBlossomMedia(masterAdminPrivateKey, authResult, {
+        return handleUploadBlossomMedia(redis, masterAdminPrivateKey, authResult, {
           formData: form,
           servers,
           optimize,

@@ -3,6 +3,7 @@ import { encode } from "blurhash";
 import sharp from "sharp";
 
 import type { AuthResult } from "../../types.js";
+import type { RedisClient } from "../../utils.js";
 import { ErrorResponseCreator, SuccessResponse } from "../../utils.js";
 import type { BlobDescriptor } from "../types.js";
 
@@ -12,7 +13,6 @@ import {
   getBlurHashKey,
   getServerCacheKey,
   markServerGood,
-  redis,
   sha256Hex,
 } from "./common.js";
 
@@ -105,6 +105,7 @@ export async function uploadBufferToServer(
 
 // Main upload handler
 export async function handleUploadBlossomMedia(
+  redis: RedisClient,
   masterAdminPrivateKey: string,
   authResult: AuthResult,
   paramsData: {
@@ -173,7 +174,8 @@ export async function handleUploadBlossomMedia(
         const descriptor = await uploadBufferToServer(server, buffer, contentType, authBase64);
 
         // Cache updates on success - sequential to ensure consistency
-        await markServerGood(hashHex, server);
+        await markServerGood(redis, hashHex, server);
+
         await redis.del(getServerCacheKey(server));
         await redis.del(getBadServerKey(hashHex, server));
 
