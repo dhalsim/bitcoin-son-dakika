@@ -143,7 +143,14 @@ export function ListServers({ servers, lastUpdated, performPublishAction }: List
         setBlobErrors(newBlobErrors);
       }
     } catch (error) {
-      console.error("Error fetching all blob lists:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Bir hata oluştu";
+
+      setError(errorMessage);
     }
   };
 
