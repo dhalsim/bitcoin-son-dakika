@@ -19,13 +19,13 @@ type ArticleEditData = Omit<ArticleItem, "author"> & {
 };
 
 type ArticleComposerProps = {
-  performAction: (data: any) => Promise<any>;
+  performPublishAction: (data: any) => Promise<any>;
   editData?: ArticleEditData;
   onCancelEdit: () => void;
 };
 
 export default function ArticleComposer({
-  performAction,
+  performPublishAction,
   editData,
   onCancelEdit,
 }: ArticleComposerProps) {
@@ -147,7 +147,7 @@ export default function ArticleComposer({
                       payload.dTag = editData.dTag;
                     }
 
-                    await performAction(payload);
+                    await performPublishAction(payload);
 
                     // Clear edit mode after successful publish
                     if (editData) {

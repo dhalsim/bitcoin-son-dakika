@@ -22,7 +22,7 @@ interface ArticleCurationProps {
   articles: ArticleTag[];
   tagItems: TagItem[];
   lastUpdated: number;
-  performAction: (data: RemoveArticlePayload | AddArticlePayload) => Promise<any>;
+  performPublishAction: (data: RemoveArticlePayload | AddArticlePayload) => Promise<any>;
   reload: () => Promise<void> | void;
   userNpub?: string;
   onEditArticle: (articleData: any) => void;
@@ -32,7 +32,7 @@ export default function ArticleCuration({
   articles,
   tagItems,
   lastUpdated,
-  performAction,
+  performPublishAction,
   reload,
   userNpub,
   onEditArticle,
@@ -78,7 +78,7 @@ export default function ArticleCuration({
     try {
       setAdding(true);
 
-      await performAction({
+      await performPublishAction({
         action: "add-article",
         type: "naddr",
         naddr: articleNaddr.trim(),
@@ -96,7 +96,7 @@ export default function ArticleCuration({
     try {
       setAdding(true);
 
-      await performAction({
+      await performPublishAction({
         action: "add-article",
         type: "a",
         tagToBeAdded: {
@@ -119,7 +119,7 @@ export default function ArticleCuration({
     try {
       setRemovingKey(tagToBeRemoved.aTag);
 
-      await performAction({ action: "remove-article", tagToBeRemoved });
+      await performPublishAction({ action: "remove-article", tagToBeRemoved });
 
       await reload();
     } finally {

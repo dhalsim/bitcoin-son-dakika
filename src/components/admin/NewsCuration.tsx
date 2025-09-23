@@ -38,7 +38,7 @@ import { AddNewsPayload, RemoveNewsPayload } from "@/types/admin";
 type NewsCurationProps = {
   news: NewsTag[];
   lastUpdated: number;
-  performAction: (data: AddNewsPayload | RemoveNewsPayload) => Promise<any>;
+  performPublishAction: (data: AddNewsPayload | RemoveNewsPayload) => Promise<any>;
   setPublishSuccess: React.Dispatch<
     React.SetStateAction<(SinglePublishResponse | MultiPublishResponse)[]>
   >;
@@ -48,7 +48,7 @@ type NewsCurationProps = {
 export default function NewsCuration({
   news,
   lastUpdated,
-  performAction,
+  performPublishAction,
   setPublishSuccess,
   reload,
 }: NewsCurationProps) {
@@ -83,7 +83,7 @@ export default function NewsCuration({
     try {
       setAdding(true);
 
-      await performAction({
+      await performPublishAction({
         action: "add-news",
         tagToBeAdded: {
           eTag: newsEventId.trim(),
@@ -106,7 +106,7 @@ export default function NewsCuration({
     try {
       setRemovingKey(key);
 
-      await performAction({
+      await performPublishAction({
         action: "remove-news",
         tagToBeRemoved: newsToBeRemoved,
         requestDeletion,

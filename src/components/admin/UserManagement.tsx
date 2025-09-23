@@ -14,11 +14,11 @@ import { getProfiles, ProfileItem } from "@/lib/nip01";
 export default function UserManagement({
   adminUsers,
   editorUsers,
-  performAction,
+  performPublishAction,
 }: {
   adminUsers: string[];
   editorUsers: string[];
-  performAction: (data: any) => Promise<any>;
+  performPublishAction: (data: any) => Promise<any>;
 }) {
   const [newAdminNpub, setNewAdminNpub] = useState("");
   const [newEditorNpub, setNewEditorNpub] = useState("");
@@ -74,7 +74,7 @@ export default function UserManagement({
 
       setError("");
 
-      await performAction({
+      await performPublishAction({
         action: "add-admin-pubkey",
         pubkey: result.pubkey,
       });
@@ -93,7 +93,7 @@ export default function UserManagement({
 
       setError("");
 
-      await performAction({ action: "remove-admin-pubkey", pubkey });
+      await performPublishAction({ action: "remove-admin-pubkey", pubkey });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bilinmeyen hata");
     } finally {
@@ -118,7 +118,7 @@ export default function UserManagement({
       setAddingEditor(true);
       setError("");
 
-      await performAction({
+      await performPublishAction({
         action: "add-editor-pubkey",
         pubkey: result.pubkey,
       });
@@ -136,7 +136,7 @@ export default function UserManagement({
       setRemovingEditorKey(pubkey);
       setError("");
 
-      await performAction({ action: "remove-editor-pubkey", pubkey });
+      await performPublishAction({ action: "remove-editor-pubkey", pubkey });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Bilinmeyen hata");
     } finally {

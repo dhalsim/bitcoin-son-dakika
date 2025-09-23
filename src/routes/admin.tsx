@@ -29,6 +29,8 @@ import { toast } from "@/hooks/use-toast";
 import type { ArticleTag, NewsTag, PodcastTag, TagItem } from "../../api-helpers/utils";
 import { ADMIN_RELAYS } from "../../api-helpers/utils";
 import {
+  ErrorResponseSchema,
+  isErrorResponse,
   isMultiPublishResponse,
   isPublishResponseError,
   isSinglePublishResponse,
@@ -376,7 +378,7 @@ export default function AdminPanel() {
     checkUserInfo();
   }, []);
 
-  const performAction = async (data: Payload) => {
+  const performPublishAction = async (data: Payload) => {
     setActionLoading(data.action);
 
     setError("");
@@ -650,7 +652,7 @@ export default function AdminPanel() {
                   <NewsCuration
                     news={adminData?.news || []}
                     lastUpdated={adminData?.newsLastTimeUpdated || 0}
-                    performAction={performAction}
+                    performPublishAction={performPublishAction}
                     reload={loadAdminData}
                     setPublishSuccess={setPublishSuccess}
                   />
@@ -658,7 +660,7 @@ export default function AdminPanel() {
                 {userIsEditor && (
                   <div className="space-y-4" data-section="compose-news">
                     <NewsComposer
-                      performAction={performAction}
+                      performPublishAction={performPublishAction}
                       prefill={composerPrefill || null}
                       prefillToken={composerPrefillToken || null}
                       blossomServers={adminData?.blossomServers || []}
@@ -677,7 +679,7 @@ export default function AdminPanel() {
                     articles={adminData?.articles || []}
                     lastUpdated={adminData?.articlesLastTimeUpdated || 0}
                     tagItems={adminData?.tagItems || []}
-                    performAction={performAction}
+                    performPublishAction={performPublishAction}
                     reload={loadAdminData}
                     userNpub={userInfo.pubkey ? nip19.npubEncode(userInfo.pubkey) : undefined}
                     onEditArticle={(articleData) => {
@@ -697,7 +699,7 @@ export default function AdminPanel() {
                 {userIsEditor && (
                   <div className="space-y-4" data-section="compose-article">
                     <ArticleComposer
-                      performAction={performAction}
+                      performPublishAction={performPublishAction}
                       editData={editingArticle}
                       onCancelEdit={() => setEditingArticle(null)}
                     />
@@ -714,7 +716,7 @@ export default function AdminPanel() {
                   <PodcastCuration
                     podcasts={adminData?.podcasts || []}
                     lastUpdated={adminData?.podcastsLastTimeUpdated || 0}
-                    performAction={performAction}
+                    performPublishAction={performPublishAction}
                     reload={loadAdminData}
                     onEditPodcast={(podcastData) => {
                       setEditingPodcast(podcastData);
@@ -733,7 +735,7 @@ export default function AdminPanel() {
                 {userIsEditor && (
                   <div className="space-y-4" data-section="compose-podcast">
                     <PodcastComposer
-                      performAction={performAction}
+                      performPublishAction={performPublishAction}
                       editData={editingPodcast}
                       onCancelEdit={() => setEditingPodcast(null)}
                     />
@@ -766,7 +768,7 @@ export default function AdminPanel() {
 
           {(userIsEditor || userIsAdmin) && (
             <TabsContent value="tags">
-              <AdminTags performAction={performAction} />
+              <AdminTags performPublishAction={performPublishAction} />
             </TabsContent>
           )}
 
@@ -778,7 +780,7 @@ export default function AdminPanel() {
                 onRefresh={() => {
                   loadAdminData();
                 }}
-                performAction={performAction}
+                performPublishAction={performPublishAction}
               />
             </TabsContent>
           )}
@@ -788,7 +790,7 @@ export default function AdminPanel() {
               <UserManagement
                 adminUsers={adminData?.adminUsers || []}
                 editorUsers={adminData?.editorUsers || []}
-                performAction={performAction}
+                performPublishAction={performPublishAction}
               />
             </TabsContent>
           )}

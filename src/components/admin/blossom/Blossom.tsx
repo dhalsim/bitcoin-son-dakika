@@ -13,13 +13,13 @@ import { Separator } from "@/components/ui/separator";
 import { ListServers } from "./ListServers";
 import { BlossomImageUpload } from "./BlossomImageUpload";
 import { ProgressiveBlossomImage } from "@/components/common/ProgressiveBlossomImage";
-import { UpdateBlossomServersPayload } from "@/types/admin";
+import { FetchBlobListsPayload, UpdateBlossomServersPayload } from "@/types/admin";
 
 interface BlossomProps {
   servers: string[];
   lastUpdated: number;
   onRefresh: () => void;
-  performAction: (data: UpdateBlossomServersPayload) => Promise<any>;
+  performPublishAction: (data: UpdateBlossomServersPayload) => Promise<any>;
   authToken?: string; // Nostr auth token for testing
 }
 
@@ -36,7 +36,7 @@ export function Blossom({
   servers,
   lastUpdated,
   onRefresh,
-  performAction,
+  performPublishAction,
   authToken,
 }: BlossomProps) {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -225,7 +225,11 @@ export function Blossom({
         </TabsList>
 
         <TabsContent value="servers" className="mt-6">
-          <ListServers servers={servers} lastUpdated={lastUpdated} performAction={performAction} />
+          <ListServers
+            servers={servers}
+            lastUpdated={lastUpdated}
+            performPublishAction={performPublishAction}
+          />
         </TabsContent>
 
         <TabsContent value="upload" className="mt-6">

@@ -20,10 +20,10 @@ interface TagItem {
 }
 
 interface AdminTagsProps {
-  performAction: (data: UpdateTagsPayload) => Promise<any>;
+  performPublishAction: (data: UpdateTagsPayload) => Promise<any>;
 }
 
-export default function AdminTags({ performAction }: AdminTagsProps) {
+export default function AdminTags({ performPublishAction }: AdminTagsProps) {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -100,7 +100,7 @@ export default function AdminTags({ performAction }: AdminTagsProps) {
       setSaving(true);
       setSuccess("");
 
-      await performAction({
+      await performPublishAction({
         action: "update-tags",
         tags: localTags,
         lastUpdated: tagsLastTimeUpdated,

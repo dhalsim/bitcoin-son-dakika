@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
-import { Clock, Save, CheckSquare, Square, Database } from "lucide-react";
+import { Clock, Save, CheckSquare, Square, Database, AlertCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-
+import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { UpdateBlossomServersPayload, FetchBlobListsPayload } from "@/types/admin";
+
+import {
+  FetchBlobListsResponse,
+  FetchBlobListsResponseSchema,
+  isErrorResponse,
+} from "../../../../api-helpers/schemas";
+
+import { createNIP98Auth } from "../utils";
+
 import BlobContentSheet from "./BlobContentSheet";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface BlobDescriptor {
   url: string;
@@ -34,13 +44,15 @@ const BLOSSOM_SERVERS = [
 interface ListServersProps {
   servers: string[];
   lastUpdated: number;
-  performAction: (data: UpdateBlossomServersPayload | FetchBlobListsPayload) => Promise<any>;
+  performPublishAction: (data: UpdateBlossomServersPayload) => Promise<any>;
 }
 
-export function ListServers({ servers, lastUpdated, performAction }: ListServersProps) {
+export function ListServers({ servers, lastUpdated, performPublishAction }: ListServersProps) {
   const [selectedServers, setSelectedServers] = useState<Set<string>>(new Set(servers));
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const { getPublicKey, signEvent } = useNostrAuth();
+  const [error, setError] = useState<string | null>(null);
 
   // Blob-related state
   const [serverBlobs, setServerBlobs] = useState<Map<string, BlobDescriptor[]>>(new Map());
@@ -58,29 +70,73 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
     });
   };
 
+  const performListAction = async (
+    data: FetchBlobListsPayload,
+  ): Promise<FetchBlobListsResponse | null> => {
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const url = `${origin}/api/admin-panel`;
+      const authHeader = await createNIP98Auth(
+        "POST",
+        url,
+        () => getPublicKey({ options: { reason: "Admin panel işlemleri" } }),
+        (params) =>
+          signEvent({ event: params.event, options: { reason: "Admin panel işlemleri" } }),
+      );
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authHeader,
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result: FetchBlobListsResponse = await response.json();
+
+      FetchBlobListsResponseSchema.parse(result);
+
+      if (isErrorResponse(result)) {
+        setError(result.message);
+
+        return;
+      }
+
+      return result;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Bir hata oluştu";
+
+      setError(errorMessage);
+
+      return;
+    }
+  };
+
   const fetchAllBlobs = async (cache: boolean) => {
     try {
-      const response = await performAction({
+      const response = await performListAction({
         action: "fetch-blob-lists",
         servers: BLOSSOM_SERVERS,
         useCache: cache,
       });
 
-      if (response.success) {
+      if (response && response.success) {
         const newServerBlobs = new Map<string, BlobDescriptor[]>();
         const newBlobErrors = new Map<string, string>();
 
-        response.data.forEach((serverData: any) => {
+        response.serverBlobs.forEach((serverBlob: BlossomServerBlobs) => {
           // Handle different response formats
-          if (serverData.error) {
-            newBlobErrors.set(serverData.server, serverData.error);
-          } else if (serverData.server && Array.isArray(serverData.blobs)) {
-            // Standard BlossomServerBlobs format
-            newServerBlobs.set(serverData.server, serverData.blobs);
-          } else if (Array.isArray(serverData)) {
-            // Handle case where server returns array directly (fallback)
-            console.warn("Unexpected array format from server:", serverData);
+          if (serverBlob.error) {
+            newBlobErrors.set(serverBlob.server, serverBlob.error);
           }
+
+          newServerBlobs.set(serverBlob.server, serverBlob.blobs);
         });
 
         setServerBlobs(newServerBlobs);
@@ -134,7 +190,7 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
   const handleSave = async () => {
     setIsSaving(true);
 
-    await performAction({
+    await performPublishAction({
       action: "update-blossom-servers",
       servers: Array.from(selectedServers),
       lastUpdated: Math.floor(lastUpdated / 1000),
@@ -147,6 +203,25 @@ export function ListServers({ servers, lastUpdated, performAction }: ListServers
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
+        <div>
+          {(error || blobErrors.size > 0) && (
+            <Alert className="border-red-200 bg-red-50 relative">
+              <button
+                onClick={() => setError(null)}
+                className="absolute top-2 right-2 text-red-600 hover:text-red-800 cursor-pointer text-lg font-bold"
+              >
+                ×
+              </button>
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              {error && <AlertDescription className="text-red-800">{error}</AlertDescription>}
+              {blobErrors.size > 0 && (
+                <AlertDescription className="text-red-800">
+                  {Array.from(blobErrors.values()).join(", ")}
+                </AlertDescription>
+              )}
+            </Alert>
+          )}
+        </div>
         <div>
           <h3 className="text-lg font-semibold">Blossom Sunucuları</h3>
           <p className="text-sm text-muted-foreground">

@@ -23,7 +23,7 @@ export default function TagsDialog({ onTagsUpdated }: TagsDialogProps) {
   const [open, setOpen] = useState(false);
   const { getPublicKey, signEvent } = useNostrAuth();
 
-  const handlePerformAction = async (data: any) => {
+  const handleperformPublishAction = async (data: any) => {
     try {
       const result = await postAdminAction(data, getPublicKey, signEvent);
 
@@ -63,7 +63,7 @@ export default function TagsDialog({ onTagsUpdated }: TagsDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="mt-4">
-          <AdminTags performAction={handlePerformAction} />
+          <AdminTags performPublishAction={handleperformPublishAction} />
         </div>
       </DialogContent>
     </Dialog>

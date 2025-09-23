@@ -20,7 +20,7 @@ import { publishToX } from "./utils";
 interface PodcastCurationProps {
   podcasts: PodcastTag[];
   lastUpdated: number;
-  performAction: (data: RemovePodcastPayload) => Promise<void>;
+  performPublishAction: (data: RemovePodcastPayload) => Promise<void>;
   reload: () => void;
   onEditPodcast?: (podcastData: any) => void;
 }
@@ -28,7 +28,7 @@ interface PodcastCurationProps {
 export default function PodcastCuration({
   podcasts,
   lastUpdated,
-  performAction,
+  performPublishAction,
   reload,
   onEditPodcast,
 }: PodcastCurationProps) {
@@ -68,7 +68,7 @@ export default function PodcastCuration({
     setRemoving(tag.aTag);
 
     try {
-      await performAction({
+      await performPublishAction({
         action: "remove-podcast",
         tagToBeRemoved: tag,
       });

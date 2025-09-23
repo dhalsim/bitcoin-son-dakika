@@ -21,13 +21,13 @@ type PodcastEditData = Omit<PodcastItem, "author"> & {
 };
 
 interface PodcastComposerProps {
-  performAction: (data: any) => Promise<void>;
+  performPublishAction: (data: any) => Promise<void>;
   editData?: PodcastEditData;
   onCancelEdit: () => void;
 }
 
 export default function PodcastComposer({
-  performAction,
+  performPublishAction,
   editData,
   onCancelEdit,
 }: PodcastComposerProps) {
@@ -107,7 +107,7 @@ export default function PodcastComposer({
         payload.dTag = editData.dTag;
       }
 
-      await performAction(payload);
+      await performPublishAction(payload);
 
       // Clear edit mode after successful publish
       if (editData) {

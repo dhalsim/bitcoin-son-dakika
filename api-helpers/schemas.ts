@@ -52,7 +52,32 @@ export const PublishResponseSchema = z.union([
   ErrorResponseSchema,
 ]);
 
-export function isErrorResponse(response: PublishResponse): response is ErrorResponse {
+export const BlobDescriptorSchema = z.object({
+  url: z.string(),
+  sha256: z.string(),
+  size: z.number(),
+  type: z.string(),
+  uploaded: z.number(),
+});
+
+export const BlossomServerBlobsSchema = z.object({
+  server: z.string(),
+  blobs: z.array(BlobDescriptorSchema),
+});
+
+export const FetchBlobListsSuccessResponseSchema = z.object({
+  success: z.literal(true),
+  serverBlobs: z.array(BlossomServerBlobsSchema),
+});
+
+export const FetchBlobListsResponseSchema = z.union([
+  FetchBlobListsSuccessResponseSchema,
+  ErrorResponseSchema,
+]);
+
+export function isErrorResponse(
+  response: PublishResponse | FetchBlobListsResponse,
+): response is ErrorResponse {
   return response.success === false;
 }
 
@@ -86,3 +111,6 @@ export type SinglePublishResponse = z.infer<typeof SinglePublishResponseSchema>;
 export type MultiPublishResponse = z.infer<typeof MultiPublishResponseSchema>;
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
 export type PublishResponse = z.infer<typeof PublishResponseSchema>;
+
+// Schema for FetchBlobListsResponse
+export type FetchBlobListsResponse = z.infer<typeof FetchBlobListsResponseSchema>;

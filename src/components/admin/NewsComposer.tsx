@@ -22,14 +22,14 @@ type PrefillData = {
 };
 
 type NewsComposerProps = {
-  performAction: (data: any) => Promise<any>;
+  performPublishAction: (data: any) => Promise<any>;
   prefill: PrefillData | null;
   prefillToken: string | null;
   blossomServers: string[];
 };
 
 export default function NewsComposer({
-  performAction,
+  performPublishAction,
   prefill,
   prefillToken,
   blossomServers = [],
@@ -239,7 +239,7 @@ export default function NewsComposer({
                         payload.image = (newsImageUrl || prefill?.image || "").trim();
                       }
 
-                      await performAction(payload);
+                      await performPublishAction(payload);
                     } finally {
                       setNewsPublishLoading(false);
                     }
@@ -347,7 +347,7 @@ export default function NewsComposer({
                         payload.image = newsImageUrl.trim();
                       }
 
-                      await performAction(payload);
+                      await performPublishAction(payload);
                     } finally {
                       setNewsPublishLoading(false);
                     }
