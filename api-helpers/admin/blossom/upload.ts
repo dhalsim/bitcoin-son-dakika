@@ -165,7 +165,7 @@ export async function handleUploadBlossomMedia(
       }
     }
 
-    const hashHex = sha256Hex(buffer);
+    const hashHex = await sha256Hex(buffer);
     const authBase64 = createMasterAuthBase64(masterAdminPrivateKey, "upload", [hashHex]);
 
     const results = await Promise.allSettled(

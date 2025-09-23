@@ -1,6 +1,3 @@
-// Common utilities and types for Blossom operations
-import { createHash } from "crypto";
-
 import { finalizeEvent, type EventTemplate } from "nostr-tools";
 import { hexToBytes } from "nostr-tools/utils";
 import { createClient } from "redis";
@@ -17,9 +14,12 @@ export const getBadServerKey = (sha256: string, server: string) =>
   `blossom:bad:${sha256}:${server}`;
 export const getCachedServersKey = () => `blossom:cached-servers`;
 
-// SHA256 hash utility
-export function sha256Hex(buffer: Buffer): string {
-  return createHash("sha256").update(buffer).digest("hex");
+// SHA256 hash utility using Web Crypto API (Edge Runtime compatible)
+export async function sha256Hex(buffer: Buffer): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest("SHA-256", new Uint8Array(buffer));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // Create MASTER-signed auth for specific action with optional x tags
@@ -97,7 +97,7 @@ export async function markServerBad(sha256: string, server: string): Promise<voi
 export async function isServerBad(sha256: string, server: string): Promise<boolean> {
   const badKey = getBadServerKey(sha256, server);
 
-  return (await redis.exists(badKey)) > 0;
+  return !!(await redis.exists(badKey));
 }
 
 // Extract sha256 from URL (last 64-char hex string per BUD-03)
