@@ -404,7 +404,8 @@ export async function OPTIONS() {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-      "Access-Control-Allow-Headers": "Range, If-None-Match, If-Modified-Since",
+      "Access-Control-Allow-Headers":
+        "Authorization, Content-Type, Range, If-None-Match, If-Modified-Since",
       "Access-Control-Expose-Headers": "X-BlurHash, X-Width, X-Height, X-Content-Type",
       "Access-Control-Max-Age": "86400",
     },
