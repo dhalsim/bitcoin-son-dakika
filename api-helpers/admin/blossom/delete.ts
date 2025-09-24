@@ -8,6 +8,7 @@ import type { AuthResult } from "../../types.js";
 import {
   createMasterAuthBase64,
   getLastGoodKey,
+  getAggregateListKey,
   getBlobServersKey,
   getBlobIndexKey,
   getServerCacheKey,
@@ -105,6 +106,7 @@ export async function handleDeleteBlossomMedia(
 
           // Clear server cache
           await redis.del(getServerCacheKey(server));
+          await redis.del(getAggregateListKey());
 
           // If this was the last-good server, clear it
           const lastGood = await redis.get(getLastGoodKey(sha256));

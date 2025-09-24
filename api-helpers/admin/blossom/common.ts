@@ -10,6 +10,7 @@ export const getBlurHashKey = (sha256: string) => `blossom:blurhash:${sha256}`;
 export const getBadServerKey = (sha256: string, server: string) =>
   `blossom:bad:${sha256}:${server}`;
 export const getCachedServersKey = () => `blossom:cached-servers`;
+export const getAggregateListKey = () => `blossom:list:aggregate`;
 export const getBlobServersKey = (sha256: string) => `blossom:blob:servers:${sha256}`;
 export const getBlobIndexKey = () => `blossom:blob:index`;
 

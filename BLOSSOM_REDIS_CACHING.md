@@ -41,6 +41,16 @@ Our Redis caching system optimizes Blossom server operations by maintaining serv
 - **Cleared**: On upload/mirror/delete operations to that server
 - **Rationale**: Blob lists are immutable until new operations occur
 
+### 4. Aggregate File List Cache (for `/api/file/list`)
+
+#### `blossom:list:aggregate` → `JSON.stringify(BlobListItem[])`
+
+- **Purpose**: Caches the final response of `/api/file/list` to avoid re-merging per-server lists on every request
+- **TTL**: None (persistent until invalidated)
+- **Updated**: On demand when `/api/file/list` is requested and the key is missing
+- **Cleared**: Whenever any `blossom-blob-list-<server>` is updated/cleared (upload, mirror, delete), so the next request rebuilds the aggregate
+- **Rationale**: Centralized, coherent cache with simple invalidation
+
 ### 3. Blob Metadata
 
 #### `blossom:blurhash:<sha256>` → `JSON.stringify({blurhash, width, height, contentType})`
@@ -53,14 +63,24 @@ Our Redis caching system optimizes Blossom server operations by maintaining serv
 
 ## Cache Update Mechanisms
 
-### Read Operations (`api/file.ts`)
+### Read Operations (`api/file.ts` and `/api/file/list`)
 
 #### Server Selection Priority:
+
+For `/api/file/<sha256>` (fetch):
 
 1. **Last-good server** (`blossom:last-good:<sha256>`)
 2. **User's server list** (from Nostr `kind:10063`)
 3. **Cached servers** (`blossom:cached-servers`)
 4. **Empty array** (no servers available)
+
+For `/api/file/list` (aggregate list):
+
+1. **Servers**: read `blossom:cached-servers`; if missing, fetch Nostr kind:10063 and set cache
+2. **Per-server blob lists**: read `blossom-blob-list-<server>`
+   - If missing, fetch signed `GET /list/<pubkey>` and set either JSON array or the sentinel string `"null"` when no blobs / unavailable
+3. **Aggregate**: merge per-server caches into a hash→servers map; enrich with `blurhash`, `last-good`, and `bad` flags
+4. **Aggregate cache**: store the final array at `blossom:list:aggregate` with no TTL
 
 #### On Successful Fetch:
 
@@ -110,6 +130,14 @@ if (result.success) {
     await redis.del(getLastGoodKey(sha256));
   }
 }
+```
+
+#### Aggregate List Invalidation
+
+```javascript
+// When any write operation modifies blobs on a server
+await redis.del(getServerCacheKey(server)); // blossom-blob-list-<server>
+await redis.del("blossom:list:aggregate");
 ```
 
 #### Server List Update (`handleUpdateBlossomServers`):

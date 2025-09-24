@@ -119,8 +119,14 @@ export type FetchBlobListsResponse = z.infer<typeof FetchBlobListsResponseSchema
 // Schema for public /api/file/list response items
 export const BlobServersItemSchema = z.object({
   hash: z.string().length(64),
-  servers: z.array(z.string()),
   blurhash: z.string().optional(),
+  servers: z.array(
+    z.object({
+      url: z.string(),
+      lastGood: z.boolean(),
+      bad: z.boolean(),
+    }),
+  ),
 });
 
 // Schema for the full list response

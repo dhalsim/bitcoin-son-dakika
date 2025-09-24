@@ -4,14 +4,14 @@ import {
   getCachedServersKey,
   getBlurHashKey,
 } from "../../api-helpers/admin/blossom/common.js";
-import {
-  ensureInvertedIndexFromServerCaches,
-  ensureIndexFromAnonymousFetch,
-  getAllCandidateServers,
-  listFromRedis,
-} from "../../api-helpers/admin/blossom/public_list.js";
+import { listOfBlobToServers } from "../../api-helpers/admin/blossom/file_list.js";
 import { type RedisClient, getRedis } from "../../api-helpers/common.js";
-import { getBlossomServersEvent } from "../../api-helpers/common_with_client.js";
+import {
+  authenticateNIP98,
+  ErrorResponseCreator,
+  fetchNostrSets,
+  getBlossomServersEvent,
+} from "../../api-helpers/common_with_client.js";
 import { BlobServersListSchema } from "../../api-helpers/schemas.js";
 
 // Extract sha256 from URL path (last 64-char hex string)
@@ -156,22 +156,27 @@ export async function GET(request: Request) {
   const isListRoute = /\/api\/file\/list\/?$/.test(url.pathname);
 
   if (isListRoute) {
+    const { adminUsers, editorUsers } = await fetchNostrSets(["admin-users", "editor-users"]);
+
+    const authResult = await authenticateNIP98(
+      request.headers.get("Authorization") || "",
+      adminUsers,
+      editorUsers,
+      ["editor", "admin"],
+    );
+
+    if (authResult.success === false) {
+      return ErrorResponseCreator(authResult.error, authResult.status);
+    }
+
+    const masterAdminPrivateKey = process.env.MASTER_ADMIN_PRIVATEKEY;
+
+    if (!masterAdminPrivateKey) {
+      return ErrorResponseCreator("Master admin private key not configured", 500);
+    }
+
     try {
-      let items = await listFromRedis(redis);
-      if (items.length === 0) {
-        const servers = await getAllCandidateServers(redis);
-        if (servers.length > 0) {
-          await ensureInvertedIndexFromServerCaches(redis, servers);
-          // If still empty, try anonymous fetch to seed caches/index
-          items = await listFromRedis(redis);
-
-          if (items.length === 0) {
-            await ensureIndexFromAnonymousFetch(redis, servers);
-          }
-
-          items = await listFromRedis(redis);
-        }
-      }
+      const items = await listOfBlobToServers(redis, masterAdminPrivateKey);
 
       const validated = BlobServersListSchema.parse(items);
 

@@ -9,6 +9,7 @@ import {
   getBadServerKey,
   getBlobServersKey,
   getBlobIndexKey,
+  getAggregateListKey,
   getServerCacheKey,
   markServerGood,
 } from "./common.js";
@@ -82,6 +83,7 @@ export async function handleMirrorBlossomMedia(
         await markServerGood(redis, sha256, server);
 
         await redis.del(getServerCacheKey(server));
+        await redis.del(getAggregateListKey());
         await redis.del(getBadServerKey(sha256, server));
 
         // Update inverted index: blob -> servers and global blob index

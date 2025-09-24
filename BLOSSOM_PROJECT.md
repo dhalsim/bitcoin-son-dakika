@@ -604,15 +604,54 @@ APIs:
   - 404/5xx: short negative cache `s-maxage=30, stale-while-revalidate=60` to avoid sticky failures.
   - Pass through `ETag`/`Last-Modified` when available.
 
-### Observability & Limits
+### File List Endpoint: `api/file/list`
 
-- Log server selection, status codes, and redirect destinations for `api/file` (without logging PII). Add simple counters for hit/miss to Redis.
-- Rate-limit public fetch endpoint with basic IP-based limits if abuse is observed (future work).
+- Purpose: Return an index of blobs and which Blossom servers host them, plus UI hints for which server is preferred.
+- Response shape (backward compatible and minimal for UI):
+
+```json
+[
+  {
+    "hash": "<sha256>",
+    "blurhash": "<optional blurhash>",
+    "servers": [
+      { "url": "https://cdn.a", "lastGood": true, "bad": false },
+      { "url": "https://cdn.b", "lastGood": false, "bad": true }
+    ]
+  }
+]
+```
+
+- Flow (Option A: reuse existing caches; no new inverted-index keys):
+  1. Resolve servers using Redis `blossom:cached-servers`. If missing, fetch Nostr kind:10063 once and set the cache.
+  2. Ensure per-server blob lists exist:
+     - For each server, read `blossom-blob-list-<server>`.
+     - If missing, fetch signed `GET /list/<pubkey>` (Authorization: Nostr base64 of kind 24242 with `t=list`) and store the response as JSON.
+     - If the server has no blobs or returns nothing usable, store a sentinel `null` (string) under `blossom-blob-list-<server>` to avoid repeated refetches.
+  3. Merge per-server caches into `sha256 -> Set(servers)`.
+  4. For each `sha256`, attach:
+     - `blurhash` from `blossom:blurhash:<sha256>` when present
+     - `lastGood` flag by comparing against `blossom:last-good:<sha256>`
+     - `bad` flag using existence of `blossom:bad:<sha256>:<server>`
+  5. Emit the array ordered naturally by hash (or by most recent server cache processed).
+  6. Cache the final list response as a single Redis value (e.g. `blossom:list:aggregate`) with no TTL; do not rely on CDN cache. Invalidate this aggregate whenever we invalidate any per-server list cache (upload, mirror, delete, or list refresh) so the next call will rebuild it.
+
+- Complexity
+  - Let S = number of servers; B = number of unique blob hashes across all servers.
+  - This approach is O(S + B): read and parse each server’s cached list once (S), merge and iterate unique hashes once (B).
+  - If, later, we choose to maintain an inverted index (blob→servers), the read can be O(B) with set lookups, at the cost of write-path complexity.
+
+- Why not CDN cache?
+  - We prefer Redis for coherent invalidation: when any per-server list is invalidated or refreshed, we delete the aggregate list key. The next request rebuilds from fresh inputs.
+
+- Authentication
+  - This is not a public endpoint. Require NIP-98 authentication and role check (editor or admin) before serving the list.
+  - Always sign upstream Blossom list fetches with a MASTER key `t=list` authorization event per BUD-02. Some servers may not require it but signing maximizes compatibility.
 
 ### Step-by-step Implementation
 
 1. Public route
-   - Create `api/file/[...slug].ts` (Edge runtime) implementing `GET` and `HEAD` with the fetch strategy above.
+   - Create `api/file/[hash].ts` implementing `GET` and `HEAD` with the fetch strategy above.
    - Add Redis `blossom:last-good:<sha256>` cache.
 2. Admin endpoints
    - Add `handleUploadBlossomMedia`, `handleMirrorBlossomMedia`, `handleDeleteBlossomMedia` in `api-helpers/admin/blossom.ts`.

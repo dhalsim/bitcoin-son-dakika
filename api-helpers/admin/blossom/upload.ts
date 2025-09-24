@@ -14,6 +14,7 @@ import {
   getServerCacheKey,
   getBlobServersKey,
   getBlobIndexKey,
+  getAggregateListKey,
   markServerGood,
   sha256Hex,
 } from "./common.js";
@@ -179,6 +180,7 @@ export async function handleUploadBlossomMedia(
         await markServerGood(redis, hashHex, server);
 
         await redis.del(getServerCacheKey(server));
+        await redis.del(getAggregateListKey());
         await redis.del(getBadServerKey(hashHex, server));
 
         // Update inverted index: blob -> servers and global blob index
