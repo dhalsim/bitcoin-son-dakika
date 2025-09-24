@@ -190,6 +190,10 @@ export async function GET(request: Request) {
           "Access-Control-Allow-Headers",
           "Range, If-None-Match, If-Modified-Since",
         );
+        responseHeaders.set(
+          "Access-Control-Expose-Headers",
+          "X-BlurHash, X-Width, X-Height, X-Content-Type",
+        );
 
         // Set CDN cache headers
         responseHeaders.set(
@@ -291,6 +295,10 @@ export async function HEAD(request: Request) {
           "Access-Control-Allow-Headers",
           "Range, If-None-Match, If-Modified-Since",
         );
+        responseHeaders.set(
+          "Access-Control-Expose-Headers",
+          "X-BlurHash, X-Width, X-Height, X-Content-Type",
+        );
 
         // Set CDN cache headers
         responseHeaders.set(
@@ -340,6 +348,7 @@ export async function OPTIONS() {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
       "Access-Control-Allow-Headers": "Range, If-None-Match, If-Modified-Since",
+      "Access-Control-Expose-Headers": "X-BlurHash, X-Width, X-Height, X-Content-Type",
       "Access-Control-Max-Age": "86400",
     },
   });
