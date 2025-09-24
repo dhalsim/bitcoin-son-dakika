@@ -1,5 +1,5 @@
 import type { RedisClient } from "../../common.js";
-import { getBlossomServersEvent } from "../../common_with_client.js";
+import { getBlossomServersEvent, MASTER_ADMIN_PUBKEY } from "../../common_with_client.js";
 
 import {
   getCachedServersKey,
@@ -95,6 +95,7 @@ export async function listFromRedis(redis: RedisClient): Promise<BlobServersItem
     const servers = await redis.sMembers(getBlobServersKey(sha256));
     const meta = await redis.get(getBlurHashKey(sha256));
     let blurhash: string | undefined;
+
     if (meta) {
       try {
         const parsed = JSON.parse(meta);
@@ -110,4 +111,106 @@ export async function listFromRedis(redis: RedisClient): Promise<BlobServersItem
   }
 
   return results;
+}
+
+// Anonymous fetch: try to populate per-server cache and inverted index without Authorization
+async function fetchBlobListFromServerAnonymous(
+  redis: RedisClient,
+  server: string,
+  pubkey: string,
+): Promise<number> {
+  try {
+    const serverUrl = server.endsWith("/") ? server.slice(0, -1) : server;
+
+    const response = await fetch(`${serverUrl}/list/${pubkey}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      return 0;
+    }
+
+    const responseData = await response.json();
+
+    let blobs: Array<{
+      url: string;
+      sha256: string;
+      size: number;
+      type: string;
+      uploaded: number;
+    }> = [];
+    if (Array.isArray(responseData)) {
+      blobs = responseData.map((item: any) => ({
+        url: item.url,
+        sha256: item.sha256,
+        size: item.size,
+        type: item.type,
+        uploaded: item.uploaded,
+      }));
+    } else if (responseData && Array.isArray(responseData.blobs)) {
+      blobs = responseData.blobs.map((item: any) => ({
+        url: item.url,
+        sha256: item.sha256,
+        size: item.size,
+        type: item.type,
+        uploaded: item.uploaded,
+      }));
+    } else if (responseData && responseData.status === "success") {
+      blobs = [
+        {
+          url: responseData.url,
+          sha256: responseData.sha256,
+          size: responseData.size,
+          type: responseData.type,
+          uploaded: responseData.uploaded,
+        },
+      ];
+    }
+
+    // Cache per-server list
+    await redis.set(getServerCacheKey(server), JSON.stringify(blobs));
+
+    // Update inverted index
+    const pipeline = redis.multi();
+    const blobIndexKey = getBlobIndexKey();
+
+    for (const b of blobs) {
+      if (!b?.sha256 || b.sha256.length !== 64) {
+        continue;
+      }
+
+      pipeline.sAdd(getBlobServersKey(b.sha256), server);
+      pipeline.sAdd(blobIndexKey, b.sha256);
+    }
+
+    if ((pipeline as any).length) {
+      await pipeline.exec();
+    }
+
+    return blobs.length;
+  } catch (e) {
+    // ignore failures; some servers may require Authorization
+    const _ignored = e;
+    void _ignored;
+
+    return 0;
+  }
+}
+
+export async function ensureIndexFromAnonymousFetch(
+  redis: RedisClient,
+  servers: string[],
+): Promise<void> {
+  for (const server of servers) {
+    // Only fetch if no cache exists
+    const cached = await redis.get(getServerCacheKey(server));
+    if (cached) {
+      continue;
+    }
+
+    await fetchBlobListFromServerAnonymous(redis, server, MASTER_ADMIN_PUBKEY);
+  }
 }

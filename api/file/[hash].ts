@@ -6,6 +6,7 @@ import {
 } from "../../api-helpers/admin/blossom/common.js";
 import {
   ensureInvertedIndexFromServerCaches,
+  ensureIndexFromAnonymousFetch,
   getAllCandidateServers,
   listFromRedis,
 } from "../../api-helpers/admin/blossom/public_list.js";
@@ -161,6 +162,13 @@ export async function GET(request: Request) {
         const servers = await getAllCandidateServers(redis);
         if (servers.length > 0) {
           await ensureInvertedIndexFromServerCaches(redis, servers);
+          // If still empty, try anonymous fetch to seed caches/index
+          items = await listFromRedis(redis);
+
+          if (items.length === 0) {
+            await ensureIndexFromAnonymousFetch(redis, servers);
+          }
+
           items = await listFromRedis(redis);
         }
       }
