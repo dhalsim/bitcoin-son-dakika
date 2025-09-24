@@ -1,5 +1,5 @@
 import type { RedisClient } from "../../common.js";
-import { MASTER_ADMIN_PUBKEY } from "../../common_with_client.js";
+import { MASTER_ADMIN_PUBKEY, getBlossomServersEvent } from "../../common_with_client.js";
 
 import {
   createBlossomAuthEvent,
@@ -111,6 +111,29 @@ async function getServersPreferCache(redis: RedisClient): Promise<string[]> {
     } catch (e) {
       console.warn("Failed to parse cached servers:", e);
     }
+  }
+
+  // Fallback: fetch servers from Nostr kind:10063 when cache is empty
+  try {
+    const evt = await getBlossomServersEvent();
+
+    if (evt && Array.isArray(evt.tags)) {
+      const servers = evt.tags
+        .filter((t: string[]) => t[0] === "server" && t[1])
+        .map((t: string[]) => t[1]);
+
+      if (servers.length > 0) {
+        const _7daysInSeconds = 60 * 60 * 24 * 7;
+
+        await redis.set(getCachedServersKey(), JSON.stringify(servers), {
+          expiration: { type: "EX", value: _7daysInSeconds },
+        });
+
+        return servers as string[];
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to fetch servers from Nostr:", e);
   }
 
   return [];
