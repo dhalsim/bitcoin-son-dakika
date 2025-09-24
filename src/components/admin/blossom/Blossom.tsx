@@ -134,7 +134,6 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
                         }
                         alt="Progressive test image"
                         className="w-full h-48 rounded border"
-                        fallbackUrl={uploadedImageUrl}
                         loading="lazy"
                         decoding="async"
                       />

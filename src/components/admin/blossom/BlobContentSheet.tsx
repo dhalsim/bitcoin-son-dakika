@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { DeleteBlossomMediaPayload } from "@/types/admin";
 import { WEBSITE_URL } from "@/lib/constants";
+import { ProgressiveBlossomImage } from "@/components/common/ProgressiveBlossomImage";
 
 import {
   DeleteBlossomMediaResponse,
@@ -293,15 +294,23 @@ export default function BlobContentSheet({
                       {/* File Preview */}
                       {blob.type.startsWith("image/") && (
                         <div className="mt-3">
-                          <img
-                            src={blob.url}
-                            alt="Preview"
-                            className="max-w-full h-32 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                          <div
+                            className="cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => handleOpenInNewTab(blob.url)}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = "none";
-                            }}
-                          />
+                          >
+                            <ProgressiveBlossomImage
+                              sha256={blob.sha256}
+                              alt="Preview"
+                              className="max-w-full h-32 object-cover rounded border"
+                              width={300}
+                              height={128}
+                              loading="lazy"
+                              decoding="async"
+                              onError={() => {
+                                console.warn(`Failed to load image for blob ${blob.sha256}`);
+                              }}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
