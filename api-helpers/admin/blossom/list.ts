@@ -1,5 +1,9 @@
 import type { RedisClient } from "../../common.js";
-import { ErrorResponseCreator, SuccessResponse } from "../../common_with_client.js";
+import {
+  ErrorResponseCreator,
+  MASTER_ADMIN_PUBKEY,
+  SuccessResponse,
+} from "../../common_with_client.js";
 import type { FetchBlobListsResponse } from "../../schemas.js";
 import { BlobDescriptorSchema } from "../../schemas.js";
 import type { AuthResult } from "../../types.js";
@@ -153,7 +157,7 @@ export async function handleFetchBlobLists(
     const blobLists = await fetchBlobListsFromServers(
       redis,
       servers,
-      authResult.pubkey,
+      MASTER_ADMIN_PUBKEY,
       masterAdminPrivateKey,
       useCache,
     );
