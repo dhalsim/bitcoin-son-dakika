@@ -10,6 +10,8 @@ export const getBlurHashKey = (sha256: string) => `blossom:blurhash:${sha256}`;
 export const getBadServerKey = (sha256: string, server: string) =>
   `blossom:bad:${sha256}:${server}`;
 export const getCachedServersKey = () => `blossom:cached-servers`;
+export const getBlobServersKey = (sha256: string) => `blossom:blob:servers:${sha256}`;
+export const getBlobIndexKey = () => `blossom:blob:index`;
 
 // SHA256 hash utility using Web Crypto API (Edge Runtime compatible)
 export async function sha256Hex(buffer: Buffer): Promise<string> {

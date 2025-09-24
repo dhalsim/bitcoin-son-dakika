@@ -12,6 +12,8 @@ import {
   getBadServerKey,
   getBlurHashKey,
   getServerCacheKey,
+  getBlobServersKey,
+  getBlobIndexKey,
   markServerGood,
   sha256Hex,
 } from "./common.js";
@@ -178,6 +180,10 @@ export async function handleUploadBlossomMedia(
 
         await redis.del(getServerCacheKey(server));
         await redis.del(getBadServerKey(hashHex, server));
+
+        // Update inverted index: blob -> servers and global blob index
+        await redis.sAdd(getBlobServersKey(hashHex), server);
+        await redis.sAdd(getBlobIndexKey(), hashHex);
 
         // Store BlurHash metadata if available
         if (blurhashData) {

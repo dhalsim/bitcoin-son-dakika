@@ -104,6 +104,7 @@ export default function AdminPanel() {
   // Sync from URL on back/forward
   useEffect(() => {
     const urlTab = (searchParams.get("tab") as AdminTab) || "stats";
+
     if (urlTab !== activeTab) {
       setActiveTab(urlTab);
     }
@@ -112,8 +113,11 @@ export default function AdminPanel() {
   const changeTab = useCallback(
     (tab: AdminTab) => {
       setActiveTab(tab);
+
       const next = new URLSearchParams(searchParams);
+
       next.set("tab", tab);
+
       setSearchParams(next, { replace: false });
     },
     [searchParams, setSearchParams],
@@ -321,7 +325,7 @@ export default function AdminPanel() {
 
             const tagItemsLastTimeUpdated = categoriesEvent.created_at * 1000;
 
-            const _adminData: AdminData = {
+            setAdminData({
               adminUsers,
               adminsLastTimeUpdated,
               editorUsers,
@@ -336,11 +340,7 @@ export default function AdminPanel() {
               tagItemsLastTimeUpdated,
               blossomServers,
               blossomServersLastTimeUpdated,
-            };
-
-            console.log(_adminData);
-
-            setAdminData(_adminData);
+            });
 
             setLoading(false);
           },
@@ -360,6 +360,7 @@ export default function AdminPanel() {
       if (!pubkey) {
         setUserInfo({});
         setError("Pubkey okunamadı");
+
         return;
       }
 

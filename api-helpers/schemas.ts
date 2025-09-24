@@ -115,3 +115,17 @@ export type PublishResponse = z.infer<typeof PublishResponseSchema>;
 
 // Schema for FetchBlobListsResponse
 export type FetchBlobListsResponse = z.infer<typeof FetchBlobListsResponseSchema>;
+
+// Schema for public /api/file/list response items
+export const BlobServersItemSchema = z.object({
+  hash: z.string().length(64),
+  servers: z.array(z.string()),
+  blurhash: z.string().optional(),
+});
+
+// Schema for the full list response
+export const BlobServersListSchema = z.array(BlobServersItemSchema);
+
+// Types
+export type BlobServersItem = z.infer<typeof BlobServersItemSchema>;
+export type BlobServersList = z.infer<typeof BlobServersListSchema>;

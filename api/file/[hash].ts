@@ -4,8 +4,14 @@ import {
   getCachedServersKey,
   getBlurHashKey,
 } from "../../api-helpers/admin/blossom/common.js";
+import {
+  ensureInvertedIndexFromServerCaches,
+  getAllCandidateServers,
+  listFromRedis,
+} from "../../api-helpers/admin/blossom/public_list.js";
 import { type RedisClient, getRedis } from "../../api-helpers/common.js";
 import { getBlossomServersEvent } from "../../api-helpers/common_with_client.js";
+import { BlobServersListSchema } from "../../api-helpers/schemas.js";
 
 // Extract sha256 from URL path (last 64-char hex string)
 function extractSha256FromPath(pathname: string): string | null {
@@ -144,6 +150,44 @@ export async function GET(request: Request) {
   const redis = await getRedis();
 
   const url = new URL(request.url);
+
+  // Route multiplexing: support /api/file/list and /api/file/<sha256>[.ext]
+  const isListRoute = /\/api\/file\/list\/?$/.test(url.pathname);
+
+  if (isListRoute) {
+    try {
+      let items = await listFromRedis(redis);
+      if (items.length === 0) {
+        const servers = await getAllCandidateServers(redis);
+        if (servers.length > 0) {
+          await ensureInvertedIndexFromServerCaches(redis, servers);
+          items = await listFromRedis(redis);
+        }
+      }
+
+      const validated = BlobServersListSchema.parse(items);
+
+      return new Response(JSON.stringify(validated), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=60",
+        },
+      });
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: error instanceof Error ? error.message : "unknown" }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        },
+      );
+    }
+  }
 
   // Extract sha256 from path
   const sha256 = extractSha256FromPath(url.pathname);

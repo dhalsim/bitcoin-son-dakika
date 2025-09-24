@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ExternalLink, Calendar, FileText, Hash, Trash2, Loader2, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,7 +17,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { DeleteBlossomMediaPayload } from "@/types/admin";
 import { WEBSITE_URL } from "@/lib/constants";
-import { ProgressiveBlossomImage } from "@/components/common/ProgressiveBlossomImage";
+import {
+  FetchMetadata,
+  ProgressiveBlossomImage,
+} from "@/components/common/ProgressiveBlossomImage";
 
 import {
   DeleteBlossomMediaResponse,
@@ -49,9 +53,48 @@ export default function BlobContentSheet({
   onBlobDeleted,
 }: BlobContentSheetProps) {
   const { getPublicKey, signEvent } = useNostrAuth();
-  const [isDeleting, setIsDeleting] = useState<string | null>(null); // Track which blob is being deleted
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [testBlurhash, setTestBlurhash] = useState<boolean>(true);
+
+  const middleTruncate = (text: string, head = 10, tail = 10): string => {
+    if (!text) return "";
+    if (text.length <= head + tail + 3) return text;
+    return `${text.slice(0, head)}…${text.slice(-tail)}`;
+  };
+  const [blurhashMetadata, setBlurhashMetadata] = useState<Record<string, any>>({});
+
+  // Fetch BlurHash metadata for all blobs when sheet opens
+  useEffect(() => {
+    if (open && blobs.length > 0) {
+      const fetchAllMetadata = async () => {
+        const metadataPromises = blobs.map(async (blob) => {
+          try {
+            const metadata = await FetchMetadata({ sha256: blob.sha256 });
+            return { sha256: blob.sha256, metadata };
+          } catch (error) {
+            console.error(`Failed to fetch metadata for ${blob.sha256}:`, error);
+            return { sha256: blob.sha256, metadata: null };
+          }
+        });
+
+        const results = await Promise.all(metadataPromises);
+        const metadataMap = results.reduce(
+          (acc, { sha256, metadata }) => {
+            acc[sha256] = metadata;
+            return acc;
+          },
+          {} as Record<string, any>,
+        );
+
+        setBlurhashMetadata(metadataMap);
+      };
+
+      fetchAllMetadata();
+    }
+  }, [open, blobs]);
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -167,17 +210,31 @@ export default function BlobContentSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[600px] sm:w-[800px]">
+      <SheetContent className="w-[600px] sm:w-[800px] overflow-x-hidden">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Hash className="h-5 w-5" />
-            {server.replace("https://", "").split(".")[0]} - Blob Listesi
+            {server} - Blob Listesi
           </SheetTitle>
           <SheetDescription>Bu sunucuda {blobs.length} blob bulundu</SheetDescription>
         </SheetHeader>
 
         <ScrollArea className="h-[calc(100vh-120px)] mt-6">
-          <div className="space-y-4">
+          <div className="space-y-4 pr-2">
+            {/* Controls */}
+            <div className="flex items-center gap-2 px-2 overflow-hidden">
+              <Checkbox
+                id="test-blurhash"
+                checked={testBlurhash}
+                onCheckedChange={(v) => setTestBlurhash(!!v)}
+              />
+              <label
+                htmlFor="test-blurhash"
+                className="text-sm text-muted-foreground select-none break-words"
+              >
+                BlurHash test modunu göster (tıklandığında orijinali aç)
+              </label>
+            </div>
             {/* Error Alert */}
             {deleteError && (
               <Alert className="border-red-200 bg-red-50">
@@ -227,32 +284,17 @@ export default function BlobContentSheet({
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-3">
-                      {/* File URL */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground font-medium w-16">URL:</span>
-                        <div className="flex-1 min-w-0">
-                          <code className="text-xs bg-muted px-2 py-1 rounded break-all">
-                            {blob.url}
-                          </code>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenInNewTab(blob.url)}
-                          className="flex-shrink-0"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
-                      </div>
-
                       {/* SHA256 Hash */}
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground font-medium w-16">
                           Hash:
                         </span>
                         <div className="flex-1 min-w-0">
-                          <code className="text-xs bg-muted px-2 py-1 rounded break-all font-mono">
-                            {blob.sha256}
+                          <code
+                            className="text-xs bg-muted px-2 py-1 rounded break-all font-mono"
+                            title={blob.sha256}
+                          >
+                            {middleTruncate(blob.sha256, 12, 12)}
                           </code>
                         </div>
                         <Button
@@ -263,6 +305,89 @@ export default function BlobContentSheet({
                         >
                           <Hash className="h-3 w-3" />
                         </Button>
+                      </div>
+
+                      {/* File URL */}
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <span className="text-xs text-muted-foreground font-medium w-16">URL:</span>
+                        <div className="flex-1 min-w-0">
+                          <a
+                            className="block text-xs bg-muted px-2 py-1 rounded break-words break-all whitespace-normal font-mono"
+                            href={blob.url}
+                            target="_blank"
+                            title={`${WEBSITE_URL}/api/file/${blob.sha256}`}
+                          >
+                            {middleTruncate(`${WEBSITE_URL}/api/file/${blob.sha256}`, 24, 16)}
+                          </a>
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenInNewTab(blob.url)}
+                          className="flex-shrink-0"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </div>
+
+                      {/* API URL */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-medium w-16">
+                          API URL:
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <a
+                            className="text-xs bg-muted px-2 py-1 rounded break-all font-mono"
+                            href={`${WEBSITE_URL}/api/file/${blob.sha256}`}
+                            target="_blank"
+                          >
+                            {WEBSITE_URL}/api/file/{blob.sha256}
+                          </a>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigator.clipboard.writeText(blob.sha256)}
+                          className="flex-shrink-0"
+                        >
+                          <Hash className="h-3 w-3" />
+                        </Button>
+                      </div>
+
+                      {/* BlurHash */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-medium w-16">
+                          BlurHash:
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          {blurhashMetadata[blob.sha256] ? (
+                            <div className="space-y-1">
+                              <code className="text-xs bg-muted px-2 py-1 rounded break-all font-mono">
+                                {blurhashMetadata[blob.sha256].blurhash}
+                              </code>
+                              <div className="text-xs text-muted-foreground">
+                                {blurhashMetadata[blob.sha256].width}×
+                                {blurhashMetadata[blob.sha256].height} •{" "}
+                                {blurhashMetadata[blob.sha256].contentType}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Loading...</span>
+                          )}
+                        </div>
+                        {blurhashMetadata[blob.sha256] && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              navigator.clipboard.writeText(blurhashMetadata[blob.sha256].blurhash)
+                            }
+                            className="flex-shrink-0"
+                          >
+                            <Hash className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
 
                       {/* Upload Date */}
@@ -301,11 +426,10 @@ export default function BlobContentSheet({
                             <ProgressiveBlossomImage
                               sha256={blob.sha256}
                               alt="Preview"
-                              className="max-w-full h-32 object-cover rounded border"
-                              width={300}
-                              height={128}
+                              className="object-cover rounded border"
                               loading="lazy"
                               decoding="async"
+                              testBlurhash={testBlurhash}
                               onError={() => {
                                 console.warn(`Failed to load image for blob ${blob.sha256}`);
                               }}

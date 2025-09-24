@@ -8,6 +8,8 @@ import type { AuthResult } from "../../types.js";
 import {
   createMasterAuthBase64,
   getLastGoodKey,
+  getBlobServersKey,
+  getBlobIndexKey,
   getServerCacheKey,
   markServerBad,
 } from "./common.js";
@@ -109,6 +111,14 @@ export async function handleDeleteBlossomMedia(
 
           if (lastGood === server) {
             await redis.del(getLastGoodKey(sha256));
+          }
+
+          // Remove from inverted index
+          await redis.sRem(getBlobServersKey(sha256), server);
+          const remaining = await redis.sCard(getBlobServersKey(sha256));
+          if (remaining === 0) {
+            // Remove hash from global index if no servers left
+            await redis.sRem(getBlobIndexKey(), sha256);
           }
         }
 

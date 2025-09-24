@@ -7,6 +7,8 @@ import {
   createMasterAuthBase64,
   extractSha256FromUrl,
   getBadServerKey,
+  getBlobServersKey,
+  getBlobIndexKey,
   getServerCacheKey,
   markServerGood,
 } from "./common.js";
@@ -81,6 +83,10 @@ export async function handleMirrorBlossomMedia(
 
         await redis.del(getServerCacheKey(server));
         await redis.del(getBadServerKey(sha256, server));
+
+        // Update inverted index: blob -> servers and global blob index
+        await redis.sAdd(getBlobServersKey(sha256), server);
+        await redis.sAdd(getBlobIndexKey(), sha256);
 
         return { server, descriptor };
       }),
