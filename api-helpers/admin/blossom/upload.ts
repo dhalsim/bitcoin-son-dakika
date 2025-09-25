@@ -1,4 +1,3 @@
-// Upload functionality for Blossom servers
 import { encode } from "blurhash";
 import sharp from "sharp";
 
@@ -150,26 +149,46 @@ export async function handleUploadBlossomMedia(
   }
 
   const inputArrayBuffer = await file.arrayBuffer();
-  let buffer = Buffer.from(inputArrayBuffer) as Buffer;
+
+  // Preserve original buffer to capture original dimensions
+  const originalBuffer = Buffer.from(inputArrayBuffer) as Buffer;
+
+  let buffer = originalBuffer;
   let contentType = file.type || "application/octet-stream";
+
   const isImage = contentType.startsWith("image/");
 
   try {
     let blurhashData: { blurhash: string; width: number; height: number } | null = null;
+    let originalWidth: number | undefined;
+    let originalHeight: number | undefined;
+
+    if (isImage) {
+      try {
+        const meta = await sharp(originalBuffer).metadata();
+        originalWidth = meta.width || undefined;
+        originalHeight = meta.height || undefined;
+      } catch (e) {
+        console.warn(`Failed to get metadata for ${file.name}: ${e}`);
+      }
+    }
 
     if (optimize && isImage) {
       const { output, mime } = await optimizeImageWithSharp(buffer, format, quality, maxWidth);
+
       buffer = output;
       contentType = mime;
 
       // Generate BlurHash if requested
       if (shouldGenerateBlurHash) {
         const blurhashResult = await generateBlurHash(buffer);
+
         blurhashData = blurhashResult;
       }
     }
 
     const hashHex = await sha256Hex(buffer);
+
     const authBase64 = createMasterAuthBase64(masterAdminPrivateKey, "upload", [hashHex]);
 
     const results = await Promise.allSettled(
@@ -187,15 +206,17 @@ export async function handleUploadBlossomMedia(
         await redis.sAdd(getBlobServersKey(hashHex), server);
         await redis.sAdd(getBlobIndexKey(), hashHex);
 
-        // Store BlurHash metadata if available
-        if (blurhashData) {
-          const blurhashMetadata = {
-            blurhash: blurhashData.blurhash,
-            width: blurhashData.width,
-            height: blurhashData.height,
+        // Store metadata (original dimensions if available) and optional blurhash
+        if (isImage) {
+          const metaToStore = {
+            blurhash: blurhashData ? blurhashData.blurhash : undefined,
+            // Prefer original dimensions as requested
+            width: originalWidth,
+            height: originalHeight,
             contentType,
-          };
-          await redis.set(getBlurHashKey(hashHex), JSON.stringify(blurhashMetadata));
+          } as Record<string, unknown>;
+
+          await redis.set(getBlurHashKey(hashHex), JSON.stringify(metaToStore));
         }
 
         return { server, descriptor };
