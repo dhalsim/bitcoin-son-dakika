@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Upload, Link, RefreshCw, Image, Copy, Server, Trash2, Plus } from "lucide-react";
+import { BlurhashCanvas } from "react-blurhash";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,10 +10,11 @@ import { ProgressiveBlossomImage } from "@/components/common/ProgressiveBlossomI
 import { UpdateBlossomServersPayload } from "@/types/admin";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { createNIP98Auth, postAdminAction } from "@/components/admin/utils";
+import { WEBSITE_URL } from "@/lib/constants";
+import { FileListItem } from "api-helpers/schemas";
 
 import { ListServers } from "./ListServers";
 import { BlossomImageUpload } from "./BlossomImageUpload";
-import { WEBSITE_URL } from "@/lib/constants";
 
 interface BlossomProps {
   servers: string[];
@@ -36,13 +38,11 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
   // Display tab state
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
-  const [fileList, setFileList] = useState<
-    Array<{
-      hash: string;
-      blurhash?: string;
-      servers: { url: string; lastGood: boolean; bad: boolean }[];
-    }>
-  >([]);
+  const [fileList, setFileList] = useState<Array<FileListItem>>([]);
+
+  // Selection map: hash -> set of server URLs selected for delete
+  const [selected, setSelected] = useState<Record<string, Set<string>>>({});
+  const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
   const { getPublicKey, signEvent } = useNostrAuth();
 
@@ -64,8 +64,15 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
       }
 
       const data = await res.json();
+      const list = Array.isArray(data) ? data : [];
+      setFileList(list);
 
-      setFileList(Array.isArray(data) ? data : []);
+      // Preselect all current servers for each blob
+      const initialSelected: Record<string, Set<string>> = {};
+      for (const item of list) {
+        initialSelected[item.hash] = new Set(item.servers.map((s: any) => s.url));
+      }
+      setSelected(initialSelected);
     } catch (e) {
       setListError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -94,6 +101,46 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
 
     await fetchFileList();
   }
+
+  function toggleSelection(hash: string, server: string) {
+    setSelected((prev) => {
+      const current = new Set(prev[hash] ? Array.from(prev[hash]) : []);
+      if (current.has(server)) {
+        current.delete(server);
+      } else {
+        current.add(server);
+      }
+      return { ...prev, [hash]: current };
+    });
+  }
+
+  async function deleteSelected(hash: string) {
+    const serversToDelete = Array.from(selected[hash] || []);
+    if (!serversToDelete.length) return;
+
+    await postAdminAction(
+      { action: "delete-blossom-media", servers: serversToDelete, sha256: hash },
+      getPublicKey,
+      signEvent,
+    );
+
+    setSelected((p) => ({ ...p, [hash]: new Set<string>() }));
+    await fetchFileList();
+  }
+
+  const truncateHash = (h: string) => `${h.slice(0, 3)}...${h.slice(-3)}`;
+
+  const copyToClipboard = async (
+    text: string,
+    hash: string,
+    e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>,
+  ) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedHash(hash);
+      setTimeout(() => setCopiedHash((curr) => (curr === hash ? null : curr)), 1200);
+    } catch (_) {}
+  };
 
   return (
     <div className="space-y-6">
@@ -182,7 +229,13 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
                         <div key={item.hash} className="border rounded p-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="shrink-0">
+                              <a
+                                href={`${WEBSITE_URL}/api/file/${item.hash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="shrink-0"
+                                title="Resmi yeni sekmede aç"
+                              >
                                 <ProgressiveBlossomImage
                                   sha256={item.hash}
                                   alt={item.hash}
@@ -190,13 +243,36 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
                                   loading="lazy"
                                   decoding="async"
                                 />
-                              </div>
+                              </a>
+                              {item.blurhash && (
+                                <div className="hidden min-md:block">
+                                  <BlurhashCanvas
+                                    hash={item.blurhash}
+                                    width={item.width}
+                                    height={item.height}
+                                    punch={1}
+                                  />
+                                </div>
+                              )}
                               <Badge variant="outline">SHA256</Badge>
-                              <span className="font-mono text-xs">{item.hash}</span>
+                              <button
+                                onClick={(e) => copyToClipboard(item.hash, item.hash, e)}
+                                className="font-mono text-xs underline underline-offset-2 cursor-pointer relative"
+                                title="Hash'i kopyala"
+                              >
+                                {truncateHash(item.hash)}
+                                <div
+                                  className={`absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-gray-800 text-white text-[10px] rounded shadow ${
+                                    copiedHash === item.hash ? "block" : "hidden"
+                                  }`}
+                                >
+                                  Kopyalandı
+                                </div>
+                              </button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => navigator.clipboard.writeText(item.hash)}
+                                onClick={(e) => copyToClipboard(item.hash, item.hash, e)}
                                 title="Kopyala"
                               >
                                 <Copy className="h-4 w-4" />
@@ -227,23 +303,38 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
                                 key={`${item.hash}-${s.url}`}
                                 className="flex items-center justify-between border rounded p-2"
                               >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm">{s.url}</span>
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={!!selected[item.hash]?.has(s.url)}
+                                    onChange={() => toggleSelection(item.hash, s.url)}
+                                    className="h-4 w-4"
+                                  />
+                                  <a
+                                    href={`${s.url.replace(/\/$/, "")}/${item.hash}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm underline underline-offset-2"
+                                    title="Sunucudan aç"
+                                  >
+                                    {s.url}
+                                  </a>
                                   {s.lastGood && <Badge className="bg-green-600">Primary</Badge>}
                                   {s.bad && <Badge className="bg-red-600">Bad</Badge>}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => deleteFromServer(item.hash, s.url)}
-                                    title="Sunucudan sil"
-                                  >
-                                    <Trash2 className="h-3 w-3 mr-1" /> Sil
-                                  </Button>
-                                </div>
+                                <div className="flex items-center gap-2" />
                               </div>
                             ))}
+                          </div>
+                          <div className="mt-3 flex items-center justify-end">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deleteSelected(item.hash)}
+                              disabled={!selected[item.hash] || selected[item.hash].size === 0}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" /> Seçili Olanları Sil
+                            </Button>
                           </div>
                         </div>
                       );

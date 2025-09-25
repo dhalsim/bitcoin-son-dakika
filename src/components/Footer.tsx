@@ -58,6 +58,7 @@ const Footer = () => {
       }
     }, 2000);
   };
+
   return (
     <footer className="bg-card text-card-foreground mt-12 border-t border-border relative">
       {/* Background image */}

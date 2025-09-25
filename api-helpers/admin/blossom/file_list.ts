@@ -1,3 +1,4 @@
+import type { FileListItem, ServerState } from "../../../api-helpers/schemas.js";
 import type { RedisClient } from "../../common.js";
 import { MASTER_ADMIN_PUBKEY, getBlossomServersEvent } from "../../common_with_client.js";
 
@@ -10,18 +11,6 @@ import {
   getLastGoodKey,
   getServerCacheKey,
 } from "./common.js";
-
-type ServerState = {
-  url: string;
-  lastGood: boolean;
-  bad: boolean;
-};
-
-type FileListItem = {
-  hash: string;
-  blurhash?: string;
-  servers: ServerState[];
-};
 
 function parseBlobList(value: string | null): Array<{ sha256: string }> | null {
   if (!value) {
@@ -197,7 +186,7 @@ export async function listOfBlobToServers(
     }
   }
 
-  // 4) Assemble response with blurhash and flags
+  // 4) Assemble response with blurhash, dimensions, content type and flags
   const result: FileListItem[] = [];
 
   for (const [hash, serverSet] of hashToServers) {
@@ -206,12 +195,18 @@ export async function listOfBlobToServers(
     const blurMetaStr = await redis.get(getBlurHashKey(hash));
 
     let blurhash: string | undefined;
+    let width: number | undefined;
+    let height: number | undefined;
+    let contentType: string | undefined;
 
     if (blurMetaStr) {
       try {
         const parsed = JSON.parse(blurMetaStr);
 
         blurhash = parsed?.blurhash;
+        width = parsed?.width;
+        height = parsed?.height;
+        contentType = parsed?.contentType;
       } catch (e) {
         console.warn(`Failed to parse blurhash for ${hash}: ${e}`);
       }
@@ -227,7 +222,7 @@ export async function listOfBlobToServers(
       serversWithFlags.push({ url: s, lastGood: !!lastGood && lastGood === s, bad });
     }
 
-    result.push({ hash, blurhash, servers: serversWithFlags });
+    result.push({ hash, blurhash, width, height, contentType, servers: serversWithFlags });
   }
 
   // 5) Cache aggregate result in Redis (no TTL)

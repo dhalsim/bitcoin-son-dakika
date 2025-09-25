@@ -120,6 +120,9 @@ export type FetchBlobListsResponse = z.infer<typeof FetchBlobListsResponseSchema
 export const BlobServersItemSchema = z.object({
   hash: z.string().length(64),
   blurhash: z.string().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  contentType: z.string().optional(),
   servers: z.array(
     z.object({
       url: z.string(),
@@ -129,8 +132,26 @@ export const BlobServersItemSchema = z.object({
   ),
 });
 
+export const ServerStateSchema = z.object({
+  url: z.string(),
+  lastGood: z.boolean(),
+  bad: z.boolean(),
+});
+
+export const FileListItemSchema = z.object({
+  hash: z.string(),
+  blurhash: z.string().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  contentType: z.string().optional(),
+  servers: z.array(ServerStateSchema),
+});
+
 // Schema for the full list response
 export const BlobServersListSchema = z.array(BlobServersItemSchema);
+
+export type ServerState = z.infer<typeof ServerStateSchema>;
+export type FileListItem = z.infer<typeof FileListItemSchema>;
 
 // Types
 export type BlobServersItem = z.infer<typeof BlobServersItemSchema>;
