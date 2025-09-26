@@ -157,6 +157,7 @@ export async function handleUploadBlossomMedia(
   let contentType = file.type || "application/octet-stream";
 
   const isImage = contentType.startsWith("image/");
+  const isGif = contentType.toLowerCase() === "image/gif";
 
   try {
     let blurhashData: { blurhash: string; width: number; height: number } | null = null;
@@ -173,7 +174,8 @@ export async function handleUploadBlossomMedia(
       }
     }
 
-    if (optimize && isImage) {
+    // Only optimize safe/static images; never optimize GIF to avoid losing animation
+    if (optimize && isImage && !isGif) {
       const { output, mime } = await optimizeImageWithSharp(buffer, format, quality, maxWidth);
 
       buffer = output;

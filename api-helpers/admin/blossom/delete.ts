@@ -100,7 +100,7 @@ export async function handleDeleteBlossomMedia(
         const result = await deleteBlobFromServer(server, sha256, authBase64);
 
         // Cache updates
-        if (result.success) {
+        if (result.success || result.status === 404) {
           // If delete was successful, mark server as bad for this blob
           await markServerBad(redis, sha256, server);
 
@@ -117,11 +117,18 @@ export async function handleDeleteBlossomMedia(
 
           // Remove from inverted index
           await redis.sRem(getBlobServersKey(sha256), server);
+
           const remaining = await redis.sCard(getBlobServersKey(sha256));
+
           if (remaining === 0) {
             // Remove hash from global index if no servers left
             await redis.sRem(getBlobIndexKey(), sha256);
           }
+        }
+
+        if (result.status === 404) {
+          result.success = true;
+          result.message = "Blob not found, dropped cache";
         }
 
         return { server, ...result };

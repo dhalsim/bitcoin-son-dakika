@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Upload, Link, RefreshCw, Image, Copy, Server, Trash2, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Upload, Link, RefreshCw, Image, Copy } from "lucide-react";
 import { BlurhashCanvas } from "react-blurhash";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { UpdateBlossomServersPayload } from "@/types/admin";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { createNIP98Auth, postAdminAction } from "@/components/admin/utils";
 import { WEBSITE_URL } from "@/lib/constants";
+
 import { FileListItem } from "api-helpers/schemas";
 
 import { ListServers } from "./ListServers";
@@ -23,15 +24,6 @@ interface BlossomProps {
   performPublishAction: (data: UpdateBlossomServersPayload) => Promise<any>;
 }
 
-interface TestResult {
-  id: string;
-  type: "upload" | "mirror" | "delete" | "fetch";
-  status: "success" | "error" | "pending";
-  message: string;
-  data?: any;
-  timestamp: number;
-}
-
 export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction }: BlossomProps) {
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
 
@@ -42,9 +34,12 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
 
   // Selection map: hash -> set of server URLs selected for delete
   const [selected, setSelected] = useState<Record<string, Set<string>>>({});
+  // Baseline selection to diff against
+  const [originalSelected, setOriginalSelected] = useState<Record<string, Set<string>>>({});
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
 
   const { getPublicKey, signEvent } = useNostrAuth();
+  const [activeTab, setActiveTab] = useState<"servers" | "upload" | "display">("servers");
 
   async function fetchFileList() {
     try {
@@ -65,14 +60,22 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
 
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
+
       setFileList(list);
 
-      // Preselect all current servers for each blob
-      const initialSelected: Record<string, Set<string>> = {};
+      // Preselect all current servers for each blob and store baseline
+      const baseline: Record<string, Set<string>> = {};
+      const current: Record<string, Set<string>> = {};
+
       for (const item of list) {
-        initialSelected[item.hash] = new Set(item.servers.map((s: any) => s.url));
+        const set = new Set<string>(item.servers.map((s: any) => s.url));
+        baseline[item.hash] = new Set<string>(Array.from(set));
+        current[item.hash] = new Set<string>(Array.from(set));
       }
-      setSelected(initialSelected);
+
+      setOriginalSelected(baseline);
+
+      setSelected(current);
     } catch (e) {
       setListError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -80,52 +83,18 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
     }
   }
 
-  async function mirrorToServer(hash: string, targetServer: string) {
-    const sourceUrl = `${WEBSITE_URL}/api/file/${hash}`;
-
-    await postAdminAction(
-      { action: "mirror-blossom-media", servers: [targetServer], sourceUrl },
-      getPublicKey,
-      signEvent,
-    );
-
-    await fetchFileList();
-  }
-
-  async function deleteFromServer(hash: string, targetServer: string) {
-    await postAdminAction(
-      { action: "delete-blossom-media", servers: [targetServer], sha256: hash },
-      getPublicKey,
-      signEvent,
-    );
-
-    await fetchFileList();
-  }
-
   function toggleSelection(hash: string, server: string) {
     setSelected((prev) => {
       const current = new Set(prev[hash] ? Array.from(prev[hash]) : []);
+
       if (current.has(server)) {
         current.delete(server);
       } else {
         current.add(server);
       }
+
       return { ...prev, [hash]: current };
     });
-  }
-
-  async function deleteSelected(hash: string) {
-    const serversToDelete = Array.from(selected[hash] || []);
-    if (!serversToDelete.length) return;
-
-    await postAdminAction(
-      { action: "delete-blossom-media", servers: serversToDelete, sha256: hash },
-      getPublicKey,
-      signEvent,
-    );
-
-    setSelected((p) => ({ ...p, [hash]: new Set<string>() }));
-    await fetchFileList();
   }
 
   const truncateHash = (h: string) => `${h.slice(0, 3)}...${h.slice(-3)}`;
@@ -137,10 +106,71 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
   ) => {
     try {
       await navigator.clipboard.writeText(text);
+
       setCopiedHash(hash);
+
       setTimeout(() => setCopiedHash((curr) => (curr === hash ? null : curr)), 1200);
     } catch (_) {}
   };
+
+  // Auto-fetch when switching to Display tab
+  useEffect(() => {
+    if (activeTab === "display" && !isLoadingList) {
+      // Fetch when entering display; avoid spamming if already loaded
+      if (fileList.length === 0) {
+        void fetchFileList();
+      }
+    }
+  }, [activeTab]);
+
+  function getDiff(hash: string): { toMirror: string[]; toDelete: string[] } {
+    const base = originalSelected[hash] || new Set<string>();
+    const curr = selected[hash] || new Set<string>();
+
+    const toMirror: string[] = [];
+    const toDelete: string[] = [];
+
+    // Additions (need mirror)
+    for (const s of curr) {
+      if (!base.has(s)) toMirror.push(s);
+    }
+
+    // Removals (need delete)
+    for (const s of base) {
+      if (!curr.has(s)) toDelete.push(s);
+    }
+
+    return { toMirror, toDelete };
+  }
+
+  async function saveChanges(hash: string) {
+    const { toMirror, toDelete } = getDiff(hash);
+
+    if (toMirror.length === 0 && toDelete.length === 0) return;
+
+    // Mirror new ones
+    if (toMirror.length > 0) {
+      const sourceUrl = `${WEBSITE_URL}/api/file/${hash}`;
+
+      await postAdminAction(
+        { action: "mirror-blossom-media", servers: toMirror, sourceUrl },
+        getPublicKey,
+        signEvent,
+      );
+    }
+
+    // Delete removed ones
+    if (toDelete.length > 0) {
+      await postAdminAction(
+        { action: "delete-blossom-media", servers: toDelete, sha256: hash },
+        getPublicKey,
+        signEvent,
+      );
+    }
+
+    // Refresh and reset baselines
+    await fetchFileList();
+  }
 
   return (
     <div className="space-y-6">
@@ -160,7 +190,7 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
         )}
       </div>
 
-      <Tabs defaultValue="servers" className="w-full">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="servers" className="flex items-center gap-2">
             <Link className="h-4 w-4" />
@@ -276,65 +306,77 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
                                 title="Kopyala"
                               >
                                 <Copy className="h-4 w-4" />
+                                <div
+                                  className={`absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-gray-800 text-white text-[10px] rounded shadow ${
+                                    copiedHash === item.hash ? "block" : "hidden"
+                                  }`}
+                                >
+                                  Kopyalandı
+                                </div>
                               </Button>
                             </div>
 
-                            {missingServers.length > 0 && (
-                              <div className="flex items-center gap-2">
-                                <Server className="h-4 w-4" />
-                                <span className="text-xs">Eksik sunucu ekle:</span>
-
-                                {missingServers.map((s) => (
-                                  <Button
-                                    key={`${item.hash}-${s}`}
-                                    size="sm"
-                                    variant="secondary"
-                                    onClick={() => mirrorToServer(item.hash, s)}
-                                  >
-                                    <Plus className="h-3 w-3 mr-1" /> {new URL(s).host}
-                                  </Button>
-                                ))}
-                              </div>
-                            )}
+                            {/* Quick-add section removed as per new UX */}
                           </div>
                           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {item.servers.map((s) => (
-                              <div
-                                key={`${item.hash}-${s.url}`}
-                                className="flex items-center justify-between border rounded p-2"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <input
-                                    type="checkbox"
-                                    checked={!!selected[item.hash]?.has(s.url)}
-                                    onChange={() => toggleSelection(item.hash, s.url)}
-                                    className="h-4 w-4"
-                                  />
-                                  <a
-                                    href={`${s.url.replace(/\/$/, "")}/${item.hash}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm underline underline-offset-2"
-                                    title="Sunucudan aç"
-                                  >
-                                    {s.url}
-                                  </a>
-                                  {s.lastGood && <Badge className="bg-green-600">Primary</Badge>}
-                                  {s.bad && <Badge className="bg-red-600">Bad</Badge>}
+                            {servers.map((serverUrl) => {
+                              const state = item.servers.find((x) => x.url === serverUrl);
+                              const isChecked = !!selected[item.hash]?.has(serverUrl);
+                              const isLastGood = !!state?.lastGood;
+                              const isBad = !!state?.bad;
+
+                              return (
+                                <div
+                                  key={`${item.hash}-${serverUrl}`}
+                                  className="flex items-center justify-between border rounded p-2"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => toggleSelection(item.hash, serverUrl)}
+                                      className="h-4 w-4"
+                                    />
+                                    <a
+                                      href={`${serverUrl.replace(/\/$/, "")}/${item.hash}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm underline underline-offset-2"
+                                      title="Sunucudan aç"
+                                    >
+                                      {serverUrl}
+                                    </a>
+                                    {isLastGood && <Badge className="bg-green-600">Primary</Badge>}
+                                    {isBad && <Badge className="bg-red-600">Bad</Badge>}
+                                  </div>
+                                  <div className="flex items-center gap-2" />
                                 </div>
-                                <div className="flex items-center gap-2" />
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
-                          <div className="mt-3 flex items-center justify-end">
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => deleteSelected(item.hash)}
-                              disabled={!selected[item.hash] || selected[item.hash].size === 0}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" /> Seçili Olanları Sil
-                            </Button>
+                          <div className="mt-3 flex items-center justify-end gap-2">
+                            {(() => {
+                              const { toMirror, toDelete } = getDiff(item.hash);
+                              const hasChanges = toMirror.length > 0 || toDelete.length > 0;
+
+                              return (
+                                <>
+                                  <div className="text-xs text-muted-foreground">
+                                    {hasChanges
+                                      ? `Eklenecek: ${toMirror.length}, Silinecek: ${toDelete.length}`
+                                      : "Değişiklik yok"}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant={hasChanges ? "default" : "outline"}
+                                    onClick={() => saveChanges(item.hash)}
+                                    disabled={!hasChanges}
+                                  >
+                                    Kaydet
+                                  </Button>
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       );
