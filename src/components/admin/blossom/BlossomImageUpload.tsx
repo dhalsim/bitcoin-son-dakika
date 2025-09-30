@@ -42,6 +42,53 @@ export function BlossomImageUpload({
     return await uploadToBlossom(file, servers, options, authToken);
   };
 
+  const performUploadUrlToBlossom = async (
+    url: string,
+    servers: string[],
+    options: {
+      optimize: boolean;
+      generateBlurHash: boolean;
+      format: "webp" | "avif" | "jpeg";
+      quality: number;
+      maxWidth: number | null;
+    },
+  ) => {
+    const apiUrl = `${WEBSITE_URL}/api/admin-panel`;
+
+    const authToken = await createNIP98Auth("POST", apiUrl, getPublicKey, signEvent);
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: authToken,
+      },
+      body: JSON.stringify({
+        action: "upload-file-url",
+        url,
+        servers,
+        optimize: options.optimize,
+        generateBlurHash: options.generateBlurHash,
+        format: options.format,
+        quality: options.quality,
+        maxWidth: options.maxWidth,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Upload failed" }));
+      throw new Error(errorData.error || `Upload failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || "Upload failed");
+    }
+
+    return result.data;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -58,6 +105,7 @@ export function BlossomImageUpload({
           placeholder={placeholder}
           blossomServers={blossomServers}
           onUploadToBlossom={performUploadToBlossom}
+          onUploadUrlToBlossom={performUploadUrlToBlossom}
         />
 
         {error && (

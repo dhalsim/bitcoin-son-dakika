@@ -18,6 +18,154 @@ import {
   sha256Hex,
 } from "./common.js";
 
+type PrepareOptions = {
+  optimize: boolean;
+  generateBlurHash: boolean;
+  format: "webp" | "avif" | "jpeg";
+  quality: number;
+  maxWidth: number | null;
+};
+
+type PreparedUpload = {
+  buffer: Buffer;
+  contentType: string;
+  originalWidth?: number;
+  originalHeight?: number;
+  blurhashData?: { blurhash: string; width: number; height: number } | null;
+  isImage: boolean;
+  isGif: boolean;
+};
+
+async function prepareUploadFromBuffer(
+  inputBuffer: Buffer,
+  initialContentType: string,
+  options: PrepareOptions,
+): Promise<PreparedUpload> {
+  let buffer = inputBuffer;
+  let contentType = initialContentType || "application/octet-stream";
+  const isImage = contentType.startsWith("image/");
+  const isGif = contentType.toLowerCase() === "image/gif";
+
+  let blurhashData: { blurhash: string; width: number; height: number } | null = null;
+  let originalWidth: number | undefined;
+  let originalHeight: number | undefined;
+
+  if (isImage) {
+    try {
+      const meta = await sharp(inputBuffer).metadata();
+      originalWidth = meta.width || undefined;
+      originalHeight = meta.height || undefined;
+    } catch (e) {
+      console.warn("Failed to get image metadata:", e);
+    }
+  }
+
+  // Only optimize safe/static images; never optimize GIF to avoid losing animation
+  if (options.optimize && isImage && !isGif) {
+    const { output, mime } = await optimizeImageWithSharp(
+      buffer,
+      options.format,
+      options.quality,
+      options.maxWidth,
+    );
+    buffer = output;
+    contentType = mime;
+
+    if (options.generateBlurHash) {
+      const res = await generateBlurHash(buffer);
+      blurhashData = res;
+    }
+  }
+
+  return {
+    buffer,
+    contentType,
+    originalWidth,
+    originalHeight,
+    blurhashData,
+    isImage,
+    isGif,
+  };
+}
+
+async function uploadProcessedToServers(
+  redis: RedisClient,
+  masterAdminPrivateKey: string,
+  servers: string[],
+  processed: PreparedUpload,
+): Promise<{
+  successful: { server: string; descriptor: BlobDescriptor }[];
+  failed: { server: string; error: string }[];
+  hashHex: string;
+  size: number;
+}> {
+  const hashHex = await sha256Hex(processed.buffer);
+  const authBase64 = createMasterAuthBase64(masterAdminPrivateKey, "upload", [hashHex]);
+
+  const results = await Promise.allSettled(
+    servers.map(async (server) => {
+      const descriptor = await uploadBufferToServer(
+        server,
+        processed.buffer,
+        processed.contentType,
+        authBase64,
+      );
+
+      // Cache updates
+      await markServerGood(redis, hashHex, server);
+      await redis.del(getServerCacheKey(server));
+      await redis.del(getAggregateListKey());
+      await redis.del(getBadServerKey(hashHex, server));
+      await redis.sAdd(getBlobServersKey(hashHex), server);
+      await redis.sAdd(getBlobIndexKey(), hashHex);
+
+      // Store metadata if image
+      if (processed.isImage) {
+        const metaToStore = {
+          blurhash: processed.blurhashData ? processed.blurhashData.blurhash : undefined,
+          width: processed.originalWidth,
+          height: processed.originalHeight,
+          contentType: processed.contentType,
+        } as Record<string, unknown>;
+        await redis.set(getBlurHashKey(hashHex), JSON.stringify(metaToStore));
+      }
+
+      return { server, descriptor };
+    }),
+  );
+
+  const successful = results
+    .filter(
+      (r): r is PromiseFulfilledResult<{ server: string; descriptor: BlobDescriptor }> =>
+        r.status === "fulfilled",
+    )
+    .map((r) => r.value);
+
+  const failed = results
+    .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+    .map((r, idx) => ({
+      server: servers[idx],
+      error: r.reason instanceof Error ? r.reason.message : String(r.reason),
+    }));
+
+  return { successful, failed, hashHex, size: processed.buffer.length };
+}
+
+async function downloadUrlToBuffer(url: string): Promise<{ buffer: Buffer; contentType: string }> {
+  const res = await fetch(url, { headers: { "Accept-Encoding": "identity" } });
+  if (!res.ok) {
+    const reason = res.statusText || "Kaynak indirilemedi";
+
+    throw new Error(`${res.status} ${reason}`);
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer) as Buffer;
+  const contentType = res.headers.get("content-type") || "application/octet-stream";
+
+  return { buffer, contentType };
+}
+
 // Image optimization with sharp (no BlurHash)
 export async function optimizeImageWithSharp(
   input: Buffer,
@@ -148,96 +296,28 @@ export async function handleUploadBlossomMedia(
     return ErrorResponseCreator("Dosya bulunamadı", 400);
   }
 
-  const inputArrayBuffer = await file.arrayBuffer();
-
-  // Preserve original buffer to capture original dimensions
-  const originalBuffer = Buffer.from(inputArrayBuffer) as Buffer;
-
-  let buffer = originalBuffer;
-  let contentType = file.type || "application/octet-stream";
-
-  const isImage = contentType.startsWith("image/");
-  const isGif = contentType.toLowerCase() === "image/gif";
-
   try {
-    let blurhashData: { blurhash: string; width: number; height: number } | null = null;
-    let originalWidth: number | undefined;
-    let originalHeight: number | undefined;
+    const inputArrayBuffer = await file.arrayBuffer();
+    const originalBuffer = Buffer.from(inputArrayBuffer) as Buffer;
 
-    if (isImage) {
-      try {
-        const meta = await sharp(originalBuffer).metadata();
-        originalWidth = meta.width || undefined;
-        originalHeight = meta.height || undefined;
-      } catch (e) {
-        console.warn(`Failed to get metadata for ${file.name}: ${e}`);
-      }
-    }
-
-    // Only optimize safe/static images; never optimize GIF to avoid losing animation
-    if (optimize && isImage && !isGif) {
-      const { output, mime } = await optimizeImageWithSharp(buffer, format, quality, maxWidth);
-
-      buffer = output;
-      contentType = mime;
-
-      // Generate BlurHash if requested
-      if (shouldGenerateBlurHash) {
-        const blurhashResult = await generateBlurHash(buffer);
-
-        blurhashData = blurhashResult;
-      }
-    }
-
-    const hashHex = await sha256Hex(buffer);
-
-    const authBase64 = createMasterAuthBase64(masterAdminPrivateKey, "upload", [hashHex]);
-
-    const results = await Promise.allSettled(
-      servers.map(async (server) => {
-        const descriptor = await uploadBufferToServer(server, buffer, contentType, authBase64);
-
-        // Cache updates on success - sequential to ensure consistency
-        await markServerGood(redis, hashHex, server);
-
-        await redis.del(getServerCacheKey(server));
-        await redis.del(getAggregateListKey());
-        await redis.del(getBadServerKey(hashHex, server));
-
-        // Update inverted index: blob -> servers and global blob index
-        await redis.sAdd(getBlobServersKey(hashHex), server);
-        await redis.sAdd(getBlobIndexKey(), hashHex);
-
-        // Store metadata (original dimensions if available) and optional blurhash
-        if (isImage) {
-          const metaToStore = {
-            blurhash: blurhashData ? blurhashData.blurhash : undefined,
-            // Prefer original dimensions as requested
-            width: originalWidth,
-            height: originalHeight,
-            contentType,
-          } as Record<string, unknown>;
-
-          await redis.set(getBlurHashKey(hashHex), JSON.stringify(metaToStore));
-        }
-
-        return { server, descriptor };
-      }),
+    const prepared = await prepareUploadFromBuffer(
+      originalBuffer,
+      file.type || "application/octet-stream",
+      {
+        optimize,
+        generateBlurHash: shouldGenerateBlurHash,
+        format,
+        quality,
+        maxWidth,
+      },
     );
 
-    const successful = results
-      .filter(
-        (r): r is PromiseFulfilledResult<{ server: string; descriptor: BlobDescriptor }> =>
-          r.status === "fulfilled",
-      )
-      .map((r) => r.value);
-
-    const failed = results
-      .filter((r): r is PromiseRejectedResult => r.status === "rejected")
-      .map((r, idx) => ({
-        server: servers[idx],
-        error: r.reason instanceof Error ? r.reason.message : String(r.reason),
-      }));
+    const { successful, failed, hashHex, size } = await uploadProcessedToServers(
+      redis,
+      masterAdminPrivateKey,
+      servers,
+      prepared,
+    );
 
     return SuccessResponse({
       message: `Uploaded to ${successful.length} / ${servers.length} servers`,
@@ -245,9 +325,9 @@ export async function handleUploadBlossomMedia(
         successful,
         failed,
         sha256: hashHex,
-        contentType,
-        size: buffer.length,
-        blurhash: blurhashData,
+        contentType: prepared.contentType,
+        size,
+        blurhash: prepared.blurhashData || null,
       },
     });
   } catch (error) {
@@ -255,6 +335,87 @@ export async function handleUploadBlossomMedia(
 
     return ErrorResponseCreator(
       error instanceof Error ? error.message : "Blossom'a yükleme sırasında bir hata oluştu",
+      500,
+    );
+  }
+}
+
+// Upload from a remote URL (server-side download then /upload to Blossom)
+export async function handleUploadFileUrl(
+  redis: RedisClient,
+  masterAdminPrivateKey: string,
+  authResult: AuthResult,
+  requestBody: {
+    servers: string[];
+    url: string;
+    optimize: boolean;
+    generateBlurHash: boolean;
+    format: "webp" | "avif" | "jpeg";
+    quality: number;
+    maxWidth: number | null;
+  },
+): Promise<Response> {
+  if (!authResult.success) {
+    return ErrorResponseCreator("Kimlik doğrulama hatası", 401);
+  }
+
+  if (!authResult.roles.includes("editor") && !authResult.roles.includes("admin")) {
+    return ErrorResponseCreator("Yalnızca editörler ve adminler yükleme yapabilir", 403);
+  }
+
+  const {
+    servers,
+    url,
+    optimize,
+    generateBlurHash: shouldGenerateBlurHash,
+    format,
+    quality,
+    maxWidth,
+  } = requestBody;
+
+  if (!servers || servers.length === 0) {
+    return ErrorResponseCreator("En az bir sunucu belirtilmelidir", 400);
+  }
+
+  if (!url) {
+    return ErrorResponseCreator("Kaynak URL belirtilmelidir", 400);
+  }
+
+  try {
+    const { buffer, contentType } = await downloadUrlToBuffer(url);
+
+    const prepared = await prepareUploadFromBuffer(buffer, contentType, {
+      optimize,
+      generateBlurHash: shouldGenerateBlurHash,
+      format,
+      quality,
+      maxWidth,
+    });
+
+    const { successful, failed, hashHex, size } = await uploadProcessedToServers(
+      redis,
+      masterAdminPrivateKey,
+      servers,
+      prepared,
+    );
+
+    return SuccessResponse({
+      message: `Uploaded (from URL) to ${successful.length} / ${servers.length} servers`,
+      data: {
+        successful,
+        failed,
+        sha256: hashHex,
+        contentType: prepared.contentType,
+        size,
+        blurhash: prepared.blurhashData || null,
+        sourceUrl: url,
+      },
+    });
+  } catch (error) {
+    console.error("Error uploading file URL to Blossom:", error);
+
+    return ErrorResponseCreator(
+      error instanceof Error ? error.message : "URL'den yükleme sırasında bir hata oluştu",
       500,
     );
   }

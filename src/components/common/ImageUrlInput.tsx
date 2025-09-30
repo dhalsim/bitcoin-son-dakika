@@ -36,6 +36,11 @@ interface ImageUrlInputProps {
     servers: string[],
     options: UploadOptions,
   ) => Promise<UploadResult>;
+  onUploadUrlToBlossom?: (
+    url: string,
+    servers: string[],
+    options: UploadOptions,
+  ) => Promise<UploadResult>;
 }
 
 interface UploadOptions {
@@ -67,6 +72,7 @@ export function ImageUrlInput({
   placeholder = "Resim URL'si girin veya dosya yükleyin",
   blossomServers,
   onUploadToBlossom,
+  onUploadUrlToBlossom,
 }: ImageUrlInputProps) {
   const [activeTab, setActiveTab] = useState<"url" | "file">("url");
   const [isCheckingCors, setIsCheckingCors] = useState(false);
@@ -141,7 +147,9 @@ export function ImageUrlInput({
     if (!value) return;
 
     setIsCheckingCors(true);
+
     const result = await checkCors(value);
+
     setCorsResult(result);
     setIsCheckingCors(false);
   };
@@ -185,11 +193,14 @@ export function ImageUrlInput({
       if (result.successful.length > 0) {
         // Use first successful upload URL
         const firstSuccess = result.successful[0];
+
         onChange(firstSuccess.descriptor.url);
+
         setActiveTab("url");
       }
     } catch (error) {
       console.error("Upload failed:", error);
+
       setUploadResult({
         successful: [],
         failed: [
@@ -208,21 +219,12 @@ export function ImageUrlInput({
   };
 
   const handleUrlUploadToBlossom = async () => {
-    if (!onUploadToBlossom || selectedServers.size === 0 || !value) return;
+    if (!onUploadUrlToBlossom || selectedServers.size === 0 || !value) return;
 
     setIsUploading(true);
     setUploadResult(null);
 
     try {
-      // Download the image from URL
-      const response = await fetch(value);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      const file = new File([blob], "image", { type: blob.type });
-
       const options: UploadOptions = {
         optimize,
         generateBlurHash,
@@ -231,7 +233,7 @@ export function ImageUrlInput({
         maxWidth,
       };
 
-      const result = await onUploadToBlossom(file, Array.from(selectedServers), options);
+      const result = await onUploadUrlToBlossom(value, Array.from(selectedServers), options);
 
       setUploadResult(result);
 
@@ -242,6 +244,7 @@ export function ImageUrlInput({
       }
     } catch (error) {
       console.error("URL upload failed:", error);
+
       setUploadResult({
         successful: [],
         failed: [
@@ -363,7 +366,7 @@ export function ImageUrlInput({
                   </div>
 
                   {/* Upload URL to Blossom */}
-                  {onUploadToBlossom && blossomServers.length > 0 && (
+                  {onUploadUrlToBlossom && blossomServers.length > 0 && (
                     <div className="space-y-3">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">

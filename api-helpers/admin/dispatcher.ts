@@ -6,7 +6,7 @@ import { handleDeleteBlossomMedia } from "./blossom/delete.js";
 import { handleFetchBlobLists } from "./blossom/list.js";
 import { handleMirrorBlossomMedia } from "./blossom/mirror.js";
 import { handleUpdateBlossomServers } from "./blossom/servers.js";
-import { handleUploadBlossomMedia } from "./blossom/upload.js";
+import { handleUploadBlossomMedia, handleUploadFileUrl } from "./blossom/upload.js";
 import { handleTriggerDeploy } from "./deploy.js";
 import { handleAddNews, handlePublishNews, handleRemoveNews } from "./news.js";
 import { handlePublishPodcast, handleRemovePodcast } from "./podcasts.js";
@@ -172,6 +172,8 @@ export async function handleAdminPost(redis: RedisClient, request: Request): Pro
         return handleMirrorBlossomMedia(redis, masterAdminPrivateKey, authResult, requestBody);
       case "delete-blossom-media":
         return handleDeleteBlossomMedia(redis, masterAdminPrivateKey, authResult, requestBody);
+      case "upload-file-url":
+        return handleUploadFileUrl(redis, masterAdminPrivateKey, authResult, requestBody);
       default:
         return ErrorResponseCreator("Invalid action", 400);
     }
