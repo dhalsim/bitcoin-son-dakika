@@ -32,14 +32,16 @@ export default function ArticleMarkdownRenderer({
               <p className="mb-4 text-foreground/70 leading-relaxed">{children}</p>
             ),
             ul: ({ children }) => (
-              <ul className="list-disc list-inside mb-4 space-y-1 text-foreground">{children}</ul>
+              <ul className="list-disc list-inside mb-4 space-y-1 text-foreground/70">
+                {children}
+              </ul>
             ),
             ol: ({ children }) => (
-              <ol className="list-decimal list-inside mb-4 space-y-1 text-foreground">
+              <ol className="list-decimal list-inside mb-4 space-y-1 text-foreground/70">
                 {children}
               </ol>
             ),
-            li: ({ children }) => <li className="text-foreground">{children}</li>,
+            li: ({ children }) => <li className="text-foreground/70">{children}</li>,
             blockquote: ({ children }) => (
               <blockquote className="border-l-4 border-main-accent pl-4 py-2 mb-4 bg-muted rounded-r">
                 <p className="text-muted-foreground italic">{children}</p>
