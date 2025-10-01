@@ -7,6 +7,7 @@ import {
   Loader2,
   ExternalLink,
   Settings,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { BlobSelector } from "@/components/common/BlobSelector";
 
 interface ImageUrlInputProps {
   value: string;
@@ -74,7 +76,7 @@ export function ImageUrlInput({
   onUploadToBlossom,
   onUploadUrlToBlossom,
 }: ImageUrlInputProps) {
-  const [activeTab, setActiveTab] = useState<"url" | "file">("url");
+  const [activeTab, setActiveTab] = useState<"url" | "file" | "select">("url");
   const [isCheckingCors, setIsCheckingCors] = useState(false);
   const [corsResult, setCorsResult] = useState<CorsCheckResult | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -286,8 +288,11 @@ export function ImageUrlInput({
     <div className="space-y-4">
       <div>
         <Label htmlFor="image-url">{label}</Label>
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "url" | "file")}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as "url" | "file" | "select")}
+        >
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="url" className="flex items-center gap-2">
               <Link className="h-4 w-4" />
               URL
@@ -295,6 +300,10 @@ export function ImageUrlInput({
             <TabsTrigger value="file" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Dosya
+            </TabsTrigger>
+            <TabsTrigger value="select" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Seç
             </TabsTrigger>
           </TabsList>
 
@@ -460,6 +469,15 @@ export function ImageUrlInput({
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="select" className="mt-4">
+            <BlobSelector
+              onSelect={onChange}
+              selectedUrl={value}
+              title="Blob Seç"
+              description="Mevcut blob'lardan birini seçin"
+            />
           </TabsContent>
 
           <TabsContent value="file" className="mt-4">

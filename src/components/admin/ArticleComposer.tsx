@@ -1,4 +1,4 @@
-import { Loader2, Rocket } from "lucide-react";
+import { Loader2, Rocket, CheckCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
+import { ImageUrlInput } from "@/components/common/ImageUrlInput";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { WEBSITE_URL } from "@/lib/constants";
 import type { ArticleItem } from "@/lib/ssg-data";
 
+import { createNIP98Auth } from "./utils";
 import TagSelector from "./TagSelector";
 
 type ArticleEditData = Omit<ArticleItem, "author"> & {
@@ -22,12 +25,14 @@ type ArticleComposerProps = {
   performPublishAction: (data: any) => Promise<any>;
   editData?: ArticleEditData;
   onCancelEdit: () => void;
+  blossomServers: string[];
 };
 
 export default function ArticleComposer({
   performPublishAction,
   editData,
   onCancelEdit,
+  blossomServers = [],
 }: ArticleComposerProps) {
   const [title, setTitle] = useState(editData?.title || "");
   const [summary, setSummary] = useState(editData?.summary || "");
@@ -36,6 +41,7 @@ export default function ArticleComposer({
   const [tags, setTags] = useState<string[]>(editData?.tagItems.map((tag) => tag.tag) || []);
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const { getPublicKey, signEvent } = useNostrAuth();
 
   const preview = useMemo(() => content, [content]);
@@ -56,6 +62,107 @@ export default function ArticleComposer({
   };
 
   const canPublish = title.trim() && content.trim();
+
+  const handleImageUpload = async (
+    file: File,
+    servers: string[],
+    options: {
+      optimize: boolean;
+      generateBlurHash: boolean;
+      format: "webp" | "avif" | "jpeg";
+      quality: number;
+      maxWidth: number | null;
+    },
+  ) => {
+    const url = `${WEBSITE_URL}/api/admin-panel`;
+    const authToken = await createNIP98Auth("POST", url, getPublicKey, signEvent);
+
+    const formData = new FormData();
+    formData.append("action", "upload-blossom-media");
+    formData.append("file", file);
+    formData.append("servers", servers.join(","));
+    formData.append("optimize", options.optimize.toString());
+    formData.append("generateBlurHash", options.generateBlurHash.toString());
+    formData.append("format", options.format);
+    formData.append("quality", options.quality.toString());
+    if (options.maxWidth) {
+      formData.append("maxWidth", options.maxWidth.toString());
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: authToken,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Upload failed" }));
+      throw new Error(errorData.error || `Upload failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || "Upload failed");
+    }
+
+    return result.data;
+  };
+
+  const handleImageUrlUpload = async (
+    url: string,
+    servers: string[],
+    options: {
+      optimize: boolean;
+      generateBlurHash: boolean;
+      format: "webp" | "avif" | "jpeg";
+      quality: number;
+      maxWidth: number | null;
+    },
+  ) => {
+    const apiUrl = `${WEBSITE_URL}/api/admin-panel`;
+    const authToken = await createNIP98Auth("POST", apiUrl, getPublicKey, signEvent);
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: authToken,
+      },
+      body: JSON.stringify({
+        action: "upload-file-url",
+        url,
+        servers,
+        optimize: options.optimize,
+        generateBlurHash: options.generateBlurHash,
+        format: options.format,
+        quality: options.quality,
+        maxWidth: options.maxWidth,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Upload failed" }));
+      throw new Error(errorData.error || `Upload failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || "Upload failed");
+    }
+
+    return result.data;
+  };
+
+  const handleImageChange = (url: string) => {
+    setImageUrl(url);
+    setUploadSuccess(true);
+    // Hide success indicator after 3 seconds
+    setTimeout(() => setUploadSuccess(false), 3000);
+  };
 
   return (
     <Card>
@@ -87,11 +194,26 @@ export default function ArticleComposer({
           </div>
 
           <div>
-            <Label className="text-base font-medium">Resim URL</Label>
-            <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
-            {imageUrl ? (
-              <img src={imageUrl} alt="preview" className="mt-2 max-h-48 rounded" />
-            ) : null}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-base font-medium">Resim URL</Label>
+                {uploadSuccess && (
+                  <div className="flex items-center gap-1 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm">Yükleme başarılı!</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <ImageUrlInput
+              value={imageUrl}
+              onChange={handleImageChange}
+              label=""
+              placeholder="Resim URL'si girin veya dosya yükleyin"
+              blossomServers={blossomServers}
+              onUploadToBlossom={handleImageUpload}
+              onUploadUrlToBlossom={handleImageUrlUpload}
+            />
           </div>
 
           <div>

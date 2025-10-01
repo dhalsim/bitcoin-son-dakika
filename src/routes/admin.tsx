@@ -706,6 +706,7 @@ export default function AdminPanel() {
                       performPublishAction={performPublishAction}
                       editData={editingArticle}
                       onCancelEdit={() => setEditingArticle(null)}
+                      blossomServers={adminData?.blossomServers || []}
                     />
                   </div>
                 )}
@@ -742,6 +743,7 @@ export default function AdminPanel() {
                       performPublishAction={performPublishAction}
                       editData={editingPodcast}
                       onCancelEdit={() => setEditingPodcast(null)}
+                      blossomServers={adminData?.blossomServers || []}
                     />
                   </div>
                 )}
