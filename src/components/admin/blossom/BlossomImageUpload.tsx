@@ -1,5 +1,5 @@
 import { ImageUrlInput } from "@/components/common/ImageUrlInput";
-import { useBlossomUpload } from "@/hooks/useBlossomUpload";
+import { useBlossomUpload, UploadOptions, UploadResult } from "@/hooks/useBlossomUpload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { createNIP98Auth } from "../utils";
@@ -22,71 +22,28 @@ export function BlossomImageUpload({
   placeholder = "Enter image URL or upload file",
 }: BlossomImageUploadProps) {
   const { getPublicKey, signEvent } = useNostrAuth();
-  const { uploadToBlossom, isUploading, error } = useBlossomUpload();
+  const { uploadToBlossom, uploadUrlToBlossom, isUploading, error } = useBlossomUpload();
 
   const performUploadToBlossom = async (
     file: File,
     servers: string[],
-    options: {
-      optimize: boolean;
-      generateBlurHash: boolean;
-      format: "webp" | "avif" | "jpeg";
-      quality: number;
-      maxWidth: number | null;
-    },
-  ) => {
+    options: UploadOptions,
+  ): Promise<UploadResult> => {
     const url = `${WEBSITE_URL}/api/admin-panel`;
-
     const authToken = await createNIP98Auth("POST", url, getPublicKey, signEvent);
 
-    return await uploadToBlossom(file, servers, options, authToken);
+    return uploadToBlossom(file, servers, options, authToken);
   };
 
   const performUploadUrlToBlossom = async (
     url: string,
     servers: string[],
-    options: {
-      optimize: boolean;
-      generateBlurHash: boolean;
-      format: "webp" | "avif" | "jpeg";
-      quality: number;
-      maxWidth: number | null;
-    },
-  ) => {
+    options: UploadOptions,
+  ): Promise<UploadResult> => {
     const apiUrl = `${WEBSITE_URL}/api/admin-panel`;
-
     const authToken = await createNIP98Auth("POST", apiUrl, getPublicKey, signEvent);
 
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: authToken,
-      },
-      body: JSON.stringify({
-        action: "upload-file-url",
-        url,
-        servers,
-        optimize: options.optimize,
-        generateBlurHash: options.generateBlurHash,
-        format: options.format,
-        quality: options.quality,
-        maxWidth: options.maxWidth,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: "Upload failed" }));
-      throw new Error(errorData.error || `Upload failed: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.error || "Upload failed");
-    }
-
-    return result.data;
+    return uploadUrlToBlossom(url, servers, options, authToken);
   };
 
   return (

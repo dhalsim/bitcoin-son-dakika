@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
 import { ImageUrlInput } from "@/components/common/ImageUrlInput";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { useBlossomUpload, UploadOptions, UploadResult } from "@/hooks/useBlossomUpload";
 import { WEBSITE_URL } from "@/lib/constants";
 import type { PodcastItem } from "@/lib/ssg-data";
 import { PublishPodcastPayload } from "@/types/admin";
@@ -56,6 +57,7 @@ export default function PodcastComposer({
   );
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const { getPublicKey, signEvent } = useNostrAuth();
+  const { uploadToBlossom, uploadUrlToBlossom } = useBlossomUpload();
 
   const preview = useMemo(() => content, [content]);
 
@@ -94,95 +96,21 @@ export default function PodcastComposer({
   const handleImageUpload = async (
     file: File,
     servers: string[],
-    options: {
-      optimize: boolean;
-      generateBlurHash: boolean;
-      format: "webp" | "avif" | "jpeg";
-      quality: number;
-      maxWidth: number | null;
-    },
-  ) => {
+    options: UploadOptions,
+  ): Promise<UploadResult> => {
     const url = `${WEBSITE_URL}/api/admin-panel`;
     const authToken = await createNIP98Auth("POST", url, getPublicKey, signEvent);
-
-    const formData = new FormData();
-    formData.append("action", "upload-blossom-media");
-    formData.append("file", file);
-    formData.append("servers", servers.join(","));
-    formData.append("optimize", options.optimize.toString());
-    formData.append("generateBlurHash", options.generateBlurHash.toString());
-    formData.append("format", options.format);
-    formData.append("quality", options.quality.toString());
-    if (options.maxWidth) {
-      formData.append("maxWidth", options.maxWidth.toString());
-    }
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: authToken,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: "Upload failed" }));
-      throw new Error(errorData.error || `Upload failed: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.error || "Upload failed");
-    }
-
-    return result.data;
+    return uploadToBlossom(file, servers, options, authToken);
   };
 
   const handleImageUrlUpload = async (
     url: string,
     servers: string[],
-    options: {
-      optimize: boolean;
-      generateBlurHash: boolean;
-      format: "webp" | "avif" | "jpeg";
-      quality: number;
-      maxWidth: number | null;
-    },
-  ) => {
+    options: UploadOptions,
+  ): Promise<UploadResult> => {
     const apiUrl = `${WEBSITE_URL}/api/admin-panel`;
     const authToken = await createNIP98Auth("POST", apiUrl, getPublicKey, signEvent);
-
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: authToken,
-      },
-      body: JSON.stringify({
-        action: "upload-file-url",
-        url,
-        servers,
-        optimize: options.optimize,
-        generateBlurHash: options.generateBlurHash,
-        format: options.format,
-        quality: options.quality,
-        maxWidth: options.maxWidth,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: "Upload failed" }));
-      throw new Error(errorData.error || `Upload failed: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    if (!result.success) {
-      throw new Error(result.error || "Upload failed");
-    }
-
-    return result.data;
+    return uploadUrlToBlossom(url, servers, options, authToken);
   };
 
   const handleImageChange = (url: string) => {

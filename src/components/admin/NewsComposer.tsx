@@ -1,4 +1,4 @@
-import { Loader2, Rocket } from "lucide-react";
+import { Loader2, Rocket, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUrlInput } from "@/components/common/ImageUrlInput";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
+import { useBlossomUpload, UploadOptions, UploadResult } from "@/hooks/useBlossomUpload";
 import { WEBSITE_URL } from "@/lib/constants";
 
 import { createNIP98Auth } from "./utils";
@@ -47,7 +49,9 @@ export default function NewsComposer({
   const [enContent, setEnContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const { getPublicKey, signEvent } = useNostrAuth();
+  const { uploadToBlossom, uploadUrlToBlossom } = useBlossomUpload();
 
   // Apply prefill whenever token changes
   useEffect(() => {
@@ -106,6 +110,35 @@ export default function NewsComposer({
     setNewsTags(newTags);
   };
 
+  const handleImageUpload = async (
+    file: File,
+    servers: string[],
+    options: UploadOptions,
+  ): Promise<UploadResult> => {
+    const url = `${WEBSITE_URL}/api/admin-panel`;
+    const authToken = await createNIP98Auth("POST", url, getPublicKey, signEvent);
+
+    return uploadToBlossom(file, servers, options, authToken);
+  };
+
+  const handleImageUrlUpload = async (
+    url: string,
+    servers: string[],
+    options: UploadOptions,
+  ): Promise<UploadResult> => {
+    const apiUrl = `${WEBSITE_URL}/api/admin-panel`;
+    const authToken = await createNIP98Auth("POST", apiUrl, getPublicKey, signEvent);
+
+    return uploadUrlToBlossom(url, servers, options, authToken);
+  };
+
+  const handleImageChange = (url: string) => {
+    setNewsImageUrl(url);
+    setUploadSuccess(true);
+    // Hide success indicator after 3 seconds
+    setTimeout(() => setUploadSuccess(false), 3000);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -145,12 +178,23 @@ export default function NewsComposer({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="newsImageUrl">Image URL</Label>
-                <Input
-                  id="newsImageUrl"
+                <div className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="newsImageUrl">Image URL</Label>
+                  {uploadSuccess && (
+                    <div className="flex items-center gap-1 text-green-600">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-sm">Yükleme başarılı!</span>
+                    </div>
+                  )}
+                </div>
+                <ImageUrlInput
                   value={newsImageUrl}
-                  onChange={(e) => setNewsImageUrl(e.target.value)}
-                  placeholder="Enter image URL"
+                  onChange={handleImageChange}
+                  label=""
+                  placeholder="Görsel URL'si girin veya dosya yükleyin"
+                  blossomServers={blossomServers}
+                  onUploadToBlossom={handleImageUpload}
+                  onUploadUrlToBlossom={handleImageUrlUpload}
                 />
               </div>
               <div>
@@ -306,12 +350,23 @@ export default function NewsComposer({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="newsImageUrlTr">Görsel</Label>
-                <Input
-                  id="newsImageUrlTr"
+                <div className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="newsImageUrlTr">Görsel</Label>
+                  {uploadSuccess && (
+                    <div className="flex items-center gap-1 text-green-600">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-sm">Yükleme başarılı!</span>
+                    </div>
+                  )}
+                </div>
+                <ImageUrlInput
                   value={newsImageUrl}
-                  onChange={(e) => setNewsImageUrl(e.target.value)}
-                  placeholder="Görsel URL'si"
+                  onChange={handleImageChange}
+                  label=""
+                  placeholder="Görsel URL'si girin veya dosya yükleyin"
+                  blossomServers={blossomServers}
+                  onUploadToBlossom={handleImageUpload}
+                  onUploadUrlToBlossom={handleImageUrlUpload}
                 />
               </div>
 
