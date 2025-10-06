@@ -94,6 +94,108 @@ function getExtensionFromMimeType(mimeType: string): string {
   return mimeMap[mimeType.toLowerCase()] || "";
 }
 
+// Optimization Settings Component
+interface OptimizationSettingsProps {
+  idPrefix: string;
+  optimize: boolean;
+  setOptimize: (value: boolean) => void;
+  generateBlurHash: boolean;
+  setGenerateBlurHash: (value: boolean) => void;
+  format: "webp" | "avif" | "jpeg";
+  setFormat: (value: "webp" | "avif" | "jpeg") => void;
+  quality: number;
+  setQuality: (value: number) => void;
+  maxWidth: number | null;
+  setMaxWidth: (value: number | null) => void;
+}
+
+function OptimizationSettings({
+  idPrefix,
+  optimize,
+  setOptimize,
+  generateBlurHash,
+  setGenerateBlurHash,
+  format,
+  setFormat,
+  quality,
+  setQuality,
+  maxWidth,
+  setMaxWidth,
+}: OptimizationSettingsProps) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id={`${idPrefix}-optimize`}
+          checked={optimize}
+          onCheckedChange={(checked) => setOptimize(checked as boolean)}
+        />
+        <Label htmlFor={`${idPrefix}-optimize`}>Resmi optimize et</Label>
+      </div>
+
+      {optimize && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor={`${idPrefix}-format`}>Çıktı Formatı</Label>
+            <Select
+              value={format}
+              onValueChange={(value: "webp" | "avif" | "jpeg") => setFormat(value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="webp">WebP (önerilen)</SelectItem>
+                <SelectItem value="avif">AVIF (en iyi sıkıştırma)</SelectItem>
+                <SelectItem value="jpeg">JPEG (uyumluluk)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`${idPrefix}-quality`}>Kalite: {quality}%</Label>
+            <Slider
+              id={`${idPrefix}-quality`}
+              min={10}
+              max={100}
+              step={1}
+              value={[quality]}
+              onValueChange={(value) => setQuality(value[0])}
+              className="w-full"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`${idPrefix}-maxWidth`}>
+              Maksimum Genişlik: {maxWidth ? `${maxWidth}px` : "Orijinal"}
+            </Label>
+            <Slider
+              id={`${idPrefix}-maxWidth`}
+              min={320}
+              max={4096}
+              step={160}
+              value={maxWidth ? [maxWidth] : [4096]}
+              onValueChange={(value) => setMaxWidth(value[0] === 4096 ? null : value[0])}
+              className="w-full"
+            />
+          </div>
+        </>
+      )}
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id={`${idPrefix}-generateBlurHash`}
+          checked={generateBlurHash}
+          onCheckedChange={(checked) => setGenerateBlurHash(checked as boolean)}
+        />
+        <Label htmlFor={`${idPrefix}-generateBlurHash`}>
+          Aşamalı yükleme için BlurHash oluştur
+        </Label>
+      </div>
+    </div>
+  );
+}
+
 export function ImageUrlInput({
   value,
   onChange,
@@ -122,13 +224,11 @@ export function ImageUrlInput({
 
   const checkCors = async (url: string): Promise<CorsCheckResult> => {
     try {
-      // First try a simple fetch to see if the image is accessible
+      // Try a CORS fetch - if it succeeds, CORS is properly configured
+      // The browser will block the request before we even get a response if CORS is not allowed
       const response = await fetch(url, {
         method: "HEAD",
         mode: "cors",
-        headers: {
-          "Content-Type": "application/octet-stream",
-        },
       });
 
       if (!response.ok) {
@@ -138,22 +238,28 @@ export function ImageUrlInput({
         };
       }
 
-      const corsHeader = response.headers.get("access-control-allow-origin");
-
-      // If we got a successful response, check for CORS headers
-      const hasCorsHeader = corsHeader === "*";
-
+      // If we got here, the fetch succeeded with CORS mode, which means CORS is working
+      // The browser would have blocked it before we got a response if CORS wasn't allowed
       return {
-        hasCors: hasCorsHeader,
-        error: hasCorsHeader ? undefined : "CORS bulunamadı - Blossom'a yüklemeyi deneyiniz",
+        hasCors: true,
+        error: undefined,
       };
     } catch (error) {
-      // If it's a CORS error, the image might still be accessible via img tag
-      if (error instanceof TypeError && error.message.includes("CORS")) {
-        return {
-          hasCors: false,
-          error: "CORS bulunamadı - Blossom'a yüklemeyi deneyiniz",
-        };
+      // If the fetch fails, it's likely a CORS issue or network error
+      if (error instanceof TypeError) {
+        // Network errors and CORS errors both throw TypeError
+        // Check if it's a CORS-related error
+        const errorMessage = error.message.toLowerCase();
+        if (
+          errorMessage.includes("cors") ||
+          errorMessage.includes("network") ||
+          errorMessage.includes("failed to fetch")
+        ) {
+          return {
+            hasCors: false,
+            error: "CORS bulunamadı - Blossom'a yüklemeyi deneyiniz",
+          };
+        }
       }
 
       const genericErrorMessage = "CORS kontrolü başarısız";
@@ -442,6 +548,34 @@ export function ImageUrlInput({
                         </div>
                       </div>
 
+                      {/* Optimization Settings for URL Upload */}
+                      <Collapsible
+                        open={showOptimizationSettings}
+                        onOpenChange={setShowOptimizationSettings}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Settings className="h-4 w-4 mr-2" />
+                            Optimizasyon Ayarları
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg bg-muted/50">
+                          <OptimizationSettings
+                            idPrefix="url"
+                            optimize={optimize}
+                            setOptimize={setOptimize}
+                            generateBlurHash={generateBlurHash}
+                            setGenerateBlurHash={setGenerateBlurHash}
+                            format={format}
+                            setFormat={setFormat}
+                            quality={quality}
+                            setQuality={setQuality}
+                            maxWidth={maxWidth}
+                            setMaxWidth={setMaxWidth}
+                          />
+                        </CollapsibleContent>
+                      </Collapsible>
+
                       <div className="flex items-center gap-2">
                         <Button
                           onClick={handleUrlUploadToBlossom}
@@ -571,82 +705,19 @@ export function ImageUrlInput({
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg bg-muted/50">
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="optimize"
-                            checked={optimize}
-                            onCheckedChange={(checked) => setOptimize(checked as boolean)}
-                          />
-                          <Label htmlFor="optimize">
-                            Resmi optimize et (boyutlandır ve format dönüştür)
-                          </Label>
-                        </div>
-
-                        {optimize && (
-                          <>
-                            <div className="space-y-2">
-                              <Label htmlFor="format">Çıktı Formatı</Label>
-                              <Select
-                                value={format}
-                                onValueChange={(value: "webp" | "avif" | "jpeg") =>
-                                  setFormat(value)
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="webp">WebP (önerilen)</SelectItem>
-                                  <SelectItem value="avif">AVIF (en iyi sıkıştırma)</SelectItem>
-                                  <SelectItem value="jpeg">JPEG (uyumluluk)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="quality">Kalite: {quality}%</Label>
-                              <Slider
-                                id="quality"
-                                min={10}
-                                max={100}
-                                step={1}
-                                value={[quality]}
-                                onValueChange={(value) => setQuality(value[0])}
-                                className="w-full"
-                              />
-                            </div>
-
-                            <div className="space-y-2">
-                              <Label htmlFor="maxWidth">
-                                Maksimum Genişlik: {maxWidth ? `${maxWidth}px` : "Orijinal"}
-                              </Label>
-                              <Slider
-                                id="maxWidth"
-                                min={320}
-                                max={4096}
-                                step={160}
-                                value={maxWidth ? [maxWidth] : [4096]}
-                                onValueChange={(value) =>
-                                  setMaxWidth(value[0] === 4096 ? null : value[0])
-                                }
-                                className="w-full"
-                              />
-                            </div>
-                          </>
-                        )}
-
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="generateBlurHash"
-                            checked={generateBlurHash}
-                            onCheckedChange={(checked) => setGenerateBlurHash(checked as boolean)}
-                          />
-                          <Label htmlFor="generateBlurHash">
-                            Aşamalı yükleme için BlurHash oluştur
-                          </Label>
-                        </div>
-                      </div>
+                      <OptimizationSettings
+                        idPrefix="file"
+                        optimize={optimize}
+                        setOptimize={setOptimize}
+                        generateBlurHash={generateBlurHash}
+                        setGenerateBlurHash={setGenerateBlurHash}
+                        format={format}
+                        setFormat={setFormat}
+                        quality={quality}
+                        setQuality={setQuality}
+                        maxWidth={maxWidth}
+                        setMaxWidth={setMaxWidth}
+                      />
                     </CollapsibleContent>
                   </Collapsible>
 

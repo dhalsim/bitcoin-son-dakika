@@ -111,19 +111,14 @@ export function BlobSelector({
                           <ProgressiveBlossomImage
                             sha256={item.hash}
                             alt={item.hash}
-                            className="w-[80px] h-[60px] object-cover rounded"
+                            className="w-[80px] aspect-[16/9] object-cover rounded bg-white"
                             loading="lazy"
                             decoding="async"
                           />
                         </div>
                         {item.blurhash && (
                           <div className="hidden min-md:block">
-                            <BlurhashCanvas
-                              hash={item.blurhash}
-                              width={item.width || 80}
-                              height={item.height || 60}
-                              punch={1}
-                            />
+                            <BlurhashCanvas hash={item.blurhash} width={80} height={60} punch={1} />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
