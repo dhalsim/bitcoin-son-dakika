@@ -26,6 +26,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BlobSelector } from "@/components/common/BlobSelector";
+import { WEBSITE_URL } from "@/lib/constants";
 
 interface ImageUrlInputProps {
   value: string;
@@ -65,6 +66,32 @@ interface UploadResult {
 interface CorsCheckResult {
   hasCors: boolean;
   error?: string;
+}
+
+// Helper function to get file extension from MIME type
+function getExtensionFromMimeType(mimeType: string): string {
+  const mimeMap: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/avif": "avif",
+    "image/svg+xml": "svg",
+    "image/bmp": "bmp",
+    "image/tiff": "tiff",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
+    "video/ogg": "ogv",
+    "audio/mpeg": "mp3",
+    "audio/ogg": "ogg",
+    "audio/wav": "wav",
+    "application/pdf": "pdf",
+    "application/zip": "zip",
+    "text/plain": "txt",
+  };
+
+  return mimeMap[mimeType.toLowerCase()] || "";
 }
 
 export function ImageUrlInput({
@@ -193,10 +220,13 @@ export function ImageUrlInput({
       setUploadResult(result);
 
       if (result.successful.length > 0) {
-        // Use first successful upload URL
-        const firstSuccess = result.successful[0];
+        // Construct our own URL using WEBSITE_URL/api/file/{hash}.{extension}
+        const extension = getExtensionFromMimeType(result.contentType);
+        const newUrl = extension
+          ? `${WEBSITE_URL}/api/file/${result.sha256}.${extension}`
+          : `${WEBSITE_URL}/api/file/${result.sha256}`;
 
-        onChange(firstSuccess.descriptor.url);
+        onChange(newUrl);
 
         setActiveTab("url");
       }
@@ -240,9 +270,13 @@ export function ImageUrlInput({
       setUploadResult(result);
 
       if (result.successful.length > 0) {
-        // Use first successful upload URL
-        const firstSuccess = result.successful[0];
-        onChange(firstSuccess.descriptor.url);
+        // Construct our own URL using WEBSITE_URL/api/file/{hash}.{extension}
+        const extension = getExtensionFromMimeType(result.contentType);
+        const newUrl = extension
+          ? `${WEBSITE_URL}/api/file/${result.sha256}.${extension}`
+          : `${WEBSITE_URL}/api/file/${result.sha256}`;
+
+        onChange(newUrl);
       }
     } catch (error) {
       console.error("URL upload failed:", error);
@@ -266,11 +300,13 @@ export function ImageUrlInput({
 
   const handleServerToggle = (server: string, checked: boolean) => {
     const newSelectedServers = new Set(selectedServers);
+
     if (checked) {
       newSelectedServers.add(server);
     } else {
       newSelectedServers.delete(server);
     }
+
     setSelectedServers(newSelectedServers);
   };
 
