@@ -1,4 +1,4 @@
-import { ImageUrlInput } from "@/components/common/ImageUrlInput";
+import { MediaUrlInput } from "@/components/common/ImageUrlInput";
 import { useBlossomUpload, UploadOptions, UploadResult } from "@/hooks/useBlossomUpload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -6,7 +6,7 @@ import { createNIP98Auth } from "../utils";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { WEBSITE_URL } from "@/lib/constants";
 
-interface BlossomImageUploadProps {
+interface BlossomMediaUploadProps {
   value: string;
   onChange: (url: string) => void;
   blossomServers: string[];
@@ -14,13 +14,13 @@ interface BlossomImageUploadProps {
   placeholder?: string;
 }
 
-export function BlossomImageUpload({
+export function BlossomMediaUpload({
   value,
   onChange,
   blossomServers,
-  label = "Image URL",
-  placeholder = "Enter image URL or upload file",
-}: BlossomImageUploadProps) {
+  label = "Medya URL'si",
+  placeholder = "Medya URL'si girin veya dosya yükleyin",
+}: BlossomMediaUploadProps) {
   const { getPublicKey, signEvent } = useNostrAuth();
   const { uploadToBlossom, uploadUrlToBlossom, isUploading, error } = useBlossomUpload();
 
@@ -49,13 +49,13 @@ export function BlossomImageUpload({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Blossom Image Upload</CardTitle>
+        <CardTitle>Blossom Medya Yükleme</CardTitle>
         <CardDescription>
-          Upload images to Blossom servers with optimization and BlurHash generation
+          Blossom sunucularına görüntü ve video yükleyin, optimizasyon ve BlurHash oluşturma ile
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ImageUrlInput
+        <MediaUrlInput
           value={value}
           onChange={onChange}
           label={label}

@@ -28,7 +28,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { BlobSelector } from "@/components/common/BlobSelector";
 import { WEBSITE_URL } from "@/lib/constants";
 
-interface ImageUrlInputProps {
+interface MediaUrlInputProps {
   value: string;
   onChange: (url: string) => void;
   label?: string;
@@ -196,15 +196,15 @@ function OptimizationSettings({
   );
 }
 
-export function ImageUrlInput({
+export function MediaUrlInput({
   value,
   onChange,
-  label = "Resim URL'si",
-  placeholder = "Resim URL'si girin veya dosya yükleyin",
+  label = "Medya URL'si",
+  placeholder = "Medya URL'si girin veya dosya yükleyin",
   blossomServers,
   onUploadToBlossom,
   onUploadUrlToBlossom,
-}: ImageUrlInputProps) {
+}: MediaUrlInputProps) {
   const [activeTab, setActiveTab] = useState<"url" | "file" | "select">("url");
   const [isCheckingCors, setIsCheckingCors] = useState(false);
   const [corsResult, setCorsResult] = useState<CorsCheckResult | null>(null);
@@ -221,6 +221,56 @@ export function ImageUrlInput({
   const [maxWidth, setMaxWidth] = useState<number | null>(1920);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Helper function to determine if URL is a video
+  const isVideoUrl = (url: string): boolean => {
+    const videoExtensions = [".mp4", ".webm", ".ogg", ".ogv", ".mov", ".avi"];
+    const lowerUrl = url.toLowerCase();
+    return (
+      videoExtensions.some((ext) => lowerUrl.includes(ext)) ||
+      lowerUrl.includes("video/") ||
+      lowerUrl.includes("youtube.com") ||
+      lowerUrl.includes("youtu.be") ||
+      lowerUrl.includes("vimeo.com")
+    );
+  };
+
+  // Helper function to determine if current file is a video
+  const isCurrentFileVideo = (): boolean => {
+    const file = fileInputRef.current?.files?.[0];
+    if (file) {
+      return file.type.startsWith("video/");
+    }
+    return isVideoUrl(value);
+  };
+
+  // Helper function to render media preview
+  const renderMediaPreview = (url: string) => {
+    if (isVideoUrl(url)) {
+      return (
+        <video
+          src={url}
+          className="h-20 w-20 object-cover rounded border"
+          controls={false}
+          muted
+          onError={(e) => {
+            (e.target as HTMLVideoElement).style.display = "none";
+          }}
+        />
+      );
+    } else {
+      return (
+        <img
+          src={url}
+          alt="Önizleme"
+          className="h-20 w-20 object-cover rounded border"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
+      );
+    }
+  };
 
   const checkCors = async (url: string): Promise<CorsCheckResult> => {
     try {
@@ -310,8 +360,8 @@ export function ImageUrlInput({
 
     try {
       const options: UploadOptions = {
-        optimize,
-        generateBlurHash,
+        optimize: isCurrentFileVideo() ? false : optimize,
+        generateBlurHash: isCurrentFileVideo() ? false : generateBlurHash,
         format,
         quality,
         maxWidth,
@@ -364,8 +414,8 @@ export function ImageUrlInput({
 
     try {
       const options: UploadOptions = {
-        optimize,
-        generateBlurHash,
+        optimize: isVideoUrl(value) ? false : optimize,
+        generateBlurHash: isVideoUrl(value) ? false : generateBlurHash,
         format,
         quality,
         maxWidth,
@@ -429,7 +479,7 @@ export function ImageUrlInput({
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="image-url">{label}</Label>
+        <Label htmlFor="media-url">{label}</Label>
         <Tabs
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as "url" | "file" | "select")}
@@ -453,7 +503,7 @@ export function ImageUrlInput({
             <div className="space-y-3">
               <div className="flex gap-2">
                 <Input
-                  id="image-url"
+                  id="media-url"
                   value={value}
                   onChange={(e) => onChange(e.target.value)}
                   placeholder={placeholder}
@@ -487,7 +537,7 @@ export function ImageUrlInput({
                     )}
                     <AlertDescription>
                       {corsResult.hasCors
-                        ? "CORS etkin - resim harici olarak kullanılabilir"
+                        ? "CORS etkin - medya harici olarak kullanılabilir"
                         : `CORS etkin değil${corsResult.error ? `: ${corsResult.error}` : ""} - Blossom'a yüklemeyi düşünün`}
                     </AlertDescription>
                   </div>
@@ -497,14 +547,7 @@ export function ImageUrlInput({
               {value && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <img
-                      src={value}
-                      alt="Önizleme"
-                      className="h-20 w-20 object-cover rounded border"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
+                    {renderMediaPreview(value)}
                     <Button
                       variant="outline"
                       size="sm"
@@ -549,32 +592,43 @@ export function ImageUrlInput({
                       </div>
 
                       {/* Optimization Settings for URL Upload */}
-                      <Collapsible
-                        open={showOptimizationSettings}
-                        onOpenChange={setShowOptimizationSettings}
-                      >
-                        <CollapsibleTrigger asChild>
-                          <Button variant="outline" size="sm" className="w-full">
-                            <Settings className="h-4 w-4 mr-2" />
-                            Optimizasyon Ayarları
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg bg-muted/50">
-                          <OptimizationSettings
-                            idPrefix="url"
-                            optimize={optimize}
-                            setOptimize={setOptimize}
-                            generateBlurHash={generateBlurHash}
-                            setGenerateBlurHash={setGenerateBlurHash}
-                            format={format}
-                            setFormat={setFormat}
-                            quality={quality}
-                            setQuality={setQuality}
-                            maxWidth={maxWidth}
-                            setMaxWidth={setMaxWidth}
-                          />
-                        </CollapsibleContent>
-                      </Collapsible>
+                      {!isVideoUrl(value) && (
+                        <Collapsible
+                          open={showOptimizationSettings}
+                          onOpenChange={setShowOptimizationSettings}
+                        >
+                          <CollapsibleTrigger asChild>
+                            <Button variant="outline" size="sm" className="w-full">
+                              <Settings className="h-4 w-4 mr-2" />
+                              Optimizasyon Ayarları
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg bg-muted/50">
+                            <OptimizationSettings
+                              idPrefix="url"
+                              optimize={optimize}
+                              setOptimize={setOptimize}
+                              generateBlurHash={generateBlurHash}
+                              setGenerateBlurHash={setGenerateBlurHash}
+                              format={format}
+                              setFormat={setFormat}
+                              quality={quality}
+                              setQuality={setQuality}
+                              maxWidth={maxWidth}
+                              setMaxWidth={setMaxWidth}
+                            />
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
+
+                      {isVideoUrl(value) && (
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                          <p className="text-sm text-blue-600">
+                            Video dosyaları için optimizasyon ayarları kullanılamaz. Video orijinal
+                            haliyle yüklenecek.
+                          </p>
+                        </div>
+                      )}
 
                       <div className="flex items-center gap-2">
                         <Button
@@ -656,7 +710,7 @@ export function ImageUrlInput({
                 <Input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   onChange={handleFileSelect}
                   className="cursor-pointer"
                 />
@@ -694,32 +748,43 @@ export function ImageUrlInput({
                   </div>
 
                   {/* Optimization Settings */}
-                  <Collapsible
-                    open={showOptimizationSettings}
-                    onOpenChange={setShowOptimizationSettings}
-                  >
-                    <CollapsibleTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Optimizasyon Ayarları
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg bg-muted/50">
-                      <OptimizationSettings
-                        idPrefix="file"
-                        optimize={optimize}
-                        setOptimize={setOptimize}
-                        generateBlurHash={generateBlurHash}
-                        setGenerateBlurHash={setGenerateBlurHash}
-                        format={format}
-                        setFormat={setFormat}
-                        quality={quality}
-                        setQuality={setQuality}
-                        maxWidth={maxWidth}
-                        setMaxWidth={setMaxWidth}
-                      />
-                    </CollapsibleContent>
-                  </Collapsible>
+                  {!isCurrentFileVideo() && (
+                    <Collapsible
+                      open={showOptimizationSettings}
+                      onOpenChange={setShowOptimizationSettings}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Optimizasyon Ayarları
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-4 mt-4 p-4 border rounded-lg bg-muted/50">
+                        <OptimizationSettings
+                          idPrefix="file"
+                          optimize={optimize}
+                          setOptimize={setOptimize}
+                          generateBlurHash={generateBlurHash}
+                          setGenerateBlurHash={setGenerateBlurHash}
+                          format={format}
+                          setFormat={setFormat}
+                          quality={quality}
+                          setQuality={setQuality}
+                          maxWidth={maxWidth}
+                          setMaxWidth={setMaxWidth}
+                        />
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+
+                  {isCurrentFileVideo() && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-sm text-blue-600">
+                        Video dosyaları için optimizasyon ayarları kullanılamaz. Video orijinal
+                        haliyle yüklenecek.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2">
                     <Button
@@ -739,11 +804,7 @@ export function ImageUrlInput({
 
                   {value && (
                     <div className="flex items-center gap-2">
-                      <img
-                        src={value}
-                        alt="Önizleme"
-                        className="h-20 w-20 object-cover rounded border"
-                      />
+                      {renderMediaPreview(value)}
                       <div className="text-sm text-muted-foreground">Yüklemeye hazır</div>
                     </div>
                   )}

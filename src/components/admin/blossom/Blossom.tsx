@@ -15,7 +15,7 @@ import { WEBSITE_URL } from "@/lib/constants";
 import { FileListItem } from "api-helpers/schemas";
 
 import { ListServers } from "./ListServers";
-import { BlossomImageUpload } from "./BlossomImageUpload";
+import { BlossomMediaUpload } from "./BlossomMediaUpload";
 
 interface BlossomProps {
   servers: string[];
@@ -178,7 +178,7 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
         <div>
           <h2 className="text-2xl font-bold">🌸 Blossom Yönetimi</h2>
           <p className="text-muted-foreground">
-            Blossom sunucularını yönetin ve dosyalarınızı yükleyin
+            Blossom sunucularını yönetin ve medya dosyalarınızı yükleyin
           </p>
         </div>
 
@@ -198,7 +198,7 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
           </TabsTrigger>
           <TabsTrigger value="upload" className="flex items-center gap-2">
             <Upload className="h-4 w-4" />
-            Dosya Yükle
+            Medya Yükle
           </TabsTrigger>
           <TabsTrigger value="display" className="flex items-center gap-2">
             <Image className="h-4 w-4" />
@@ -215,11 +215,11 @@ export function Blossom({ servers, lastUpdated, onRefresh, performPublishAction 
         </TabsContent>
 
         <TabsContent value="upload" className="mt-6">
-          <BlossomImageUpload
+          <BlossomMediaUpload
             value={uploadedImageUrl}
             onChange={setUploadedImageUrl}
-            label="Blossom Görüntü Yükle"
-            placeholder="Blossom görüntüsü yükleyin"
+            label="Blossom Medya Yükle"
+            placeholder="Blossom medyası yükleyin"
             blossomServers={servers}
           />
         </TabsContent>
