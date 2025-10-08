@@ -74,7 +74,13 @@ export function MultiPublishEventResponseCreator(
     ...data,
   };
 
-  return new Response(JSON.stringify(send), { status });
+  return new Response(JSON.stringify(send), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
 }
 
 export function PublishEventResponseCreator(
