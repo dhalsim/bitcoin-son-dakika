@@ -1,4 +1,4 @@
-import { MediaUrlInput } from "@/components/common/ImageUrlInput";
+import { MediaUrlInput } from "@/components/common/MediaUrlInput";
 import { useBlossomUpload, UploadOptions, UploadResult } from "@/hooks/useBlossomUpload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -61,6 +61,7 @@ export function BlossomMediaUpload({
           label={label}
           placeholder={placeholder}
           blossomServers={blossomServers}
+          onlyImage={false}
           onUploadToBlossom={performUploadToBlossom}
           onUploadUrlToBlossom={performUploadUrlToBlossom}
         />

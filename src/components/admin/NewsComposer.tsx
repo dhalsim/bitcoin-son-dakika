@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ImageUrlInput } from "@/components/common/ImageUrlInput";
+import { MediaUrlInput } from "@/components/common/MediaUrlInput";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { useBlossomUpload, UploadOptions, UploadResult } from "@/hooks/useBlossomUpload";
 import { WEBSITE_URL } from "@/lib/constants";
@@ -187,9 +187,10 @@ export default function NewsComposer({
                     </div>
                   )}
                 </div>
-                <ImageUrlInput
+                <MediaUrlInput
                   value={newsImageUrl}
                   onChange={handleImageChange}
+                  onlyImage={true}
                   label=""
                   placeholder="Görsel URL'si girin veya dosya yükleyin"
                   blossomServers={blossomServers}
@@ -359,9 +360,10 @@ export default function NewsComposer({
                     </div>
                   )}
                 </div>
-                <ImageUrlInput
+                <MediaUrlInput
                   value={newsImageUrl}
                   onChange={handleImageChange}
+                  onlyImage={true}
                   label=""
                   placeholder="Görsel URL'si girin veya dosya yükleyin"
                   blossomServers={blossomServers}

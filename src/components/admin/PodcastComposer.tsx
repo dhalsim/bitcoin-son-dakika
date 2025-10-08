@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
-import { ImageUrlInput } from "@/components/common/ImageUrlInput";
+import { MediaUrlInput } from "@/components/common/MediaUrlInput";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { useBlossomUpload, UploadOptions, UploadResult } from "@/hooks/useBlossomUpload";
 import { WEBSITE_URL } from "@/lib/constants";
@@ -247,9 +247,10 @@ export default function PodcastComposer({
                     </div>
                   )}
                 </div>
-                <ImageUrlInput
+                <MediaUrlInput
                   value={image}
                   onChange={handleImageChange}
+                  onlyImage={true}
                   label=""
                   placeholder="Görsel URL'si girin veya dosya yükleyin"
                   blossomServers={blossomServers}

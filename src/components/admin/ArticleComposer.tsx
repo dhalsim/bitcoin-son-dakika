@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ArticleMarkdownRenderer from "@/components/ArticleMarkdownRenderer";
-import { ImageUrlInput } from "@/components/common/ImageUrlInput";
+import { MediaUrlInput } from "@/components/common/MediaUrlInput";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { useBlossomUpload, UploadOptions, UploadResult } from "@/hooks/useBlossomUpload";
 import { WEBSITE_URL } from "@/lib/constants";
@@ -135,9 +135,10 @@ export default function ArticleComposer({
                 )}
               </div>
             </div>
-            <ImageUrlInput
+            <MediaUrlInput
               value={imageUrl}
               onChange={handleImageChange}
+              onlyImage={true}
               label=""
               placeholder="Resim URL'si girin veya dosya yükleyin"
               blossomServers={blossomServers}

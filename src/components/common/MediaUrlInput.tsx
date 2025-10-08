@@ -34,6 +34,7 @@ interface MediaUrlInputProps {
   label?: string;
   placeholder?: string;
   blossomServers: string[];
+  onlyImage: boolean;
   onUploadToBlossom?: (
     file: File,
     servers: string[],
@@ -202,6 +203,7 @@ export function MediaUrlInput({
   label = "Medya URL'si",
   placeholder = "Medya URL'si girin veya dosya yükleyin",
   blossomServers,
+  onlyImage,
   onUploadToBlossom,
   onUploadUrlToBlossom,
 }: MediaUrlInputProps) {
@@ -710,7 +712,7 @@ export function MediaUrlInput({
                 <Input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*,video/*"
+                  accept={onlyImage ? "image/*" : "image/*,video/*"}
                   onChange={handleFileSelect}
                   className="cursor-pointer"
                 />
