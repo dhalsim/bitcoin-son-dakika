@@ -46,7 +46,7 @@ export const PodcastCard: React.FC<PodcastCardProps> = ({ podcast }) => {
   );
 
   const imageElement = wrapInLink(
-    <img src={podcast.image} alt={podcast.title} className="w-full h-full object-cover" />,
+    <img src={podcast.image} alt={podcast.title} className="w-full h-full" />,
     "hover:opacity-80 transition-opacity cursor-pointer",
   );
 

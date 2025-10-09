@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
 import BreakingNews from "./BreakingNews";
+import EmailSubscription from "./EmailSubscription";
 import Footer from "./Footer";
 import Header from "./Header";
 import PriceBar from "./PriceBar";
@@ -52,6 +53,8 @@ export default function MainContent({ children }: MainContentProps) {
           </div>
         </div>
       </div>
+
+      <EmailSubscription className="container mx-auto px-4 py-8" />
 
       <Footer />
     </div>

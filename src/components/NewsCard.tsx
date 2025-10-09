@@ -66,7 +66,7 @@ export const NewsCard: React.FC<NewsCardProps> = ({
 
   const imageElement = image
     ? wrapInLink(
-        <img src={image} alt={title} className="w-full h-full object-cover" />,
+        <img src={image} alt={title} className="w-full h-full" />,
         "hover:opacity-80 transition-opacity cursor-pointer",
       )
     : null;
