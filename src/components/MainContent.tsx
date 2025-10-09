@@ -54,8 +54,7 @@ export default function MainContent({ children }: MainContentProps) {
         </div>
       </div>
 
-      <EmailSubscription className="container mx-auto px-4 py-8" />
-
+      <EmailSubscription />
       <Footer />
     </div>
   );

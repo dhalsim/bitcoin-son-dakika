@@ -1,12 +1,8 @@
 import { useState } from "react";
 
-interface EmailSubscriptionProps {
-  className?: string;
-}
-
-export default function EmailSubscription({ className = "" }: EmailSubscriptionProps) {
+export default function EmailSubscription() {
   const [email, setEmail] = useState("");
-  const [dailyChecked, setDailyChecked] = useState(false);
+  const [dailyChecked, setDailyChecked] = useState(true);
   const [weeklyChecked, setWeeklyChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -66,18 +62,23 @@ export default function EmailSubscription({ className = "" }: EmailSubscriptionP
   };
 
   return (
-    <div className={`bg-info text-info-foreground p-6 rounded-lg ${className}`}>
+    <div
+      className={`bg-gradient-to-br from-blue-50 to-orange-50 dark:from-blue-500 dark:to-orange-900 border-2 border-blue-200 dark:border-blue-800 p-6 m-6 rounded-lg shadow-lg`}
+    >
       <div className="max-w-md mx-auto">
-        <h3 className="text-lg font-semibold text-info-foreground mb-4 text-center">
+        <h3 className="text-xl font-bold text-black dark:text-white mb-4 text-center">
           📧 E-posta Bülteni
         </h3>
-        <p className="text-sm text-info-foreground mb-6 text-center">
+        <p className="text-sm text-black dark:text-white mb-6 text-center">
           Bitcoin haberleri, makaleler ve podcast içeriklerimizden haberdar olmak için abone olun.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-info-foreground mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold text-black dark:text-white mb-2"
+            >
               E-posta Adresi
             </label>
             <input
@@ -85,14 +86,14 @@ export default function EmailSubscription({ className = "" }: EmailSubscriptionP
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-info-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border-2 border-blue-300 dark:border-blue-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 transition-all duration-200"
               placeholder="ornek@email.com"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-info-foreground mb-2">
+            <label className="block text-sm font-semibold text-black dark:text-white mb-2">
               Bildirim Sıklığı
             </label>
             <div className="space-y-2">
@@ -101,18 +102,20 @@ export default function EmailSubscription({ className = "" }: EmailSubscriptionP
                   type="checkbox"
                   checked={dailyChecked}
                   onChange={(e) => setDailyChecked(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-info-foreground rounded"
+                  className="h-4 w-4 text-orange-500 focus:ring-orange-400 border-blue-300 dark:border-blue-600 rounded"
                 />
-                <span className="ml-2 text-sm text-info-foreground">Günlük bildirimler</span>
+                <span className="ml-2 text-sm text-black dark:text-white">Günlük bildirimler</span>
               </label>
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   checked={weeklyChecked}
                   onChange={(e) => setWeeklyChecked(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-info-foreground rounded"
+                  className="h-4 w-4 text-orange-500 focus:ring-orange-400 border-blue-300 dark:border-blue-600 rounded"
                 />
-                <span className="ml-2 text-sm text-info-foreground">Haftalık bildirimler</span>
+                <span className="ml-2 text-sm text-black dark:text-white">
+                  Haftalık bildirimler
+                </span>
               </label>
             </div>
           </div>
@@ -120,7 +123,7 @@ export default function EmailSubscription({ className = "" }: EmailSubscriptionP
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-primary hover:bg-primary/80 disabled:bg-primary/40 text-primary-foreground font-medium py-2 px-4 rounded-md transition-colors duration-200"
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-orange-300 disabled:to-orange-400 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:transform-none"
           >
             {isSubmitting ? "Abone Olunuyor..." : "Abone Ol"}
           </button>
@@ -128,8 +131,10 @@ export default function EmailSubscription({ className = "" }: EmailSubscriptionP
 
         {message && (
           <div
-            className={`mt-4 p-3 rounded-md text-sm ${
-              isSuccess ? "bg-success/10 text-success" : "bg-error/10 text-error"
+            className={`mt-4 p-4 rounded-lg text-sm font-medium ${
+              isSuccess
+                ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-2 border-green-300 dark:border-green-700"
+                : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-2 border-red-300 dark:border-red-700"
             }`}
           >
             {message}

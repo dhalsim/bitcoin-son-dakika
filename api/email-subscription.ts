@@ -132,7 +132,7 @@ export async function POST(request: Request) {
 
     return SuccessResponse({
       message: "Başarıyla abone oldunuz",
-      subscriptionId: result.lastInsertRowid,
+      subscriptionId: result.lastInsertRowid?.toString(),
     });
   } catch (error) {
     console.error("Email subscription API error:", error);
