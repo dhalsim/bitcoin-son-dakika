@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { WEBSITE_URL } from "@/lib/constants";
 
 interface UnsubscribeResponse {
   success: boolean;
@@ -29,7 +30,9 @@ export default function Unsubscribe() {
 
     const unsubscribe = async () => {
       try {
-        const response = await fetch(`/api/email-subscription?token=${encodeURIComponent(token)}`);
+        const response = await fetch(
+          `${WEBSITE_URL}/api/email-subscription?token=${encodeURIComponent(token)}`,
+        );
 
         const data: UnsubscribeResponse = await response.json();
 

@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { WEBSITE_URL } from "@/lib/constants";
+
 export default function EmailSubscription() {
   const [email, setEmail] = useState("");
   const [dailyChecked, setDailyChecked] = useState(true);
@@ -29,7 +31,7 @@ export default function EmailSubscription() {
     setMessage("");
 
     try {
-      const response = await fetch("/api/email-subscription", {
+      const response = await fetch(`${WEBSITE_URL}/api/email-subscription`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -133,8 +135,8 @@ export default function EmailSubscription() {
           <div
             className={`mt-4 p-4 rounded-lg text-sm font-medium ${
               isSuccess
-                ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-2 border-green-300 dark:border-green-700"
-                : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border-2 border-red-300 dark:border-red-700"
+                ? "bg-green-100 dark:bg-green-900/30 text-white border-2 border-green-300 dark:border-green-700"
+                : "bg-red-100 dark:bg-red-900/30 text-white border-2 border-red-300 dark:border-red-700"
             }`}
           >
             {message}
