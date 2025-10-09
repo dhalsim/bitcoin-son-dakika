@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import { Outlet, Links, Meta, Scripts, isRouteErrorResponse } from "react-router";
 import type { MetaFunction, LinksFunction } from "react-router";
 
@@ -104,6 +105,7 @@ export default function Root() {
         <Links />
       </head>
       <body>
+        <Analytics />
         <TooltipProvider>
           <SSGProvider>
             <NostrAuthProvider>
