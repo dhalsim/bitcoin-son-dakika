@@ -145,6 +145,6 @@ export default {
 
     console.log("✅ Sitemap.xml generated successfully");
 
-    return allRoutes;
+    return [...allRoutes, "/unsubscribe"];
   },
 } satisfies Config;
