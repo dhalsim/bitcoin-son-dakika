@@ -4,7 +4,10 @@ import { createClient } from "@libsql/client";
 import nodemailer from "nodemailer";
 
 import { ErrorResponseCreator, SuccessResponse } from "../api-helpers/common_with_client.js";
+import { createTitleSlug } from "../api-helpers/common_with_client.js";
 import { generateUnsubscribeLink } from "../api-helpers/email-utils.js";
+import type { SSGData } from "../src/lib/ssg-data.js";
+import { links } from "../src/lib/utils.js";
 
 // Initialize Turso client
 const turso = createClient({
@@ -129,59 +132,66 @@ Abonelikten çıkmak için: ${unsubscribeLink}
   }
 }
 
-// Generate email content based on frequency using RSS feeds
+// Generate email content based on frequency using raw SSG data
 async function generateEmailContent(frequency: "daily" | "weekly") {
   const isWeekly = frequency === "weekly";
 
   try {
-    // Fetch RSS feed data
-    const feedUrl = "https://bitcoinsondakika.com/feed/atom.xml";
+    // Fetch raw SSG data
+    const feedUrl = "https://bitcoinsondakika.com/feed/email-data.json";
     const response = await fetch(feedUrl);
-    const feedXml = await response.text();
-
-    // Parse XML to extract recent items
-    const items = parseAtomFeed(feedXml);
+    const ssgData: SSGData = await response.json();
 
     // Filter items based on publication date
-    const now = new Date();
-    const cutoffDate = isWeekly
-      ? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
-      : new Date(now.getTime() - 24 * 60 * 60 * 1000); // 1 day ago
+    const now = Date.now() / 1000; // Convert to Unix timestamp
+    const cutoffTime = isWeekly
+      ? now - 7 * 24 * 60 * 60 // 7 days ago
+      : now - 24 * 60 * 60; // 1 day ago
 
-    const filteredItems = items.filter((item) => {
-      const publishedDate = new Date(item.publishedRaw);
-
-      return publishedDate >= cutoffDate;
-    });
+    // Combine news and articles for main content
+    const allContent = [...ssgData.news, ...ssgData.articles]
+      .filter((item) => item.publishedAt >= cutoffTime)
+      .sort((a, b) => b.publishedAt - a.publishedAt); // Sort by newest first
 
     // Limit items
-    const recentItems = filteredItems.slice(0, isWeekly ? 15 : 8);
+    const recentItems = allContent.slice(0, isWeekly ? 15 : 8);
 
-    // For weekly emails, also fetch podcast content
+    // For weekly emails, also include podcast content
     let podcastItems: Array<{ title: string; summary: string; link: string; published: string }> =
       [];
     if (isWeekly) {
-      try {
-        const podcastResponse = await fetch("https://bitcoinsondakika.com/feed/podcast-rss.xml");
-        const podcastXml = await podcastResponse.text();
-        podcastItems = parsePodcastFeed(podcastXml).slice(0, 5); // Top 5 recent podcasts
-      } catch (error) {
-        console.error("Error fetching podcast feed:", error);
-      }
+      podcastItems = ssgData.podcasts
+        .filter((item) => item.publishedAt >= cutoffTime)
+        .sort((a, b) => b.publishedAt - a.publishedAt)
+        .slice(0, 5) // Top 5 recent podcasts
+        .map((item) => ({
+          title: item.title,
+          summary: item.summary,
+          link: `https://bitcoinsondakika.com${links.podcastDetail(createTitleSlug(item.title))}`,
+          published: new Date(item.publishedAt * 1000).toLocaleDateString("tr-TR"),
+        }));
     }
 
     const itemsHtml = recentItems
-      .map(
-        (item) => `
+      .map((item) => {
+        // Generate appropriate link based on item type
+        const link =
+          item.type === "news"
+            ? `https://bitcoinsondakika.com${links.newsDetail(createTitleSlug(item.title || "bitcoin-haberi"))}`
+            : `https://bitcoinsondakika.com${links.articleDetail(createTitleSlug(item.title))}`;
+
+        const summary = item.summary || item.content.substring(0, 200) + "...";
+
+        return `
       <div style="border-bottom: 1px solid #e5e7eb; padding: 15px 0;">
         <h4 style="margin: 0 0 8px 0; color: #1f2937;">
-          <a href="${item.link}" style="color: #2563eb; text-decoration: none;">${item.title}</a>
+          <a href="${link}" style="color: #2563eb; text-decoration: none;">${item.title || "Bitcoin Haberi"}</a>
         </h4>
-        <p style="margin: 0; color: #6b7280; font-size: 14px;">${item.summary}</p>
-        <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 12px;">${item.published}</p>
+        <p style="margin: 0; color: #6b7280; font-size: 14px;">${summary}</p>
+        <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 12px;">${new Date(item.publishedAt * 1000).toLocaleDateString("tr-TR")}</p>
       </div>
-    `,
-      )
+    `;
+      })
       .join("");
 
     const podcastHtml =
@@ -230,13 +240,19 @@ Bitcoin Son Dakika
 ${isWeekly ? "Haftalık" : "Günlük"} Bitcoin Haberleri
 
 ${recentItems
-  .map(
-    (item) => `${item.title}
-${item.summary}
-${item.link}
+  .map((item) => {
+    const link =
+      item.type === "news"
+        ? `https://bitcoinsondakika.com${links.newsDetail(createTitleSlug(item.title || "bitcoin-haberi"))}`
+        : `https://bitcoinsondakika.com${links.articleDetail(createTitleSlug(item.title))}`;
+    const summary = item.summary || item.content.substring(0, 200) + "...";
 
-`,
-  )
+    return `${item.title || "Bitcoin Haberi"}
+${summary}
+${link}
+
+`;
+  })
   .join("")}
 
 ${
@@ -295,82 +311,6 @@ Tüm haberleri görüntülemek için: https://bitcoinsondakika.com
 
     return { htmlContent, textContent };
   }
-}
-
-// Simple Atom feed parser
-function parseAtomFeed(xml: string) {
-  const items: Array<{
-    title: string;
-    summary: string;
-    link: string;
-    published: string;
-    publishedRaw: string;
-  }> = [];
-
-  // Extract entries using regex (simple approach)
-  const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
-  let match;
-
-  while ((match = entryRegex.exec(xml)) !== null) {
-    const entryXml = match[1];
-
-    const titleMatch = entryXml.match(/<title>([\s\S]*?)<\/title>/);
-    const summaryMatch = entryXml.match(/<summary[^>]*>([\s\S]*?)<\/summary>/);
-    const linkMatch = entryXml.match(/<link[^>]*href="([^"]*)"[^>]*>/);
-    const publishedMatch = entryXml.match(/<published>([\s\S]*?)<\/published>/);
-
-    if (titleMatch && linkMatch) {
-      const publishedRaw = publishedMatch ? publishedMatch[1] : "";
-      items.push({
-        title: titleMatch[1].replace(/<!\[CDATA\[|\]\]>/g, "").trim(),
-        summary: summaryMatch
-          ? summaryMatch[1]
-              .replace(/<!\[CDATA\[|\]\]>/g, "")
-              .trim()
-              .substring(0, 200) + "..."
-          : "",
-        link: linkMatch[1],
-        published: publishedRaw ? new Date(publishedRaw).toLocaleDateString("tr-TR") : "",
-        publishedRaw: publishedRaw,
-      });
-    }
-  }
-
-  return items;
-}
-
-// Simple RSS feed parser for podcasts
-function parsePodcastFeed(xml: string) {
-  const items: Array<{ title: string; summary: string; link: string; published: string }> = [];
-
-  // Extract items using regex (simple approach)
-  const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-  let match;
-
-  while ((match = itemRegex.exec(xml)) !== null) {
-    const itemXml = match[1];
-
-    const titleMatch = itemXml.match(/<title>([\s\S]*?)<\/title>/);
-    const descriptionMatch = itemXml.match(/<description>([\s\S]*?)<\/description>/);
-    const linkMatch = itemXml.match(/<link>([\s\S]*?)<\/link>/);
-    const pubDateMatch = itemXml.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
-
-    if (titleMatch && linkMatch) {
-      items.push({
-        title: titleMatch[1].replace(/<!\[CDATA\[|\]\]>/g, "").trim(),
-        summary: descriptionMatch
-          ? descriptionMatch[1]
-              .replace(/<!\[CDATA\[|\]\]>/g, "")
-              .trim()
-              .substring(0, 200) + "..."
-          : "",
-        link: linkMatch[1].trim(),
-        published: pubDateMatch ? new Date(pubDateMatch[1]).toLocaleDateString("tr-TR") : "",
-      });
-    }
-  }
-
-  return items;
 }
 
 // Vercel Edge Function handler for GET requests (for unsubscribe links and email campaigns)

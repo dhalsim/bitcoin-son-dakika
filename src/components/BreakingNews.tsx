@@ -1,7 +1,5 @@
 import { useMemo } from "react";
 
-import { links } from "@/lib/utils";
-
 import { createTitleSlug } from "api-helpers/common_with_client";
 
 import { useLatestNews } from "../contexts/SSGContext";
@@ -11,13 +9,11 @@ export default function BreakingNews() {
 
   const topItem = useMemo(() => latestNews[0], [latestNews]);
 
-  if (!topItem) {
+  if (!topItem || !topItem.title) {
     return null;
   }
 
-  const hasLink = topItem.title && topItem.summary;
-
-  const link = hasLink ? links.newsDetail(createTitleSlug(topItem.title)) : null;
+  const link = createTitleSlug(topItem.title);
 
   return (
     <div className="bg-main-accent text-white py-2">
@@ -28,11 +24,7 @@ export default function BreakingNews() {
           </span>
           <div className="flex-1 overflow-hidden">
             <span className="text-xs sm:text-sm font-medium">
-              <a href={link}>
-                {`${topItem.title || "Bitcoin Haberleri"} - ${(
-                  topItem.summary || "Güncel Bitcoin haberleri ve analizler"
-                ).substring(0, 100)}...`}
-              </a>
+              <a href={link}>`${topItem.title}</a>
             </span>
           </div>
         </div>

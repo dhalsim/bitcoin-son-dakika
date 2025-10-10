@@ -17,6 +17,11 @@ import {
 } from "./src/lib/ssg-data";
 import { links } from "./src/lib/utils";
 
+// Generate JSON feed for email campaigns - export raw SSG data
+function generateJsonFeed(ssgData: SSGData): string {
+  return JSON.stringify(ssgData, null, 2);
+}
+
 export default {
   // Use src directory instead of app
   appDirectory: "src",
@@ -68,12 +73,16 @@ export default {
       // Ensure directory exists
       await mkdir(feedDir, { recursive: true });
 
+      // Generate JSON feed for email campaigns
+      const jsonFeed = generateJsonFeed(ssgData);
+
       // Write files
       await writeFile(join(feedDir, "rss.xml"), rssFeed);
       await writeFile(join(feedDir, "atom.xml"), atomFeed);
       await writeFile(join(feedDir, "podcast-rss.xml"), podcastRssFeed);
+      await writeFile(join(feedDir, "email-data.json"), jsonFeed);
 
-      console.log("✅ RSS, Atom, and Podcast RSS feeds generated successfully");
+      console.log("✅ RSS, Atom, Podcast RSS, and JSON feeds generated successfully");
     } catch (error) {
       console.error("❌ Error generating feeds:", error);
     }
