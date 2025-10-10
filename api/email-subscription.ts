@@ -99,40 +99,64 @@ export async function POST(request: Request) {
 
     // Check if email already exists
     const existingSubscription = await turso.execute({
-      sql: "SELECT id FROM email_subscriptions WHERE email = ?",
+      sql: "SELECT id, active FROM email_subscriptions WHERE email = ?",
       args: [email.toLowerCase()],
     });
 
+    let result;
+    let isReactivated = false;
+
     if (existingSubscription.rows.length > 0) {
-      return ErrorResponseCreator("Bu e-posta adresi zaten abone", 409);
+      const subscription = existingSubscription.rows[0];
+
+      // If subscription is active, return error
+      if (subscription.active === 1) {
+        return ErrorResponseCreator("Bu e-posta adresi zaten abone", 409);
+      }
+
+      // If subscription is inactive, reactivate it with new settings
+      isReactivated = true;
+      result = await turso.execute({
+        sql: `
+          UPDATE email_subscriptions 
+          SET daily_notifications = ?, weekly_notifications = ?, active = 1, updated_at = ?
+          WHERE email = ?
+        `,
+        args: [daily ? 1 : 0, weekly ? 1 : 0, new Date().toISOString(), email.toLowerCase()],
+      });
+    } else {
+      // Generate unique unsubscribe token for new subscription
+      const unsubscribeToken = generateUnsubscribeToken();
+
+      // Insert new subscription
+      result = await turso.execute({
+        sql: `
+          INSERT INTO email_subscriptions (email, daily_notifications, weekly_notifications, unsubscribe_token, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        args: [
+          email.toLowerCase(),
+          daily ? 1 : 0,
+          weekly ? 1 : 0,
+          unsubscribeToken,
+          new Date().toISOString(),
+          new Date().toISOString(),
+        ],
+      });
     }
 
-    // Generate unique unsubscribe token
-    const unsubscribeToken = generateUnsubscribeToken();
-
-    // Insert new subscription
-    const result = await turso.execute({
-      sql: `
-        INSERT INTO email_subscriptions (email, daily_notifications, weekly_notifications, unsubscribe_token, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `,
-      args: [
-        email.toLowerCase(),
-        daily ? 1 : 0,
-        weekly ? 1 : 0,
-        unsubscribeToken,
-        new Date().toISOString(),
-        new Date().toISOString(),
-      ],
-    });
-
     if (result.rowsAffected === 0) {
-      return ErrorResponseCreator("Abonelik oluşturulamadı", 500);
+      return ErrorResponseCreator("Abonelik işlemi başarısız", 500);
     }
 
     return SuccessResponse({
-      message: "Başarıyla abone oldunuz",
-      subscriptionId: result.lastInsertRowid?.toString(),
+      message: isReactivated
+        ? "Aboneliğiniz yeniden etkinleştirildi ve ayarlarınız güncellendi"
+        : "Başarıyla abone oldunuz",
+      subscriptionId: isReactivated
+        ? existingSubscription.rows[0].id?.toString()
+        : result.lastInsertRowid?.toString(),
+      reactivated: isReactivated,
     });
   } catch (error) {
     console.error("Email subscription API error:", error);
