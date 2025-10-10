@@ -457,28 +457,17 @@ export function applyCacheHeaders(response: Response, strategy: CacheConfig): Re
 }
 
 export function createTitleSlug(title: string): string {
-  return (
-    title
-      .toLowerCase()
-      // replace turkish characters with english characters
-      .replace(/ğ/g, "g")
-      .replace(/Ğ/g, "G")
-      .replace(/ı/g, "i")
-      .replace(/İ/g, "I")
-      .replace(/ş/g, "s")
-      .replace(/Ş/g, "S")
-      .replace(/ü/g, "u")
-      .replace(/Ü/g, "U")
-      .replace(/ö/g, "o")
-      .replace(/Ö/g, "O")
-      .replace(/ç/g, "c")
-      .replace(/Ç/g, "C")
-      .replace(/[^a-z0-9\s-]/g, "") // Remove special characters except spaces and hyphens
-      .trim()
-      .replace(/\s+/g, "-") // Replace spaces with hyphens
-      .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
-      .trim()
-  );
+  // Normalize the string to NFD form and remove diacritics (accents), covers cases like í => i, é => e, ç => c, etc.
+  // Then filter out non-alphanumeric characters except spaces/hyphens, lower-case, and slugify
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritical marks
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special characters except spaces and hyphens
+    .trim()
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+    .trim();
 }
 
 export function extractArticleDataFromEvent(
