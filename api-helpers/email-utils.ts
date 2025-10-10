@@ -26,7 +26,7 @@ export function generateUnsubscribeLink(
  */
 export function generateUnsubscribeHtml(
   unsubscribeToken: string,
-  baseUrl: string = process.env.VERCEL_URL || "https://bitcoin-son-dakika.com",
+  baseUrl: string = WEBSITE_URL,
   email: string,
 ): string {
   const unsubscribeUrl = generateUnsubscribeLink(unsubscribeToken, baseUrl);
