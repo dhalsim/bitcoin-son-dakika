@@ -67,7 +67,7 @@ export function generateRSSFeed(ssgData: SSGData): string {
       <pubDate>${formatRssDate(item.publishedAt)}</pubDate>
       <description><![CDATA[${item.summary || item.content.substring(0, 300) + "..."}]]></description>
       <author>${item.author.display_name || item.author.pubkey}</author>
-      <category>${item.tagItems && item.tagItems.length > 0 ? item.tagItems[0] : "Bitcoin"}</category>
+      <category>${item.tagItems && item.tagItems.length > 0 ? item.tagItems[0].label : "Bitcoin"}</category>
       ${item.image ? `<enclosure url="${item.image}" type="image/jpeg" />` : ""}
     </item>`;
       })
@@ -113,7 +113,7 @@ export function generateAtomFeed(ssgData: SSGData): string {
       <name>${item.author.display_name || item.author.pubkey}</name>
       ${item.author.picture ? `<uri>${item.author.picture}</uri>` : ""}
     </author>
-    <category term="${item.tagItems && item.tagItems.length > 0 ? item.tagItems[0] : "Bitcoin"}" />
+    <category term="${item.tagItems && item.tagItems.length > 0 ? item.tagItems[0].label : "Bitcoin"}" />
     ${item.image ? `<link rel="enclosure" href="${item.image}" type="image/jpeg" />` : ""}
   </entry>`;
     })

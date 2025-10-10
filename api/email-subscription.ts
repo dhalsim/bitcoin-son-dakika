@@ -57,7 +57,7 @@ async function sendEmailCampaign(frequency: "daily" | "weekly", subject: string)
     }
 
     // Generate email content based on frequency
-    const { htmlContent, textContent } = generateEmailContent(frequency);
+    const { htmlContent, textContent } = await generateEmailContent(frequency);
 
     let sentCount = 0;
     let failedCount = 0;
@@ -129,47 +129,137 @@ Abonelikten çıkmak için: ${unsubscribeLink}
   }
 }
 
-// Generate email content based on frequency
-function generateEmailContent(frequency: "daily" | "weekly") {
+// Generate email content based on frequency using RSS feeds
+async function generateEmailContent(frequency: "daily" | "weekly") {
   const isWeekly = frequency === "weekly";
 
-  const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #2563eb;">Bitcoin Son Dakika</h1>
-      <h2 style="color: #1f2937;">${isWeekly ? "Haftalık" : "Günlük"} Bitcoin Haberleri</h2>
-      
-      <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <h3 style="color: #374151; margin-top: 0;">Son Dakika Haberler</h3>
-        <p style="color: #6b7280;">Bitcoin fiyatı ve piyasa gelişmeleri hakkında güncel bilgiler...</p>
-      </div>
-      
-      <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <h3 style="color: #92400e; margin-top: 0;">Analiz ve Yorumlar</h3>
-        <p style="color: #78350f;">Uzmanların Bitcoin piyasası hakkındaki görüşleri...</p>
-      </div>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="https://bitcoinsondakika.com" style="background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-          Tüm Haberleri Görüntüle
-        </a>
-      </div>
-    </div>
-  `;
+  try {
+    // Fetch RSS feed data
+    const feedUrl = "https://bitcoinsondakika.com/feed/atom.xml";
+    const response = await fetch(feedUrl);
+    const feedXml = await response.text();
 
-  const textContent = `
+    // Parse XML to extract recent items
+    const items = parseAtomFeed(feedXml);
+    const recentItems = items.slice(0, isWeekly ? 10 : 5); // More items for weekly
+
+    const itemsHtml = recentItems
+      .map(
+        (item) => `
+      <div style="border-bottom: 1px solid #e5e7eb; padding: 15px 0;">
+        <h4 style="margin: 0 0 8px 0; color: #1f2937;">
+          <a href="${item.link}" style="color: #2563eb; text-decoration: none;">${item.title}</a>
+        </h4>
+        <p style="margin: 0; color: #6b7280; font-size: 14px;">${item.summary}</p>
+        <p style="margin: 5px 0 0 0; color: #9ca3af; font-size: 12px;">${item.published}</p>
+      </div>
+    `,
+      )
+      .join("");
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #2563eb; text-align: center;">Bitcoin Son Dakika</h1>
+        <h2 style="color: #1f2937; text-align: center;">${isWeekly ? "Haftalık" : "Günlük"} Bitcoin Haberleri</h2>
+        
+        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          ${itemsHtml}
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://bitcoinsondakika.com" style="background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            Tüm Haberleri Görüntüle
+          </a>
+        </div>
+      </div>
+    `;
+
+    const textContent = `
+Bitcoin Son Dakika
+${isWeekly ? "Haftalık" : "Günlük"} Bitcoin Haberleri
+
+${recentItems
+  .map(
+    (item) => `${item.title}
+${item.summary}
+${item.link}
+
+`,
+  )
+  .join("")}
+
+Tüm haberleri görüntülemek için: https://bitcoinsondakika.com
+    `.trim();
+
+    return { htmlContent, textContent };
+  } catch (error) {
+    console.error("Error generating email content from RSS:", error);
+
+    // Fallback to static content
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #2563eb;">Bitcoin Son Dakika</h1>
+        <h2 style="color: #1f2937;">${isWeekly ? "Haftalık" : "Günlük"} Bitcoin Haberleri</h2>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="color: #374151; margin-top: 0;">Son Dakika Haberler</h3>
+          <p style="color: #6b7280;">Bitcoin fiyatı ve piyasa gelişmeleri hakkında güncel bilgiler...</p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://bitcoinsondakika.com" style="background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            Tüm Haberleri Görüntüle
+          </a>
+        </div>
+      </div>
+    `;
+
+    const textContent = `
 Bitcoin Son Dakika
 ${isWeekly ? "Haftalık" : "Günlük"} Bitcoin Haberleri
 
 Son Dakika Haberler
 Bitcoin fiyatı ve piyasa gelişmeleri hakkında güncel bilgiler...
 
-Analiz ve Yorumlar
-Uzmanların Bitcoin piyasası hakkındaki görüşleri...
-
 Tüm haberleri görüntülemek için: https://bitcoinsondakika.com
-  `.trim();
+    `.trim();
 
-  return { htmlContent, textContent };
+    return { htmlContent, textContent };
+  }
+}
+
+// Simple Atom feed parser
+function parseAtomFeed(xml: string) {
+  const items: Array<{ title: string; summary: string; link: string; published: string }> = [];
+
+  // Extract entries using regex (simple approach)
+  const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
+  let match;
+
+  while ((match = entryRegex.exec(xml)) !== null) {
+    const entryXml = match[1];
+
+    const titleMatch = entryXml.match(/<title>([\s\S]*?)<\/title>/);
+    const summaryMatch = entryXml.match(/<summary[^>]*>([\s\S]*?)<\/summary>/);
+    const linkMatch = entryXml.match(/<link[^>]*href="([^"]*)"[^>]*>/);
+    const publishedMatch = entryXml.match(/<published>([\s\S]*?)<\/published>/);
+
+    if (titleMatch && linkMatch) {
+      items.push({
+        title: titleMatch[1].replace(/<!\[CDATA\[|\]\]>/g, "").trim(),
+        summary: summaryMatch
+          ? summaryMatch[1]
+              .replace(/<!\[CDATA\[|\]\]>/g, "")
+              .trim()
+              .substring(0, 200) + "..."
+          : "",
+        link: linkMatch[1],
+        published: publishedMatch ? new Date(publishedMatch[1]).toLocaleDateString("tr-TR") : "",
+      });
+    }
+  }
+
+  return items;
 }
 
 // Vercel Edge Function handler for GET requests (for unsubscribe links and email campaigns)
