@@ -122,6 +122,7 @@ function loadScriptOnce(src: string, id?: string): Promise<void> {
 declare global {
   interface Window {
     Konva: any;
+    gsap: any;
   }
 }
 
@@ -472,7 +473,7 @@ const CanvasEditor = memo(
         },
       }));
 
-      // Load Konva lazily in browser and initialize when available
+      // Load Konva and GSAP lazily in browser and initialize when available
       useEffect(() => {
         let cancelled = false;
         async function ensureKonva() {
@@ -480,8 +481,16 @@ const CanvasEditor = memo(
             return;
           }
 
+          // Load both Konva and GSAP
           if (!window.Konva) {
             await loadScriptOnce("https://unpkg.com/konva@9/konva.min.js", "konva-cdn");
+          }
+
+          if (!window.gsap) {
+            await loadScriptOnce(
+              "https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js",
+              "gsap-cdn",
+            );
           }
 
           if (cancelled) {
@@ -517,7 +526,7 @@ const CanvasEditor = memo(
           if (!transformerRef.current) {
             transformerRef.current = new K.Transformer({
               nodes: [],
-              rotateEnabled: false,
+              rotateEnabled: true,
               keepRatio: true,
               enabledAnchors: ["top-left", "top-right", "bottom-left", "bottom-right"],
               boundBoxFunc: (oldBox: any, newBox: any) => {
