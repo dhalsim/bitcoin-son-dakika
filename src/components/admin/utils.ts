@@ -106,3 +106,44 @@ export async function publishToX({
     body: form,
   });
 }
+
+export type PublishToReelsParams = {
+  blob: Blob;
+  title: string;
+  description: string;
+  type: "news" | "podcast" | "article";
+  slug: string;
+  getPublicKey: GetPublicKey;
+  signEvent: SignEvent;
+};
+
+export async function publishToReels({
+  blob,
+  title,
+  description,
+  type,
+  slug,
+  getPublicKey,
+  signEvent,
+}: PublishToReelsParams): Promise<Response> {
+  const form = new FormData();
+  form.append("action", "upload-to-reels");
+  form.append("title", title);
+  form.append("description", description);
+  form.append("type", type);
+  form.append("slug", slug);
+  form.append("media", new File([blob], "reel.mp4", { type: "video/mp4" }));
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const url = `${origin}/api/admin-panel`;
+  const auth = await createNIP98Auth("POST", url, getPublicKey, signEvent);
+
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      // Do NOT set Content-Type here; the browser will set the proper multipart boundary
+      Authorization: auth,
+    },
+    body: form,
+  });
+}

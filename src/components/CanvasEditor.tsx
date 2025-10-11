@@ -26,9 +26,15 @@ export type CanvasEditorHandle = {
       backgroundFixedWidth?: number; // if provided, rect uses this width and text aligns within
       backgroundVerticalOffset?: number; // fine-tune vertical centering (px)
     },
-  ) => void;
+  ) => string; // Now returns layerId for layer tracking
   clearOverlays: () => void;
+  // New methods for reels functionality (available for all, but mainly used in reels)
+  rotateLayer: (layerId: string, rotation: number) => void;
+  setLayerOpacity: (layerId: string, opacity: number) => void;
+  removeLayer: (layerId: string) => void;
 };
+
+type ImageScalingMode = "cover" | "contain" | "fill" | "scale-down";
 
 type CanvasEditorProps = {
   imageUrl?: string;
@@ -36,6 +42,7 @@ type CanvasEditorProps = {
   width?: number;
   height?: number;
   backgroundColor?: string;
+  scalingMode?: ImageScalingMode; // New prop for reels, defaults to "contain"
 };
 
 function loadScriptOnce(src: string, id?: string): Promise<void> {
@@ -117,6 +124,7 @@ const CanvasEditor = memo(
         width = DEFAULT_WIDTH,
         height = DEFAULT_HEIGHT,
         backgroundColor = "#000000",
+        scalingMode = "contain",
       },
       ref,
     ) => {
@@ -132,6 +140,9 @@ const CanvasEditor = memo(
       const captionRectRef = useRef<any>(null);
       const captionTextRef = useRef<any>(null);
       const transformerRef = useRef<any>(null);
+
+      // Layer tracking for reels functionality
+      const layersMapRef = useRef<Map<string, any>>(new Map());
 
       // Visual scale factor to fit the canvas inside its parent container (e.g., Dialog column)
       // Exported bitmap remains at the original logical size (width x height)
@@ -224,6 +235,8 @@ const CanvasEditor = memo(
               const y = options?.y ?? 16;
 
               const K = window.Konva;
+              const layerId = `overlay-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
               const node = new K.Image({
                 image: img,
                 x,
@@ -232,8 +245,13 @@ const CanvasEditor = memo(
                 height: targetH,
                 draggable: true,
                 listening: true,
+                id: layerId,
+                name: "overlay-item",
               });
+
               overlayLayerRef.current.add(node);
+              layersMapRef.current.set(layerId, node);
+
               // Select the newly added node for immediate resize if desired
               if (transformerRef.current) {
                 transformerRef.current.nodes([node]);
@@ -248,10 +266,11 @@ const CanvasEditor = memo(
         },
         addOverlayText: (text, options) => {
           if (!overlayLayerRef.current || typeof window === "undefined" || !window.Konva) {
-            return;
+            return "";
           }
 
           const K = window.Konva;
+          const layerId = `text-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
           const group = new K.Group({
             x: options?.x ?? 24,
@@ -259,6 +278,7 @@ const CanvasEditor = memo(
             draggable: true,
             listening: true,
             name: "overlay-item",
+            id: layerId,
           });
 
           const textNode = new K.Text({
@@ -334,12 +354,14 @@ const CanvasEditor = memo(
 
           group.add(textNode);
           overlayLayerRef.current.add(group);
+          layersMapRef.current.set(layerId, group);
 
           if (transformerRef.current) {
             transformerRef.current.nodes([group]);
           }
 
           overlayLayerRef.current.draw();
+          return layerId;
         },
         clearOverlays: () => {
           if (!overlayLayerRef.current) {
@@ -362,7 +384,31 @@ const CanvasEditor = memo(
             transformerRef.current.moveToTop();
           }
 
+          layersMapRef.current.clear();
           overlayLayerRef.current.draw();
+        },
+        // New methods for reels functionality (available for all components)
+        rotateLayer: (layerId: string, rotation: number) => {
+          const layer = layersMapRef.current.get(layerId);
+          if (layer) {
+            layer.rotation(rotation);
+            overlayLayerRef.current?.draw();
+          }
+        },
+        setLayerOpacity: (layerId: string, opacity: number) => {
+          const layer = layersMapRef.current.get(layerId);
+          if (layer) {
+            layer.opacity(opacity);
+            overlayLayerRef.current?.draw();
+          }
+        },
+        removeLayer: (layerId: string) => {
+          const layer = layersMapRef.current.get(layerId);
+          if (layer) {
+            layer.destroy();
+            layersMapRef.current.delete(layerId);
+            overlayLayerRef.current?.draw();
+          }
         },
       }));
 
@@ -654,16 +700,62 @@ const CanvasEditor = memo(
         const img = new window.Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
-          // compute contain fit
           const imgW = img.width;
           const imgH = img.height;
           const canvasW = width;
           const canvasH = height;
-          const scale = Math.min(canvasW / imgW, canvasH / imgH);
-          const drawW = imgW * scale;
-          const drawH = imgH * scale;
-          const dx = (canvasW - drawW) / 2;
-          const dy = (canvasH - drawH) / 2;
+          const canvasAspect = canvasW / canvasH;
+          const imgAspect = imgW / imgH;
+
+          let drawW, drawH, dx, dy;
+
+          switch (scalingMode) {
+            case "cover":
+              // Cover: fill canvas, crop if needed
+              if (imgAspect > canvasAspect) {
+                const scale = canvasH / imgH;
+                drawW = imgW * scale;
+                drawH = canvasH;
+                dx = (canvasW - drawW) / 2;
+                dy = 0;
+              } else {
+                const scale = canvasW / imgW;
+                drawW = canvasW;
+                drawH = imgH * scale;
+                dx = 0;
+                dy = (canvasH - drawH) / 2;
+              }
+              break;
+
+            case "fill":
+              // Fill: stretch to exact canvas size
+              drawW = canvasW;
+              drawH = canvasH;
+              dx = 0;
+              dy = 0;
+              break;
+
+            case "scale-down":
+              // Scale-down: only shrink if larger
+              const scaleX = Math.min(1, canvasW / imgW);
+              const scaleY = Math.min(1, canvasH / imgH);
+              const scale = Math.min(scaleX, scaleY);
+              drawW = imgW * scale;
+              drawH = imgH * scale;
+              dx = (canvasW - drawW) / 2;
+              dy = (canvasH - drawH) / 2;
+              break;
+
+            case "contain":
+            default:
+              // Contain: fit within canvas, maintain aspect ratio
+              const containScale = Math.min(canvasW / imgW, canvasH / imgH);
+              drawW = imgW * containScale;
+              drawH = imgH * containScale;
+              dx = (canvasW - drawW) / 2;
+              dy = (canvasH - drawH) / 2;
+              break;
+          }
 
           if (!mainImageRef.current) {
             const node = new K.Image({
@@ -690,7 +782,7 @@ const CanvasEditor = memo(
         return () => {
           // no-op cleanup; node destroyed in stage cleanup
         };
-      }, [imageUrl, width, height, konvaReady]);
+      }, [imageUrl, width, height, konvaReady, scalingMode]);
 
       // Update caption text and resize background
       useEffect(() => {

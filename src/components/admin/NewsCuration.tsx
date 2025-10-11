@@ -33,6 +33,7 @@ import {
 } from "api-helpers/common_with_client";
 
 import UploadToX from "./UploadToX";
+import UploadReels from "./UploadReels";
 import { publishToX } from "./utils";
 
 type NewsCurationProps = {
@@ -58,8 +59,10 @@ export default function NewsCuration({
   const [adding, setAdding] = useState(false);
   const [removingKey, setRemovingKey] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [reelsOpen, setReelsOpen] = useState(false);
   const [newsEvents, setNewsEvents] = useState<Map<string, EventItem>>(new Map());
   const [shareData, setShareData] = useState<EventItem | null>(null);
+  const [reelsData, setReelsData] = useState<EventItem | null>(null);
   const [deletionDialogOpen, setDeletionDialogOpen] = useState(false);
   const [pendingDeletionEvent, setPendingDeletionEvent] = useState<EventItem | null>(null);
   const { signEvent } = useNostrAuth();
@@ -320,6 +323,26 @@ export default function NewsCuration({
                         </svg>
                       </Button>
                       <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setReelsData(event);
+                          setReelsOpen(true);
+                        }}
+                        title="Reels oluştur"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                          className="h-4 w-4 text-muted-foreground"
+                          viewBox="0 0 16 16"
+                        >
+                          <path d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1zm4 0v6h8V1zm8 8H4v6h8zM1 1v2h2V1zm2 3H1v2h2zM1 7v2h2V7zm2 3H1v2h2zm-2 3v2h2v-2zM15 1h-2v2h2zm-2 3v2h2V4zm2 3h-2v2h2zm-2 3v2h2v-2zm2 3h-2v2h2z" />
+                        </svg>
+                      </Button>
+                      <Button
                         variant="destructive"
                         size="sm"
                         disabled={removingKey === event.id}
@@ -371,6 +394,8 @@ export default function NewsCuration({
         width={800}
         height={600}
       />
+
+      <UploadReels open={reelsOpen} onOpenChange={setReelsOpen} eventItem={reelsData} type="news" />
 
       <Dialog open={deletionDialogOpen} onOpenChange={setDeletionDialogOpen}>
         <DialogContent>

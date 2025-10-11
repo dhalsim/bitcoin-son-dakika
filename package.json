@@ -20,6 +20,8 @@
     "scrape:therage": "node scripts/scrape-therage.mjs"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@google-cloud/translate": "^9.2.0",
     "@hookform/resolvers": "^5.1.1",
     "@libsql/client": "^0.15.15",
