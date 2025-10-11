@@ -1,12 +1,19 @@
 import { forwardRef, memo, useEffect, useImperativeHandle, useRef, useState } from "react";
 
+export type LayerInfo = {
+  id: string;
+  type: "text" | "image" | "overlay";
+  rotation: number;
+  opacity: number;
+};
+
 export type CanvasEditorHandle = {
   exportAsDataURL: () => string | null;
   exportAsBlob: () => Promise<Blob | null>;
   addOverlayImageFromUrl: (
     url: string,
     options?: { width?: number; height?: number; x?: number; y?: number },
-  ) => Promise<void>;
+  ) => Promise<string>; // Now returns layerId
   addOverlayText: (
     text: string,
     options?: {
@@ -26,12 +33,14 @@ export type CanvasEditorHandle = {
       backgroundFixedWidth?: number; // if provided, rect uses this width and text aligns within
       backgroundVerticalOffset?: number; // fine-tune vertical centering (px)
     },
-  ) => string; // Now returns layerId for layer tracking
+  ) => string; // Returns layerId for layer tracking
   clearOverlays: () => void;
   // New methods for reels functionality (available for all, but mainly used in reels)
   rotateLayer: (layerId: string, rotation: number) => void;
   setLayerOpacity: (layerId: string, opacity: number) => void;
   removeLayer: (layerId: string) => void;
+  getLayers: () => LayerInfo[]; // Get all current layers
+  getLayer: (layerId: string) => LayerInfo | null; // Get specific layer info
 };
 
 type ImageScalingMode = "cover" | "contain" | "fill" | "scale-down";
@@ -43,6 +52,10 @@ type CanvasEditorProps = {
   height?: number;
   backgroundColor?: string;
   scalingMode?: ImageScalingMode; // New prop for reels, defaults to "contain"
+  // Callbacks for layer events
+  onLayerAdded?: (layer: LayerInfo) => void;
+  onLayerRemoved?: (layerId: string) => void;
+  onLayerUpdated?: (layerId: string, updates: Partial<LayerInfo>) => void;
 };
 
 function loadScriptOnce(src: string, id?: string): Promise<void> {
@@ -125,6 +138,9 @@ const CanvasEditor = memo(
         height = DEFAULT_HEIGHT,
         backgroundColor = "#000000",
         scalingMode = "contain",
+        onLayerAdded,
+        onLayerRemoved,
+        onLayerUpdated,
       },
       ref,
     ) => {
@@ -143,6 +159,7 @@ const CanvasEditor = memo(
 
       // Layer tracking for reels functionality
       const layersMapRef = useRef<Map<string, any>>(new Map());
+      const layerMetadataRef = useRef<Map<string, LayerInfo>>(new Map());
 
       // Visual scale factor to fit the canvas inside its parent container (e.g., Dialog column)
       // Exported bitmap remains at the original logical size (width x height)
@@ -206,10 +223,10 @@ const CanvasEditor = memo(
         },
         addOverlayImageFromUrl: async (url, options) => {
           if (!overlayLayerRef.current || typeof window === "undefined") {
-            return;
+            return "";
           }
 
-          await new Promise<void>((resolve) => {
+          return await new Promise<string>((resolve) => {
             const img = new window.Image();
             img.crossOrigin = "anonymous";
             img.onload = () => {
@@ -252,13 +269,25 @@ const CanvasEditor = memo(
               overlayLayerRef.current.add(node);
               layersMapRef.current.set(layerId, node);
 
+              // Store metadata
+              const layerInfo: LayerInfo = {
+                id: layerId,
+                type: "overlay",
+                rotation: 0,
+                opacity: 1,
+              };
+              layerMetadataRef.current.set(layerId, layerInfo);
+
+              // Notify parent
+              onLayerAdded?.(layerInfo);
+
               // Select the newly added node for immediate resize if desired
               if (transformerRef.current) {
                 transformerRef.current.nodes([node]);
               }
 
               overlayLayerRef.current.draw();
-              resolve();
+              resolve(layerId);
             };
 
             img.src = url;
@@ -356,6 +385,18 @@ const CanvasEditor = memo(
           overlayLayerRef.current.add(group);
           layersMapRef.current.set(layerId, group);
 
+          // Store metadata
+          const layerInfo: LayerInfo = {
+            id: layerId,
+            type: "text",
+            rotation: 0,
+            opacity: 1,
+          };
+          layerMetadataRef.current.set(layerId, layerInfo);
+
+          // Notify parent
+          onLayerAdded?.(layerInfo);
+
           if (transformerRef.current) {
             transformerRef.current.nodes([group]);
           }
@@ -367,6 +408,10 @@ const CanvasEditor = memo(
           if (!overlayLayerRef.current) {
             return;
           }
+
+          // Notify about all removals before clearing
+          const layerIds = Array.from(layersMapRef.current.keys());
+          layerIds.forEach((id) => onLayerRemoved?.(id));
 
           // Remove all overlay items but keep the transformer node intact
           const children = overlayLayerRef.current.getChildren();
@@ -385,20 +430,27 @@ const CanvasEditor = memo(
           }
 
           layersMapRef.current.clear();
+          layerMetadataRef.current.clear();
           overlayLayerRef.current.draw();
         },
         // New methods for reels functionality (available for all components)
         rotateLayer: (layerId: string, rotation: number) => {
           const layer = layersMapRef.current.get(layerId);
-          if (layer) {
+          const metadata = layerMetadataRef.current.get(layerId);
+          if (layer && metadata) {
             layer.rotation(rotation);
+            metadata.rotation = rotation;
+            onLayerUpdated?.(layerId, { rotation });
             overlayLayerRef.current?.draw();
           }
         },
         setLayerOpacity: (layerId: string, opacity: number) => {
           const layer = layersMapRef.current.get(layerId);
-          if (layer) {
+          const metadata = layerMetadataRef.current.get(layerId);
+          if (layer && metadata) {
             layer.opacity(opacity);
+            metadata.opacity = opacity;
+            onLayerUpdated?.(layerId, { opacity });
             overlayLayerRef.current?.draw();
           }
         },
@@ -407,8 +459,16 @@ const CanvasEditor = memo(
           if (layer) {
             layer.destroy();
             layersMapRef.current.delete(layerId);
+            layerMetadataRef.current.delete(layerId);
+            onLayerRemoved?.(layerId);
             overlayLayerRef.current?.draw();
           }
+        },
+        getLayers: () => {
+          return Array.from(layerMetadataRef.current.values());
+        },
+        getLayer: (layerId: string) => {
+          return layerMetadataRef.current.get(layerId) || null;
         },
       }));
 
@@ -637,7 +697,15 @@ const CanvasEditor = memo(
 
           // Handle Delete/Backspace
           if (e.key === "Delete" || e.key === "Backspace") {
-            nodes.forEach((n: any) => n.destroy());
+            nodes.forEach((n: any) => {
+              const nodeId = n.id();
+              if (nodeId) {
+                layersMapRef.current.delete(nodeId);
+                layerMetadataRef.current.delete(nodeId);
+                onLayerRemoved?.(nodeId);
+              }
+              n.destroy();
+            });
             transformer.nodes([]);
             overlayLayer.draw();
             e.preventDefault();
@@ -677,7 +745,7 @@ const CanvasEditor = memo(
         window.addEventListener("keydown", onKeyDown);
 
         return () => window.removeEventListener("keydown", onKeyDown);
-      }, []);
+      }, [onLayerRemoved]); // Add callback to dependencies so it's always current
 
       // Load or update main image when imageUrl changes
       useEffect(() => {

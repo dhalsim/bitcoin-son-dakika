@@ -1,7 +1,7 @@
 import { Loader2, Video, RotateCcw, RotateCw, Move, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import CanvasEditor, { type CanvasEditorHandle } from "@/components/CanvasEditor";
+import CanvasEditor, { type CanvasEditorHandle, type LayerInfo } from "@/components/CanvasEditor";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,8 @@ type UploadReelsProps = {
   onOpenChange: (v: boolean) => void;
   eventItem: EventItem;
   type: "news" | "podcast" | "article";
+  width?: number;
+  height?: number;
 };
 
 type ReelsPublishData =
@@ -43,21 +45,14 @@ type ReelsPublishData =
 
 type ImageScalingMode = "cover" | "contain" | "fill" | "scale-down";
 
-type Layer = {
-  id: string;
-  type: "image" | "text" | "overlay";
-  x: number;
-  y: number;
-  width?: number;
-  height?: number;
-  rotation: number;
-  opacity: number;
-  zIndex: number;
-  visible: boolean;
-  properties: any;
-};
-
-export default function UploadReels({ open, onOpenChange, eventItem, type }: UploadReelsProps) {
+export default function UploadReels({
+  open,
+  onOpenChange,
+  eventItem,
+  type,
+  width = 108 * 3,
+  height = 192 * 3,
+}: UploadReelsProps) {
   const canvasRef = useRef<CanvasEditorHandle | null>(null);
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -67,8 +62,8 @@ export default function UploadReels({ open, onOpenChange, eventItem, type }: Upl
   const [reelsPublishData, setReelsPublishData] = useState<ReelsPublishData | null>(null);
   const { getPublicKey, signEvent } = useNostrAuth();
 
-  // Layer management
-  const [layers, setLayers] = useState<Layer[]>([]);
+  // Layer management - simplified, CanvasEditor is source of truth
+  const [layers, setLayers] = useState<LayerInfo[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [imageScalingMode, setImageScalingMode] = useState<ImageScalingMode>("cover");
 
@@ -108,23 +103,7 @@ export default function UploadReels({ open, onOpenChange, eventItem, type }: Upl
       return;
     }
 
-    const layerId = `text-${Date.now()}`;
-    const newLayer: Layer = {
-      id: layerId,
-      type: "text",
-      x: 50,
-      y: 100,
-      rotation: 0,
-      opacity: 1,
-      zIndex: layers.length,
-      visible: true,
-      properties: { ...textConfig },
-    };
-
-    setLayers([...layers, newLayer]);
-    setSelectedLayerId(layerId);
-
-    canvasRef.current.addOverlayText(textConfig.text, {
+    const layerId = canvasRef.current.addOverlayText(textConfig.text, {
       fontSize: textConfig.fontSize,
       fontFamily: textConfig.fontFamily,
       fill: textConfig.fill,
@@ -135,6 +114,9 @@ export default function UploadReels({ open, onOpenChange, eventItem, type }: Upl
       backgroundOpacity: textConfig.backgroundOpacity,
       textAlign: textConfig.textAlign,
     });
+
+    setSelectedLayerId(layerId);
+    // Layer will be added to state via onLayerAdded callback
   };
 
   const addLogoLayer = async () => {
@@ -142,56 +124,37 @@ export default function UploadReels({ open, onOpenChange, eventItem, type }: Upl
       return;
     }
 
-    const layerId = `logo-${Date.now()}`;
-    const newLayer: Layer = {
-      id: layerId,
-      type: "overlay",
-      x: 20,
-      y: 20,
-      width: 120,
-      height: 120,
-      rotation: 0,
-      opacity: 1,
-      zIndex: layers.length,
-      visible: true,
-      properties: {
-        url: "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png",
-      },
-    };
-
-    setLayers([...layers, newLayer]);
-    setSelectedLayerId(layerId);
-
-    await canvasRef.current.addOverlayImageFromUrl(
+    const layerId = await canvasRef.current.addOverlayImageFromUrl(
       "https://bitcoinsondakika.com/bitcoin-son-dakika-logo.png",
       { width: 120, height: 120, x: 20, y: 20 },
     );
+
+    setSelectedLayerId(layerId);
+    // Layer will be added to state via onLayerAdded callback
   };
 
   const removeLayer = (layerId: string) => {
-    setLayers(layers.filter((layer) => layer.id !== layerId));
+    canvasRef.current?.removeLayer(layerId);
+    // Layer will be removed from state via onLayerRemoved callback
     if (selectedLayerId === layerId) {
       setSelectedLayerId(null);
     }
-    canvasRef.current?.removeLayer(layerId);
   };
 
   const rotateLayer = (layerId: string, direction: "left" | "right") => {
     const layer = layers.find((l) => l.id === layerId);
-    if (!layer) return;
+    if (!layer || !canvasRef.current) return;
 
     const rotationStep = direction === "left" ? -15 : 15;
     const newRotation = (layer.rotation + rotationStep) % 360;
 
-    setLayers(layers.map((l) => (l.id === layerId ? { ...l, rotation: newRotation } : l)));
-
-    canvasRef.current?.rotateLayer(layerId, newRotation);
+    canvasRef.current.rotateLayer(layerId, newRotation);
+    // Layer will be updated in state via onLayerUpdated callback
   };
 
   const updateLayerOpacity = (layerId: string, opacity: number) => {
-    setLayers(layers.map((l) => (l.id === layerId ? { ...l, opacity } : l)));
-
     canvasRef.current?.setLayerOpacity(layerId, opacity);
+    // Layer will be updated in state via onLayerUpdated callback
   };
 
   const handleGenerateVideo = async () => {
@@ -356,15 +319,11 @@ export default function UploadReels({ open, onOpenChange, eventItem, type }: Upl
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-sm font-medium">
-                          {layer.type === "text"
-                            ? "Metin"
-                            : layer.type === "overlay"
-                              ? "Logo"
-                              : "Görsel"}
+                          {layer.type === "text" ? "Metin" : "Logo"}
                         </span>
                         {layer.rotation !== 0 && (
                           <span className="text-xs text-muted-foreground ml-2">
-                            ({layer.rotation}°)
+                            ({Math.round(layer.rotation)}°)
                           </span>
                         )}
                       </div>
@@ -469,9 +428,16 @@ export default function UploadReels({ open, onOpenChange, eventItem, type }: Upl
               ref={canvasRef as any}
               imageUrl={imageUrl}
               scalingMode={imageScalingMode}
-              width={1080}
-              height={1920}
+              width={width}
+              height={height}
               backgroundColor="#000000"
+              onLayerAdded={(layer) => setLayers((prev) => [...prev, layer])}
+              onLayerRemoved={(layerId) =>
+                setLayers((prev) => prev.filter((l) => l.id !== layerId))
+              }
+              onLayerUpdated={(layerId, updates) =>
+                setLayers((prev) => prev.map((l) => (l.id === layerId ? { ...l, ...updates } : l)))
+              }
             />
           </div>
 
