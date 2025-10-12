@@ -216,8 +216,8 @@
     --z-sheet: 50;
     --z-sheet-overlay: 50;
     --z-dropdown: 300;
-    --z-popover: 500;
     --z-dialog: 900;
+    --z-popover: 905;
     --z-dialog-sheet: 910;
     --z-tooltip: 920;
     --z-search: 950;

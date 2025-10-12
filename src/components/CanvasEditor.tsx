@@ -5,15 +5,46 @@ export type LayerInfo = {
   type: "text" | "image" | "overlay";
   rotation: number;
   opacity: number;
+  createdAt?: number; // Timestamp when layer was created
+  canvasNode?: any; // Reference to the Konva node
 };
 
 export type CanvasEditorHandle = {
   exportAsDataURL: () => string | null;
   exportAsBlob: () => Promise<Blob | null>;
+
+  // Property setters for animation
+  setLayerRotation?: (layerId: string, rotation: number) => void;
+  setLayerPosition?: (layerId: string, x: number, y: number) => void;
+  setLayerScale?: (layerId: string, scaleX: number, scaleY: number) => void;
+
+  // Property getter
+  getLayerTransform?: (layerId: string) => {
+    x: number;
+    y: number;
+    rotation: number;
+    scaleX: number;
+    scaleY: number;
+    opacity: number;
+  } | null;
+
+  addImageLayer: (
+    url: string,
+    options?: {
+      width?: number;
+      height?: number;
+      x?: number;
+      y?: number;
+      layerId?: string; // Optional custom ID (for background)
+      name?: string; // Optional name
+      draggable?: boolean; // Optional, defaults to true
+      scalingMode?: "cover" | "contain" | "fill" | "scale-down"; // For background
+    },
+  ) => Promise<string>; // Returns layerId
   addOverlayImageFromUrl: (
     url: string,
     options?: { width?: number; height?: number; x?: number; y?: number },
-  ) => Promise<string>; // Now returns layerId
+  ) => Promise<string>; // Deprecated: use addImageLayer instead
   addOverlayText: (
     text: string,
     options?: {
@@ -38,6 +69,9 @@ export type CanvasEditorHandle = {
   // New methods for reels functionality (available for all, but mainly used in reels)
   rotateLayer: (layerId: string, rotation: number) => void;
   setLayerOpacity: (layerId: string, opacity: number) => void;
+  setLayerVisible: (layerId: string, visible: boolean) => void;
+  addNodeToCanvas: (node: any) => void; // Add a Konva node to the overlay layer
+  removeNodeFromCanvas: (node: any) => void; // Remove a Konva node from the overlay layer
   removeLayer: (layerId: string) => void;
   getLayers: () => LayerInfo[]; // Get all current layers
   getLayer: (layerId: string) => LayerInfo | null; // Get specific layer info
@@ -56,6 +90,17 @@ type CanvasEditorProps = {
   onLayerAdded?: (layer: LayerInfo) => void;
   onLayerRemoved?: (layerId: string) => void;
   onLayerUpdated?: (layerId: string, updates: Partial<LayerInfo>) => void;
+  onTransformChange?: (
+    layerId: string,
+    transform: {
+      x: number;
+      y: number;
+      rotation: number;
+      scaleX: number;
+      scaleY: number;
+    },
+  ) => void;
+  getCurrentTime?: () => number; // For timeline integration
 };
 
 function loadScriptOnce(src: string, id?: string): Promise<void> {
@@ -142,6 +187,8 @@ const CanvasEditor = memo(
         onLayerAdded,
         onLayerRemoved,
         onLayerUpdated,
+        onTransformChange,
+        getCurrentTime,
       },
       ref,
     ) => {
@@ -161,6 +208,7 @@ const CanvasEditor = memo(
       // Layer tracking for reels functionality
       const layersMapRef = useRef<Map<string, any>>(new Map());
       const layerMetadataRef = useRef<Map<string, LayerInfo>>(new Map());
+      const isProgrammaticUpdateRef = useRef<boolean>(false);
 
       // Visual scale factor to fit the canvas inside its parent container (e.g., Dialog column)
       // Exported bitmap remains at the original logical size (width x height)
@@ -222,7 +270,7 @@ const CanvasEditor = memo(
 
           return await res.blob();
         },
-        addOverlayImageFromUrl: async (url, options) => {
+        addImageLayer: async (url, options) => {
           if (!overlayLayerRef.current || typeof window === "undefined") {
             return "";
           }
@@ -231,13 +279,64 @@ const CanvasEditor = memo(
             const img = new window.Image();
             img.crossOrigin = "anonymous";
             img.onload = () => {
+              const K = window.Konva;
               const naturalW = img.width || 1;
               const naturalH = img.height || 1;
+
               let targetW = options?.width;
               let targetH = options?.height;
+              let x = options?.x ?? 16;
+              let y = options?.y ?? 16;
 
-              if (!targetW && !targetH) {
-                // default: 25% of canvas width, preserving aspect ratio
+              // Handle scaling mode for background-style images
+              if (options?.scalingMode) {
+                const canvasW = width;
+                const canvasH = height;
+                const canvasAspect = canvasW / canvasH;
+                const imgAspect = naturalW / naturalH;
+
+                switch (options.scalingMode) {
+                  case "cover":
+                    if (imgAspect > canvasAspect) {
+                      const scale = canvasH / naturalH;
+                      targetW = naturalW * scale;
+                      targetH = canvasH;
+                      x = (canvasW - targetW) / 2;
+                      y = 0;
+                    } else {
+                      const scale = canvasW / naturalW;
+                      targetW = canvasW;
+                      targetH = naturalH * scale;
+                      x = 0;
+                      y = (canvasH - targetH) / 2;
+                    }
+                    break;
+                  case "contain":
+                    const containScale = Math.min(canvasW / naturalW, canvasH / naturalH);
+                    targetW = naturalW * containScale;
+                    targetH = naturalH * containScale;
+                    x = (canvasW - targetW) / 2;
+                    y = (canvasH - targetH) / 2;
+                    break;
+                  case "fill":
+                    targetW = canvasW;
+                    targetH = canvasH;
+                    x = 0;
+                    y = 0;
+                    break;
+                  case "scale-down":
+                    const scaleDownScale = Math.min(
+                      1,
+                      Math.min(canvasW / naturalW, canvasH / naturalH),
+                    );
+                    targetW = naturalW * scaleDownScale;
+                    targetH = naturalH * scaleDownScale;
+                    x = (canvasW - targetW) / 2;
+                    y = (canvasH - targetH) / 2;
+                    break;
+                }
+              } else if (!targetW && !targetH) {
+                // Default: 25% of canvas width, preserving aspect ratio
                 targetW = Math.min(naturalW, width * 0.25);
               }
 
@@ -249,11 +348,10 @@ const CanvasEditor = memo(
                 targetW = naturalW * scale;
               }
 
-              const x = options?.x ?? 16;
-              const y = options?.y ?? 16;
-
-              const K = window.Konva;
-              const layerId = `overlay-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+              const layerId =
+                options?.layerId ||
+                `image-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+              const draggable = options?.draggable !== undefined ? options.draggable : true;
 
               const node = new K.Image({
                 image: img,
@@ -261,10 +359,10 @@ const CanvasEditor = memo(
                 y,
                 width: targetW,
                 height: targetH,
-                draggable: true,
+                draggable,
                 listening: true,
                 id: layerId,
-                name: "overlay-item",
+                name: options?.name || "image-layer",
               });
 
               overlayLayerRef.current.add(node);
@@ -273,17 +371,19 @@ const CanvasEditor = memo(
               // Store metadata
               const layerInfo: LayerInfo = {
                 id: layerId,
-                type: "overlay",
+                type: "image",
                 rotation: 0,
                 opacity: 1,
+                createdAt: getCurrentTime?.() ?? 0,
+                canvasNode: node,
               };
               layerMetadataRef.current.set(layerId, layerInfo);
 
               // Notify parent
               onLayerAdded?.(layerInfo);
 
-              // Select the newly added node for immediate resize if desired
-              if (transformerRef.current) {
+              // Select the newly added node if draggable
+              if (draggable && transformerRef.current) {
                 transformerRef.current.nodes([node]);
               }
 
@@ -292,6 +392,14 @@ const CanvasEditor = memo(
             };
 
             img.src = url;
+          });
+        },
+        // Backward compatibility wrapper
+        addOverlayImageFromUrl: async (url, options) => {
+          return await (ref as any).current?.addImageLayer(url, {
+            ...options,
+            name: "overlay-item",
+            draggable: true,
           });
         },
         addOverlayText: (text, options) => {
@@ -392,6 +500,8 @@ const CanvasEditor = memo(
             type: "text",
             rotation: 0,
             opacity: 1,
+            createdAt: getCurrentTime?.() ?? 0,
+            canvasNode: group,
           };
           layerMetadataRef.current.set(layerId, layerInfo);
 
@@ -455,9 +565,44 @@ const CanvasEditor = memo(
             overlayLayerRef.current?.draw();
           }
         },
+        setLayerVisible: (layerId: string, visible: boolean) => {
+          const layer = layersMapRef.current.get(layerId);
+          if (layer) {
+            layer.visible(visible);
+            overlayLayerRef.current?.draw();
+          }
+        },
+        addNodeToCanvas: (node: any) => {
+          if (overlayLayerRef.current && node) {
+            overlayLayerRef.current.add(node);
+            overlayLayerRef.current.draw();
+          }
+        },
+        removeNodeFromCanvas: (node: any) => {
+          if (node && node.remove) {
+            // Clear transformer selection if this node is selected
+            if (transformerRef.current) {
+              const selectedNodes = transformerRef.current.nodes();
+              if (selectedNodes.includes(node)) {
+                transformerRef.current.nodes([]);
+              }
+            }
+            node.remove(); // Remove from parent layer
+            overlayLayerRef.current?.draw();
+          }
+        },
         removeLayer: (layerId: string) => {
           const layer = layersMapRef.current.get(layerId);
           if (layer) {
+            // Clear transformer selection if this layer is selected
+            if (transformerRef.current) {
+              const selectedNodes = transformerRef.current.nodes();
+              if (selectedNodes.includes(layer)) {
+                transformerRef.current.nodes([]);
+              }
+            }
+
+            // Destroy the node (removes from parent if attached)
             layer.destroy();
             layersMapRef.current.delete(layerId);
             layerMetadataRef.current.delete(layerId);
@@ -470,6 +615,52 @@ const CanvasEditor = memo(
         },
         getLayer: (layerId: string) => {
           return layerMetadataRef.current.get(layerId) || null;
+        },
+        setLayerRotation: (layerId: string, rotation: number) => {
+          const layer = layersMapRef.current.get(layerId);
+          if (layer) {
+            isProgrammaticUpdateRef.current = true;
+            layer.rotation(rotation);
+            overlayLayerRef.current?.draw();
+            // Reset flag after a small delay to allow for any event processing
+            setTimeout(() => {
+              isProgrammaticUpdateRef.current = false;
+            }, 0);
+          }
+        },
+        setLayerPosition: (layerId: string, x: number, y: number) => {
+          const layer = layersMapRef.current.get(layerId);
+          if (layer) {
+            isProgrammaticUpdateRef.current = true;
+            layer.position({ x, y });
+            overlayLayerRef.current?.draw();
+            setTimeout(() => {
+              isProgrammaticUpdateRef.current = false;
+            }, 0);
+          }
+        },
+        setLayerScale: (layerId: string, scaleX: number, scaleY: number) => {
+          const layer = layersMapRef.current.get(layerId);
+          if (layer) {
+            isProgrammaticUpdateRef.current = true;
+            layer.scale({ x: scaleX, y: scaleY });
+            overlayLayerRef.current?.draw();
+            setTimeout(() => {
+              isProgrammaticUpdateRef.current = false;
+            }, 0);
+          }
+        },
+        getLayerTransform: (layerId: string) => {
+          const layer = layersMapRef.current.get(layerId);
+          if (!layer) return null;
+          return {
+            x: layer.x(),
+            y: layer.y(),
+            rotation: layer.rotation(),
+            scaleX: layer.scaleX(),
+            scaleY: layer.scaleY(),
+            opacity: layer.opacity(),
+          };
         },
       }));
 
@@ -572,6 +763,26 @@ const CanvasEditor = memo(
               overlayLayerRef.current.draw();
             }
           });
+
+          // Transform end handler - notify parent of changes
+          const handleTransformEnd = () => {
+            // Don't fire if this is a programmatic update (from timeline interpolation)
+            if (!onTransformChange || isProgrammaticUpdateRef.current) return;
+            const nodes = transformerRef.current.nodes();
+            if (nodes.length === 1) {
+              const node = nodes[0];
+              onTransformChange(node.id(), {
+                x: node.x(),
+                y: node.y(),
+                rotation: node.rotation(),
+                scaleX: node.scaleX(),
+                scaleY: node.scaleY(),
+              });
+            }
+          };
+
+          stageRef.current.on("transformend", handleTransformEnd);
+          stageRef.current.on("dragend", handleTransformEnd);
 
           // Background rectangle
           if (!backgroundRef.current) {

@@ -321,11 +321,12 @@ export default function UploadToX({
                   <Select
                     value={overlayTextConfig.fontFamily}
                     disabled={isUploading}
-                    onValueChange={(v) =>
-                      setOverlayTextConfig({ ...overlayTextConfig, fontFamily: v })
-                    }
+                    onValueChange={(v) => {
+                      console.log("Font family changed to:", v);
+                      setOverlayTextConfig({ ...overlayTextConfig, fontFamily: v });
+                    }}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="cursor-pointer">
                       <SelectValue placeholder="Yazı tipini seçin" />
                     </SelectTrigger>
                     <SelectContent>
@@ -453,14 +454,15 @@ export default function UploadToX({
                     <Select
                       value={overlayTextConfig.textAlign}
                       disabled={isUploading}
-                      onValueChange={(v) =>
-                        setOverlayTextConfig({ ...overlayTextConfig, textAlign: v as any })
-                      }
+                      onValueChange={(v) => {
+                        console.log("Text align changed to:", v);
+                        setOverlayTextConfig({ ...overlayTextConfig, textAlign: v as any });
+                      }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full cursor-pointer">
                         <SelectValue placeholder="Hizalama" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[9999]" position="popper">
                         <SelectItem value="left">Sol</SelectItem>
                         <SelectItem value="center">Orta</SelectItem>
                         <SelectItem value="right">Sağ</SelectItem>
