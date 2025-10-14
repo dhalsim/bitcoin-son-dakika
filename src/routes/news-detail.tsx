@@ -138,7 +138,7 @@ export default function NewsDetailPage() {
         <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
           <div className="text-foreground leading-relaxed">
             <RenderedText enableRichPreviews preserveNewlines>
-              {newsItem.content}
+              {newsItem.summary + " " + newsItem.content}
             </RenderedText>
           </div>
         </div>
