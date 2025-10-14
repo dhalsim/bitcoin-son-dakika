@@ -1,9 +1,10 @@
 import { Loader2, Video, RotateCcw, RotateCw, Move, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import CanvasEditor, { type CanvasEditorHandle, type LayerInfo } from "@/components/CanvasEditor";
 import { Timeline } from "@/components/admin/timeline";
 import type { AnimatedObject, TimelineState } from "@/components/admin/timeline";
+import { useAnimationController } from "@/hooks/useAnimationController";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -64,22 +65,25 @@ export default function UploadReels({
   const [reelsPublishData, setReelsPublishData] = useState<ReelsPublishData | null>(null);
   const { getPublicKey, signEvent } = useNostrAuth();
 
-  // Layer management - simplified, CanvasEditor is source of truth
-  const [layers, setLayers] = useState<LayerInfo[]>([]);
-  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
-  const [imageScalingMode, setImageScalingMode] = useState<ImageScalingMode>("cover");
+  // Use new animation controller for timeline and layer management
+  const controller = useAnimationController(canvasRef);
 
-  // Timeline state - controlled
-  const [timelineState, setTimelineState] = useState<TimelineState>({
-    objects: [],
-    duration: 10000,
-    currentTime: 0,
-    isPlaying: false,
-    playbackSpeed: 1,
-    zoom: 100,
-    scrollOffset: 0,
-    history: { past: [], future: [] },
-  });
+  // Use the optimized currentTime ref from the controller
+  const currentTimeRef = controller.refs?.currentTime || { current: controller.state.currentTime };
+
+  // Layer management - controller.state.objects is the source of truth
+  // Convert AnimatedObject[] to LayerInfo[] for UI display
+  const layers = useMemo(() => {
+    return controller.state.objects.map((obj) => ({
+      id: obj.id,
+      type: obj.type === "text" ? "text" : "overlay",
+      rotation: obj.properties.rotation?.[0]?.value ?? 0,
+      opacity: obj.properties.opacity?.[0]?.value ?? 1,
+      createdAt: obj.startTime,
+      canvasNode: obj.canvasNode,
+    }));
+  }, [controller.state.objects]);
+  const [imageScalingMode, setImageScalingMode] = useState<ImageScalingMode>("cover");
 
   // Flag to prevent interpolation during keyframe updates
   const isUpdatingKeyframesRef = useRef(false);
@@ -88,22 +92,28 @@ export default function UploadReels({
   useEffect(() => {
     (window as any).debugTimelineState = () => {
       console.log("=== Timeline State ===");
-      console.log("Current Time:", timelineState.currentTime);
-      console.log("Duration:", timelineState.duration);
-      console.log("Is Playing:", timelineState.isPlaying);
-      console.log("Objects:", timelineState.objects);
-      console.log(
-        "Selected Object:",
-        timelineState.objects.find((obj) => obj.id === selectedLayerId),
-      );
-      return timelineState;
+      console.log("Current Time:", controller.state.currentTime);
+      console.log("Duration:", controller.state.duration);
+      console.log("Is Playing:", controller.state.isPlaying);
+      console.log("Objects:", controller.state.objects);
+      console.log("Current Frame:", controller.currentFrame);
+      console.log("Ref Time:", controller.refs?.currentTime?.current);
+      return controller.state;
     };
     (window as any).debugLayers = () => {
       console.log("=== Layers ===");
       console.log("Layers:", layers);
       return layers;
     };
-  }, [timelineState, layers, selectedLayerId]);
+    (window as any).debugPlayback = () => {
+      console.log("=== Playback Debug ===");
+      console.log("State Time:", controller.state.currentTime);
+      console.log("Ref Time:", controller.refs?.currentTime?.current);
+      console.log("Is Playing:", controller.state.isPlaying);
+      console.log("Ref Is Playing:", controller.refs?.isPlaying?.current);
+      console.log("Duration:", controller.state.duration);
+    };
+  }, [controller.state, layers, controller.currentFrame]);
 
   // Text layer configuration
   const [textConfig, setTextConfig] = useState({
@@ -134,13 +144,10 @@ export default function UploadReels({
     }
   }, [open, eventItem]);
 
-  // Sync layers to timeline objects (including background image)
+  // Initialize background image in timeline state
   useEffect(() => {
-    const animatedObjects: AnimatedObject[] = [];
-
-    // Add background image as first layer if it exists
-    if (imageUrl) {
-      animatedObjects.push({
+    if (imageUrl && !controller.state.objects.find((obj) => obj.id === "background-image")) {
+      const backgroundObject: AnimatedObject = {
         id: "background-image",
         type: "image",
         name: "Background Image",
@@ -179,12 +186,18 @@ export default function UploadReels({
           ],
         },
         startTime: 0,
-      });
-    }
+      };
 
-    // Add all other layers
-    layers.forEach((layer) => {
-      const createdAt = layer.createdAt ?? 0;
+      controller.addObject(backgroundObject);
+    }
+  }, [imageUrl, controller]);
+
+  const isUploading = reelsPublishData?.type === "loading";
+
+  // Helper function to convert LayerInfo to AnimatedObject
+  const convertLayerToAnimatedObject = useCallback(
+    (layer: LayerInfo, currentTime: number): AnimatedObject => {
+      const createdAt = layer.createdAt ?? currentTime;
 
       // Get actual values from canvas node if available
       const nodeX = layer.canvasNode?.x?.() ?? 0;
@@ -194,7 +207,7 @@ export default function UploadReels({
       const nodeRotation = layer.canvasNode?.rotation?.() ?? layer.rotation;
       const nodeOpacity = layer.canvasNode?.opacity?.() ?? layer.opacity;
 
-      animatedObjects.push({
+      return {
         id: layer.id,
         type: layer.type === "text" ? "text" : "overlay",
         name: layer.type === "text" ? "Text Layer" : "Logo",
@@ -234,115 +247,10 @@ export default function UploadReels({
         },
         startTime: createdAt,
         canvasNode: layer.canvasNode,
-      });
-    });
-
-    setTimelineState((prev) => ({
-      ...prev,
-      objects: animatedObjects,
-    }));
-  }, [layers, imageUrl]);
-
-  // Helper function to interpolate between keyframes
-  const interpolateValue = (keyframes: any[], time: number): any => {
-    if (keyframes.length === 0) return null;
-    if (keyframes.length === 1) return keyframes[0].value;
-
-    const before = keyframes.filter((kf) => kf.time <= time).pop();
-    const after = keyframes.find((kf) => kf.time > time);
-
-    if (!before) return keyframes[0].value;
-    if (!after) return before.value;
-
-    const progress = (time - before.time) / (after.time - before.time);
-
-    if (typeof before.value === "number") {
-      return before.value + (after.value - before.value) * progress;
-    }
-
-    if (typeof before.value === "object" && before.value !== null) {
-      const result: any = {};
-      Object.keys(before.value).forEach((key) => {
-        result[key] = before.value[key] + (after.value[key] - before.value[key]) * progress;
-      });
-      return result;
-    }
-
-    return before.value;
-  };
-
-  // Add/remove layers from canvas and interpolate properties based on timeline position
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    if (isUpdatingKeyframesRef.current) {
-      console.log("⏸️ Skipping interpolation - updating keyframes");
-      return;
-    }
-
-    const currentTime = timelineState.currentTime;
-
-    if (timelineState.isPlaying) {
-      console.log("🎬 Interpolation during playback at:", currentTime);
-    }
-
-    timelineState.objects.forEach((obj) => {
-      // Background image should always be visible
-      if (obj.id === "background-image") return;
-
-      const shouldBeOnCanvas =
-        currentTime >= obj.startTime && (!obj.endTime || currentTime <= obj.endTime);
-
-      if (obj.canvasNode) {
-        const isOnCanvas = obj.canvasNode.getParent() !== null;
-
-        if (shouldBeOnCanvas && !isOnCanvas) {
-          // Add node to canvas
-          canvasRef.current?.addNodeToCanvas?.(obj.canvasNode);
-        } else if (!shouldBeOnCanvas && isOnCanvas) {
-          // Remove node from canvas
-          canvasRef.current?.removeNodeFromCanvas?.(obj.canvasNode);
-        }
-
-        // Interpolate and apply properties if on canvas
-        // Only interpolate if there are multiple keyframes (meaning user has animated this property)
-        if (shouldBeOnCanvas) {
-          const positionKeyframes = obj.properties.position || [];
-          const rotationKeyframes = obj.properties.rotation || [];
-          const scaleKeyframes = obj.properties.scale || [];
-          const opacityKeyframes = obj.properties.opacity || [];
-
-          // Only apply interpolation if there are 2+ keyframes for that property
-          if (positionKeyframes.length >= 2) {
-            const position = interpolateValue(positionKeyframes, currentTime);
-            if (position) {
-              canvasRef.current?.setLayerPosition?.(obj.id, position.x, position.y);
-            }
-          }
-          if (rotationKeyframes.length >= 2) {
-            const rotation = interpolateValue(rotationKeyframes, currentTime);
-            if (rotation !== null) {
-              canvasRef.current?.setLayerRotation?.(obj.id, rotation);
-            }
-          }
-          if (scaleKeyframes.length >= 2) {
-            const scale = interpolateValue(scaleKeyframes, currentTime);
-            if (scale) {
-              canvasRef.current?.setLayerScale?.(obj.id, scale.x, scale.y);
-            }
-          }
-          if (opacityKeyframes.length >= 2) {
-            const opacity = interpolateValue(opacityKeyframes, currentTime);
-            if (opacity !== null) {
-              canvasRef.current?.setLayerOpacity?.(obj.id, opacity);
-            }
-          }
-        }
-      }
-    });
-  }, [timelineState.objects, timelineState.currentTime]);
-
-  const isUploading = reelsPublishData?.type === "loading";
+      };
+    },
+    [],
+  );
 
   const addTextLayer = () => {
     if (!canvasRef.current || !textConfig.text.trim()) {
@@ -361,8 +269,8 @@ export default function UploadReels({
       textAlign: textConfig.textAlign,
     });
 
-    setSelectedLayerId(layerId);
     // Layer will be added to state via onLayerAdded callback
+    // Selection is handled by the timeline component
   };
 
   const addLogoLayer = async () => {
@@ -375,16 +283,14 @@ export default function UploadReels({
       { width: 120, height: 120, x: 20, y: 20 },
     );
 
-    setSelectedLayerId(layerId);
     // Layer will be added to state via onLayerAdded callback
+    // Selection is handled by the timeline component
   };
 
   const removeLayer = (layerId: string) => {
     canvasRef.current?.removeLayer(layerId);
-    // Layer will be removed from state via onLayerRemoved callback
-    if (selectedLayerId === layerId) {
-      setSelectedLayerId(null);
-    }
+    // Layer will be removed from timeline state via onLayerRemoved callback
+    // Selection is handled by the timeline component
   };
 
   const rotateLayer = (layerId: string, direction: "left" | "right") => {
@@ -395,12 +301,12 @@ export default function UploadReels({
     const newRotation = (layer.rotation + rotationStep) % 360;
 
     canvasRef.current.rotateLayer(layerId, newRotation);
-    // Layer will be updated in state via onLayerUpdated callback
+    // Layer will be updated in timeline state via onLayerUpdated callback
   };
 
   const updateLayerOpacity = (layerId: string, opacity: number) => {
     canvasRef.current?.setLayerOpacity(layerId, opacity);
-    // Layer will be updated in state via onLayerUpdated callback
+    // Layer will be updated in timeline state via onLayerUpdated callback
   };
 
   const handleGenerateVideo = async () => {
@@ -459,75 +365,14 @@ export default function UploadReels({
           <Timeline
             width={1000}
             height={200}
-            state={timelineState}
-            selectedObjectId={selectedLayerId}
-            onTimeUpdate={(time) => {
-              // During playback, don't update the state - let Timeline own the time
-              // Only update for manual seeks (when not playing)
-              if (!timelineState.isPlaying) {
-                setTimelineState((prev) => {
-                  // Only update if time actually changed to prevent infinite loops
-                  if (prev.currentTime === time) return prev;
-                  return {
-                    ...prev,
-                    currentTime: time,
-                  };
-                });
-              } else {
-                // During playback, trigger canvas interpolation without state update
-                // Force the interpolation effect to run by updating a separate ref
-                if (canvasRef.current) {
-                  const currentTime = time;
-
-                  timelineState.objects.forEach((obj) => {
-                    if (obj.id === "background-image") return;
-
-                    const shouldBeOnCanvas =
-                      currentTime >= obj.startTime && (!obj.endTime || currentTime <= obj.endTime);
-
-                    if (shouldBeOnCanvas && obj.canvasNode) {
-                      const positionKeyframes = obj.properties.position || [];
-                      const rotationKeyframes = obj.properties.rotation || [];
-                      const scaleKeyframes = obj.properties.scale || [];
-                      const opacityKeyframes = obj.properties.opacity || [];
-
-                      if (positionKeyframes.length >= 2) {
-                        const position = interpolateValue(positionKeyframes, currentTime);
-                        if (position) {
-                          canvasRef.current?.setLayerPosition?.(obj.id, position.x, position.y);
-                        }
-                      }
-                      if (rotationKeyframes.length >= 2) {
-                        const rotation = interpolateValue(rotationKeyframes, currentTime);
-                        if (rotation !== null) {
-                          canvasRef.current?.setLayerRotation?.(obj.id, rotation);
-                        }
-                      }
-                      if (scaleKeyframes.length >= 2) {
-                        const scale = interpolateValue(scaleKeyframes, currentTime);
-                        if (scale) {
-                          canvasRef.current?.setLayerScale?.(obj.id, scale.x, scale.y);
-                        }
-                      }
-                      if (opacityKeyframes.length >= 2) {
-                        const opacity = interpolateValue(opacityKeyframes, currentTime);
-                        if (opacity !== null) {
-                          canvasRef.current?.setLayerOpacity?.(obj.id, opacity);
-                        }
-                      }
-                    }
-                  });
-                }
-              }
-            }}
+            state={controller.state}
+            selectedObjectId={null} // Selection handled by timeline internally
+            onTimeUpdate={controller.seek}
             onPlayingChange={(isPlaying) => {
-              setTimelineState((prev) => ({
-                ...prev,
-                isPlaying,
-              }));
+              isPlaying ? controller.play() : controller.pause();
             }}
             onSelectObject={(objectId) => {
-              setSelectedLayerId(objectId);
+              // Selection handled by timeline internally
             }}
             onDeleteObject={(objectId) => {
               if (objectId === "background-image") {
@@ -624,8 +469,8 @@ export default function UploadReels({
                   variant="destructive"
                   onClick={() => {
                     canvasRef.current?.clearOverlays();
-                    setLayers([]);
-                    setSelectedLayerId(null);
+                    // Layers will be removed from timeline state via onLayerRemoved callbacks
+                    // Selection is handled by the timeline component
                   }}
                   disabled={isUploading || layers.length === 0}
                   className="flex-1"
@@ -683,193 +528,62 @@ export default function UploadReels({
               width={width}
               height={height}
               backgroundColor="#000000"
-              getCurrentTime={() => timelineState.currentTime}
+              getCurrentTime={() => controller.state.currentTime}
               onLayerAdded={(layer) => {
-                setLayers((prev) => [...prev, layer]);
-
-                // If layer was created after current timeline position, remove it from canvas immediately
-                const createdAt = layer.createdAt ?? 0;
-                if (
-                  createdAt > timelineState.currentTime &&
-                  layer.canvasNode &&
-                  canvasRef.current
-                ) {
-                  canvasRef.current.removeNodeFromCanvas?.(layer.canvasNode);
+                // Convert LayerInfo to AnimatedObject and add to timeline state
+                const animatedObject = convertLayerToAnimatedObject(
+                  layer,
+                  controller.state.currentTime,
+                );
+                controller.addObject(animatedObject);
+              }}
+              onLayerRemoved={(layerId) => {
+                controller.removeObject(layerId);
+              }}
+              onLayerUpdated={(layerId, updates) => {
+                // Update the canvasNode reference in the timeline state
+                const object = controller.state.objects.find((obj) => obj.id === layerId);
+                if (object && updates.canvasNode) {
+                  controller.addObject({ ...object, canvasNode: updates.canvasNode });
                 }
               }}
-              onLayerRemoved={(layerId) =>
-                setLayers((prev) => prev.filter((l) => l.id !== layerId))
-              }
-              onLayerUpdated={(layerId, updates) =>
-                setLayers((prev) => prev.map((l) => (l.id === layerId ? { ...l, ...updates } : l)))
-              }
-              onTransformChange={(layerId, transform) => {
-                console.log("🔄 onTransformChange called:", {
-                  layerId,
-                  transform,
-                });
+              onTransformChange={useCallback(
+                (layerId, transform) => {
+                  // Get fresh state at the time of the callback using ref
+                  const currentTime = currentTimeRef.current;
 
-                isUpdatingKeyframesRef.current = true;
-                setTimelineState((prev) => {
-                  // Read current time from the state, not from closure
-                  const currentTime = prev.currentTime;
-
-                  console.log("⏱️ Current time from state:", currentTime);
-
-                  const newObjects = prev.objects.map((obj) => {
-                    if (obj.id !== layerId) return obj;
-
-                    const generateId = () =>
-                      `kf-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-                    // Get the current interpolated values at this time to check if anything changed
-                    const getCurrentValue = (keyframes: any[]) => {
-                      return interpolateValue(keyframes, currentTime);
-                    };
-
-                    // Add/update keyframes for position, rotation, and scale
-                    const newProperties = { ...obj.properties };
-
-                    // Position keyframe - only if position changed
-                    const currentPos = getCurrentValue(obj.properties.position || []);
-                    const posChanged =
-                      !currentPos ||
-                      Math.abs(currentPos.x - transform.x) > 0.1 ||
-                      Math.abs(currentPos.y - transform.y) > 0.1;
-
-                    if (posChanged) {
-                      const posKeyframes = [...(newProperties.position || [])];
-                      const existingPosIndex = posKeyframes.findIndex(
-                        (kf) => kf.time === currentTime,
-                      );
-
-                      console.log("📍 Position keyframes before:", posKeyframes);
-                      console.log("📍 Adding/updating at time:", currentTime, "value:", {
-                        x: transform.x,
-                        y: transform.y,
-                      });
-
-                      if (existingPosIndex >= 0) {
-                        posKeyframes[existingPosIndex] = {
-                          ...posKeyframes[existingPosIndex],
-                          value: { x: transform.x, y: transform.y },
-                        };
-                      } else {
-                        posKeyframes.push({
-                          id: generateId(),
-                          time: currentTime,
-                          value: { x: transform.x, y: transform.y },
-                          easing: "linear",
-                        });
-                        posKeyframes.sort((a, b) => a.time - b.time);
-                      }
-
-                      console.log("📍 Position keyframes after:", posKeyframes);
-                      newProperties.position = posKeyframes;
-                    }
-
-                    // Rotation keyframe - only if rotation changed
-                    const currentRot = getCurrentValue(obj.properties.rotation || []);
-                    const rotChanged =
-                      currentRot === null || Math.abs(currentRot - transform.rotation) > 0.1;
-
-                    if (rotChanged) {
-                      const rotKeyframes = [...(newProperties.rotation || [])];
-                      const existingRotIndex = rotKeyframes.findIndex(
-                        (kf) => kf.time === currentTime,
-                      );
-                      console.log(
-                        "🔄 Rotation changed at time:",
-                        currentTime,
-                        "from",
-                        currentRot,
-                        "to",
-                        transform.rotation,
-                      );
-                      if (existingRotIndex >= 0) {
-                        rotKeyframes[existingRotIndex] = {
-                          ...rotKeyframes[existingRotIndex],
-                          value: transform.rotation,
-                        };
-                      } else {
-                        rotKeyframes.push({
-                          id: generateId(),
-                          time: currentTime,
-                          value: transform.rotation,
-                          easing: "linear",
-                        });
-                        rotKeyframes.sort((a, b) => a.time - b.time);
-                      }
-                      newProperties.rotation = rotKeyframes;
-                    }
-
-                    // Scale keyframe - only if scale changed
-                    const currentScale = getCurrentValue(obj.properties.scale || []);
-                    const scaleChanged =
-                      !currentScale ||
-                      Math.abs(currentScale.x - transform.scaleX) > 0.01 ||
-                      Math.abs(currentScale.y - transform.scaleY) > 0.01;
-
-                    if (scaleChanged) {
-                      const scaleKeyframes = [...(newProperties.scale || [])];
-                      const existingScaleIndex = scaleKeyframes.findIndex(
-                        (kf) => kf.time === currentTime,
-                      );
-                      console.log(
-                        "📏 Scale changed at time:",
-                        currentTime,
-                        "from",
-                        currentScale,
-                        "to",
-                        { x: transform.scaleX, y: transform.scaleY },
-                      );
-                      if (existingScaleIndex >= 0) {
-                        scaleKeyframes[existingScaleIndex] = {
-                          ...scaleKeyframes[existingScaleIndex],
-                          value: { x: transform.scaleX, y: transform.scaleY },
-                        };
-                      } else {
-                        scaleKeyframes.push({
-                          id: generateId(),
-                          time: currentTime,
-                          value: { x: transform.scaleX, y: transform.scaleY },
-                          easing: "linear",
-                        });
-                        scaleKeyframes.sort((a, b) => a.time - b.time);
-                      }
-                      newProperties.scale = scaleKeyframes;
-                    }
-
-                    return {
-                      ...obj,
-                      properties: newProperties,
-                    };
+                  console.log("🔄 onTransformChange called:", {
+                    layerId,
+                    transform,
+                    currentTime,
+                    refTime: currentTimeRef.current,
+                    stateTime: controller.state.currentTime,
                   });
 
-                  const result = {
-                    ...prev,
-                    objects: newObjects,
-                  };
+                  // Debug: Check if timeline state is correct
+                  if (currentTime === 0) {
+                    console.warn(
+                      "⚠️ Timeline currentTime is 0! This should be the timeline position.",
+                    );
+                    return; // Don't create keyframes at time 0
+                  }
 
-                  const updatedObj = newObjects.find((obj) => obj.id === layerId);
-                  console.log("✅ Keyframes created. Updated object:", updatedObj);
+                  const generateId = () =>
+                    `kf-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-                  return result;
-                });
+                  // Only create position keyframe for now (since that's what we're testing)
+                  const keyframeId = generateId();
+                  controller.updateKeyframe(layerId, "position", keyframeId, {
+                    id: keyframeId,
+                    time: currentTime,
+                    value: { x: transform.x, y: transform.y },
+                    easing: "linear",
+                  });
 
-                // Also update the canvas node directly to ensure it reflects the new transform
-                // This ensures the canvas and timeline are in sync
-                if (canvasRef.current) {
-                  canvasRef.current.setLayerPosition?.(layerId, transform.x, transform.y);
-                  canvasRef.current.setLayerRotation?.(layerId, transform.rotation);
-                  canvasRef.current.setLayerScale?.(layerId, transform.scaleX, transform.scaleY);
-                }
-
-                // Reset flag after state update completes
-                setTimeout(() => {
-                  isUpdatingKeyframesRef.current = false;
-                }, 0);
-              }}
+                  console.log("✅ Created position keyframe at time:", currentTime);
+                },
+                [controller],
+              )}
             />
           </div>
 

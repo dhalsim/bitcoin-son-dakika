@@ -86,10 +86,7 @@ function timelineReducer(
         ...state,
         objects,
         history: {
-          past: [
-            ...state.history.past,
-            { type: "ADD_KEYFRAME", payload: action.payload, timestamp: Date.now() },
-          ],
+          past: [...state.history.past, state],
           future: [],
         },
       };
@@ -117,10 +114,7 @@ function timelineReducer(
         ...state,
         objects,
         history: {
-          past: [
-            ...state.history.past,
-            { type: "REMOVE_KEYFRAME", payload: action.payload, timestamp: Date.now() },
-          ],
+          past: [...state.history.past, state],
           future: [],
         },
       };
@@ -150,10 +144,7 @@ function timelineReducer(
         ...state,
         objects,
         history: {
-          past: [
-            ...state.history.past,
-            { type: "MOVE_KEYFRAME", payload: action.payload, timestamp: Date.now() },
-          ],
+          past: [...state.history.past, state],
           future: [],
         },
       };
@@ -187,10 +178,7 @@ function timelineReducer(
         ...state,
         objects: [...state.objects, action.payload],
         history: {
-          past: [
-            ...state.history.past,
-            { type: "ADD_OBJECT", payload: action.payload, timestamp: Date.now() },
-          ],
+          past: [...state.history.past, state],
           future: [],
         },
       };
@@ -201,10 +189,7 @@ function timelineReducer(
         ...state,
         objects: state.objects.filter((obj) => obj.id !== action.payload.objectId),
         history: {
-          past: [
-            ...state.history.past,
-            { type: "REMOVE_OBJECT", payload: action.payload, timestamp: Date.now() },
-          ],
+          past: [...state.history.past, state],
           future: [],
         },
       };
@@ -227,14 +212,15 @@ function timelineReducer(
         return state;
       }
 
-      const lastAction = state.history.past[state.history.past.length - 1];
-      // TODO: Implement proper undo logic based on action type
+      const previousState = state.history.past[state.history.past.length - 1];
+      const newPast = state.history.past.slice(0, -1);
+      const newFuture = [state, ...state.history.future];
 
       return {
-        ...state,
+        ...previousState,
         history: {
-          past: state.history.past.slice(0, -1),
-          future: [lastAction, ...state.history.future],
+          past: newPast,
+          future: newFuture,
         },
       };
     }
@@ -244,14 +230,15 @@ function timelineReducer(
         return state;
       }
 
-      const nextAction = state.history.future[0];
-      // TODO: Implement proper redo logic based on action type
+      const nextState = state.history.future[0];
+      const newFuture = state.history.future.slice(1);
+      const newPast = [...state.history.past, state];
 
       return {
-        ...state,
+        ...nextState,
         history: {
-          past: [...state.history.past, nextAction],
-          future: state.history.future.slice(1),
+          past: newPast,
+          future: newFuture,
         },
       };
     }

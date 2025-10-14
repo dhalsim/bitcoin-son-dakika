@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import type { AnimatedObject, PropertyType, Keyframe } from "./types";
+
+import type { AnimatedObject, Keyframe } from "./types";
 
 interface AnimationEngineProps {
   objects: AnimatedObject[];
@@ -22,15 +23,25 @@ export function useAnimationEngine({
     time: number,
     easing: string = "linear",
   ): any => {
-    if (keyframes.length === 0) return null;
-    if (keyframes.length === 1) return keyframes[0].value;
+    if (keyframes.length === 0) {
+      return null;
+    }
+
+    if (keyframes.length === 1) {
+      return keyframes[0].value;
+    }
 
     // Find surrounding keyframes
     const before = keyframes.filter((kf) => kf.time <= time).pop();
     const after = keyframes.find((kf) => kf.time > time);
 
-    if (!before) return after?.value;
-    if (!after) return before.value;
+    if (!before) {
+      return after?.value;
+    }
+
+    if (!after) {
+      return before.value;
+    }
 
     // Calculate progress between keyframes
     const progress = (time - before.time) / (after.time - before.time);
@@ -57,6 +68,7 @@ export function useAnimationEngine({
           result[key] = before.value[key];
         }
       }
+
       return result;
     }
 
@@ -92,12 +104,19 @@ export function useAnimationEngine({
 
   // Update canvas when time changes (scrubbing)
   useEffect(() => {
-    if (isPlaying) return; // Don't update during playback, GSAP handles it
+    if (isPlaying) {
+      return;
+    } // Don't update during playback, GSAP handles it
 
     objects.forEach((obj) => {
       // Check if object should be visible at current time
-      if (currentTime < obj.startTime) return;
-      if (obj.endTime && currentTime > obj.endTime) return;
+      if (currentTime < obj.startTime) {
+        return;
+      }
+
+      if (obj.endTime && currentTime > obj.endTime) {
+        return;
+      }
 
       const properties = getCurrentProperties(obj);
       onUpdateCanvas?.(obj.id, properties);
@@ -106,7 +125,9 @@ export function useAnimationEngine({
 
   // Build and control GSAP timeline for playback
   useEffect(() => {
-    if (typeof window === "undefined" || !window.gsap) return;
+    if (typeof window === "undefined" || !window.gsap) {
+      return;
+    }
 
     // Clean up previous timeline
     if (gsapTimelineRef.current) {
@@ -120,8 +141,13 @@ export function useAnimationEngine({
         // Update canvas during playback
         const time = tl.time() * 1000; // Convert to ms
         objects.forEach((obj) => {
-          if (time < obj.startTime) return;
-          if (obj.endTime && time > obj.endTime) return;
+          if (time < obj.startTime) {
+            return;
+          }
+
+          if (obj.endTime && time > obj.endTime) {
+            return;
+          }
 
           const properties = getCurrentProperties(obj);
           onUpdateCanvas?.(obj.id, properties);
@@ -134,7 +160,9 @@ export function useAnimationEngine({
       // Position animations
       if (obj.properties.position && obj.properties.position.length > 0) {
         obj.properties.position.forEach((kf, idx) => {
-          if (idx === 0) return; // Skip first keyframe as starting position
+          if (idx === 0) {
+            return;
+          } // Skip first keyframe as starting position
 
           const prevKf = obj.properties.position![idx - 1];
           const duration = (kf.time - prevKf.time) / 1000;
@@ -168,7 +196,9 @@ export function useAnimationEngine({
 
   // Control playback
   useEffect(() => {
-    if (!gsapTimelineRef.current) return;
+    if (!gsapTimelineRef.current) {
+      return;
+    }
 
     if (isPlaying) {
       gsapTimelineRef.current.play();
@@ -179,7 +209,10 @@ export function useAnimationEngine({
 
   // Seek when time changes externally
   useEffect(() => {
-    if (!gsapTimelineRef.current || isPlaying) return;
+    if (!gsapTimelineRef.current || isPlaying) {
+      return;
+    }
+
     gsapTimelineRef.current.time(currentTime / 1000);
   }, [currentTime, isPlaying]);
 

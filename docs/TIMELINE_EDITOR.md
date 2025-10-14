@@ -56,10 +56,12 @@ The Timeline Editor is a full-featured animation system built on top of **Konva.
    - **Cmd+Z**: Undo
    - **Cmd+Shift+Z**: Redo
 
-8. **GSAP Integration**
-   - Smooth interpolation between keyframes
-   - Support for multiple easing functions
-   - Real-time canvas updates during playback
+8. **GSAP Integration** ✅
+   - **Professional easing functions**: power, bounce, elastic, back, etc.
+   - **GSAP-powered interpolation** in `useUnifiedStateManager`
+   - **Smooth playback** with GSAP timeline
+   - **Real-time canvas updates** during playback
+   - **Manual interpolation** for scrubbing (when paused)
 
 9. **Export/Import**
    - Export timeline as JSON
@@ -108,30 +110,30 @@ interface Keyframe<T = any> {
 
 ### State Management
 
-The timeline uses a reducer pattern for state management:
+The timeline uses **unified state management** with GSAP integration:
 
 ```typescript
-const { state, actions } = useTimelineState();
+const manager = useUnifiedStateManager();
 
 // State includes:
-state.objects; // Array of animated objects
-state.duration; // Total animation duration
-state.currentTime; // Current playhead position
-state.isPlaying; // Playback status
-state.zoom; // Zoom level
-state.history; // Undo/redo stacks
+manager.state.timeline.objects; // Array of animated objects
+manager.state.timeline.duration; // Total animation duration
+manager.state.timeline.currentTime; // Current playhead position
+manager.state.timeline.isPlaying; // Playback status
+manager.state.timeline.zoom; // Zoom level
+manager.state.timeline.history; // Undo/redo stacks
+manager.state.selectedLayerId; // Currently selected layer
+manager.state.currentLayerProperties; // Interpolated properties
 
-// Actions available:
-actions.addKeyframe(objectId, property, keyframe);
-actions.removeKeyframe(objectId, property, keyframeId);
-actions.moveKeyframe(objectId, property, keyframeId, newTime);
-actions.play();
-actions.pause();
-actions.seek(time);
-actions.setZoom(zoom);
-actions.undo();
-actions.redo();
-actions.exportTimeline();
+// GSAP-powered actions:
+manager.play(); // GSAP timeline playback
+manager.pause(); // GSAP timeline pause
+manager.seekToTime(time); // GSAP when playing, manual when scrubbing
+manager.updateProperty(layerId, property, value, options);
+manager.handleCanvasTransform(layerId, transform);
+manager.addAnimatedObject(object);
+manager.removeAnimatedObject(objectId);
+manager.selectLayer(layerId);
 ```
 
 ## Usage
@@ -140,20 +142,23 @@ actions.exportTimeline();
 
 ```tsx
 import { Timeline } from "@/components/admin/timeline";
+import { useUnifiedStateManager } from "@/hooks/useUnifiedStateManager";
 
 function MyComponent() {
+  const manager = useUnifiedStateManager();
+  manager.canvasRef = canvasRef; // Assign canvas ref
+
   return (
     <Timeline
       width={800}
       height={300}
-      onTimeUpdate={(time) => {
-        // Update canvas when timeline scrubs
-        console.log("Current time:", time);
+      state={manager.state.timeline}
+      selectedObjectId={manager.state.selectedLayerId}
+      onTimeUpdate={manager.seekToTime}
+      onPlayingChange={(isPlaying) => {
+        isPlaying ? manager.play() : manager.pause();
       }}
-      onObjectsChange={(objects) => {
-        // React to timeline changes
-        console.log("Objects:", objects);
-      }}
+      onSelectObject={manager.selectLayer}
     />
   );
 }
@@ -161,17 +166,31 @@ function MyComponent() {
 
 ### In UploadReels
 
-The timeline is integrated into UploadReels and can be toggled with a button:
+The timeline is fully integrated into UploadReels with GSAP-powered animations:
 
 ```tsx
-<Button onClick={() => setShowTimeline(!showTimeline)}>
-  <Film className="h-4 w-4 mr-2" />
-  {showTimeline ? "Hide Timeline" : "Show Timeline"}
-</Button>;
+const manager = useUnifiedStateManager();
+manager.canvasRef = canvasRef;
 
-{
-  showTimeline && <Timeline width={800} height={250} />;
-}
+// Timeline is always visible at the top
+<Timeline
+  width={1000}
+  height={200}
+  state={manager.state.timeline}
+  selectedObjectId={manager.state.selectedLayerId}
+  onTimeUpdate={manager.seekToTime}
+  onPlayingChange={(isPlaying) => {
+    isPlaying ? manager.play() : manager.pause();
+  }}
+  onSelectObject={manager.selectLayer}
+  onDeleteObject={(objectId) => {
+    if (objectId === "background-image") {
+      setImageUrl("");
+    } else {
+      removeLayer(objectId);
+    }
+  }}
+/>;
 ```
 
 ## Animation Workflow

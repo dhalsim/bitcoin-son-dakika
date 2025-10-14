@@ -15,6 +15,7 @@ import { handleUpdateTags } from "./tags.js";
 import { handleTranslateNews } from "./translate.js";
 import { handleUploadToX } from "./twitter.js";
 import { handleAddAdmin, handleAddEditor, handleRemoveAdmin, handleRemoveEditor } from "./users.js";
+import { handleFetchZeronoiseEmails, handleFormatZeronoiseItem } from "./zeronoise/index.js";
 
 export async function handleAdminPost(redis: RedisClient, request: Request): Promise<Response> {
   try {
@@ -174,6 +175,10 @@ export async function handleAdminPost(redis: RedisClient, request: Request): Pro
         return handleDeleteBlossomMedia(redis, masterAdminPrivateKey, authResult, requestBody);
       case "upload-file-url":
         return handleUploadFileUrl(redis, masterAdminPrivateKey, authResult, requestBody);
+      case "fetch-zeronoise-emails":
+        return handleFetchZeronoiseEmails(redis, authResult, requestBody.noCache);
+      case "format-zeronoise-item":
+        return handleFormatZeronoiseItem(redis, authResult, requestBody);
       default:
         return ErrorResponseCreator("Invalid action", 400);
     }

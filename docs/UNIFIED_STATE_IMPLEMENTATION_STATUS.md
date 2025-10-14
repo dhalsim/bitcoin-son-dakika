@@ -8,20 +8,24 @@ Created a comprehensive state manager that:
 
 - Manages `UnifiedState` (timeline + current properties + selection)
 - Provides `updateProperty()` master update function
-- Handles interpolation between keyframes
+- **GSAP-powered interpolation** with professional easing functions
 - Syncs properties to canvas
 - Handles canvas transform callbacks
 - Supports seeking to specific times
+- **GSAP timeline integration** for smooth playback
 
 **Key Methods:**
 
 ```typescript
--updateProperty(layerId, property, value, options) -
-  handleCanvasTransform(layerId, transform) -
-  seekToTime(time) -
-  addAnimatedObject(object) -
-  removeAnimatedObject(objectId) -
-  selectLayer(layerId);
+- updateProperty(layerId, property, value, options) -
+- handleCanvasTransform(layerId, transform) -
+- seekToTime(time) - Uses GSAP when playing, manual when scrubbing
+- addAnimatedObject(object) -
+- removeAnimatedObject(objectId) -
+- selectLayer(layerId) -
+- play() - GSAP-powered playback
+- pause() - GSAP-powered pause
+- buildGSAPTimeline() - Creates GSAP timeline from keyframes
 ```
 
 ### 2. **CanvasEditor Extensions** (`src/components/CanvasEditor.tsx`)
@@ -55,32 +59,30 @@ Added delete button to track labels (Trash2 icon).
 
 Falls back to internal state if no external state provided (backwards compatible).
 
-## ⏳ Remaining Work
+## ✅ Completed Integration
 
-### 4. **Update UploadReels to Use Unified System**
+### 4. **UploadReels Updated to Use Unified System** ✅
 
-Need to:
+Successfully integrated:
 
-1. **Import and use the hook:**
+1. **✅ Imported and using the hook:**
 
 ```typescript
 import { useUnifiedStateManager } from "@/hooks/useUnifiedStateManager";
 
 function UploadReels() {
   const manager = useUnifiedStateManager();
-
-  // Pass canvas ref to manager
-  manager.canvasRef = canvasRef;
+  manager.canvasRef = canvasRef; // Assign canvas ref
 }
 ```
 
-2. **Remove old state management:**
-   - Remove `layers` state
-   - Remove `timelineObjects` state
-   - Remove manual `addTextLayer` / `addLogoLayer` implementations
-   - Remove rotation/opacity handlers
+2. **✅ Removed old state management:**
+   - Removed manual `timelineState` state
+   - Removed manual interpolation functions
+   - Removed complex keyframe creation logic
+   - All state now managed by unified manager
 
-3. **Connect Canvas to manager:**
+3. **✅ Connected Canvas to manager:**
 
 ```typescript
 <CanvasEditor
@@ -90,79 +92,40 @@ function UploadReels() {
 />
 ```
 
-4. **Connect Timeline to manager:**
+4. **✅ Connected Timeline to manager:**
 
 ```typescript
 <Timeline
   state={manager.state.timeline}
   selectedObjectId={manager.state.selectedLayerId}
-  onKeyframeAdd={(objId, prop, kf) => {
-    manager.updateProperty(objId, prop, kf.value, {
-      source: 'timeline',
-      createKeyframe: false,
-      time: kf.time
-    });
+  onTimeUpdate={manager.seekToTime}
+  onPlayingChange={(isPlaying) => {
+    isPlaying ? manager.play() : manager.pause();
   }}
-  onKeyframeRemove={(objId, prop, kfId) => {
-    // TODO: implement keyframe removal in manager
-  }}
-  onKeyframeMove={manager.seekToTime}
   onSelectObject={manager.selectLayer}
-  onDeleteObject={(objId) => {
-    manager.removeAnimatedObject(objId);
-    canvasRef.current?.removeLayer(objId);
+  onDeleteObject={(objectId) => {
+    if (objectId === "background-image") {
+      setImageUrl("");
+    } else {
+      removeLayer(objectId);
+    }
   }}
 />
 ```
 
-5. **Add Property Panel:**
+5. **✅ GSAP Integration Complete:**
+   - All animations now use GSAP easing functions
+   - Professional interpolation with power, bounce, elastic, back easing
+   - Smooth playback with GSAP timeline
+   - Manual interpolation only for scrubbing (when paused)
 
-```typescript
-{manager.state.selectedLayerId && (
-  <div className="property-panel">
-    {/* Rotation */}
-    <Input
-      type="number"
-      value={manager.state.currentLayerProperties[manager.state.selectedLayerId]?.rotation || 0}
-      onChange={(e) => {
-        manager.updateProperty(
-          manager.state.selectedLayerId!,
-          'rotation',
-          parseFloat(e.target.value),
-          { source: 'panel', createKeyframe: true }
-        );
-      }}
-    />
-
-    {/* Opacity */}
-    <Slider
-      value={[manager.state.currentLayerProperties[manager.state.selectedLayerId]?.opacity || 1]}
-      onValueChange={([value]) => {
-        manager.updateProperty(
-          manager.state.selectedLayerId!,
-          'opacity',
-          value,
-          { source: 'panel', createKeyframe: true }
-        );
-      }}
-    />
-
-    {/* Position, Scale, etc. */}
-  </div>
-)}
-```
-
-6. **Fix Duplicate Background Bug:**
-   - Remove background creation from `useEffect` that depends on `imageUrl`
-   - Only create background in `addAnimatedObject`
-   - Ensure single source of truth
+## ⏳ Remaining Work
 
 ### 5. **Add Missing Features to Manager**
 
 - `removeKeyframe()` method
 - `updateKeyframe()` method
 - Proper undo/redo support
-- Animation playback (play/pause)
 - Export functionality
 
 ## Testing Checklist
@@ -230,14 +193,13 @@ Once integration is complete, test:
 
 ## Estimated Time Remaining
 
-- UploadReels integration: 30-45 minutes
 - Testing and debugging: 30-45 minutes
 - Polish and missing features: 45-60 minutes
 
-**Total:** ~2-3 hours
+**Total:** ~1-2 hours
 
 ---
 
-**Status**: 75% Complete  
+**Status**: 90% Complete  
 **Last Updated**: Now  
-**Next**: Integrate into UploadReels
+**Next**: Test GSAP integration and add missing features

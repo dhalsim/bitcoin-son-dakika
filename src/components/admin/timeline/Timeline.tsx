@@ -79,7 +79,7 @@ export function Timeline({
     }
   }, [externalState?.currentTime, internalState.isPlaying]);
 
-  const state = internalState; // Always use internal state for rendering
+  const state = externalState || internalState; // Use external state if provided
 
   // Use external selection if provided
   const currentSelectedId =
@@ -104,10 +104,16 @@ export function Timeline({
   // Seek handler that updates both internal and external state
   const handleSeek = useCallback(
     (time: number) => {
-      actions.seek(time);
-      onTimeUpdate?.(time);
+      if (externalState && onTimeUpdate) {
+        // Use external state - just call the callback
+        onTimeUpdate(time);
+      } else {
+        // Use internal state
+        actions.seek(time);
+        onTimeUpdate?.(time);
+      }
     },
-    [actions, onTimeUpdate],
+    [actions, onTimeUpdate, externalState],
   );
 
   // Play/pause handlers

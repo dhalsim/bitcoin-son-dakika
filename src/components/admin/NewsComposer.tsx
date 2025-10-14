@@ -21,7 +21,8 @@ type PrefillData = {
   url?: string;
   content?: string;
   tags?: string[];
-  from?: "sources" | string;
+  sources?: string[];
+  from?: "sources" | "zeronoise" | string;
 };
 
 type NewsComposerProps = {
@@ -44,6 +45,7 @@ export default function NewsComposer({
   const [newsTags, setNewsTags] = useState<string[]>([]);
   const [newsPublishLoading, setNewsPublishLoading] = useState(false);
   const [sourceUrl, setSourceUrl] = useState("");
+  const [newsSources, setNewsSources] = useState<string[]>([]);
   const [enTitle, setEnTitle] = useState("");
   const [enSummary, setEnSummary] = useState("");
   const [enContent, setEnContent] = useState("");
@@ -62,12 +64,14 @@ export default function NewsComposer({
     if (typeof prefill.url === "string") setSourceUrl(prefill.url);
     if (typeof prefill.content === "string") setNewsContent(prefill.content);
     if (Array.isArray(prefill.tags)) setNewsTags(prefill.tags);
+    if (Array.isArray(prefill.sources)) setNewsSources(prefill.sources);
     if (typeof prefill.title === "string") setEnTitle(prefill.title);
     if (typeof prefill.summary === "string") setEnSummary(prefill.summary);
     if (typeof prefill.content === "string") setEnContent(prefill.content);
   }, [prefillToken]);
 
   const isFromSources = prefill?.from === "sources";
+  const isFromZeronoise = prefill?.from === "zeronoise";
 
   const autoTranslate = async () => {
     setIsLoading(true);
@@ -148,7 +152,7 @@ export default function NewsComposer({
       <CardContent>
         {error && <div className="text-red-500">{error}</div>}
 
-        {isFromSources ? (
+        {isFromSources || isFromZeronoise ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: English/originals */}
             <div className="space-y-4">
@@ -207,6 +211,18 @@ export default function NewsComposer({
                   className="min-h-[240px]"
                 />
               </div>
+              {newsSources.length > 0 && (
+                <div>
+                  <Label className="text-base font-medium">Sources</Label>
+                  <div className="space-y-1">
+                    {newsSources.map((source, idx) => (
+                      <div key={idx} className="text-xs text-muted-foreground break-all">
+                        {source}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right: Turkish editable */}

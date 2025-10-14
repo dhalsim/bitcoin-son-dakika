@@ -77,8 +77,8 @@ export interface TimelineAction {
 }
 
 export interface TimelineHistory {
-  past: TimelineAction[];
-  future: TimelineAction[];
+  past: TimelineState[];
+  future: TimelineState[];
 }
 
 // Helper type for keyframe with computed properties
