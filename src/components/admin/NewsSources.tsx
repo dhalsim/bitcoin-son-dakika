@@ -5,6 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { WEBSITE_URL } from "@/lib/constants";
 
@@ -50,6 +57,10 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
   const [zeronoiseLoading, setZeronoiseLoading] = useState<boolean>(false);
   const [zeronoiseError, setZeronoiseError] = useState<string>("");
   const [zeronoiseFromCache, setZeronoiseFromCache] = useState<boolean>(false);
+
+  // Modal state
+  const [selectedItem, setSelectedItem] = useState<ZeronoiseNewsItem | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const { getPublicKey, signEvent } = useNostrAuth();
 
@@ -182,6 +193,11 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
     },
     [formatZeronoiseItem, onPrefill],
   );
+
+  const handleReadMore = useCallback((item: ZeronoiseNewsItem) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  }, []);
 
   useEffect(() => {
     fetchScrapes(false);
@@ -387,14 +403,24 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
                                 ))}
                               </div>
                             )}
-                            <Button
-                              size="sm"
-                              onClick={() => handleUseZeronoiseItem(email, item)}
-                              className="w-full"
-                            >
-                              <Share2 className="h-3 w-3 mr-1" />
-                              Use in Composer
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleReadMore(item)}
+                                className="flex-1"
+                              >
+                                Devamını Oku
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleUseZeronoiseItem(email, item)}
+                                className="flex-1"
+                              >
+                                <Share2 className="h-3 w-3 mr-1" />
+                                Use in Composer
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -406,6 +432,53 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
           )}
         </div>
       </TabsContent>
+
+      {/* Modal for reading full content */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">{selectedItem?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedItem?.image && (
+              <img
+                src={selectedItem.image}
+                alt=""
+                className="w-full max-w-md mx-auto rounded-lg"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+            )}
+            <div className="prose prose-sm max-w-none">
+              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                {selectedItem?.content}
+              </div>
+            </div>
+            {selectedItem?.rawTags && selectedItem.rawTags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedItem.rawTags.map((tag, idx) => (
+                  <Badge key={idx} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {selectedItem?.sources && selectedItem.sources.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Kaynaklar:</h4>
+                <div className="space-y-1">
+                  {selectedItem.sources.map((source, idx) => (
+                    <div key={idx} className="text-xs text-muted-foreground">
+                      • {source}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Tabs>
   );
 }

@@ -87,12 +87,14 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
       model: "gemini-exp-1114",
       messages: [
         { role: "system", content: prompt },
-        { role: "user", content: "Başlık: " + item.title + "Ham içerik: " + item.content },
+        { role: "user", content: "Başlık: " + item.title + "\n\nHam içerik: " + item.content },
       ],
     }),
   });
 
   const data = await response.json();
+
+  console.log(data);
 
   if (!data.choices || !data.choices[0] || !data.choices[0].message) {
     throw new Error("Invalid response from AI service");
