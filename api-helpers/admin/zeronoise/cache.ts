@@ -95,7 +95,7 @@ export async function refreshGmailAccessToken(): Promise<string> {
     console.error("Token refresh failed:", data);
 
     throw new Error(
-      `Token refresh failed: ${response.status} ${response.statusText} - ${data.error || "Unknown error"}`,
+      `Token refresh failed: ${response.status} ${response.statusText} - ${data.error || "Unknown error" + data.error_description}`,
     );
   }
 
