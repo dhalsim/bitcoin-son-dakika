@@ -46,7 +46,7 @@ export function ShareButton({ event, isPodcast = false }: ShareButtonProps) {
           ? links.articleDetail(slug)
           : links.newsDetail(slug);
 
-      const url = `${WEBSITE_URL}/${restOfTheUrl}`;
+      const url = `${WEBSITE_URL}${restOfTheUrl}`;
 
       const titlePrefix = isPodcast ? "Podcast" : isArticle ? "Makale" : "Haber";
 
