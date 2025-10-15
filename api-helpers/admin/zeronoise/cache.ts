@@ -65,14 +65,18 @@ export async function cacheGmailAccessToken(
 
 export async function refreshGmailAccessToken(): Promise<string> {
   const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
   const REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
 
-  if (!CLIENT_ID || !REFRESH_TOKEN) {
-    throw new Error("Missing GOOGLE_CLIENT_ID or GMAIL_REFRESH_TOKEN in environment variables");
+  if (!CLIENT_ID || !CLIENT_SECRET || !REFRESH_TOKEN) {
+    throw new Error(
+      "Missing GOOGLE_CLIENT_ID or GMAIL_REFRESH_TOKEN or GOOGLE_CLIENT_SECRET in environment variables",
+    );
   }
 
   const payload = {
     client_id: CLIENT_ID,
+    client_secret: CLIENT_SECRET,
     refresh_token: REFRESH_TOKEN,
     grant_type: "refresh_token",
   };

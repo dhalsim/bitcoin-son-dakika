@@ -55,11 +55,12 @@ function postForm(url, params) {
     const payload = {
       client_id: CLIENT_ID,
       refresh_token: REFRESH_TOKEN,
+      client_secret: CLIENT_SECRET,
       grant_type: "refresh_token",
     };
-    if (CLIENT_SECRET) payload.client_secret = CLIENT_SECRET;
 
     const tokenResp = await postForm("https://oauth2.googleapis.com/token", payload);
+
     if (!tokenResp || tokenResp.error || !tokenResp.access_token) {
       console.error("Token refresh failed:", tokenResp);
       process.exit(1);
