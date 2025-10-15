@@ -74,7 +74,7 @@ export async function handleFetchZeronoiseEmails(
     const err = error instanceof Error ? error : new Error("Failed to fetch Zeronoise emails");
     console.error("Error in handleFetchZeronoiseEmails:", err);
 
-    return ErrorResponseCreator(err, 500);
+    return ErrorResponseCreator(err.message, 500);
   }
 }
 
@@ -99,7 +99,7 @@ export async function handleFormatZeronoiseItem(
     const err = error instanceof Error ? error : new Error("Failed to format Zeronoise item");
     console.error("Error in handleFormatZeronoiseItem:", err);
 
-    return ErrorResponseCreator(err, 500);
+    return ErrorResponseCreator(err.message, 500);
   }
 }
 

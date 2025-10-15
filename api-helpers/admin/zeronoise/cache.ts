@@ -64,16 +64,16 @@ export async function cacheGmailAccessToken(
 }
 
 export async function refreshGmailAccessToken(): Promise<string> {
-  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-  const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
+  const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  const REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN;
 
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_REFRESH_TOKEN) {
-    throw new Error("Missing GOOGLE_CLIENT_ID or GOOGLE_REFRESH_TOKEN in environment variables");
+  if (!CLIENT_ID || !REFRESH_TOKEN) {
+    throw new Error("Missing GOOGLE_CLIENT_ID or GMAIL_REFRESH_TOKEN in environment variables");
   }
 
   const payload = {
-    client_id: GOOGLE_CLIENT_ID,
-    refresh_token: GOOGLE_REFRESH_TOKEN,
+    client_id: CLIENT_ID,
+    refresh_token: REFRESH_TOKEN,
     grant_type: "refresh_token",
   };
 
@@ -85,14 +85,14 @@ export async function refreshGmailAccessToken(): Promise<string> {
     body: new URLSearchParams(payload).toString(),
   });
 
-  if (!response.ok) {
-    throw new Error(`Token refresh failed: ${response.status} ${response.statusText}`);
-  }
-
   const data = await response.json();
 
-  if (!data.access_token) {
-    throw new Error("No access token in refresh response");
+  if (!response.ok || !data.access_token) {
+    console.error("Token refresh failed:", data);
+
+    throw new Error(
+      `Token refresh failed: ${response.status} ${response.statusText} - ${data.error || "Unknown error"}`,
+    );
   }
 
   return data.access_token;
