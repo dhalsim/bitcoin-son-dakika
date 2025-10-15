@@ -84,7 +84,7 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gemini-exp-1114",
+      model: "gpt-4.1-nano",
       messages: [
         { role: "system", content: prompt },
         { role: "user", content: "Başlık: " + item.title + "\n\nHam içerik: " + item.content },
