@@ -109,12 +109,24 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
     throw new Error("Invalid response from AI service");
   }
 
-  const content = data.choices[0].message;
+  const content = data.choices[0].message.content;
 
-  console.log(content);
+  console.log("content: ", content);
 
   try {
-    const json = JSON.parse(content);
+    // Extract JSON from markdown code blocks if present
+    let jsonString = content;
+
+    // Check if content is wrapped in markdown code blocks
+    const codeBlockMatch = jsonString.match(/```json\s*([\s\S]*?)\s*```/);
+
+    if (codeBlockMatch) {
+      jsonString = codeBlockMatch[1];
+    }
+
+    console.log("jsonString: ", jsonString);
+
+    const json = JSON.parse(jsonString);
 
     return {
       title: json.title,
@@ -125,6 +137,7 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
     };
   } catch (error) {
     console.error("Error parsing JSON from AI service:", error);
+    console.error("Raw content:", content.content);
 
     throw new Error("Invalid response from AI service");
   }
