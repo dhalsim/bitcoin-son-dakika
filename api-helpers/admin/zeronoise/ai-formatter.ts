@@ -111,11 +111,19 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
 
   const content = data.choices[0].message.content;
 
-  return {
-    title: item.title,
-    summary: "",
-    content,
-    image: "",
-    tags: [],
-  };
+  try {
+    const json = JSON.parse(content);
+
+    return {
+      title: json.title,
+      summary: json.summary,
+      content: json.content,
+      image: json.image,
+      tags: json.tags,
+    };
+  } catch (error) {
+    console.error("Error parsing JSON from AI service:", error);
+
+    throw new Error("Invalid response from AI service");
+  }
 }
