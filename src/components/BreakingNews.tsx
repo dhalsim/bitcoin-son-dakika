@@ -24,7 +24,7 @@ export default function BreakingNews() {
           </span>
           <div className="flex-1 overflow-hidden">
             <span className="text-xs sm:text-sm font-medium">
-              <a href={link}>`${topItem.title}</a>
+              <a href={link}>${topItem.title}</a>
             </span>
           </div>
         </div>
