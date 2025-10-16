@@ -457,9 +457,15 @@ export function applyCacheHeaders(response: Response, strategy: CacheConfig): Re
 }
 
 export function createTitleSlug(title: string): string {
-  // Normalize the string to NFD form and remove diacritics (accents), covers cases like í => i, é => e, ç => c, etc.
+  // Normalize the string to NFD form and remove diacritics (accents), covers cases like í => i, é => e, etc.
   // Then filter out non-alphanumeric characters except spaces/hyphens, lower-case, and slugify
   return title
+    .replace(/[ıİ]/g, "i") // Turkish ı/İ -> i
+    .replace(/[ğĞ]/g, "g") // Turkish ğ/Ğ -> g
+    .replace(/[üÜ]/g, "u") // Turkish ü/Ü -> u
+    .replace(/[şŞ]/g, "s") // Turkish ş/Ş -> s
+    .replace(/[öÖ]/g, "o") // Turkish ö/Ö -> o
+    .replace(/[çÇ]/g, "c") // Turkish ç/Ç -> c
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "") // Remove diacritical marks
     .toLowerCase()
