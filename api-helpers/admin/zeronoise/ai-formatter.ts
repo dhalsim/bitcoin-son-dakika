@@ -44,7 +44,7 @@ function buildFormattingPrompt(item: ZeronoiseNewsItem): string {
 
 KURALLAR:
 - Markdown formatında değil, düz yazı formatında yaz.
-- Kaynaklara girerek yazının doğruluğunu kontrol et.
+- Kaynaklara girerek yazının doğruluğunu kontrol et. İçerikte linkler varsa web araması yaparak bu linklerin içeriğini kontrol et ve doğruluğunu teyit et.
 - Etiketleri gözden geçir. Bize verilen etiketleri kullan, eğer yoksa eklenmesi gereken etiketleri belirt: "abd, afrika, altcoin, analiz, asya, avusturya, banka, benimsenme, bitcoin, blogging, ekonomi, enerji, finans, geliştirme, girisimcilik, haber, haber, hiperenflasyon, kagit-para, lightning, madencilik, mining, mulkiyet-haklari, nostr, odeme, para-tarihi, piyasa, podcast, politika, regülasyon, regulasyon, savas, savas-finansmani, tarih, teknoloji, tether, guney-amerika"
 
 - İlk başlık özel. Sitede zaten koyu ve büyük bir biçimde gösteriyoruz o yüzden tüm harflerin büyük olmasına gerek yok. Örnek: "ABD Senatöründen Bitcoin Önerisi" ✓, "ABD SENATÖRÜNDEN BİTCOİN ÖNERİSİ" ✗
@@ -84,11 +84,20 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-4.1-nano",
+      model: "gemini-2.0-flash-001",
       messages: [
         { role: "system", content: prompt },
         { role: "user", content: "Başlık: " + item.title + "\n\nHam içerik: " + item.content },
       ],
+      tools: [
+        {
+          type: "web_search",
+          web_search: {
+            search_depth: "basic",
+          },
+        },
+      ],
+      tool_choice: "auto",
     }),
   });
 
