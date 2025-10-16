@@ -109,7 +109,9 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
     throw new Error("Invalid response from AI service");
   }
 
-  const content = data.choices[0].message.content;
+  const content = data.choices[0].message;
+
+  console.log(content);
 
   try {
     const json = JSON.parse(content);
