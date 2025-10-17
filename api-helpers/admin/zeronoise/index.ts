@@ -69,7 +69,9 @@ export async function handleFetchZeronoiseEmails(
       }
     });
 
-    const emails = Array.from(emailMap.values());
+    const emails = Array.from(emailMap.values()).sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
 
     // Cache results
     await cacheEmails(redis, emails);
