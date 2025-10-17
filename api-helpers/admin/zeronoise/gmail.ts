@@ -9,6 +9,7 @@ import {
   cacheGmailAccessToken,
   refreshGmailAccessToken,
 } from "./cache.js";
+import { extractDateFromMarkdown } from "./parser.js";
 import type { ZeronoiseEmail } from "./types.js";
 
 const turndownService = new TurndownService({
@@ -100,10 +101,13 @@ export async function fetchFromGmail(): Promise<ZeronoiseEmail[]> {
       // Store in Vercel Blob
       const blobUrl = await storeEmailInBlob(messageId, markdown);
 
+      // Extract date from markdown content first, then fallback to header
+      const extractedDate = extractDateFromMarkdown(markdown, date);
+
       emails.push({
         messageId: messageId,
         subject: subject,
-        date: new Date(date).toISOString(),
+        date: extractedDate,
         blobUrl: blobUrl,
       });
 

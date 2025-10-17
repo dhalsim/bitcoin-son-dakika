@@ -1,21 +1,53 @@
 import { useCallback, useEffect, useState } from "react";
+import type { JSX } from "react";
 import { AlertCircle, Loader2, Share2, RefreshCw } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { WEBSITE_URL } from "@/lib/constants";
 
 import { createNIP98Auth } from "./utils";
+
+// Helper function to render markdown links as clickable HTML links
+const renderMarkdownLinks = (text: string): JSX.Element => {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts: (string | JSX.Element)[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    // Add text before the link
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    // Add the link
+    parts.push(
+      <a
+        key={match.index}
+        href={match[2]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:text-blue-800 underline"
+      >
+        {match[1]}
+      </a>,
+    );
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text after the last link
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return <>{parts}</>;
+};
 
 type ScraperSource = "coindesk" | "cointelegraph" | "tradingview" | "bitcoinmagazine" | "therage";
 
@@ -269,7 +301,11 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
               {zeronoiseEmails.map((email) => (
                 <div key={email.messageId} className="border rounded-lg p-4">
                   <div className="mb-3">
-                    <h3 className="font-semibold text-lg">{email.subject}</h3>
+                    <h3 className="font-semibold text-lg">
+                      {typeof email.subject === "string"
+                        ? renderMarkdownLinks(email.subject)
+                        : email.subject}
+                    </h3>
                     <span className="text-sm text-muted-foreground">
                       {new Date(email.date).toLocaleDateString("tr-TR")}
                     </span>

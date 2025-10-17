@@ -1,5 +1,6 @@
 import { put, list } from "@vercel/blob";
 
+import { extractDateFromMarkdown } from "./parser.js";
 import type { ZeronoiseEmail } from "./types.js";
 
 export async function storeEmailInBlob(messageId: string, markdown: string): Promise<string> {
@@ -24,10 +25,11 @@ export async function fetchFromBlob(): Promise<ZeronoiseEmail[]> {
         // Extract messageId from filename: zeronoise/emails/{messageId}.md
         const messageId = file.pathname.split("/")[2]?.split(".")[0] || "unknown";
 
-        // Fetch the content to extract subject
+        // Fetch the content to extract subject and date
         const response = await fetch(file.url);
         if (response.ok) {
           const content = await response.text();
+
           // Try to extract subject from content (look for "Subject:" or similar patterns)
           const subjectMatch =
             content.match(/Subject:\s*(.+)/i) ||
@@ -38,10 +40,13 @@ export async function fetchFromBlob(): Promise<ZeronoiseEmail[]> {
             ? subjectMatch[1].trim()
             : `Bitcoin Intelligence Tracker: ${messageId}`;
 
+          // Extract date from markdown content with fallback to blob upload date
+          const emailDate = extractDateFromMarkdown(content, file.uploadedAt.toISOString());
+
           emails.push({
             messageId,
             subject,
-            date: file.uploadedAt.toISOString(),
+            date: emailDate,
             blobUrl: file.url,
           });
         }

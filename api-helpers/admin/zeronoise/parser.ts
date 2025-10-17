@@ -1,5 +1,33 @@
 import type { ZeronoiseNewsItem } from "./types.js";
 
+export function extractDateFromMarkdown(markdown: string, fallbackDate: string): string {
+  // 1. Try to extract from "Coverage:" line (alternative format)
+  const coverageMatch = markdown.match(/Coverage:\s*(.+?)(?:\n|$)/i);
+  if (coverageMatch) {
+    try {
+      // Parse "October 15, 2025 - October 16, 2025" format
+      const coverageStr = coverageMatch[1].trim();
+      const dateParts = coverageStr.split(" - ");
+      const datePart = dateParts.length > 1 ? dateParts[1] : dateParts[0]; // Take the end date (October 16)
+      const parsedDate = new Date(datePart);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toISOString();
+      }
+    } catch (_error) {
+      console.warn(`Failed to parse coverage date: ${coverageMatch[1]}`);
+    }
+  }
+
+  // 2. Fallback to provided date
+  try {
+    return new Date(fallbackDate).toISOString();
+  } catch (_error) {
+    console.warn(`Failed to parse fallback date: ${fallbackDate}`);
+
+    return new Date().toISOString(); // Ultimate fallback
+  }
+}
+
 export function parseEmailMarkdown(markdown: string): ZeronoiseNewsItem[] {
   const items: ZeronoiseNewsItem[] = [];
 
