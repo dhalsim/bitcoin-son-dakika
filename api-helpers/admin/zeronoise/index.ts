@@ -3,10 +3,11 @@ import { ErrorResponseCreator, SuccessResponse } from "../../common_with_client.
 import type { AuthResult } from "../../types.js";
 
 import { formatNewsItem } from "./ai-formatter.js";
+import { fetchFromBlob } from "./blob.js";
 import { shouldFetchFresh, getCachedEmails, cacheEmails } from "./cache.js";
 import { fetchFromGmail } from "./gmail.js";
 import { parseEmailMarkdown } from "./parser.js";
-import type { ZeronoiseNewsItem } from "./types.js";
+import type { ZeronoiseEmail, ZeronoiseNewsItem } from "./types.js";
 
 export async function handleFetchZeronoiseEmails(
   redis: RedisClient,
@@ -48,7 +49,27 @@ export async function handleFetchZeronoiseEmails(
     }
 
     // Fetch fresh from Gmail
-    const emails = await fetchFromGmail();
+    const emailsFromGmail = await fetchFromGmail();
+
+    // Fetch from blob storage for old emails
+    const emailsFromBlobStorage = await fetchFromBlob();
+
+    // Deduplicate emails by messageId
+    const emailMap = new Map<string, ZeronoiseEmail>();
+
+    // Add Gmail emails first (they take priority as they're fresh)
+    emailsFromGmail.forEach((email) => {
+      emailMap.set(email.messageId, email);
+    });
+
+    // Add blob emails only if they don't exist in Gmail
+    emailsFromBlobStorage.forEach((email) => {
+      if (!emailMap.has(email.messageId)) {
+        emailMap.set(email.messageId, email);
+      }
+    });
+
+    const emails = Array.from(emailMap.values());
 
     // Cache results
     await cacheEmails(redis, emails);

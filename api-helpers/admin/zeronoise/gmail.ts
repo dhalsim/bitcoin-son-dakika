@@ -1,9 +1,9 @@
-import { put } from "@vercel/blob";
 import { google } from "googleapis";
 import TurndownService from "turndown";
 
 import { getRedis } from "../../common.js";
 
+import { storeEmailInBlob } from "./blob.js";
 import {
   getCachedGmailAccessToken,
   cacheGmailAccessToken,
@@ -124,17 +124,6 @@ export async function fetchFromGmail(): Promise<ZeronoiseEmail[]> {
   }
 
   return emails;
-}
-
-async function storeEmailInBlob(messageId: string, markdown: string): Promise<string> {
-  const filename = `zeronoise/emails/${messageId}.md`;
-
-  const blob = await put(filename, markdown, {
-    access: "public",
-    contentType: "text/markdown",
-  });
-
-  return blob.url;
 }
 
 // Helper function to extract email body
