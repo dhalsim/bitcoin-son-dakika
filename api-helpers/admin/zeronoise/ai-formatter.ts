@@ -28,7 +28,7 @@ export async function formatNewsItem(
   const formatted = await callAIService(prompt, item);
 
   // Search for images
-  const images = await searchImagesForArticle(formatted.tags.join(", "));
+  const images = await searchImagesForArticle(formatted.tags_in_english.join(", "));
 
   const finalResult = {
     ...formatted,
@@ -53,7 +53,9 @@ export function buildFormattingPrompt(item: ZeronoiseNewsItem): string {
 KURALLAR:
 - Çıktıyı sade metin formatında hazırla. Kalın, italik, başlık gibi markdown biçimleri veya markdown URL’leri kullanma. Bağlantıları sadece düz URL olarak ver. Gerekli yerlerde madde işareti için " - " kullanabilirsin.
 - Kaynaklara girerek yazının doğruluğunu kontrol et. İçerikte linkler varsa web araması yaparak bu linklerin içeriğini kontrol et ve doğruluğunu teyit et.
+- Web araması yaparak haberi zenginleştir: Haberin başlığını ve anahtar kelimelerini kullanarak son 30 gün içindeki ilgili haberleri ara. Bulduğun ek bilgileri (rakamlar, tarihler, kişi isimleri, şirket detayları) yazıya entegre et. Her ek bilgi için kaynak URL'ini KAYNAKLAR bölümüne ekle. Eğer haberin eksik olduğu önemli detaylar varsa bunları da ekle.
 - Etiketleri gözden geçir. Bize verilen etiketleri kullan, eğer yoksa eklenmesi gereken etiketleri belirt: "abd, afrika, altcoin, analiz, asya, avusturya, banka, benimsenme, bitcoin, blogging, ekonomi, enerji, finans, geliştirme, girisimcilik, haber, haber, hiperenflasyon, kagit-para, lightning, madencilik, mining, mulkiyet-haklari, nostr, odeme, para-tarihi, piyasa, podcast, politika, regülasyon, regulasyon, savas, savas-finansmani, tarih, teknoloji, tether, guney-amerika"
+- Etiketleri hem Türkçe hem İngilizce olarak ver. İngilizce etiketler görsel arama için kullanılacak.
 
 - İlk başlık özel. Sitede zaten koyu ve büyük bir biçimde gösteriyoruz o yüzden tüm harflerin büyük olmasına gerek yok. Örnek: "ABD Senatöründen Bitcoin Önerisi" ✓, "ABD SENATÖRÜNDEN BİTCOİN ÖNERİSİ" ✗
 
@@ -74,7 +76,8 @@ ${item.content}
   "title": "...",
   "summary": "...",
   "content": "...",
-  "tags": ["bitcoin", "abd", ...]
+  "tags": ["bitcoin", "abd", ...],
+  "tags_in_english": ["bitcoin", "usa", ...]
 }`;
 }
 
@@ -104,7 +107,7 @@ export async function callAIService(
         {
           type: "web_search",
           web_search: {
-            search_depth: "basic",
+            search_depth: "comprehensive",
           },
         },
       ],
@@ -142,6 +145,7 @@ export async function callAIService(
       summary: json.summary,
       content: json.content,
       tags: json.tags,
+      tags_in_english: json.tags_in_english,
     };
   } catch (error) {
     console.error("Error parsing JSON from AI service:", error);
