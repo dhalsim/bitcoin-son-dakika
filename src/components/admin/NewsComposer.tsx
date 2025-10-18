@@ -237,26 +237,16 @@ export default function NewsComposer({
                   )}
                 </div>
 
-                {/* Show ImageSelector if we have multiple images from Zeronoise */}
-                {isFromZeronoise && availableImages.length > 0 ? (
-                  <ImageSelector
-                    images={availableImages}
-                    selectedImage={newsImageUrl}
-                    onImageSelect={setNewsImageUrl}
-                    label="Görsel Seç (AI ile bulunan)"
-                  />
-                ) : (
-                  <MediaUrlInput
-                    value={newsImageUrl}
-                    onChange={handleImageChange}
-                    onlyImage={true}
-                    label=""
-                    placeholder="Görsel URL'si girin veya dosya yükleyin"
-                    blossomServers={blossomServers}
-                    onUploadToBlossom={handleImageUpload}
-                    onUploadUrlToBlossom={handleImageUrlUpload}
-                  />
-                )}
+                <MediaUrlInput
+                  value={newsImageUrl}
+                  onChange={handleImageChange}
+                  onlyImage={true}
+                  label=""
+                  placeholder="Görsel URL'si girin veya dosya yükleyin"
+                  blossomServers={blossomServers}
+                  onUploadToBlossom={handleImageUpload}
+                  onUploadUrlToBlossom={handleImageUrlUpload}
+                />
               </div>
               <div>
                 <Label className="text-base font-medium">English Content</Label>
@@ -446,25 +436,26 @@ export default function NewsComposer({
                 </div>
 
                 {/* Show ImageSelector if we have multiple images from Zeronoise */}
-                {isFromZeronoise && availableImages.length > 0 ? (
+                {isFromZeronoise && availableImages.length > 0 && (
                   <ImageSelector
                     images={availableImages}
                     selectedImage={newsImageUrl}
                     onImageSelect={setNewsImageUrl}
                     label="Görsel Seç (AI ile bulunan)"
-                  />
-                ) : (
-                  <MediaUrlInput
-                    value={newsImageUrl}
-                    onChange={handleImageChange}
-                    onlyImage={true}
-                    label=""
-                    placeholder="Görsel URL'si girin veya dosya yükleyin"
-                    blossomServers={blossomServers}
-                    onUploadToBlossom={handleImageUpload}
-                    onUploadUrlToBlossom={handleImageUrlUpload}
+                    className="mb-4"
                   />
                 )}
+
+                <MediaUrlInput
+                  value={newsImageUrl}
+                  onChange={handleImageChange}
+                  onlyImage={true}
+                  label=""
+                  placeholder="Görsel URL'si girin veya dosya yükleyin"
+                  blossomServers={blossomServers}
+                  onUploadToBlossom={handleImageUpload}
+                  onUploadUrlToBlossom={handleImageUrlUpload}
+                />
               </div>
 
               <TagSelector
