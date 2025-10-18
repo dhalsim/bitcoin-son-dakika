@@ -1,6 +1,6 @@
 import type { RedisClient } from "../../common.js";
 
-import type { ZeronoiseNewsItem, FormattedNewsItem } from "./types.js";
+import type { ZeronoiseNewsItem, FormattedNewsItem, FormattedNewsItemWithImages } from "./types.js";
 
 const AI_CACHE_PREFIX = "zeronoise:ai:";
 const AI_CACHE_TTL = 30 * 24 * 60 * 60; // 30 days
@@ -9,7 +9,7 @@ export async function formatNewsItem(
   redis: RedisClient,
   item: ZeronoiseNewsItem,
   messageId: string,
-): Promise<FormattedNewsItem> {
+): Promise<FormattedNewsItemWithImages> {
   // Check cache first
   const cacheKey = `${AI_CACHE_PREFIX}${messageId}:${item.index}`;
   const cached = await redis.get(cacheKey);
@@ -27,19 +27,27 @@ export async function formatNewsItem(
   // Call AI service (using Google Cloud Translate for now)
   const formatted = await callAIService(prompt, item);
 
+  // Search for images
+  const images = await searchImagesForArticle(formatted.tags.join(", "));
+
+  const finalResult = {
+    ...formatted,
+    images: images,
+  };
+
   // Cache result
   try {
-    await redis.set(cacheKey, JSON.stringify(formatted), {
+    await redis.set(cacheKey, JSON.stringify(finalResult), {
       expiration: { type: "EX", value: AI_CACHE_TTL },
     });
   } catch {
     // Ignore cache errors
   }
 
-  return formatted;
+  return finalResult;
 }
 
-function buildFormattingPrompt(item: ZeronoiseNewsItem): string {
+export function buildFormattingPrompt(item: ZeronoiseNewsItem): string {
   return `Bu dokümanı aşağıdaki kuralları uygulayarak bitcoinsondakika.com'da yayınlanacak bir yazı formatında yeniden yaz.
 
 KURALLAR:
@@ -70,7 +78,10 @@ ${item.content}
 }`;
 }
 
-async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<FormattedNewsItem> {
+export async function callAIService(
+  prompt: string,
+  item: ZeronoiseNewsItem,
+): Promise<FormattedNewsItem> {
   const apiKey = process.env.PPQ_API_KEY;
 
   if (!apiKey) {
@@ -111,8 +122,6 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
 
   const content = data.choices[0].message.content;
 
-  console.log("content: ", content);
-
   try {
     // Extract JSON from markdown code blocks if present
     let jsonString = content;
@@ -132,7 +141,6 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
       title: json.title,
       summary: json.summary,
       content: json.content,
-      image: json.image,
       tags: json.tags,
     };
   } catch (error) {
@@ -141,4 +149,56 @@ async function callAIService(prompt: string, item: ZeronoiseNewsItem): Promise<F
 
     throw new Error("Invalid response from AI service");
   }
+}
+
+async function searchImagesForArticle(tags: string): Promise<string[]> {
+  const apiKey = process.env.BRAVE_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("BRAVE_API_KEY is not set");
+  }
+
+  console.log("🖼️ Searching for images related to:", tags);
+
+  const url = new URL("https://api.search.brave.com/res/v1/images/search");
+  url.searchParams.set("q", tags);
+  url.searchParams.set("safesearch", "strict");
+  url.searchParams.set("count", "10");
+
+  console.log("🔍 Search URL:", url.toString());
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "Accept-Encoding": "gzip",
+      "X-Subscription-Token": apiKey,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Brave API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  console.log("🖼️ Brave API response:", JSON.stringify(data, null, 2));
+
+  if (!data.results || !Array.isArray(data.results)) {
+    throw new Error("Invalid response from Brave API");
+  }
+
+  // Extract image URLs from the results
+  const imageUrls: string[] = [];
+
+  for (const result of data.results) {
+    if (result.properties && result.properties.url) {
+      imageUrls.push(result.properties.url);
+    } else if (result.thumbnail && result.thumbnail.src) {
+      imageUrls.push(result.thumbnail.src);
+    }
+  }
+
+  console.log("🖼️ Found image URLs:", imageUrls);
+
+  return imageUrls;
 }

@@ -13,17 +13,13 @@ import { WEBSITE_URL } from "@/lib/constants";
 
 import { createNIP98Auth } from "./utils";
 import TagSelector from "./TagSelector";
-
-type PrefillData = {
-  title?: string;
-  summary?: string;
-  image?: string;
-  url?: string;
-  content?: string;
-  tags?: string[];
-  sources?: string[];
-  from?: "sources" | "zeronoise" | string;
-};
+import ImageSelector from "./ImageSelector";
+import {
+  type PrefillData,
+  isZeronoisePrefillData,
+  isScrapedPrefillData,
+  isManualPrefillData,
+} from "./types";
 
 type NewsComposerProps = {
   performPublishAction: (data: any) => Promise<any>;
@@ -42,6 +38,7 @@ export default function NewsComposer({
   const [newsTitle, setNewsTitle] = useState("");
   const [newsSummary, setNewsSummary] = useState("");
   const [newsImageUrl, setNewsImageUrl] = useState("");
+  const [availableImages, setAvailableImages] = useState<string[]>([]);
   const [newsTags, setNewsTags] = useState<string[]>([]);
   const [newsPublishLoading, setNewsPublishLoading] = useState(false);
   const [sourceUrl, setSourceUrl] = useState("");
@@ -60,20 +57,61 @@ export default function NewsComposer({
   // Apply prefill whenever token changes
   useEffect(() => {
     if (!prefill) return;
-    if (typeof prefill.title === "string") setNewsTitle(prefill.title);
-    if (typeof prefill.summary === "string") setNewsSummary(prefill.summary);
-    if (typeof prefill.image === "string") setNewsImageUrl(prefill.image);
-    if (typeof prefill.url === "string") setSourceUrl(prefill.url);
-    if (typeof prefill.content === "string") setNewsContent(prefill.content);
-    if (Array.isArray(prefill.tags)) setNewsTags(prefill.tags);
-    if (Array.isArray(prefill.sources)) setNewsSources(prefill.sources);
-    if (typeof prefill.title === "string") setEnTitle(prefill.title);
-    if (typeof prefill.summary === "string") setEnSummary(prefill.summary);
-    if (typeof prefill.content === "string") setEnContent(prefill.content);
+
+    // Common fields for all types
+    if (typeof prefill.title === "string") {
+      setNewsTitle(prefill.title);
+      setEnTitle(prefill.title);
+    }
+    if (typeof prefill.summary === "string") {
+      setNewsSummary(prefill.summary);
+      setEnSummary(prefill.summary);
+    }
+    if (typeof prefill.content === "string") {
+      setNewsContent(prefill.content);
+      setEnContent(prefill.content);
+    }
+    if (Array.isArray(prefill.tags)) {
+      setNewsTags(prefill.tags);
+    }
+
+    // Handle different data types
+    if (isZeronoisePrefillData(prefill)) {
+      // Zeronoise data has multiple images
+      if (Array.isArray(prefill.images)) {
+        setAvailableImages(prefill.images);
+        // Set first image as default if available
+        if (prefill.images.length > 0) {
+          setNewsImageUrl(prefill.images[0]);
+        }
+      }
+    } else if (isScrapedPrefillData(prefill)) {
+      // Scraped data has single image and URL
+      if (typeof prefill.image === "string") {
+        setNewsImageUrl(prefill.image);
+      }
+      if (typeof prefill.url === "string") {
+        setSourceUrl(prefill.url);
+      }
+      if (Array.isArray(prefill.sources)) {
+        setNewsSources(prefill.sources);
+      }
+    } else {
+      // Manual data - single image
+      if (typeof prefill.image === "string") {
+        setNewsImageUrl(prefill.image);
+      }
+      if (typeof prefill.url === "string") {
+        setSourceUrl(prefill.url);
+      }
+      if (Array.isArray(prefill.sources)) {
+        setNewsSources(prefill.sources);
+      }
+    }
   }, [prefillToken]);
 
-  const isFromSources = prefill?.from === "sources";
-  const isFromZeronoise = prefill?.from === "zeronoise";
+  const isFromSources = isScrapedPrefillData(prefill);
+  const isFromZeronoise = isZeronoisePrefillData(prefill);
 
   const autoTranslate = async () => {
     setIsLoading(true);
@@ -198,16 +236,27 @@ export default function NewsComposer({
                     </div>
                   )}
                 </div>
-                <MediaUrlInput
-                  value={newsImageUrl}
-                  onChange={handleImageChange}
-                  onlyImage={true}
-                  label=""
-                  placeholder="Görsel URL'si girin veya dosya yükleyin"
-                  blossomServers={blossomServers}
-                  onUploadToBlossom={handleImageUpload}
-                  onUploadUrlToBlossom={handleImageUrlUpload}
-                />
+
+                {/* Show ImageSelector if we have multiple images from Zeronoise */}
+                {isFromZeronoise && availableImages.length > 0 ? (
+                  <ImageSelector
+                    images={availableImages}
+                    selectedImage={newsImageUrl}
+                    onImageSelect={setNewsImageUrl}
+                    label="Görsel Seç (AI ile bulunan)"
+                  />
+                ) : (
+                  <MediaUrlInput
+                    value={newsImageUrl}
+                    onChange={handleImageChange}
+                    onlyImage={true}
+                    label=""
+                    placeholder="Görsel URL'si girin veya dosya yükleyin"
+                    blossomServers={blossomServers}
+                    onUploadToBlossom={handleImageUpload}
+                    onUploadUrlToBlossom={handleImageUrlUpload}
+                  />
+                )}
               </div>
               <div>
                 <Label className="text-base font-medium">English Content</Label>
@@ -323,7 +372,7 @@ export default function NewsComposer({
                     !newsContent.trim() ||
                     !newsTitle.trim() ||
                     !tagsValid ||
-                    !newsImageUrl.trim()
+                    (!newsImageUrl.trim() && !isFromZeronoise)
                   }
                   className="w-full"
                   size="lg"
@@ -395,16 +444,27 @@ export default function NewsComposer({
                     </div>
                   )}
                 </div>
-                <MediaUrlInput
-                  value={newsImageUrl}
-                  onChange={handleImageChange}
-                  onlyImage={true}
-                  label=""
-                  placeholder="Görsel URL'si girin veya dosya yükleyin"
-                  blossomServers={blossomServers}
-                  onUploadToBlossom={handleImageUpload}
-                  onUploadUrlToBlossom={handleImageUrlUpload}
-                />
+
+                {/* Show ImageSelector if we have multiple images from Zeronoise */}
+                {isFromZeronoise && availableImages.length > 0 ? (
+                  <ImageSelector
+                    images={availableImages}
+                    selectedImage={newsImageUrl}
+                    onImageSelect={setNewsImageUrl}
+                    label="Görsel Seç (AI ile bulunan)"
+                  />
+                ) : (
+                  <MediaUrlInput
+                    value={newsImageUrl}
+                    onChange={handleImageChange}
+                    onlyImage={true}
+                    label=""
+                    placeholder="Görsel URL'si girin veya dosya yükleyin"
+                    blossomServers={blossomServers}
+                    onUploadToBlossom={handleImageUpload}
+                    onUploadUrlToBlossom={handleImageUrlUpload}
+                  />
+                )}
               </div>
 
               <TagSelector
@@ -468,7 +528,7 @@ export default function NewsComposer({
                     !newsContent.trim() ||
                     !newsTitle.trim() ||
                     !tagsValid ||
-                    !newsImageUrl.trim()
+                    (!newsImageUrl.trim() && !isFromZeronoise)
                   }
                   className="w-full"
                   size="lg"

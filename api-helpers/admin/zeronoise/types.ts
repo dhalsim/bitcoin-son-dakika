@@ -15,6 +15,9 @@ export type FormattedNewsItem = {
   title: string;
   summary: string;
   content: string;
-  image?: string;
   tags: string[];
+};
+
+export type FormattedNewsItemWithImages = FormattedNewsItem & {
+  images: string[];
 };

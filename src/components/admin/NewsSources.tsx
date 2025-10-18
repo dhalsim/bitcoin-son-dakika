@@ -11,6 +11,7 @@ import { useNostrAuth } from "@/contexts/NostrAuthContext";
 import { WEBSITE_URL } from "@/lib/constants";
 
 import { createNIP98Auth } from "./utils";
+import type { FormattedNewsItemWithImages } from "api-helpers/admin/zeronoise/types.js";
 
 // Helper function to render markdown links as clickable HTML links
 const renderMarkdownLinks = (text: string): JSX.Element => {
@@ -77,7 +78,9 @@ type ZeronoiseNewsItem = {
   rawTags?: string[];
 };
 
-export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => void }) {
+import type { PrefillData, ZeronoisePrefillData, ScrapedPrefillData } from "./types";
+
+export default function NewsSources({ onPrefill }: { onPrefill?: (data: PrefillData) => void }) {
   const [scrapes, setScrapes] = useState<ScrapedItem[]>([]);
   const [scrapesLoading, setScrapesLoading] = useState<boolean>(false);
   const [scrapesError, setScrapesError] = useState<string>("");
@@ -172,7 +175,11 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
   );
 
   const formatZeronoiseItem = useCallback(
-    async (messageId: string, itemIndex: number, item: ZeronoiseNewsItem) => {
+    async (
+      messageId: string,
+      itemIndex: number,
+      item: ZeronoiseNewsItem,
+    ): Promise<FormattedNewsItemWithImages> => {
       try {
         const url = `${WEBSITE_URL}/api/admin-panel`;
 
@@ -221,9 +228,8 @@ export default function NewsSources({ onPrefill }: { onPrefill?: (data: any) => 
           title: formatted.title,
           summary: formatted.summary,
           content: formatted.content,
-          image: formatted.image,
+          images: formatted.images,
           tags: formatted.tags,
-          sources: formatted.sources,
           from: "zeronoise",
         });
       } catch (error) {
