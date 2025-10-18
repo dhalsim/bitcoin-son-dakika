@@ -35,18 +35,19 @@ export type ManualPrefillData = {
 export type PrefillData = ZeronoisePrefillData | ScrapedPrefillData | ManualPrefillData;
 
 // Type guards to check which type of prefill data we're dealing with
-export function isZeronoisePrefillData(data: PrefillData): data is ZeronoisePrefillData {
-  return data.from === "zeronoise";
+export function isZeronoisePrefillData(data: PrefillData | null): data is ZeronoisePrefillData {
+  return data !== null && data.from === "zeronoise";
 }
 
-export function isScrapedPrefillData(data: PrefillData): data is ScrapedPrefillData {
-  return data.from === "sources";
+export function isScrapedPrefillData(data: PrefillData | null): data is ScrapedPrefillData {
+  return data !== null && data.from === "sources";
 }
 
-export function isManualPrefillData(data: PrefillData): data is ManualPrefillData {
+export function isManualPrefillData(data: PrefillData | null): data is ManualPrefillData {
   return (
-    !data.from ||
-    data.from === "manual" ||
-    (!isZeronoisePrefillData(data) && !isScrapedPrefillData(data))
+    data !== null &&
+    (!data.from ||
+      data.from === "manual" ||
+      (!isZeronoisePrefillData(data) && !isScrapedPrefillData(data)))
   );
 }
