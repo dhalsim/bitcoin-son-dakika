@@ -43,7 +43,7 @@ function buildFormattingPrompt(item: ZeronoiseNewsItem): string {
   return `Bu dokümanı aşağıdaki kuralları uygulayarak bitcoinsondakika.com'da yayınlanacak bir yazı formatında yeniden yaz.
 
 KURALLAR:
-- Markdown formatında değil, düz yazı formatında yaz. Bold, italic, list, headers gibi formatları veya markdown URL kullanma. Linkleri düz URL olarak yaz.
+- Çıktıyı sade metin formatında hazırla. Kalın, italik, başlık gibi markdown biçimleri veya markdown URL’leri kullanma. Bağlantıları sadece düz URL olarak ver. Gerekli yerlerde madde işareti için " - " kullanabilirsin.
 - Kaynaklara girerek yazının doğruluğunu kontrol et. İçerikte linkler varsa web araması yaparak bu linklerin içeriğini kontrol et ve doğruluğunu teyit et.
 - Etiketleri gözden geçir. Bize verilen etiketleri kullan, eğer yoksa eklenmesi gereken etiketleri belirt: "abd, afrika, altcoin, analiz, asya, avusturya, banka, benimsenme, bitcoin, blogging, ekonomi, enerji, finans, geliştirme, girisimcilik, haber, haber, hiperenflasyon, kagit-para, lightning, madencilik, mining, mulkiyet-haklari, nostr, odeme, para-tarihi, piyasa, podcast, politika, regülasyon, regulasyon, savas, savas-finansmani, tarih, teknoloji, tether, guney-amerika"
 
