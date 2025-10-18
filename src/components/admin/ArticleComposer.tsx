@@ -1,5 +1,5 @@
 import { Loader2, Rocket, CheckCircle } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +43,8 @@ export default function ArticleComposer({
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [tagsValid, setTagsValid] = useState(true);
+  const [invalidTags, setInvalidTags] = useState<string[]>([]);
   const { getPublicKey, signEvent } = useNostrAuth();
   const { uploadToBlossom, uploadUrlToBlossom } = useBlossomUpload();
 
@@ -63,7 +65,12 @@ export default function ArticleComposer({
     setTags(newTags);
   };
 
-  const canPublish = title.trim() && content.trim();
+  const handleTagsValidationChange = useCallback((isValid: boolean, invalidTagsList: string[]) => {
+    setTagsValid(isValid);
+    setInvalidTags(invalidTagsList);
+  }, []);
+
+  const canPublish = title.trim() && content.trim() && tagsValid;
 
   const handleImageUpload = async (
     file: File,
@@ -161,6 +168,7 @@ export default function ArticleComposer({
           <TagSelector
             selectedTags={tags}
             onTagsChange={handleTagsChange}
+            onValidationChange={handleTagsValidationChange}
             label="Etiketler"
             placeholder="Etiket ekle"
           />
@@ -175,6 +183,11 @@ export default function ArticleComposer({
 
           {/* Publish */}
           <div className="pt-2">
+            {!tagsValid && (
+              <div className="text-sm text-error bg-error/10 p-2 rounded-md border border-error/20 mb-3">
+                Yayınlamadan önce geçersiz etiketleri düzeltin: {invalidTags.join(", ")}
+              </div>
+            )}
             <div className="flex gap-2">
               {editData && (
                 <Button onClick={onCancelEdit} variant="outline" className="flex-1" size="lg">

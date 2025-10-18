@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { AlertCircle, Loader2, Mic, CheckCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,8 @@ export default function PodcastComposer({
     editData?.tagItems.map((tagItem) => tagItem.tag) || [],
   );
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [tagsValid, setTagsValid] = useState(true);
+  const [invalidTags, setInvalidTags] = useState<string[]>([]);
   const { getPublicKey, signEvent } = useNostrAuth();
   const { uploadToBlossom, uploadUrlToBlossom } = useBlossomUpload();
 
@@ -92,6 +94,11 @@ export default function PodcastComposer({
   const handleTagsChange = (newTags: string[]) => {
     setTags(newTags);
   };
+
+  const handleTagsValidationChange = useCallback((isValid: boolean, invalidTagsList: string[]) => {
+    setTagsValid(isValid);
+    setInvalidTags(invalidTagsList);
+  }, []);
 
   const handleImageUpload = async (
     file: File,
@@ -309,6 +316,7 @@ export default function PodcastComposer({
             <TagSelector
               selectedTags={tags}
               onTagsChange={handleTagsChange}
+              onValidationChange={handleTagsValidationChange}
               label="Etiketler"
               placeholder="Etiket ekle"
             />
@@ -317,12 +325,20 @@ export default function PodcastComposer({
 
         <div className="flex justify-end">
           <div className="flex gap-2">
+            {!tagsValid && (
+              <div className="text-sm text-error bg-error/10 p-2 rounded-md border border-error/20 mr-3">
+                Yayınlamadan önce geçersiz etiketleri düzeltin: {invalidTags.join(", ")}
+              </div>
+            )}
             {editData && (
               <Button type="button" variant="outline" onClick={onCancelEdit}>
                 İptal
               </Button>
             )}
-            <Button type="submit" disabled={loading || !title || !content || !audioUrl}>
+            <Button
+              type="submit"
+              disabled={loading || !title || !content || !audioUrl || !tagsValid}
+            >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

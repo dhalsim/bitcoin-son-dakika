@@ -1,5 +1,5 @@
 import { Loader2, Rocket, CheckCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +52,8 @@ export default function NewsComposer({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [tagsValid, setTagsValid] = useState(true);
+  const [invalidTags, setInvalidTags] = useState<string[]>([]);
   const { getPublicKey, signEvent } = useNostrAuth();
   const { uploadToBlossom, uploadUrlToBlossom } = useBlossomUpload();
 
@@ -113,6 +115,11 @@ export default function NewsComposer({
   const handleTagsChange = (newTags: string[]) => {
     setNewsTags(newTags);
   };
+
+  const handleTagsValidationChange = useCallback((isValid: boolean, invalidTagsList: string[]) => {
+    setTagsValid(isValid);
+    setInvalidTags(invalidTagsList);
+  }, []);
 
   const handleImageUpload = async (
     file: File,
@@ -270,12 +277,18 @@ export default function NewsComposer({
               <TagSelector
                 selectedTags={newsTags}
                 onTagsChange={handleTagsChange}
+                onValidationChange={handleTagsValidationChange}
                 label="Etiketler"
                 placeholder="Etiket ekle"
               />
 
               {/* Publish */}
               <div className="pt-2">
+                {!tagsValid && (
+                  <div className="text-sm text-error bg-error/10 p-2 rounded-md border border-error/20 mb-3">
+                    Yayınlamadan önce geçersiz etiketleri düzeltin: {invalidTags.join(", ")}
+                  </div>
+                )}
                 <Button
                   onClick={async () => {
                     if (!newsContent.trim() || !newsTitle.trim()) {
@@ -305,7 +318,9 @@ export default function NewsComposer({
                       setNewsPublishLoading(false);
                     }
                   }}
-                  disabled={newsPublishLoading || !newsContent.trim() || !newsTitle.trim()}
+                  disabled={
+                    newsPublishLoading || !newsContent.trim() || !newsTitle.trim() || !tagsValid
+                  }
                   className="w-full"
                   size="lg"
                 >
@@ -391,11 +406,17 @@ export default function NewsComposer({
               <TagSelector
                 selectedTags={newsTags}
                 onTagsChange={handleTagsChange}
+                onValidationChange={handleTagsValidationChange}
                 label="Etiketler"
                 placeholder="Etiket ekle"
               />
 
               <div className="pt-2">
+                {!tagsValid && (
+                  <div className="text-sm text-error bg-error/10 p-2 rounded-md border border-error/20 mb-3">
+                    Yayınlamadan önce geçersiz etiketleri düzeltin: {invalidTags.join(", ")}
+                  </div>
+                )}
                 <Button
                   onClick={async () => {
                     if (!newsContent.trim() || !newsTitle.trim()) {
@@ -425,7 +446,9 @@ export default function NewsComposer({
                       setNewsPublishLoading(false);
                     }
                   }}
-                  disabled={newsPublishLoading || !newsContent.trim() || !newsTitle.trim()}
+                  disabled={
+                    newsPublishLoading || !newsContent.trim() || !newsTitle.trim() || !tagsValid
+                  }
                   className="w-full"
                   size="lg"
                 >
