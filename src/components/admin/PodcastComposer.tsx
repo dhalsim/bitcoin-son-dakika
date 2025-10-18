@@ -337,7 +337,7 @@ export default function PodcastComposer({
             )}
             <Button
               type="submit"
-              disabled={loading || !title || !content || !audioUrl || !tagsValid}
+              disabled={loading || !title || !content || !audioUrl || !tagsValid || !image.trim()}
             >
               {loading ? (
                 <>

@@ -70,7 +70,7 @@ export default function ArticleComposer({
     setInvalidTags(invalidTagsList);
   }, []);
 
-  const canPublish = title.trim() && content.trim() && tagsValid;
+  const canPublish = title.trim() && content.trim() && tagsValid && imageUrl.trim();
 
   const handleImageUpload = async (
     file: File,

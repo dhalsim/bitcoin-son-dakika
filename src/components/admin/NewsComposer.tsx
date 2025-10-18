@@ -159,7 +159,7 @@ export default function NewsComposer({
       <CardContent>
         {error && <div className="text-red-500">{error}</div>}
 
-        {isFromSources || isFromZeronoise ? (
+        {isFromSources ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: English/originals */}
             <div className="space-y-4">
@@ -319,7 +319,11 @@ export default function NewsComposer({
                     }
                   }}
                   disabled={
-                    newsPublishLoading || !newsContent.trim() || !newsTitle.trim() || !tagsValid
+                    newsPublishLoading ||
+                    !newsContent.trim() ||
+                    !newsTitle.trim() ||
+                    !tagsValid ||
+                    !newsImageUrl.trim()
                   }
                   className="w-full"
                   size="lg"
@@ -411,6 +415,19 @@ export default function NewsComposer({
                 placeholder="Etiket ekle"
               />
 
+              {newsSources.length > 0 && (
+                <div>
+                  <Label className="text-base font-medium">Kaynaklar</Label>
+                  <div className="space-y-1">
+                    {newsSources.map((source, idx) => (
+                      <div key={idx} className="text-xs text-muted-foreground break-all">
+                        {source}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="pt-2">
                 {!tagsValid && (
                   <div className="text-sm text-error bg-error/10 p-2 rounded-md border border-error/20 mb-3">
@@ -447,7 +464,11 @@ export default function NewsComposer({
                     }
                   }}
                   disabled={
-                    newsPublishLoading || !newsContent.trim() || !newsTitle.trim() || !tagsValid
+                    newsPublishLoading ||
+                    !newsContent.trim() ||
+                    !newsTitle.trim() ||
+                    !tagsValid ||
+                    !newsImageUrl.trim()
                   }
                   className="w-full"
                   size="lg"
