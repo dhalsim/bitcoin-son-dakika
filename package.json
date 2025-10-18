@@ -121,7 +121,7 @@
     "prettier": "^3.5.3",
     "prettier-eslint": "^16.4.2",
     "react-router": "^7.6.3",
-    "rollup-plugin-visualizer": "^6.0.3",
+    "rollup-plugin-visualizer": "^6.0.4",
     "tailwindcss": "^4.1.10",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.43.0",
