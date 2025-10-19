@@ -57,10 +57,40 @@ export function generateSitemapXml(routes: string[], ssgData: SSGData): string {
         changefreq = "monthly";
         lastmod = getLastmod(news);
       } else if (route === "/haberler") {
-        // the news page
+        // the news page (redirects to latest page)
         priority = "0.9";
         changefreq = "daily";
         lastmod = getLastmod(latestNews);
+      } else if (route.startsWith("/haberler/")) {
+        // paginated news pages
+        const [, _route, page] = route.split("/");
+
+        if (_route !== "haberler") {
+          throw new Error("Invalid route for paginated news page");
+        }
+
+        if (!page || isNaN(parseInt(page))) {
+          throw new Error("Invalid page number for paginated news page");
+        }
+
+        const pageNum = parseInt(page);
+        const NEWS_PER_PAGE = 10;
+        const totalPages = Math.ceil(ssgData.news.length / NEWS_PER_PAGE);
+
+        if (pageNum < 1 || pageNum > totalPages) {
+          return []; // Skip invalid pages
+        }
+
+        // Get the latest news item for this page
+        const sortedNews = ssgData.news.sort((a, b) => a.publishedAt - b.publishedAt);
+        const startIndex = (pageNum - 1) * NEWS_PER_PAGE;
+        const endIndex = startIndex + NEWS_PER_PAGE;
+        const pageNews = sortedNews.slice(startIndex, endIndex);
+        const latestNewsOnPage = pageNews[pageNews.length - 1]; // Last item on page
+
+        priority = pageNum === totalPages ? "0.9" : "0.7"; // Latest page gets higher priority
+        changefreq = "daily";
+        lastmod = latestNewsOnPage ? getLastmod(latestNewsOnPage) : currentDate;
       } else if (route.startsWith("/makale/")) {
         // a specific article page
         const [, _route, slug] = route.split("/");
@@ -113,6 +143,42 @@ export function generateSitemapXml(routes: string[], ssgData: SSGData): string {
         priority = "0.7";
         changefreq = "weekly";
         lastmod = getLastmod(latestPodcast);
+      } else if (route === "/son-dakika") {
+        // the latest page (redirects to latest page)
+        priority = "0.9";
+        changefreq = "daily";
+        lastmod = getLastmod(latestContent[0]);
+      } else if (route.startsWith("/son-dakika/")) {
+        // paginated latest pages (mixed content)
+        const [, _route, page] = route.split("/");
+
+        if (_route !== "son-dakika") {
+          throw new Error("Invalid route for paginated latest page");
+        }
+
+        if (!page || isNaN(parseInt(page))) {
+          throw new Error("Invalid page number for paginated latest page");
+        }
+
+        const pageNum = parseInt(page);
+        const ITEMS_PER_PAGE = 10;
+        const allItems = [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts];
+        const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+
+        if (pageNum < 1 || pageNum > totalPages) {
+          return []; // Skip invalid pages
+        }
+
+        // Get the latest content item for this page
+        const sortedItems = allItems.sort((a, b) => a.publishedAt - b.publishedAt);
+        const startIndex = (pageNum - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const pageItems = sortedItems.slice(startIndex, endIndex);
+        const latestItemOnPage = pageItems[pageItems.length - 1]; // Last item on page
+
+        priority = pageNum === totalPages ? "0.9" : "0.7"; // Latest page gets higher priority
+        changefreq = "daily";
+        lastmod = latestItemOnPage ? getLastmod(latestItemOnPage) : currentDate;
       } else if (route.startsWith("/etiket/")) {
         // a specific tag page
         const [, _route, slug] = route.split("/");

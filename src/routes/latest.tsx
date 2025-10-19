@@ -1,4 +1,5 @@
-import type { MetaFunction } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { redirect } from "react-router";
 
 import PodcastCard from "@/components/PodcastCard";
 import { ContentItem } from "@/lib/ssg-data";
@@ -8,6 +9,26 @@ import NewsCard from "../components/NewsCard";
 import ArticleCard from "../components/ArticleCard";
 import { useSSGData } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  // Get SSG data from global (set during prerender)
+  const ssgData = global.__SSG_DATA__;
+
+  if (!ssgData) {
+    throw new Error("SSG data not available");
+  }
+
+  // Combine news, articles, and podcasts to calculate total pages
+  const allItems: ContentItem[] = [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts];
+
+  // Calculate the latest page number (highest page = newest content)
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+  const latestPage = Math.max(1, totalPages);
+
+  // Redirect to the latest page
+  return redirect(`/son-dakika/${latestPage}`);
+}
 
 export const meta: MetaFunction = () => {
   return [
@@ -39,49 +60,8 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+// This component redirects to the latest paginated page
 export default function LatestPage() {
-  const ssgData = useSSGData();
-
-  // Combine news and articles, sort by publish date
-  const allItems: ContentItem[] = [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts].sort(
-    (a, b) => b.publishedAt - a.publishedAt,
-  );
-
-  // If no content is available, show empty state
-  if (allItems.length === 0) {
-    return (
-      <MainContent>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            İçerikler Yükleniyor...
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Güncel Bitcoin haberleri ve makaleleri yakında burada olacak.
-          </p>
-        </div>
-      </MainContent>
-    );
-  }
-
-  return (
-    <MainContent>
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2">En Son İçerikler</h1>
-        <p className="text-muted-foreground">Bitcoin dünyasından en güncel haberler ve makaleler</p>
-      </div>
-
-      {/* Combined Content List - Single Column */}
-      <div className="max-w-4xl mx-auto space-y-6">
-        {allItems.map((item, index) => {
-          if (item.type === "news") {
-            return <NewsCard key={index} {...item} />;
-          } else if (item.type === "article") {
-            return <ArticleCard key={index} {...item} />;
-          } else {
-            return <PodcastCard key={index} podcast={item} />;
-          }
-        })}
-      </div>
-    </MainContent>
-  );
+  // This component should never render as it redirects in the loader
+  return null;
 }

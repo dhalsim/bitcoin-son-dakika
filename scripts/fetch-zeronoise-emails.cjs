@@ -53,7 +53,7 @@ const SUBJECT_PREFIX = "Bitcoin Intelligence Tracker:";
 
     // Search for unread messages from sender with subject prefix
     //const query = `from:${SENDER} subject:"${SUBJECT_PREFIX}" is:unread`;
-    const query = `subject:"${SUBJECT_PREFIX}" is:unread`;
+    const query = `subject:"${SUBJECT_PREFIX}"`;
     console.log(`Searching with query: ${query}`);
 
     const listResponse = await gmail.users.messages.list({

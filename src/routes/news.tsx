@@ -1,9 +1,24 @@
-import type { MetaFunction } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { redirect } from "react-router";
 
-import MainContent from "../components/MainContent";
-import NewsCard from "../components/NewsCard";
-import { useSSGData } from "../contexts/SSGContext";
 import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "../lib/constants";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  // Get SSG data from global (set during prerender)
+  const ssgData = global.__SSG_DATA__;
+
+  if (!ssgData) {
+    throw new Error("SSG data not available");
+  }
+
+  // Calculate the latest page number (highest page = newest content)
+  const NEWS_PER_PAGE = 10;
+  const totalPages = Math.ceil(ssgData.news.length / NEWS_PER_PAGE);
+  const latestPage = Math.max(1, totalPages);
+
+  // Redirect to the latest page
+  return redirect(`/haberler/${latestPage}`);
+}
 
 export const meta: MetaFunction = () => {
   return [
@@ -29,39 +44,8 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-// Helper function to convert NewsItem to NewsCard props
-
+// This component redirects to the latest paginated page
 export default function NewsPage() {
-  const ssgData = useSSGData();
-
-  // Get only news items and sort by publish date
-  const newsItems = ssgData.news.sort((a, b) => b.publishedAt - a.publishedAt);
-
-  // If no content is available, show empty state
-  if (newsItems.length === 0) {
-    return (
-      <MainContent>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Haberler Yükleniyor...</h1>
-          <p className="text-muted-foreground">Güncel Bitcoin haberleri yakında burada olacak.</p>
-        </div>
-      </MainContent>
-    );
-  }
-
-  return (
-    <MainContent>
-      {/* News List - Single Column */}
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Tüm Haberler</h1>
-          <p className="text-muted-foreground">Bitcoin dünyasından en güncel haberler</p>
-        </div>
-
-        {newsItems.map((news, index) => (
-          <NewsCard key={index} {...news} />
-        ))}
-      </div>
-    </MainContent>
-  );
+  // This component should never render as it redirects in the loader
+  return null;
 }

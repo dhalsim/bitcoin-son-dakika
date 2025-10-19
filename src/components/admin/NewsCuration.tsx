@@ -36,6 +36,8 @@ import UploadToX from "./UploadToX";
 import UploadReels from "./UploadReels";
 import { publishToX } from "./utils";
 
+const SHOW_NEWS_COUNT = 5;
+
 type NewsCurationProps = {
   news: NewsTag[];
   lastUpdated: number;
@@ -65,6 +67,7 @@ export default function NewsCuration({
   const [reelsData, setReelsData] = useState<EventItem | null>(null);
   const [deletionDialogOpen, setDeletionDialogOpen] = useState(false);
   const [pendingDeletionEvent, setPendingDeletionEvent] = useState<EventItem | null>(null);
+  const [showAllNews, setShowAllNews] = useState(false);
   const { signEvent } = useNostrAuth();
 
   useEffect(() => {
@@ -239,7 +242,7 @@ export default function NewsCuration({
           {news?.length === 0 ? (
             <p className="text-gray-500 text-sm">Henüz haber eklenmemiş</p>
           ) : newsEvents.size === 0 ? (
-            Array.from({ length: news.length }).map((_, idx) => (
+            Array.from({ length: Math.min(news.length, SHOW_NEWS_COUNT) }).map((_, idx) => (
               <div
                 key={`skeleton-${idx}`}
                 className="flex items-center justify-between p-3 rounded-lg"
@@ -255,109 +258,123 @@ export default function NewsCuration({
               </div>
             ))
           ) : (
-            Array.from(newsEvents.values())
-              .sort((a, b) => b.created_at - a.created_at)
-              .map((event) => {
-                const content = event.content || "";
-                const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
-                const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
-                const display = titleTag || summaryTag || content;
-                const slug = createTitleSlug(titleTag);
-                const url = `${WEBSITE_URL}${links.newsDetail(slug)}`;
-                const nevent = nip19.neventEncode({
-                  id: event.id,
-                  relays: event.relays,
-                  author: event.pubkey,
-                  kind: event.kind,
-                });
+            <>
+              {Array.from(newsEvents.values())
+                .sort((a, b) => b.created_at - a.created_at)
+                .slice(0, showAllNews ? undefined : SHOW_NEWS_COUNT)
+                .map((event) => {
+                  const content = event.content || "";
+                  const titleTag = event.tags.find((t) => t[0] === "title")?.[1];
+                  const summaryTag = event.tags.find((t) => t[0] === "summary")?.[1];
+                  const display = titleTag || summaryTag || content;
+                  const slug = createTitleSlug(titleTag);
+                  const url = `${WEBSITE_URL}${links.newsDetail(slug)}`;
+                  const nevent = nip19.neventEncode({
+                    id: event.id,
+                    relays: event.relays,
+                    author: event.pubkey,
+                    kind: event.kind,
+                  });
 
-                return (
-                  <div
-                    key={event.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted"
+                  return (
+                    <div
+                      key={event.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm truncate max-w-[48ch]">
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:text-blue-600 font-bold"
+                          >
+                            {display}
+                          </a>
+                        </div>
+                        <div className="font-mono text-xs text-muted-foreground">
+                          <a
+                            href={`https://njump.me/${nevent}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:text-blue-600"
+                          >
+                            {event.id.substring(0, 6)}...{event.id.substring(event.id.length - 6)}
+                          </a>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {event.relays.join(", ")} {formatNostrDate(event.created_at)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShareData(event);
+                            setShareOpen(true);
+                          }}
+                          title="X'e yükle"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="h-4 w-4 text-muted-foreground"
+                            viewBox="0 0 16 16"
+                          >
+                            <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
+                          </svg>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setReelsData(event);
+                            setReelsOpen(true);
+                          }}
+                          title="Reels oluştur"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="h-4 w-4 text-muted-foreground"
+                            viewBox="0 0 16 16"
+                          >
+                            <path d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1zm4 0v6h8V1zm8 8H4v6h8zM1 1v2h2V1zm2 3H1v2h2zM1 7v2h2V7zm2 3H1v2h2zm-2 3v2h2v-2zM15 1h-2v2h2zm-2 3v2h2V4zm2 3h-2v2h2zm-2 3v2h2v-2zm2 3h-2v2h2z" />
+                          </svg>
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={removingKey === event.id}
+                          onClick={() => handleRemoveNewsClick(event)}
+                        >
+                          {removingKey === event.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              {newsEvents.size > SHOW_NEWS_COUNT && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAllNews(!showAllNews)}
+                    className="w-full"
                   >
-                    <div className="min-w-0">
-                      <div className="text-sm truncate max-w-[48ch]">
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:text-blue-600 font-bold"
-                        >
-                          {display}
-                        </a>
-                      </div>
-                      <div className="font-mono text-xs text-muted-foreground">
-                        <a
-                          href={`https://njump.me/${nevent}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 hover:text-blue-600"
-                        >
-                          {event.id.substring(0, 6)}...{event.id.substring(event.id.length - 6)}
-                        </a>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {event.relays.join(", ")} {formatNostrDate(event.created_at)}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setShareData(event);
-                          setShareOpen(true);
-                        }}
-                        title="X'e yükle"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          fill="currentColor"
-                          className="h-4 w-4 text-muted-foreground"
-                          viewBox="0 0 16 16"
-                        >
-                          <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setReelsData(event);
-                          setReelsOpen(true);
-                        }}
-                        title="Reels oluştur"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          fill="currentColor"
-                          className="h-4 w-4 text-muted-foreground"
-                          viewBox="0 0 16 16"
-                        >
-                          <path d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1zm4 0v6h8V1zm8 8H4v6h8zM1 1v2h2V1zm2 3H1v2h2zM1 7v2h2V7zm2 3H1v2h2zm-2 3v2h2v-2zM15 1h-2v2h2zm-2 3v2h2V4zm2 3h-2v2h2zm-2 3v2h2v-2zm2 3h-2v2h2z" />
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={removingKey === event.id}
-                        onClick={() => handleRemoveNewsClick(event)}
-                      >
-                        {removingKey === event.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })
+                    {showAllNews ? "Daha Az Göster" : "Tamamini Goster"}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
         <div className="space-y-3 pt-4 border-t">

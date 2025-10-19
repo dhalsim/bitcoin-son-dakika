@@ -14,12 +14,7 @@ import { WEBSITE_URL } from "@/lib/constants";
 import { createNIP98Auth } from "./utils";
 import TagSelector from "./TagSelector";
 import ImageSelector from "./ImageSelector";
-import {
-  type PrefillData,
-  isZeronoisePrefillData,
-  isScrapedPrefillData,
-  isManualPrefillData,
-} from "./types";
+import { type PrefillData, isZeronoisePrefillData, isScrapedPrefillData } from "./types";
 
 type NewsComposerProps = {
   performPublishAction: (data: any) => Promise<any>;

@@ -131,14 +131,33 @@ export default {
 
     console.log(`Generated ${podcastRoutes.length} podcast routes`);
 
+    // Generate paginated news routes
+    const NEWS_PER_PAGE = 10;
+    const newsTotalPages = Math.ceil(ssgData.news.length / NEWS_PER_PAGE);
+    const newsPageRoutes = Array.from({ length: newsTotalPages }, (_, i) => `/haberler/${i + 1}`);
+
+    // Generate paginated latest routes (mixed content)
+    const ITEMS_PER_PAGE = 10;
+    const allItems = [...ssgData.news, ...ssgData.articles, ...ssgData.podcasts];
+    const latestTotalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+    const latestPageRoutes = Array.from(
+      { length: latestTotalPages },
+      (_, i) => `/son-dakika/${i + 1}`,
+    );
+
+    console.log(`Generated ${newsPageRoutes.length} paginated news routes`);
+    console.log(`Generated ${latestPageRoutes.length} paginated latest routes`);
+
     const allRoutes = [
       "/", // Ana sayfa - Bitcoin Son Dakika (static)
       "/admin", // Admin paneli
       "/profile", // Profil
-      "/haberler", // Haberler sayfası - static
+      "/haberler", // Haberler sayfası - redirects to latest page
       "/makaleler", // Makaleler sayfası - static
       "/podcast", // Podcast ana sayfası - static
-      "/son-dakika", // Son dakika sayfası - static
+      "/son-dakika", // Son dakika sayfası - redirects to latest page
+      ...newsPageRoutes.sort(), // Paginated news pages - static
+      ...latestPageRoutes.sort(), // Paginated latest pages - static
       ...authorRoutes.sort(), // Profile pages - static
       ...tagRoutes.sort(), // Tag pages - static
       ...articlesRoutes.sort(), // Article detail pages - static
