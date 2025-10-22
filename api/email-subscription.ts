@@ -60,7 +60,17 @@ async function sendEmailCampaign(frequency: "daily" | "weekly", subject: string)
     }
 
     // Generate email content based on frequency
-    const { htmlContent, textContent } = await generateEmailContent(frequency);
+    const { htmlContent, textContent, hasContent } = await generateEmailContent(frequency);
+
+    // If no content is available, don't send emails
+    if (!hasContent) {
+      return {
+        message: `No content available for ${frequency} frequency - skipping email send`,
+        sent: 0,
+        failed: 0,
+        total: subscribers.rows.length,
+      };
+    }
 
     let sentCount = 0;
     let failedCount = 0;
@@ -172,6 +182,9 @@ async function generateEmailContent(frequency: "daily" | "weekly") {
         }));
     }
 
+    // Check if we have any content to send
+    const hasContent = recentItems.length > 0 || podcastItems.length > 0;
+
     const itemsHtml = recentItems
       .map((item) => {
         // Generate appropriate link based on item type
@@ -276,40 +289,11 @@ ${item.link}
 Tüm haberleri görüntülemek için: https://bitcoinsondakika.com
     `.trim();
 
-    return { htmlContent, textContent };
+    return { htmlContent, textContent, hasContent };
   } catch (error) {
     console.error("Error generating email content from RSS:", error);
 
-    // Fallback to static content
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #2563eb;">Bitcoin Son Dakika</h1>
-        <h2 style="color: #1f2937;">${isWeekly ? "Haftalık" : "Günlük"} Bitcoin Haberleri</h2>
-        
-        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #374151; margin-top: 0;">Son Dakika Haberler</h3>
-          <p style="color: #6b7280;">Bitcoin fiyatı ve piyasa gelişmeleri hakkında güncel bilgiler...</p>
-        </div>
-        
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="https://bitcoinsondakika.com" style="background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-            Tüm Haberleri Görüntüle
-          </a>
-        </div>
-      </div>
-    `;
-
-    const textContent = `
-Bitcoin Son Dakika
-${isWeekly ? "Haftalık" : "Günlük"} Bitcoin Haberleri
-
-Son Dakika Haberler
-Bitcoin fiyatı ve piyasa gelişmeleri hakkında güncel bilgiler...
-
-Tüm haberleri görüntülemek için: https://bitcoinsondakika.com
-    `.trim();
-
-    return { htmlContent, textContent };
+    return { htmlContent: "", textContent: "", hasContent: false };
   }
 }
 
